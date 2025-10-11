@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create("encomienda_detalle", function (Blueprint $table) {
             $table->id();
-            $table->foreignId("encomienda_id")->constrained("encomiendas");
+            $table->foreignId("encomienda_id")->constrained("encomienda");
             $table->string("tipo_equipaje", 100);
             $table->string("descripcion", 100);
             $table->decimal("peso", 10, 2)->default(0);

@@ -16,10 +16,7 @@ return new class extends Migration {
                 ->foreignId("venta_id")
                 ->constrained("ventas")
                 ->cascadeOnDelete();
-            $table
-                ->foreignId("almacen_id")
-                ->default(1)
-                ->constrained("almacenes");
+            $table->foreignId("almacen_id")->default(1)->constrained("almacen");
             $table->foreignId("unidad_medida_id")->constrained("unidad_medida");
             $table->foreignId("producto_id")->constrained("productos");
             $table->decimal("descuento", 10, 2)->default(0);

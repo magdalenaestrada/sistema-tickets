@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create("caja_detalle", function (Blueprint $table) {
             $table->id();
-            $table->foreignId("caja_id")->constrained("cajas");
+            $table->foreignId("caja_id")->constrained("caja");
             $table
                 ->foreignId("subtipo_movimiento_caja_id")
                 ->constrained("subtipo_movimiento_caja");

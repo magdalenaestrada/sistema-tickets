@@ -16,7 +16,6 @@ return new class extends Migration {
             $table->foreignId("sucursal_id")->constrained("sucursales");
             $table->decimal("monto_apertura", 10, 2)->default(0);
             $table->decimal("monto_cierre", 10, 2)->default(0);
-            $table->timestamps();
             $table
                 ->enum("estado", ["A", "C", "P"])
                 ->comment(
