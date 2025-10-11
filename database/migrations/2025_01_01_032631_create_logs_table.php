@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('sucursal_id')->nullable()->constrained('sucursales');
+        Schema::create('logs', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
         });
     }
 
@@ -21,9 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['sucursal_id']);
-            $table->dropColumn('sucursal_id');
-        });
+        Schema::dropIfExists('logs');
     }
 };
