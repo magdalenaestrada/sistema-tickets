@@ -1,18 +1,11 @@
-// Basic Typeahead
-const stringMatcher = (strs) => {
-    return function findMatches(word, wd) {
-        const strmatches = [];
-        const substrRegex = new RegExp(word, 'i');
-        strs.forEach((str) => {
-            if (substrRegex.test(str)) {
-                strmatches.push(str);
-            }
-        });
-        wd(strmatches);
-    };
-};
+// npm package: typeahead.js
+// github link: https://github.com/twitter/typeahead.js
 
-const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+'use strict';
+
+(function () {
+  
+  const statesArray = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
     'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
     'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
     'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
@@ -21,125 +14,60 @@ const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
     'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
     'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
     'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-];
+  ];
 
-$('#basictype .typeahead').typeahead({
-        hint: true,
-        highlight: true,
-        minLength: 1
-    },
-    {
-        name: 'states',
-        source: stringMatcher(states)
-    });
 
-// Bloodhoundtype Typeahead
-const bloodhoundStates = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.whitespace,
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    local: states
-});
+  // 1. Basic Example
+  const substringMatcher = function(strs) {
+    return function findMatches(q, cb) {
+      let matches, substringRegex;
 
-$('#bloodhoundtype .typeahead').typeahead({
-        hint: true,
-        highlight: false,
-        minLength: 1
-    },
-    {
-        name: 'states',
-        source: bloodhoundStates
-    });
+      // an array that will be populated with substring matches
+      matches = [];
 
-// Prefetchtype Typeahead
-const countries = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.whitespace,
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    prefetch: "../assets/vendor/typeahead/data/countries.json",
-});
+      // regex used to determine if a string contains the substring `q`
+      var substrRegex = new RegExp(q, 'i');
 
-$('#prefetchtype .typeahead').typeahead(null, {
+      // iterate through the pool of strings and for any string that
+      // contains the substring `q`, add it to the `matches` array
+      for (var i = 0; i < strs.length; i++) {
+        if (substrRegex.test(strs[i])) {
+          matches.push(strs[i]);
+        }
+      }
+
+      cb(matches);
+    };
+  };
+
+  $('#the-basics .typeahead').typeahead({
+    hint: true,
+    highlight: true,
+    minLength: 1
+  }, {
     name: 'states',
-    source: countries
-});
+    source: substringMatcher(statesArray)
+  });
 
-// Remotetype Typeahead
-const bestPictures = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    prefetch: '../assets/vendor/typeahead/data/post_1960.json',
-});
 
-$('#remotetype .typeahead').typeahead(null, {
-    name: 'best-pictures',
-    display: 'value',
-    source: bestPictures
-});
 
-// Custom Templates
-$('#customtype-templates .typeahead').typeahead(null, {
-    name: 'best-pictures',
-    display: 'value',
-    source: bestPictures,
-    templates: {
-        empty: [
-            '<div class="empty-message">',
-            '<i class="ti ti-mood-sad"></i> sorry! Data is not available',
-            '</div>',
-        ].join('\n'),
-    }
-});
 
-// multiple-datasets
-const nbaTeams = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('team'),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    prefetch: '../assets/vendor/typeahead/data/nba.json'
-});
-
-const nhlTeams = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('team'),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    prefetch: '../assets/vendor/typeahead/data/nhl.json'
-});
-
-// multiple-datasets
-$('#multiple-datasetstype .typeahead').typeahead(null,
-    {
-        name: 'nba-teams',
-        display: 'team',
-        source: nbaTeams,
-        templates: {
-            header: '<h5 class="league-name">NBA Teams</h5>'
-        }
-    },
-    {
-        name: 'nhl-teams',
-        display: 'team',
-        source: nhlTeams,
-        templates: {
-            header: '<h5 class="league-name">NHL Teams</h5>'
-        }
-    });
-
-// scrollable-dropdown-menu
-$('#scrollable-dropdown-menu .typeahead').typeahead(null, {
-    name: 'countries',
-    limit: 10,
-    source: countries
-});
-
-// rtltype Typeahead
-const arabicPhrases = new Bloodhound({
+  // 2. Bloodhound (Suggestion Engine) Example
+  // constructs the suggestion engine
+  const states = new Bloodhound({
     datumTokenizer: Bloodhound.tokenizers.whitespace,
     queryTokenizer: Bloodhound.tokenizers.whitespace,
-    local: states
-});
+    // `statesArray` is an array of state names defined in "The Basics"
+    local: statesArray
+  });
 
-$('#rtltype .typeahead').typeahead({
-        hint: false
-    },
-    {
-        name: 'arabic-phrases',
-        source: arabicPhrases
-    });
+  $('#bloodhound .typeahead').typeahead({
+    hint: true,
+    highlight: true,
+    minLength: 1
+  }, {
+    name: 'states',
+    source: states
+  });
 
+})();

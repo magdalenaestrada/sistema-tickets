@@ -16,12 +16,17 @@ return new class extends Migration
             $table->string('direccion');
             $table->string('usuario_facturacion')->nullable();
             $table->string('contrasena_facturacion')->nullable();
-            $table->timestamps();
+            $table->enum("estado", ["A", "I"])->default("A")->index();
+            $table->softDeletes();
         });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('empresas');
+    }
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
     }
 };
