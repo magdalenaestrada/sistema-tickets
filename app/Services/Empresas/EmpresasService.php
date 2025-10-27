@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Empresas;
 
 use App\Enums\Models\ModelStatusEnum;
 use App\Helpers\HTMLHelper;
@@ -156,11 +156,15 @@ class EmpresasService
             throw $exception;
         }
     }
-
     public function desactivar(Empresas $empresa)
     {
+        if ($empresa->sucursales()->exists() || $empresa->usuarios()->exists()) {
+            throw new \Exception("No se puede desactivar la empresa porque tiene registros relacionados.");
+        }
+
         $empresa->estado = ModelStatusEnum::INACTIVO;
         $empresa->save();
+
         activity()
             ->performedOn($empresa)
             ->log("Se desactivó una empresa");
@@ -170,6 +174,7 @@ class EmpresasService
     {
         $empresa->estado = ModelStatusEnum::ACTIVO;
         $empresa->save();
+
         activity()
             ->performedOn($empresa)
             ->log("Se activó una empresa");

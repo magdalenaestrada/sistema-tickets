@@ -13,31 +13,28 @@
       
       <div class="sidebar-body">
           <ul class="nav" id="sidebarNav">
-              <li class="nav-item nav-category">Main</li>
+              <li class="nav-item nav-category">HOME</li>
               <li class="nav-item">
                   <a href="dashboard-1.html" class="nav-link">
                       <i class="link-icon" data-lucide="box"></i>
                       <span class="link-title">Dashboard</span>
                   </a>
               </li>
-              <li class="nav-item nav-category">web apps</li>
+              <li class="nav-item nav-category">GESTIÓN</li>
               <li class="nav-item">
                   <a class="nav-link" data-bs-toggle="collapse" href="#emails" role="button" aria-expanded="false"
                       aria-controls="emails">
-                      <i class="link-icon" data-lucide="mail"></i>
-                      <span class="link-title">Email</span>
+                      <i class="link-icon" data-lucide="building"></i>
+                      <span class="link-title">Empresa</span>
                       <i class="link-arrow" data-lucide="chevron-down"></i>
                   </a>
                   <div class="collapse" id="emails">
                       <ul class="nav sub-menu">
                           <li class="nav-item">
-                              <a href="pages/email/inbox.html" class="nav-link">Inbox</a>
+                              <a href="{{ route("empresas.index") }}" class="nav-link">Mi empresa</a>
                           </li>
                           <li class="nav-item">
-                              <a href="pages/email/read.html" class="nav-link">Read</a>
-                          </li>
-                          <li class="nav-item">
-                              <a href="pages/email/compose.html" class="nav-link">Compose</a>
+                              <a href="pages/email/read.html" class="nav-link">Sucursales</a>
                           </li>
                       </ul>
                   </div>
