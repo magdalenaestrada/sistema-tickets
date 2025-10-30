@@ -13,7 +13,7 @@ class DistritosSeeder extends Seeder
     public function run(): void
     {
         // PERU
-        DB::table('provincias')->insert([
+        DB::table('distritos')->insert([
             ['id' => '1', 'ubigeo' => '010101', 'nombre' => 'Chachapoyas', 'provincia_id' => '1'],
             ['id' => '2', 'ubigeo' => '010102', 'nombre' => 'Asunción', 'provincia_id' => '1'],
             ['id' => '3', 'ubigeo' => '010103', 'nombre' => 'Balsas', 'provincia_id' => '1'],

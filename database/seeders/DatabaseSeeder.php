@@ -14,16 +14,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::factory()->create([
-        //     'username' => 'admin',
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        //     'password' => Hash::make("12345")
-        // ]);
-
-        // $this->call(PaisSeeder::class);
-        // $this->call(RolesSeeder::class);
+        $this->call([
+            PaisSeeder::class,
+            DepartamentosSeeder::class,
+            ProvinciasSeeder::class,
+            DistritosSeeder::class,
+            RolesSeeder::class,
+        ]);
     }
 }

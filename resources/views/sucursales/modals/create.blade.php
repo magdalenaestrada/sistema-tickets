@@ -1,0 +1,47 @@
+<div class="modal fade" id="modalSucursal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalTitulo">Registrar Sucursal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="formSucursal">
+                <div class="modal-body">
+                    <input type="hidden" id="sucursal_id" name="sucursal_id">
+                    <div class="mb-3">
+                        <label>Distrito</label>
+                        <select name="distrito_id" id="distrito_id" class="form-select" required>
+                            <option value="">Seleccione</option>
+                            @foreach ($distritos as $distrito)
+                                <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Nombre Comercial</label>
+                        <input type="text" name="nombre_comercial" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Dirección</label>
+                        <input type="text" name="direccion" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Teléfono</label>
+                        <input type="text" name="telefono" class="form-control" maxlength="9" pattern="\d{9}"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

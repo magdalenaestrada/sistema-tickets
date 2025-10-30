@@ -1,0 +1,13 @@
+<?php
+
+use App\Http\Controllers\Sucursal\SucursalController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('sucursales')->name('sucursales.')->group(function () {
+    Route::get('/{empresa_id}', [SucursalController::class, 'index'])->name('index');
+    Route::get('/{empresa_id}/datatable', [SucursalController::class, 'datatable'])->name('datatable');
+    Route::post('/', [SucursalController::class, 'guardar'])->name('guardar');
+    Route::get('/show/{sucursal}', [SucursalController::class, 'show'])->name('show');
+    Route::put('/{sucursal}', [SucursalController::class, 'actualizar'])->name('actualizar');
+    Route::get('/detalle/{id}', [SucursalController::class, 'show'])->name('detalle');
+});

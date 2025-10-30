@@ -8,6 +8,8 @@
 
     {{-- Configuración de color --}}
     <script src="{{ asset('assets/js/color-modes.js') }}"></script>
+    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Fuentes --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">

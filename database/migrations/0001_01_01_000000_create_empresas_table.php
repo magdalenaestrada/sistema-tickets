@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('contrasena_facturacion')->nullable();
             $table->enum("estado", ["A", "I"])->default("A")->index();
             $table->softDeletes();
+            $table->timestamps();
         });
     }
 

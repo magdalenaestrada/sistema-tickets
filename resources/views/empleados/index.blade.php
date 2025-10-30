@@ -3,23 +3,23 @@
 @section('content')
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Gestión de empresas</h5>
+            <h5 class="mb-0">Gestión de Empleados</h5>
             <div class="d-flex gap-2">
-                <button class="btn btn-primary" id="btnNuevaEmpresa">
+                <button class="btn btn-primary" id="btnNuevoEmpleado">
                     <i class="link-icon" data-lucide="plus"></i>
-                    Añadir Empresa
+                    Añadir Empleado
                 </button>
             </div>
         </div>
 
         <div class="card-body">
-            <table id="tablaEmpresas" class="table table-striped w-100"></table>
+            <table id="tablaEmpleados" class="table table-striped w-100"></table>
         </div>
     </div>
 
-    @include('empresas.modals.create')
+    @include('empleados.modals.create')
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/empresas.js') }}"></script>
+    <script src="{{ asset('js/empleados.js') }}"></script>
 @endpush

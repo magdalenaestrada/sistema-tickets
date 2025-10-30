@@ -14,8 +14,9 @@ return new class extends Migration {
             $table->id();
             $table->foreignId("empresa_id")->constrained("empresas");
             $table->foreignId("distrito_id")->constrained("distritos");
-            $table->string("nombre_comercial");
+            $table->string("nombre_comercial")->nullable();
             $table->string("direccion");
+            $table->string("telefono");
             $table->timestamps();
         });
     }

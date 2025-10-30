@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Empresas extends Model
+class Empresa extends Model
 {
     protected $table = "empresas";
     protected $fillable = [
@@ -15,4 +15,9 @@ class Empresas extends Model
         'usuario_facturacion',
         'contrasena_facturacion',
     ];
+
+    public function sucursales()
+    {
+        return $this->hasMany(Sucursal::class);
+    }
 }

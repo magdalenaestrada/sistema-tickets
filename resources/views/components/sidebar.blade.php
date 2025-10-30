@@ -10,7 +10,7 @@
               <span></span>
           </div>
       </div>
-      
+
       <div class="sidebar-body">
           <ul class="nav" id="sidebarNav">
               <li class="nav-item nav-category">HOME</li>
@@ -31,10 +31,16 @@
                   <div class="collapse" id="emails">
                       <ul class="nav sub-menu">
                           <li class="nav-item">
-                              <a href="{{ route("empresas.index") }}" class="nav-link">Mi empresa</a>
+                              <a href="{{ route('empresas.index') }}" class="nav-link">Mi empresa</a>
                           </li>
                           <li class="nav-item">
-                              <a href="pages/email/read.html" class="nav-link">Sucursales</a>
+                              <a href="{{ route('areas.index') }}" class="nav-link">Áreas</a>
+                          </li>
+                          <li class="nav-item">
+                              <a href="{{ route('cargos.index') }}" class="nav-link">Cargos</a>
+                          </li>
+                          <li class="nav-item">
+                              <a href="{{ route('empleados.index') }}" class="nav-link">Empleados</a>
                           </li>
                       </ul>
                   </div>
