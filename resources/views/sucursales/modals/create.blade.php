@@ -10,6 +10,24 @@
                 <div class="modal-body">
                     <input type="hidden" id="sucursal_id" name="sucursal_id">
                     <div class="mb-3">
+                        <label>Departamento</label>
+                        <select name="departamento_id" id="departamento_id" class="form-select" required>
+                            <option value="">Seleccione</option>
+                            @foreach ($departamentos as $departamento)
+                                <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Provincia</label>
+                        <select name="provincia_id" id="provincia_id" class="form-select" required>
+                            <option value="">Seleccione</option>
+                            @foreach ($provincias as $provincia)
+                                <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label>Distrito</label>
                         <select name="distrito_id" id="distrito_id" class="form-select" required>
                             <option value="">Seleccione</option>
@@ -18,7 +36,6 @@
                             @endforeach
                         </select>
                     </div>
-
                     <div class="mb-3">
                         <label>Nombre Comercial</label>
                         <input type="text" name="nombre_comercial" class="form-control">

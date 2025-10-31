@@ -15,4 +15,8 @@ class Area extends Model
     {
         return $this->hasMany(Empleado::class);
     }
+     public function cargos()
+    {
+        return $this->hasMany(Cargo::class);
+    }
 }

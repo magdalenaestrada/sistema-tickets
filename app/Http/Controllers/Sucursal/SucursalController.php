@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Sucursal;
 
 use App\Http\Controllers\Controller;
+use App\Models\Departamento;
 use App\Models\Sucursal;
 use App\Models\Empresa;
 use App\Models\Distrito;
+use App\Models\Provincia;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
@@ -15,9 +17,11 @@ class SucursalController extends Controller
     public function index($empresa_id)
     {
         $empresa = Empresa::findOrFail($empresa_id);
+        $departamentos = Departamento::select('id', 'nombre')->get();
+        $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
 
-        return view('sucursales.index', compact('empresa', 'distritos'));
+        return view('sucursales.index', compact('empresa', 'distritos', 'departamentos', 'provincias'));
     }
 
     public function datatable($empresa_id)

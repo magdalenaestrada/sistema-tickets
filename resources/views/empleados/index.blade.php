@@ -16,7 +16,6 @@
             <table id="tablaEmpleados" class="table table-striped w-100"></table>
         </div>
     </div>
-
     @include('empleados.modals.create')
 @endsection
 

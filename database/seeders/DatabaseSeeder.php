@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
             ProvinciasSeeder::class,
             DistritosSeeder::class,
             RolesSeeder::class,
+            AreasSeeder::class,
+            CargosSeeder::class,
+            TipoDocumentoSeeder::class,
         ]);
     }
 }

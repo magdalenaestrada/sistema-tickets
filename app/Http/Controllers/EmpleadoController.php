@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
 use App\Models\Empleado;
 use App\Models\Persona;
 use Illuminate\Http\Request;
@@ -110,7 +111,6 @@ class EmpleadoController extends Controller
                 'message' => 'Empleado guardado correctamente.',
                 'empleado' => $empleado,
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

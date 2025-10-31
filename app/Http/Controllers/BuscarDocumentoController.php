@@ -17,12 +17,11 @@ class BuscarDocumentoController extends Controller
             return response()->json(['error' => 'Debe ingresar un número de documento.'], 400);
         }
 
-        $client = new Client([
+        $client = new \GuzzleHttp\Client([
             'base_uri' => 'https://api.decolecta.com/v1/',
             'verify' => false,
         ]);
 
-        // Si tiene 11 dígitos es RUC → usar endpoint avanzado
         $apiEndpoint = strlen($documento) === 11
             ? "sunat/ruc/full?numero={$documento}"
             : "reniec/dni?numero={$documento}";
@@ -34,23 +33,35 @@ class BuscarDocumentoController extends Controller
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                 ],
-                'http_errors' => true, // Lanza error si status >= 400
             ]);
 
-            $responseData = json_decode($response->getBody(), true);
-            return response()->json($responseData, 200);
+            $data = json_decode($response->getBody(), true);
 
+            // 🔹 Normalizamos la respuesta según el tipo de documento
+            if (strlen($documento) === 8) {
+                // DNI
+                $resultado = [
+                    'nombres' => $data['first_name'] ?? '',
+                    'apellido_paterno' => $data['first_last_name'] ?? '',
+                    'apellido_materno' => $data['second_last_name'] ?? '',
+                    'documento' => $data['document_number'] ?? '',
+                ];
+            } else {
+                // RUC
+                $resultado = [
+                    'razonSocial' => $data['razon_social'] ?? $data['nombre'] ?? '',
+                    'documento' => $data['ruc'] ?? $data['numeroDocumento'] ?? '',
+                ];
+            }
+
+            return response()->json($resultado);
         } catch (ClientException $e) {
-            $statusCode = $e->getResponse()->getStatusCode();
-            $body = $e->getResponse()->getBody()->getContents();
-
             return response()->json([
-                'error' => "Error al consultar la API: {$statusCode}",
-                'detalle' => json_decode($body, true)
-            ], $statusCode);
+                'error' => 'Documento no encontrado',
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Excepción interna',
+                'error' => 'Error interno',
                 'detalle' => $e->getMessage()
             ], 500);
         }

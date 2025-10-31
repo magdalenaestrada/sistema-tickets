@@ -15,4 +15,8 @@ class Cargo extends Model
     {
         return $this->hasMany(Empleado::class);
     }
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
 }
