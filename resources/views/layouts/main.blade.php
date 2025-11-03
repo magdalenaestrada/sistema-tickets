@@ -8,7 +8,7 @@
 
     {{-- Configuración de color --}}
     <script src="{{ asset('assets/js/color-modes.js') }}"></script>
-    
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Fuentes --}}
@@ -34,11 +34,14 @@
         </div>
     </div>
     <script src="{{ asset('assets/theme/vendors/core/core.js') }}"></script>
-    <script src="{{ asset('assets/theme/vendors/apexcharts/apexcharts.min.js') }}"></script>
-    <script src="{{ asset('assets/js/dashboard.js') }}"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 
     @include('layouts.partials.scripts')
 
     @stack('scripts')
 </body>
+
 </html>

@@ -8,4 +8,6 @@ Route::prefix('ubigeos')->group(function () {
     Route::get('/departamentos', [UbigeoController::class, 'getDepartamentos']);
     Route::get('/provincias/{departamento_id}', [UbigeoController::class, 'getProvincias']);
     Route::get('/distritos/{provincia_id}', [UbigeoController::class, 'getDistritos']);
+    Route::get('/ubigeos-con-sucursales', [UbigeoController::class, 'getUbigeosConSucursales']);
+    Route::get('/sucursales/{distrito_id}', [UbigeoController::class, 'getSucursalesPorDistrito']);
 });

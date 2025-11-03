@@ -5,6 +5,9 @@ $.ajaxSetup({
 });
 
 $(document).ready(function () {
+    // ==============================
+    // 🧾 Inicializar DataTable
+    // ==============================
     let tabla = $("#tablaSucursales").DataTable({
         ajax: `/sucursales/${EMPRESA_ID}/datatable`,
         columns: [
@@ -23,20 +26,87 @@ $(document).ready(function () {
         responsive: false,
         scrollX: true,
         language: {
-            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
         drawCallback: function () {
             lucide.createIcons();
         },
     });
 
+    // ==============================
+    // 🌎 Cargar ubigeos dinámicamente
+    // ==============================
+    function cargarDepartamentos(selected = null) {
+        $.get("/ubigeos/departamentos", function (departamentos) {
+            let $select = $("#departamento_id");
+            $select.empty().append('<option value="">Seleccione</option>');
+            departamentos.forEach((d) =>
+                $select.append(`<option value="${d.id}">${d.nombre}</option>`)
+            );
+            if (selected) $select.val(selected);
+        });
+    }
+
+    function cargarProvincias(departamento_id, selected = null) {
+        if (!departamento_id) return;
+        $.get(`/ubigeos/provincias/${departamento_id}`, function (provincias) {
+            let $select = $("#provincia_id");
+            $select.empty().append('<option value="">Seleccione</option>');
+            provincias.forEach((p) =>
+                $select.append(`<option value="${p.id}">${p.nombre}</option>`)
+            );
+            if (selected) $select.val(selected);
+        });
+    }
+
+    function cargarDistritos(provincia_id, selected = null) {
+        if (!provincia_id) return;
+        $.get(`/ubigeos/distritos/${provincia_id}`, function (distritos) {
+            let $select = $("#distrito_id");
+            $select.empty().append('<option value="">Seleccione</option>');
+            distritos.forEach((d) =>
+                $select.append(`<option value="${d.id}">${d.nombre}</option>`)
+            );
+            if (selected) $select.val(selected);
+        });
+    }
+
+    $("#departamento_id").on("change", function () {
+        const id = $(this).val();
+        $("#provincia_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+        $("#distrito_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+        cargarProvincias(id);
+    });
+
+    $("#provincia_id").on("change", function () {
+        const id = $(this).val();
+        $("#distrito_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+        cargarDistritos(id);
+    });
+
+    // ==============================
+    // ➕ Nueva sucursal
+    // ==============================
     $("#btnNuevaSucursal").click(() => {
         $("#formSucursal")[0].reset();
         $("#sucursal_id").val("");
         $("#modalTitulo").text("Registrar Sucursal");
+
+        // cargar los ubigeos
+        cargarDepartamentos();
+
         $("#modalSucursal").modal("show");
     });
 
+    // ==============================
+    // 💾 Guardar sucursal
+    // ==============================
     $("#formSucursal").submit(function (e) {
         e.preventDefault();
 
@@ -67,20 +137,32 @@ $(document).ready(function () {
         });
     });
 
+    // ==============================
+    // ✏️ Editar sucursal
+    // ==============================
     $("#tablaSucursales").on("click", ".editar", function () {
         const id = $(this).data("id");
+
         $.get(`/sucursales/detalle/${id}`, function (data) {
             $("#sucursal_id").val(data.id);
             $("#empresa_id").val(data.empresa_id);
-            $("#distrito_id").val(data.distrito_id);
             $('input[name="nombre_comercial"]').val(data.nombre_comercial);
             $('input[name="direccion"]').val(data.direccion);
             $('input[name="telefono"]').val(data.telefono);
+
             $("#modalTitulo").text("Editar Sucursal");
+
+            cargarDepartamentos(data.departamento_id);
+            cargarProvincias(data.departamento_id, data.provincia_id);
+            cargarDistritos(data.provincia_id, data.distrito_id);
+
             $("#modalSucursal").modal("show");
         });
     });
 
+    // ==============================
+    // 👁️ Ver detalles
+    // ==============================
     $("#tablaSucursales").on("click", ".ver", function () {
         const id = $(this).data("id");
         $.get(`/sucursales/detalle/${id}`, function (data) {
@@ -91,8 +173,8 @@ $(document).ready(function () {
                     <b>Empresa:</b> ${data.empresa?.razon_social || "-"}<br>
                     <b>Distrito:</b> ${data.distrito?.nombre || "-"}<br>
                     <b>Nombre Sucursal:</b> ${data.nombre_comercial || "-"}<br>
-                    <b>Dirección Sucursal:</b> ${data.direccion || "-"}<br>
-                    <b>Teléfono Sucursal:</b> ${data.telefono || "-"}
+                    <b>Dirección:</b> ${data.direccion || "-"}<br>
+                    <b>Teléfono:</b> ${data.telefono || "-"}
                 </div>
             `,
                 icon: "info",

@@ -8,7 +8,12 @@ class Provincia extends Model
 {
     protected $table = "provincias";
 
-    public function departamento(){
+    public function departamento()
+    {
         return $this->belongsTo(Departamento::class, "departamento_id");
+    }
+    public function distritos()
+    {
+        return $this->hasMany(Distrito::class);
     }
 }

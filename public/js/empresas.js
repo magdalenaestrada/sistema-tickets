@@ -21,7 +21,7 @@ $(function () {
         responsive: false,
         scrollX: true,
         language: {
-            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
         drawCallback: function () {
             lucide.createIcons();
@@ -105,10 +105,11 @@ $(function () {
 
         $("#btnBuscarRuc")
             .prop("disabled", true)
-            .html('<i class="fa fa-spinner fa-spin"></i>');
+            .html('<i class="link-icon" data-lucide="search"></i>');
+        lucide.createIcons();
 
         $.ajax({
-            url: `/buscar?documento=${documento}`,
+            url: `/buscar/?documento=${documento}`,
             type: "GET",
             dataType: "json",
             success: function (data) {
@@ -153,6 +154,7 @@ $(function () {
                 $("#btnBuscarRuc")
                     .prop("disabled", false)
                     .html('<i class="link-icon" data-lucide="search"></i> ');
+                lucide.createIcons();
             },
         });
     });

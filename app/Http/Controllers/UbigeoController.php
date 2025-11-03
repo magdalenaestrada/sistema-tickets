@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Departamento;
 use App\Models\Provincia;
 use App\Models\Distrito;
+use App\Models\Sucursal;
 
 class UbigeoController extends Controller
 {
@@ -23,6 +24,7 @@ class UbigeoController extends Controller
                 ->select('id', 'nombre')
                 ->orderBy('nombre')
                 ->get()
+
         );
     }
 
@@ -34,5 +36,31 @@ class UbigeoController extends Controller
                 ->orderBy('nombre')
                 ->get()
         );
+    }
+    // Devuelve departamentos, provincias y distritos que tengan al menos 1 sucursal
+    // UbigeoController
+    public function getUbigeosConSucursales()
+    {
+        $departamentos = Departamento::whereHas('provincias.distritos.sucursales')
+            ->with(['provincias' => function ($q) {
+                $q->whereHas('distritos.sucursales')
+                    ->with(['distritos' => function ($q2) {
+                        $q2->whereHas('sucursales')
+                            ->with('sucursales');
+                    }]);
+            }])
+            ->get();
+
+        return response()->json($departamentos);
+    }
+
+    public function getSucursalesPorDistrito($distrito_id)
+    {
+        $sucursales = Sucursal::where('distrito_id', $distrito_id)
+            ->select('id', 'nombre_comercial')
+            ->orderBy('nombre_comercial')
+            ->get();
+
+        return response()->json($sucursales);
     }
 }

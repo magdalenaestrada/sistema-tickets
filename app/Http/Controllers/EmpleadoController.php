@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Area;
+use App\Models\Departamento;
+use App\Models\Distrito;
 use App\Models\Empleado;
 use App\Models\Persona;
+use App\Models\Provincia;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +16,11 @@ class EmpleadoController extends Controller
 {
     public function index()
     {
-        return view('empleados.index');
+        $departamentos = Departamento::select('id', 'nombre')->get();
+        $provincias = Provincia::select('id', 'nombre')->get();
+        $distritos = Distrito::select('id', 'nombre')->get();
+        return view('empleados.index', compact( 'distritos', 'departamentos', 'provincias'));
+        
     }
 
     public function datatable()
@@ -47,14 +54,12 @@ class EmpleadoController extends Controller
         DB::beginTransaction();
 
         try {
-            // 🔹 Validación simple
             $request->validate([
                 'documento' => 'required',
                 'nombres' => 'required',
                 'apellidos' => 'required',
             ]);
 
-            // 🔹 Buscar o crear persona
             $persona = Persona::where('documento', $request->documento)->first();
 
             if ($persona) {
@@ -87,7 +92,6 @@ class EmpleadoController extends Controller
                 ]);
             }
 
-            // 🔹 Crear o actualizar empleado
             $empleado = Empleado::updateOrCreate(
                 ['id' => $request->empleado_id],
                 [
@@ -95,7 +99,6 @@ class EmpleadoController extends Controller
                     'area_id' => $request->area_id,
                     'sucursal_id' => $request->sucursal_id,
                     'cargo_id' => $request->cargo_id,
-                    'supervisor_id' => $request->supervisor_id,
                     'tipo_licencia_id' => $request->tipo_licencia_id,
                     'licencia_conducir' => $request->licencia_conducir,
                     'fecha_vencimiento_licencia' => $request->fecha_vencimiento_licencia,

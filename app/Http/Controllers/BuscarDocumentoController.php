@@ -3,66 +3,74 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
+use Illuminate\Support\Facades\Http;
 
 class BuscarDocumentoController extends Controller
 {
     public function buscarDocumento(Request $request)
     {
-        $documento = $request->input('documento');
-        $token = env('APIS_TOKEN');
+        $numero = $request->get('documento');
 
-        if (!$documento) {
+        if (!$numero) {
             return response()->json(['error' => 'Debe ingresar un número de documento.'], 400);
         }
 
-        $client = new \GuzzleHttp\Client([
-            'base_uri' => 'https://api.decolecta.com/v1/',
-            'verify' => false,
-        ]);
-
-        $apiEndpoint = strlen($documento) === 11
-            ? "sunat/ruc/full?numero={$documento}"
-            : "reniec/dni?numero={$documento}";
+        $token = env('APIS_TOKEN');
+        $baseUrl = 'https://api.decolecta.com/v1/';
 
         try {
-            $response = $client->request('GET', $apiEndpoint, [
-                'headers' => [
-                    'Authorization' => "Bearer {$token}",
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-            ]);
+            // Determinar tipo de documento (DNI o RUC)
+            if (strlen($numero) === 8) {
+                $endpoint = "reniec/dni?numero={$numero}";
+            } elseif (strlen($numero) === 11) {
+                $endpoint = "sunat/ruc?numero={$numero}";
+            } else {
+                return response()->json(['error' => 'Número de documento inválido.'], 400);
+            }
 
-            $data = json_decode($response->getBody(), true);
+            // Llamada a la API
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$token}",
+                'Content-Type' => 'application/json',
+            ])->get($baseUrl . $endpoint);
 
-            // 🔹 Normalizamos la respuesta según el tipo de documento
-            if (strlen($documento) === 8) {
-                // DNI
+            if ($response->failed()) {
+                return response()->json(['error' => 'Documento no encontrado'], 404);
+            }
+
+            $data = $response->json();
+
+            // ✅ Normalizar respuesta
+            if (strlen($numero) === 8) {
+                // DNI - RENIEC
                 $resultado = [
+                    'tipo' => 'DNI',
+                    'documento' => $data['document_number'] ?? $numero,
                     'nombres' => $data['first_name'] ?? '',
                     'apellido_paterno' => $data['first_last_name'] ?? '',
                     'apellido_materno' => $data['second_last_name'] ?? '',
-                    'documento' => $data['document_number'] ?? '',
+                    'nombre_completo' => $data['full_name'] ?? '',
                 ];
             } else {
-                // RUC
+                // RUC - SUNAT
                 $resultado = [
-                    'razonSocial' => $data['razon_social'] ?? $data['nombre'] ?? '',
-                    'documento' => $data['ruc'] ?? $data['numeroDocumento'] ?? '',
+                    'tipo' => 'RUC',
+                    'documento' => $data['numero_documento'] ?? $numero,
+                    'razon_social' => $data['razon_social'] ?? '',
+                    'direccion' => $data['direccion'] ?? '',
+                    'estado' => $data['estado'] ?? '',
+                    'condicion' => $data['condicion'] ?? '',
+                    'departamento' => $data['departamento'] ?? '',
+                    'provincia' => $data['provincia'] ?? '',
+                    'distrito' => $data['distrito'] ?? '',
                 ];
             }
 
             return response()->json($resultado);
-        } catch (ClientException $e) {
-            return response()->json([
-                'error' => 'Documento no encontrado',
-            ], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Error interno',
-                'detalle' => $e->getMessage()
+                'error' => 'Error interno en la consulta',
+                'detalle' => $e->getMessage(),
             ], 500);
         }
     }
