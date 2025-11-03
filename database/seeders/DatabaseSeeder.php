@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\TipoLicencia;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,7 +23,10 @@ class DatabaseSeeder extends Seeder
             RolesSeeder::class,
             AreasSeeder::class,
             CargosSeeder::class,
+            TiposLicenciaSeeder::class,
             TipoDocumentoSeeder::class,
+            TipoVehiculoSeeder::class,
+            TipoViajeSeeder::class,
         ]);
     }
 }

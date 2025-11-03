@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId('area_id')->nullable()->constrained('areas', 'id')->nullOnDelete()->index('idx_empleados_area');
             $table->foreignId('sucursal_id')->nullable()->constrained('sucursales', 'id')->nullOnDelete()->index('idx_empleados_sucursal');
             $table->foreignId('cargo_id')->nullable()->constrained('cargos', 'id')->nullOnDelete()->index('idx_empleados_cargo');
-            $table->foreignId('supervisor_id')->nullable()->constrained('empleados', 'id')->nullOnDelete()->index('idx_empleados_supervisor');
             $table->foreignId('tipo_licencia_id')->nullable()->constrained('tipo_licencias', 'id')->nullOnDelete()->index('idx_empleados_tipo_licencia');
             $table->string('licencia_conducir', 50)->nullable();
             $table->date('fecha_vencimiento_licencia')->nullable();

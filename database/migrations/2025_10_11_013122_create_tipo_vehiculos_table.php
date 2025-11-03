@@ -10,10 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create("tipo_licencias", function (Blueprint $table) {
+        Schema::create("tipo_vehiculos", function (Blueprint $table) {
             $table->id();
-            $table->string("codigo", 100)->index();
-            $table->string("descripcion", 100)->index();
+            $table->string("descripcion")->index();
+            $table->string("imagen")->index();
+            $table->string("capacidad")->index();
+            $table->unsignedInteger("peso_bodega")->index();
             $table
                 ->enum("estado", ["A", "I"])
                 ->default("A")
@@ -28,6 +30,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists("tipo_licencias");
+        Schema::dropIfExists("tipo_vehiculos");
     }
 };

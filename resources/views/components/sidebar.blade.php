@@ -42,6 +42,15 @@
                           <li class="nav-item">
                               <a href="{{ route('empleados.index') }}" class="nav-link">Empleados</a>
                           </li>
+                          <li class="nav-item">
+                              <a href="{{ route('vehiculos.index') }}" class="nav-link">Vehiculos</a>
+                          </li>
+                          <li class="nav-item">
+                              <a href="{{ route('horarios.index') }}" class="nav-link">Horarios</a>
+                          </li>
+                          <li class="nav-item">
+                              <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>
+                          </li>
                       </ul>
                   </div>
               </li>

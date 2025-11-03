@@ -4,4 +4,6 @@ use App\Http\Controllers\ListaController;
 
 Route::prefix('listas')->name('listas.')->group(function () {
     Route::get('/', [ListaController::class, 'obtenerListas'])->name('all');
+    Route::get('/api/sucursales/{distrito}', [ListaController::class, 'listarJson']);
+    Route::get('/vehiculos/tipos', [ListaController::class, 'listarTipos']);
 });

@@ -14,4 +14,6 @@ require __DIR__ . '/cargos.php';
 require __DIR__ . '/empleados.php';
 require __DIR__ . '/listas.php';
 require __DIR__ . '/ubigeos.php';
+require __DIR__ . '/vehiculos.php';
+require __DIR__ . '/horarios.php';
 

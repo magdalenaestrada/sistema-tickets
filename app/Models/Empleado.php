@@ -15,7 +15,6 @@ class Empleado extends Model
         'area_id',
         'sucursal_id',
         'cargo_id',
-        'supervisor_id',
         'tipo_licencia_id',
         'licencia_conducir',
         'fecha_vencimiento_licencia',
@@ -26,32 +25,26 @@ class Empleado extends Model
     // Relaciones
     public function persona()
     {
-        return $this->belongsTo(Persona::class);
+        return $this->belongsTo(Persona::class, "persona_id");
     }
 
     public function area()
     {
-        return $this->belongsTo(Area::class);
+        return $this->belongsTo(Area::class, "area_id");
     }
 
     public function sucursal()
     {
-        return $this->belongsTo(Sucursal::class);
+        return $this->belongsTo(Sucursal::class, "sucursal_id");
     }
 
     public function cargo()
     {
-        return $this->belongsTo(Cargo::class);
+        return $this->belongsTo(Cargo::class, "cargo_id");
     }
-
-    public function supervisor()
-    {
-        return $this->belongsTo(Empleado::class, 'supervisor_id');
-    }
-
     public function tipoLicencia()
     {
-        return $this->belongsTo(TipoLicencia::class);
+        return $this->belongsTo(TipoLicencia::class, "tipo_licencia_id");
     }
 
     public function usuario()

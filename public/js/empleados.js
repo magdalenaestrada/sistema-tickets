@@ -232,39 +232,40 @@ $(document).ready(function () {
             modal.show();
         });
     });
-
     $("#tablaEmpleados").on("click", ".editar", function () {
         const id = $(this).data("id");
 
         cargarListasEmpleado(() => {
             $.get(`/empleados/${id}`, function (res) {
-                $("#empleado_id").val(res.id);
-                $("#documento").val(res.persona.documento);
-                $("#nombres").val(res.persona.nombres);
-                $("#apellidos").val(res.persona.apellidos);
-                $("#correo").val(res.persona.correo);
-                $("#telefono").val(res.persona.telefono);
-                $("#direccion").val(res.persona.direccion);
+                const persona = res.persona ?? {};
 
-                cargarUbigeosConSucursales(
-                    "#departamento_id",
-                    "#provincia_id",
-                    "#distrito_id",
-                    "#sucursal_id",
-                    res.departamento_id,
-                    res.provincia_id,
-                    res.distrito_id,
-                    res.sucursal_id
+                $("#empleado_id").val(res.id);
+                $("#documento").val(persona.documento ?? "");
+                $("#nombres").val(persona.nombres ?? "");
+                $("#apellidos").val(persona.apellidos ?? "");
+                $("#correo").val(persona.correo ?? "");
+                $("#telefono").val(persona.telefono ?? "");
+                $("#direccion").val(persona.direccion ?? "");
+                cargarUbicacionPorIds(
+                    persona.departamento_id ??
+                        persona.distrito?.provincia?.departamento_id ??
+                        null,
+                    persona.provincia_id ??
+                        persona.distrito?.provincia_id ??
+                        null,
+                    persona.distrito_id ?? null,
+                    res.sucursal_id ?? null
                 );
 
-                $("#area_id").val(res.area_id);
-                $("#cargo_id").val(res.cargo_id);
-                $("#tipo_licencia_id").val(res.tipo_licencia_id);
+                $("#area_id").val(res.area_id ?? "");
+                $("#cargo_id").val(res.cargo_id ?? "");
+                $("#tipo_licencia_id").val(res.tipo_licencia_id ?? "");
+
                 modal.show();
             });
         });
     });
-    // ✅ Envío del formulario por AJAX
+
     $("#formEmpleado").on("submit", function (e) {
         e.preventDefault(); // Evita el envío tradicional
 
@@ -298,7 +299,6 @@ $(document).ready(function () {
         });
     });
 
-    // 🔍 VER EMPLEADO - Adaptado al JSON real
     $("#tablaEmpleados").on("click", ".ver", function () {
         const id = $(this).data("id");
 
@@ -308,9 +308,8 @@ $(document).ready(function () {
 
         cargarListasEmpleado(function () {
             $.get(`/empleados/${id}`, function (res) {
-                const persona = res.persona ?? {};
-
-                // 🧾 Datos personales
+                const empleado = res.empleado ?? res;
+                const persona = empleado.persona;
                 $("#empleado_id").val(res.id ?? "");
                 $("#tipo_documento_id").val(persona.tipo_documento_id ?? "");
                 $("#documento").val(persona.documento ?? "");
@@ -322,26 +321,21 @@ $(document).ready(function () {
                 $("#celular").val(persona.celular ?? "");
                 $("#direccion").val(persona.direccion ?? "");
 
-                // 🌍 Ubicación: solo distrito
                 const distritoId =
                     persona.distrito_id ?? persona.distrito?.id ?? null;
                 if (distritoId)
                     $("#distrito_id").val(distritoId).trigger("change");
 
-                // Ocultar provincia y departamento
                 $(".campo-ubicacion").hide();
 
-                // 🏢 Sucursal
                 const sucursalId = res.sucursal_id ?? res.sucursal?.id ?? null;
                 if (sucursalId)
                     $("#sucursal_id").val(sucursalId).trigger("change");
 
-                // 🧠 Área y cargo
                 $("#area_id").val(res.area_id ?? res.area?.id ?? "");
                 $("#cargo_id").val(res.cargo_id ?? res.cargo?.id ?? "");
                 $("#fecha_ingreso").val(res.fecha_ingreso ?? "");
 
-                // 🚗 Si es conductor
                 const cargoDesc = (res.cargo?.descripcion ?? "").toLowerCase();
                 if (res.cargo_id === 16 || cargoDesc.includes("conductor")) {
                     $(".conductor").removeAttr("hidden").show();
@@ -354,7 +348,6 @@ $(document).ready(function () {
                     $(".conductor").attr("hidden", true).hide();
                 }
 
-                // 👤 Usuario
                 const usuarioValor =
                     res.usuario ??
                     res.usuario_nombre ??
@@ -401,6 +394,18 @@ $(document).ready(function () {
                     "error"
                 );
             });
+            setTimeout(() => {
+                cargarUbicacionPorIds(
+                    persona.departamento_id ??
+                        persona.distrito?.provincia?.departamento_id ??
+                        null,
+                    persona.provincia_id ??
+                        persona.distrito?.provincia_id ??
+                        null,
+                    persona.distrito_id ?? null,
+                    persona.sucursal_id ?? null
+                );
+            }, 500);
         });
     });
 
@@ -428,3 +433,107 @@ $(document).ready(function () {
         );
     });
 });
+function initUbigeos(depSelectId, provSelectId, distSelectId, sucSelectId) {
+    $(depSelectId).on("change", function () {
+        const depId = $(this).val();
+        cargarUbigeosConSucursales(
+            depSelectId,
+            provSelectId,
+            distSelectId,
+            sucSelectId,
+            depId
+        );
+    });
+
+    // Cuando cambia la provincia, recarga distritos (y eventualmente sucursales)
+    $(provSelectId).on("change", function () {
+        const provId = $(this).val();
+        const depId = $(depSelectId).val();
+        cargarUbigeosConSucursales(
+            depSelectId,
+            provSelectId,
+            distSelectId,
+            sucSelectId,
+            depId,
+            provId
+        );
+    });
+
+    // Cuando cambia el distrito, carga las sucursales asociadas
+    $(distSelectId).on("change", function () {
+        const distritoId = $(this).val();
+        cargarSucursales(distritoId, sucSelectId);
+    });
+}
+function cargarUbicacionPorIds(
+    departamentoId,
+    provinciaId,
+    distritoId,
+    sucursalId
+) {
+    const depSelect = $("#departamento_id");
+    const provSelect = $("#provincia_id");
+    const distSelect = $("#distrito_id");
+    const sucSelect = $("#sucursal_id");
+
+    // 1️⃣ Cargar departamentos con sus provincias y distritos
+    $.get("/ubigeos/ubigeos-con-sucursales", function (departamentos) {
+        depSelect
+            .empty()
+            .append('<option value="">Seleccione un departamento</option>');
+        departamentos.forEach((dep) =>
+            depSelect.append(`<option value="${dep.id}">${dep.nombre}</option>`)
+        );
+        if (departamentoId) depSelect.val(departamentoId);
+
+        const departamento = departamentos.find((d) => d.id == departamentoId);
+        if (!departamento) return;
+
+        // 2️⃣ Provincias
+        provSelect
+            .empty()
+            .append('<option value="">Seleccione una provincia</option>');
+        departamento.provincias.forEach((p) =>
+            provSelect.append(`<option value="${p.id}">${p.nombre}</option>`)
+        );
+        if (provinciaId) provSelect.val(provinciaId);
+
+        const provincia = departamento.provincias.find(
+            (p) => p.id == provinciaId
+        );
+        if (!provincia) return;
+
+        // 3️⃣ Distritos
+        distSelect
+            .empty()
+            .append('<option value="">Seleccione un distrito</option>');
+        provincia.distritos.forEach((d) =>
+            distSelect.append(`<option value="${d.id}">${d.nombre}</option>`)
+        );
+        if (distritoId) distSelect.val(distritoId);
+
+        // 4️⃣ Sucursales del distrito
+        if (distritoId) {
+            $.get(
+                `/listas/api/sucursales/${distritoId}`,
+                function (sucursales) {
+                    sucSelect
+                        .empty()
+                        .append(
+                            '<option value="">Seleccione una sucursal</option>'
+                        );
+                    sucursales.forEach((s) =>
+                        sucSelect.append(
+                            `<option value="${s.id}">${s.nombre_comercial}</option>`
+                        )
+                    );
+                    if (sucursalId) sucSelect.val(sucursalId); // ✅ selecciona la sucursal del empleado
+                }
+            );
+        } else {
+            sucSelect
+                .empty()
+                .append('<option value="">Seleccione una sucursal</option>');
+        }
+    });
+}

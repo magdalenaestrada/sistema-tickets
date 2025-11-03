@@ -9,6 +9,7 @@ use App\Models\Sucursal;
 use App\Models\TipoLicencia;
 use App\Models\Empleado;
 use App\Models\TipoDocumentoPersona;
+use App\Models\TipoVehiculo;
 
 class ListaController extends Controller
 {
@@ -21,15 +22,6 @@ class ListaController extends Controller
             $tiposLicencia = TipoLicencia::select('id', 'descripcion')->orderBy('descripcion')->get();
             $tiposDocumento = TipoDocumentoPersona::select('id', 'codigo')->orderBy('id')->get();
 
-            $supervisores = Empleado::with('persona:id,nombres,apellidos')
-                ->get(['id', 'persona_id'])
-                ->map(function ($e) {
-                    return [
-                        'id' => $e->id,
-                        'nombre' => trim(($e->persona->nombres ?? '') . ' ' . ($e->persona->apellidos ?? '')),
-                    ];
-                });
-
             return response()->json([
                 'success' => true,
                 'areas' => $areas,
@@ -37,7 +29,6 @@ class ListaController extends Controller
                 'sucursales' => $sucursales,
                 'tipos_licencia' => $tiposLicencia,
                 'tipos_documento' => $tiposDocumento,
-                'supervisores' => $supervisores,
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -45,5 +36,22 @@ class ListaController extends Controller
                 'message' => 'Error al cargar las listas: ' . $th->getMessage(),
             ], 500);
         }
+    }
+
+    // En SucursalController.php
+    public function listarJson($distrito)
+    {
+        return response()->json(
+            Sucursal::where('distrito_id', $distrito)
+                ->select('id', 'nombre_comercial')
+                ->get()
+        );
+    }
+
+    public function listarTipos()
+    {
+        // Trae todos los tipos de vehículo
+        $tipos = TipoVehiculo::all(); // Suponiendo que tu modelo se llama TipoVehiculo
+        return response()->json($tipos);
     }
 }
