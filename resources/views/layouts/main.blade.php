@@ -20,6 +20,8 @@
 
     {{-- Stack opcional para estilos adicionales por vista --}}
     @stack('styles')
+    @routes
+
 </head>
 
 <body>

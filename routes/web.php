@@ -16,4 +16,5 @@ require __DIR__ . '/listas.php';
 require __DIR__ . '/ubigeos.php';
 require __DIR__ . '/vehiculos.php';
 require __DIR__ . '/horarios.php';
+require __DIR__ . '/encomiendas.php';
 

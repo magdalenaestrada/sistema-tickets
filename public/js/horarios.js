@@ -198,47 +198,4 @@ $(document).ready(function () {
         if ($("#punto_destino_id").val() === origen)
             $("#punto_destino_id").val("");
     });
-    
-    const modalCalendarioEl = document.getElementById("modalVerHorarios");
-    if (!modalCalendarioEl) {
-        console.warn(
-            "Modal no encontrado, no se inicializará FullCalendar con modal"
-        );
-        return;
-    }
-
-    const modalCalendario = new bootstrap.Modal(modalCalendarioEl);
-    const calendarEl = document.getElementById("calendar");
-
-    if (!calendarEl) return;
-
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "timeGridWeek",
-        locale: "es",
-        headerToolbar: {
-            left: "prev,next today",
-            center: "title",
-            right: "timeGridWeek,timeGridDay",
-        },
-        events: "/horarios/calendario/eventos",
-        eventClick: function (info) {
-            const props = info.event.extendedProps;
-            const tbody = $("#tablaHorariosDia tbody");
-            tbody.empty();
-
-            tbody.append(`
-                <tr>
-                    <td>${props.hora}</td>
-                    <td>${info.event.title}</td>
-                    <td>${props.tipo_viaje}</td>
-                    <td>${props.vehiculo}</td>
-                    <td>${props.costo}</td>
-                </tr>
-            `);
-
-            modalCalendario.show();
-        },
-    });
-
-    calendar.render();
 });

@@ -100,39 +100,64 @@ class HorarioController extends Controller
     {
         return view('horarios.calendario');
     }
-
     public function getEventos()
     {
         $horarios = Horario::with(['punto_destino', 'tipo_viaje', 'tipo_vehiculo'])->get();
-
         $eventos = [];
 
         foreach ($horarios as $h) {
-            $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-            foreach ($dias as $dia) {
-                if ($h->$dia) {
-                    // FullCalendar necesita fecha y hora, usamos fecha_salida + hora_embarque
-                    $eventos[] = [
-                        'title' => $h->punto_destino->nombre_comercial, // Solo mostramos destino
-                        'start' => $h->fecha_salida . 'T' . $h->hora_embarque,
-                        'extendedProps' => [
-                            'id' => $h->id,
-                            'tipo_viaje' => $h->tipo_viaje->descripcion,
-                            'tipo_vehiculo' => $h->tipo_vehiculo->placa,
-                            'costo' => $h->costo_pasaje,
-                            'hora' => $h->hora_embarque,
-                            'dias' => [
-                                'lunes' => $h->lunes,
-                                'martes' => $h->martes,
-                                'miercoles' => $h->miercoles,
-                                'jueves' => $h->jueves,
-                                'viernes' => $h->viernes,
-                                'sabado' => $h->sabado,
-                                'domingo' => $h->domingo
+            $dias = [
+                'lunes' => 1,
+                'martes' => 2,
+                'miercoles' => 3,
+                'jueves' => 4,
+                'viernes' => 5,
+                'sabado' => 6,
+                'domingo' => 7,
+            ];
+
+            $fechaBase = \Carbon\Carbon::parse($h->fecha_salida);
+            $tieneRepeticion = false;
+
+            // Generar eventos repetidos (si tiene días marcados)
+            for ($semana = 0; $semana < 4; $semana++) {
+                foreach ($dias as $nombre => $numeroDia) {
+                    if ($h->$nombre) {
+                        $tieneRepeticion = true;
+
+                        $fechaEvento = $fechaBase->copy()
+                            ->startOfWeek()
+                            ->addDays($numeroDia - 1)
+                            ->addWeeks($semana);
+
+                        $eventos[] = [
+                            'title' => $h->punto_destino->nombre_comercial,
+                            'start' => $fechaEvento->format('Y-m-d') . 'T' . $h->hora_embarque,
+                            'extendedProps' => [
+                                'id' => $h->id,
+                                'tipo_viaje' => $h->tipo_viaje->descripcion,
+                                'tipo_vehiculo' => $h->tipo_vehiculo->descripcion ?? '',
+                                'costo' => $h->costo_pasaje,
+                                'hora' => $h->hora_embarque,
                             ],
-                        ],
-                    ];
+                        ];
+                    }
                 }
+            }
+
+            // ⚠️ Si no marcó días de repetición, mostrar solo la fecha_salida
+            if (!$tieneRepeticion) {
+                $eventos[] = [
+                    'title' => $h->punto_destino->nombre_comercial,
+                    'start' => $h->fecha_salida . 'T' . $h->hora_embarque,
+                    'extendedProps' => [
+                        'id' => $h->id,
+                        'tipo_viaje' => $h->tipo_viaje->descripcion,
+                        'tipo_vehiculo' => $h->tipo_vehiculo->descripcion ?? '',
+                        'costo' => $h->costo_pasaje,
+                        'hora' => $h->hora_embarque,
+                    ],
+                ];
             }
         }
 

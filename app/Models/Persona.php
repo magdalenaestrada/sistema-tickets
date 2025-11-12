@@ -55,12 +55,18 @@ class Persona extends Model
         return $this->hasOne(Empleado::class, 'persona_id');
     }
 
-    // ========================
-    // 🧠 Accesor personalizado
-    // ========================
-
     public function getNombreCompletoAttribute()
     {
         return trim("{$this->nombres} {$this->apellidos}");
+    }
+
+    public function encomiendasEmitidas()
+    {
+        return $this->hasMany(Encomienda::class, 'emisor_persona_id');
+    }
+
+    public function encomiendasRecibidas()
+    {
+        return $this->hasMany(Encomienda::class, 'receptor_persona_id');
     }
 }

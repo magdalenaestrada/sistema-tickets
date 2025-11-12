@@ -12,10 +12,8 @@ return new class extends Migration {
     {
         Schema::create("encomienda", function (Blueprint $table) {
             $table->id();
-            $table
-                ->foreignId("sucursal_id")
-                ->nullable()
-                ->constrained("sucursales");
+            $table->foreignId("origen")->nullable()->constrained("sucursales");
+            $table->foreignId("destino")->nullable()->constrained("sucursales");
             $table->foreignId("usuario_id")->constrained("users");
             $table->foreignId("emisor_persona_id")->constrained("personas");
             $table->foreignId("receptor_persona_id")->constrained("personas");

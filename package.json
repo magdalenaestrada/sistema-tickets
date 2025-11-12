@@ -39,6 +39,7 @@
         "filepond-plugin-image-preview": "^4.6.12",
         "filepond-plugin-image-resize": "^2.0.10",
         "flatpickr": "^4.6.13",
+        "fullcalendar": "^6.1.19",
         "highcharts": "^12.1.2",
         "imask": "^7.6.1",
         "lucide": "^0.545.0",
