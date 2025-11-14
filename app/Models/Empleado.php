@@ -22,7 +22,8 @@ class Empleado extends Model
         'estado',
     ];
 
-    // Relaciones
+    protected $dates = ['fecha_nacimiento'];
+
     public function persona()
     {
         return $this->belongsTo(Persona::class, "persona_id");

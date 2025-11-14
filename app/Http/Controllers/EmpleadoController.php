@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Empleado;
+use App\Models\Evento;
 use App\Models\Persona;
 use App\Models\Provincia;
 use Illuminate\Http\Request;
@@ -19,8 +20,7 @@ class EmpleadoController extends Controller
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
-        return view('empleados.index', compact( 'distritos', 'departamentos', 'provincias'));
-        
+        return view('empleados.index', compact('distritos', 'departamentos', 'provincias'));
     }
 
     public function datatable()
@@ -75,6 +75,13 @@ class EmpleadoController extends Controller
                     'fecha_nacimiento' => $request->fecha_nacimiento,
                     'estado' => 'A'
                 ]);
+
+                Evento::where('persona_id', $persona->id)->update([
+                    'titulo' => "CUMPLEAÑOS DE " . $persona->nombres . " " . $persona->apellidos,
+                    'tipo_evento_id' => 1,
+                    'fecha_inicio' => $request->fecha_nacimiento,
+                    'fecha_fin' => $request->fecha_nacimiento,
+                ]);
             } else {
                 $persona = Persona::create([
                     'tipo_documento_id' => $request->tipo_documento_id,
@@ -89,6 +96,14 @@ class EmpleadoController extends Controller
                     'fecha_nacimiento' => $request->fecha_nacimiento,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
+                ]);
+
+                Evento::create([
+                    'persona_id' => $persona->id,
+                    'titulo' => "Cumpleaños de " . $persona->nombres . " " . $persona->apellidos,
+                    'tipo_evento_id' => 1,
+                    'fecha_inicio' => $request->fecha_nacimiento,
+                    'fecha_fin' => $request->fecha_nacimiento,
                 ]);
             }
 

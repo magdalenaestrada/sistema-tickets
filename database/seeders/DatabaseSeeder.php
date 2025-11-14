@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             TipoDocumentoSeeder::class,
             TipoVehiculoSeeder::class,
             TipoViajeSeeder::class,
+            TipoEventoSeeder::class,
         ]);
     }
 }

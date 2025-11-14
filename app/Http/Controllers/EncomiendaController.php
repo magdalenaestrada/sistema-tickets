@@ -55,7 +55,6 @@ class EncomiendaController extends Controller
 
         DB::beginTransaction();
         try {
-            // 🔹 Crear o actualizar persona emisor
             $emisor = Persona::updateOrCreate(
                 ['documento' => $request->emisor['documento']],
                 [

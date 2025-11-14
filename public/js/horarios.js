@@ -1,8 +1,6 @@
 $(document).ready(function () {
-    // 🔹 Modal de crear/editar/ver horario
     const modalHorario = new bootstrap.Modal($("#modalHorario")[0]);
     const formHorario = $("#formHorario");
-    // 🔹 DataTable de horarios
     const tabla = $("#tablaHorarios").DataTable({
         ajax: "/horarios/datatable",
         columns: [
@@ -35,7 +33,6 @@ $(document).ready(function () {
         },
     });
 
-    // 🔹 Botón nuevo horario
     $("#btnNuevoHorario").click(function () {
         formHorario[0].reset();
         $("#horario_id").val("");
@@ -44,7 +41,6 @@ $(document).ready(function () {
         modalHorario.show();
     });
 
-    // 🔹 Guardar/Actualizar horario
     formHorario.submit(function (e) {
         e.preventDefault();
 
@@ -90,7 +86,6 @@ $(document).ready(function () {
         });
     });
 
-    // 🔹 Editar horario
     $("#tablaHorarios").on("click", ".editar", function () {
         let id = $(this).data("id");
         $.get(`/horarios/${id}`, function (data) {
@@ -123,7 +118,6 @@ $(document).ready(function () {
         });
     });
 
-    // 🔹 Ver horario
     $("#tablaHorarios").on("click", ".ver", function () {
         let id = $(this).data("id");
         $.get(`/horarios/${id}`, function (data) {
@@ -156,7 +150,6 @@ $(document).ready(function () {
         });
     });
 
-    // 🔹 Eliminar horario
     $("#tablaHorarios").on("click", ".eliminar", function () {
         let id = $(this).data("id");
         Swal.fire({
@@ -185,7 +178,6 @@ $(document).ready(function () {
         });
     });
 
-    // 🔹 Ocultar opción destino igual al origen
     $("#punto_origen_id").change(function () {
         let origen = $(this).val();
         $("#punto_destino_id option").each(function () {
