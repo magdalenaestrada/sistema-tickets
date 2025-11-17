@@ -14,10 +14,10 @@ class TipoEventoSeeder extends Seeder
     public function run(): void
     {
         TipoEvento::insert([
-            ['nombre' => 'Cumpleaños'],
-            ['nombre' => 'Aniversario'],
-            ['nombre' => 'Reunión'],
-            ['nombre' => 'Otro'],
+            ['descripcion' => 'Cumpleaños'],
+            ['descripcion' => 'Aniversario'],
+            ['descripcion' => 'Reunión'],
+            ['descripcion' => 'Otro'],
         ]);
     }
 }

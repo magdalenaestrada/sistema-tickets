@@ -6,6 +6,7 @@ use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\Persona;
 use App\Models\Sucursal;
+use App\Models\TipoDocumentoPersona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,8 @@ class EncomiendaController extends Controller
     public function index()
     {
         $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
-        return view('encomiendas.index', compact('sucursales'));
+        $tipos_documentos = TipoDocumentoPersona::all();
+        return view('encomiendas.index', compact('sucursales', 'tipos_documentos'));
     }
     public function datatable()
     {
@@ -56,22 +58,21 @@ class EncomiendaController extends Controller
         DB::beginTransaction();
         try {
             $emisor = Persona::updateOrCreate(
-                ['documento' => $request->emisor['documento']],
+                'documento' => $request->emisor_documento;
                 [
-                    'tipo_documento_id' => $request->emisor['tipo_documento_id'] ?? 1,
-                    'distrito_id' => $request->emisor['distrito_id'] ?? 1,
-                    'nombres' => $request->emisor['nombres'],
-                    'apellidos' => $request->emisor['apellidos'] ?? null,
-                    'telefono' => $request->emisor['telefono'] ?? null,
-                    'celular' => $request->emisor['celular'] ?? null,
-                    'correo' => $request->emisor['correo'] ?? null,
-                    'direccion' => $request->emisor['direccion'] ?? null,
+                    'tipo_documento_id' => $request->emisor_tipo_documento_id;
+                    'distrito_id' => $request->emisor_distrito_;
+                    'nombres' => $request->emisor_nombre;
+                    'apellidos' => $request->emisor_apellid; ?? null,
+                    'telefono' => $request->emisor_telefo; ?? null,
+                    'celular' => $request->emisor_celul; ?? null,
+                    'correo' => $request->emisor_corr; ?? null,
+                    'direccion' => $request->emisor_direcci; ?? null,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
                 ]
             );
 
-            // 🔹 Crear o actualizar persona receptor
             $receptor = Persona::updateOrCreate(
                 ['documento' => $request->receptor['documento']],
                 [
@@ -88,7 +89,6 @@ class EncomiendaController extends Controller
                 ]
             );
 
-            // 🔹 Crear encomienda
             $encomienda = Encomienda::create([
                 'sucursal_id' => $request->sucursal_id ?? null,
                 'usuario_id' => Auth::id(),
