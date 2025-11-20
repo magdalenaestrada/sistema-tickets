@@ -22,10 +22,6 @@
             </thead>
         </table>
     </div>
-
-
-
-    @include('encomiendas.modals.form')
     @include('encomiendas.modals.ver')
 @endsection
 

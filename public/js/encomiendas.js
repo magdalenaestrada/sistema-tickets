@@ -1,65 +1,62 @@
 $(function () {
-
     // === Buscar persona por documento ===
-    function buscarPersona(tipo) { // 'emisor' o 'receptor'
+    function buscarPersona(tipo) {
+        // 'emisor' o 'receptor'
         let doc = $(`#${tipo}_documento`).val();
         if (!doc) return;
 
-        $.get(`/buscar?documento=${doc}`, function(res) {
-            if(res.error){
+        $.get(`/buscar?documento=${doc}`, function (res) {
+            if (res.error) {
                 alert(res.error);
                 return;
             }
 
-            if(res.tipo === 'DNI'){
+            if (res.tipo === "DNI") {
                 $(`#${tipo}_nombres`).val(res.nombres);
-                $(`#${tipo}_apellidos`).val(res.apellido_paterno + ' ' + res.apellido_materno);
-            } else if(res.tipo === 'RUC'){
+                $(`#${tipo}_apellidos`).val(
+                    res.apellido_paterno + " " + res.apellido_materno
+                );
+            } else if (res.tipo === "RUC") {
                 $(`#${tipo}_nombres`).val(res.razon_social);
-                $(`#${tipo}_apellidos`).val('');
-                $(`#${tipo}_direccion`).val(res.direccion || '');
+                $(`#${tipo}_apellidos`).val("");
+                $(`#${tipo}_direccion`).val(res.direccion || "");
             }
-        }).fail(function(err){
-            alert(err.responseJSON?.error || 'Error al buscar documento');
+        }).fail(function (err) {
+            alert(err.responseJSON?.error || "Error al buscar documento");
         });
     }
 
-    $('#emisor_documento').on('blur', () => buscarPersona('emisor'));
-    $('#receptor_documento').on('blur', () => buscarPersona('receptor'));
-
+    $("#emisor_documento").on("blur", () => buscarPersona("emisor"));
+    $("#receptor_documento").on("blur", () => buscarPersona("receptor"));
 
     // === Evitar sucursal repetida en origen/destino ===
-    $('#origen').on('change', function() {
+    $("#origen").on("change", function () {
         let origen = $(this).val();
-        $('#destino option').show();
-        if(origen) $('#destino option[value="'+origen+'"]').hide();
+        $("#destino option").show();
+        if (origen) $('#destino option[value="' + origen + '"]').hide();
     });
 
-    $('#destino').on('change', function() {
+    $("#destino").on("change", function () {
         let destino = $(this).val();
-        $('#origen option').show();
-        if(destino) $('#origen option[value="'+destino+'"]').hide();
+        $("#origen option").show();
+        if (destino) $('#origen option[value="' + destino + '"]').hide();
     });
-
 
     // === Tabla de detalles y total ===
     let tabla = $("#tablaEncomiendas").DataTable({
-        ajax: '/encomiendas/datatable',
+        ajax: "/encomiendas/datatable",
         columns: [
-            { data: 'id' },
-            { data: 'emisor' },
-            { data: 'receptor' },
-            { data: 'total' },
-            { data: 'estado' },
-            { data: 'acciones', orderable: false, searchable: false },
-        ]
+            { data: "id" },
+            { data: "emisor" },
+            { data: "receptor" },
+            { data: "total" },
+            { data: "estado" },
+            { data: "acciones", orderable: false, searchable: false },
+        ],
     });
 
     $("#btnNueva").click(() => {
-        $("#formEncomienda")[0].reset();
-        $("#tablaDetalles tbody").empty();
-        $("#modalEncomienda").modal('show');
-        $('#origen option, #destino option').show();
+        window.location.href = "encomiendas/crear-encomienda";
     });
 
     $("#btnAgregarDetalle").click(() => {
@@ -74,12 +71,12 @@ $(function () {
         `);
     });
 
-    $(document).on('click', '.btnQuitar', function () {
-        $(this).closest('tr').remove();
+    $(document).on("click", ".btnQuitar", function () {
+        $(this).closest("tr").remove();
         recalcularTotal();
     });
 
-    $(document).on('input', '.costo', recalcularTotal);
+    $(document).on("input", ".costo", recalcularTotal);
 
     function recalcularTotal() {
         let total = 0;
@@ -104,10 +101,10 @@ $(function () {
         });
 
         $.ajax({
-            url: '/encomiendas/guardar',
-            method: 'POST',
+            url: "/encomiendas/guardar",
+            method: "POST",
             data: {
-                _token: $('input[name=_token]').val(),
+                _token: $("input[name=_token]").val(),
                 emisor: {
                     documento: $("#emisor_documento").val(),
                     nombres: $("#emisor_nombres").val(),
@@ -125,15 +122,14 @@ $(function () {
                 origen: $("#origen").val(),
                 destino: $("#destino").val(),
                 total: $("#total").val(),
-                detalles: detalles
+                detalles: detalles,
             },
             success: function (res) {
                 if (res.success) {
-                    $("#modalEncomienda").modal('hide');
+                    $("#modalEncomienda").modal("hide");
                     tabla.ajax.reload();
                 }
-            }
+            },
         });
     });
-
 });

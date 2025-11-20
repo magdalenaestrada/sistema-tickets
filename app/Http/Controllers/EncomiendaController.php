@@ -6,6 +6,8 @@ use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\Persona;
 use App\Models\Sucursal;
+use App\Models\TipoDocumentoPersona;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,14 @@ class EncomiendaController extends Controller
     {
         $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
         return view('encomiendas.index', compact('sucursales'));
+    }
+
+    public function formulario()
+    {
+        Carbon::now();
+        $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
+        $tipos_documentos = TipoDocumentoPersona::all();
+        return view('encomiendas.create', compact('sucursales', 'tipos_documentos'));
     }
     public function datatable()
     {

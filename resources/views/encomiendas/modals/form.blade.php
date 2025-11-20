@@ -10,36 +10,53 @@
 
             <div class="modal-body">
                 <div class="row g-2">
-
-                    <!-- Emisor -->
                     <div class="col-12">
                         <h6>Datos del Emisor</h6>
                         <hr>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Documento</label>
-                        <div class="input-group">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label class="form-label"> Tipo de documento</label>
+                            <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id">
+                                @foreach ($tipos_documentos as $tipo_documento)
+                                    <option value="{{ $tipo_documento->id }}">
+                                        {{ $tipo_documento->codigo }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Documento</label>
                             <input type="text" class="form-control" id="emisor_documento">
-                            <button type="button" class="btn btn-primary" onclick="buscarPersona('emisor')">
-                                <i class="link-icon" data-lucide="search"></i>
-                            </button>
+
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Nombres</label>
+                            <input type="text" class="form-control" id="emisor_nombres">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="emisor_apellidos">
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Nombres</label>
-                        <input type="text" class="form-control" id="emisor_nombres">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Apellidos</label>
-                        <input type="text" class="form-control" id="emisor_apellidos">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Celular</label>
-                        <input type="text" class="form-control" id="emisor_celular">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Dirección</label>
-                        <input type="text" class="form-control" id="emisor_direccion">
+                    <br>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <label class="form-label">Celular</label>
+                            <input type="text" class="form-control" id="emisor_celular">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Telefono</label>
+                            <input type="text" class="form-control" id="emisor_telefono">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Correo electrónico</label>
+                            <input type="text" class="form-control" id="emisor_direccion">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Ubigeo</label>
+                            <input type="text" class="form-control" id="emisor_direccion">
+                        </div>
                     </div>
 
                     <!-- Receptor -->
