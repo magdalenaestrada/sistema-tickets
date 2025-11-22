@@ -18,4 +18,4 @@ require __DIR__ . '/vehiculos.php';
 require __DIR__ . '/horarios.php';
 require __DIR__ . '/encomiendas.php';
 require __DIR__ . '/eventos.php';
-
+require __DIR__ . '/tipo-encomienda.php';

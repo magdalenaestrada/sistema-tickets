@@ -94,9 +94,12 @@
                   <div class="collapse" id="ventas">
                       <ul class="nav sub-menu">
                           <li class="nav-item">
+                              <a href="{{ route('tipo-encomienda.index') }}" class="nav-link">Tipo encomiendas</a>
+                          </li>
+                          <li class="nav-item">
                               <a href="{{ route('encomiendas.index') }}" class="nav-link">Encomiendas</a>
                           </li>
-                           <li class="nav-item">
+                          <li class="nav-item">
                               <a href="{{ route('encomiendas.index') }}" class="nav-link">Ventas</a>
                           </li>
                       </ul>

@@ -12,12 +12,14 @@ return new class extends Migration {
     {
         Schema::create("encomienda_detalle", function (Blueprint $table) {
             $table->id();
-            $table->foreignId("encomienda_id")->constrained("encomienda");
-            $table->string("tipo_equipaje", 100);
+            $table->unsignedBigInteger("encomienda_id");
+            $table->unsignedBigInteger("tipo_encomienda_id");
             $table->string("descripcion", 100);
             $table->decimal("peso", 10, 2)->default(0);
             $table->decimal("costo", 10, 2)->default(0);
             $table->timestamps();
+            $table->foreign("encomienda_id")->references("id")->on("encomienda");
+            $table->foreign("tipo_encomienda_id")->references("id")->on("tipo_encomienda");
         });
     }
 

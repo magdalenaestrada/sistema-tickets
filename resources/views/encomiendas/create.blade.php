@@ -2,146 +2,163 @@
 
 @section('content')
     <div class="row">
-        <div class="card mb-3 col-md-9">
-            <div class="card-body">
-                <div>
+
+        <!-- COLUMNA IZQUIERDA (70%) -->
+        <div class="col-md-9">
+
+            <!-- DATOS DEL EMISOR -->
+            <div class="card mb-3">
+                <div class="card-body">
                     <h6>Datos del Emisor</h6>
                     <hr>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                        <label class="form-label"> Tipo de documento</label>
-                        <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id">
-                            @foreach ($tipos_documentos as $tipo_documento)
-                                <option value="{{ $tipo_documento->id }}">
-                                    {{ $tipo_documento->codigo }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Documento</label>
-                        <input type="text" class="form-control" id="emisor_documento">
 
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Tipo de documento</label>
+                            <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id">
+                                @foreach ($tipos_documentos as $tipo_documento)
+                                    <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Documento</label>
+                            <input type="text" class="form-control" id="emisor_documento">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Nombres</label>
+                            <input type="text" class="form-control" id="emisor_nombres">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="emisor_apellidos">
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Nombres</label>
-                        <input type="text" class="form-control" id="emisor_nombres">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Apellidos</label>
-                        <input type="text" class="form-control" id="emisor_apellidos">
-                    </div>
-                </div>
-                <br>
-                <div class="row">
-                    <div class="col-md-3">
-                        <label class="form-label">Celular</label>
-                        <input type="text" class="form-control" id="emisor_celular">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Telefono</label>
-                        <input type="text" class="form-control" id="emisor_telefono">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Correo electrónico</label>
-                        <input type="text" class="form-control" id="emisor_direccion">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Ubigeo</label>
-                        <input type="text" class="form-control" id="emisor_ubigeo">
+
+                    <div class="row g-2 mt-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Celular</label>
+                            <input type="text" class="form-control" id="emisor_celular">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Telefono</label>
+                            <input type="text" class="form-control" id="emisor_telefono">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Correo electrónico</label>
+                            <input type="text" class="form-control" id="emisor_direccion">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Ubigeo</label>
+                            <input type="text" class="form-control" id="emisor_ubigeo">
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="card mb-3 col-md-9">
-            <div class="card-body">
-                <div class="col-12 mt-3">
+
+            <!-- DATOS DEL RECEPTOR -->
+            <div class="card mb-3">
+                <div class="card-body">
                     <h6>Datos del Receptor</h6>
                     <hr>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                        <label class="form-label"> Tipo de documento</label>
-                        <select class="form-select" name="receptor_tipo_documento_id" id="receptor_tipo_documento_id">
-                            @foreach ($tipos_documentos as $tipo_documento)
-                                <option value="{{ $tipo_documento->id }}">
-                                    {{ $tipo_documento->codigo }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Documento</label>
-                        <input type="text" class="form-control" id="receptor_documento">
 
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Tipo de documento</label>
+                            <select class="form-select" name="receptor_tipo_documento_id" id="receptor_tipo_documento_id">
+                                @foreach ($tipos_documentos as $tipo_documento)
+                                    <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Documento</label>
+                            <input type="text" class="form-control" id="receptor_documento">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Nombres</label>
+                            <input type="text" class="form-control" id="receptor_nombres">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="receptor_apellidos">
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Nombres</label>
-                        <input type="text" class="form-control" id="receptor_nombres">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Apellidos</label>
-                        <input type="text" class="form-control" id="receptor_apellidos">
-                    </div>
-                </div>
-                <br>
-                <div class="row">
-                    <div class="col-md-3">
-                        <label class="form-label">Celular</label>
-                        <input type="text" class="form-control" id="receptor_celular">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Telefono</label>
-                        <input type="text" class="form-control" id="receptor_telefono">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Correo electrónico</label>
-                        <input type="text" class="form-control" id="receptor_direccion">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Ubigeo</label>
-                        <input type="text" class="form-control" id="receptor_ubigeo">
+
+                    <div class="row g-2 mt-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Celular</label>
+                            <input type="text" class="form-control" id="receptor_celular">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Telefono</label>
+                            <input type="text" class="form-control" id="receptor_telefono">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Correo electrónico</label>
+                            <input type="text" class="form-control" id="receptor_direccion">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label">Ubigeo</label>
+                            <input type="text" class="form-control" id="receptor_ubigeo">
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="card mb-3 col-md-9">
-            <div class="card-body">
-                <div class="col-12 mt-3">
+
+            <!-- RUTA -->
+            <div class="card mb-3">
+                <div class="card-body">
                     <h6>Ruta</h6>
                     <hr>
-                    <div class="row">
+
+                    <div class="row g-2">
                         <div class="col-md-6">
                             <label class="form-label">Origen</label>
-                            <select id="origen" class="form-select" name="origen" required>
-                                <option value="" selected disabled>Seleccione una sucursal</option>
+                            <select id="origen" class="form-select" name="origen">
+                                <option value="" disabled selected>Seleccione una sucursal</option>
                                 @foreach ($sucursales as $s)
                                     <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
                                 @endforeach
                             </select>
                         </div>
+
                         <div class="col-md-6">
                             <label class="form-label">Destino</label>
-                            <select id="destino" class="form-select" name="destino" required>
-                                <option value="" selected disabled>Seleccione una sucursal</option>
+                            <select id="destino" class="form-select" name="destino">
+                                <option value="" disabled selected>Seleccione una sucursal</option>
                                 @foreach ($sucursales as $s)
                                     <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
+
                 </div>
             </div>
-        </div>
-        <div class="card mb-3 col-md-9">
-            <div class="card-body">
-                <div class="col-12 mt-3">
+
+            <!-- DETALLES -->
+            <div class="card mb-3">
+                <div class="card-body">
                     <h6>Detalles de Encomienda</h6>
                     <hr>
+
                     <button type="button" class="btn btn-success btn-sm mb-2" id="btnAgregarDetalle">
                         <i data-lucide="plus"></i> Agregar Detalle
                     </button>
+
                     <table class="table table-sm table-bordered" id="tablaDetalles">
                         <thead>
                             <tr>
@@ -154,38 +171,146 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+
                 </div>
             </div>
+
         </div>
 
         <div class="col-md-3">
 
+            <!-- Resumen Encomienda -->
             <div class="card mb-3">
                 <div class="card-body">
-                    <h6 class="mb-2">Tipo de servicio: Encomienda</h6>
-                    <div class="col-md-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <label for="total" class="form-label mb-0">Total</label>
-                            <input type="number" id="total" class="form-control" readonly>
+                    <h6 class="mb-3">Tipo de servicio: Encomienda</h6>
+
+                    <div class="row mb-2">
+                        <label for="peso_total" class="col-6 col-form-label">Peso Equipaje</label>
+                        <div class="col-6">
+                            <input type="number" id="peso_total" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="cantidad_bultos" class="col-6 col-form-label">Cantidad Bultos</label>
+                        <div class="col-6">
+                            <input type="number" id="cantidad_bultos" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="origen" class="col-6 col-form-label">Origen</label>
+                        <div class="col-6">
+                            <input type="text" id="origen" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="destino" class="col-6 col-form-label">Destino</label>
+                        <div class="col-6">
+                            <input type="text" id="destino" class="form-control" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos Documento -->
+            <div class="card mb-3">
+                <div class="card-body">
+
+                    <div class="row mb-2">
+                        <label for="tipo_documento_factura_id" class="col-6 col-form-label">Tipo de documento</label>
+                        <div class="col-6">
+                            <select name="tipo_documento_factura_id" id="tipo_documento_factura_id" class="form-select">
+                                @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
+                                    <option value="{{ $tipo_documento_factura->id }}"
+                                        @if ($index === 1) selected @endif>
+                                        {{ $tipo_documento_factura->descripcion }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="numero_documento_id" class="col-6 col-form-label">Número documento</label>
+                        <div class="col-6">
+                            <input type="number" id="numero_documento_id" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="razon_social" class="col-6 col-form-label">Razón social</label>
+                        <div class="col-6">
+                            <input type="text" id="razon_social" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="numero_serie" class="col-6 col-form-label">Número de serie</label>
+                        <div class="col-6">
+                            <input type="text" id="numero_serie" class="form-control">
                         </div>
                     </div>
 
                 </div>
             </div>
 
+            <!-- Métodos de Pago -->
             <div class="card mb-3">
                 <div class="card-body">
-                    <h6 class="mb-2">Opciones adicionales</h6>
-                </div>
-            </div>
 
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h6 class="mb-2">Resumen</h6>
+                    <div class="row mb-2">
+                        <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
+                        <div class="col-6">
+                            <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
+                                @foreach ($metodos_pago as $metodo_pago)
+                                    <option value="{{ $metodo_pago->id }}">
+                                        {{ $metodo_pago->descripcion }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="costo_total" class="col-6 col-form-label">Total a pagar</label>
+                        <div class="col-6">
+                            <input type="number" id="costo_total" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
+                        <div class="col-6">
+                            <input type="number" id="pago_efectivo" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
+                        <div class="col-6">
+                            <select name="billetera_id" id="billetera_id" class="form-select">
+                                @foreach ($billeteras_digitales as $billetera_digital)
+                                    <option value="{{ $billetera_digital->id }}">{{ $billetera_digital->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
+                        <div class="col-6">
+                            <input type="number" id="pago_billetera" class="form-control">
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
         </div>
+
 
     </div>
 @endsection

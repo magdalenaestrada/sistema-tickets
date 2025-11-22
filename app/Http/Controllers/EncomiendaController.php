@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BilleteraDigital;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
+use App\Models\MetodoPago;
 use App\Models\Persona;
 use App\Models\Sucursal;
+use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
+use App\Models\TipoEncomienda;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,15 +22,20 @@ class EncomiendaController extends Controller
     public function index()
     {
         $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
-        return view('encomiendas.index', compact('sucursales'));
+        $tipos_documentos = TipoDocumentoPersona::all();
+        return view('encomiendas.index', compact('sucursales', 'tipos_documentos'));
     }
 
     public function formulario()
     {
         Carbon::now();
+        $metodos_pago = MetodoPago::all();
         $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
-        return view('encomiendas.create', compact('sucursales', 'tipos_documentos'));
+        $tipos_documentos_facturas = TipoDocumentoFactura::all();
+        $tipo_encomiendas = TipoEncomienda::all();
+        $billeteras_digitales = BilleteraDigital::all();
+        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales'));
     }
     public function datatable()
     {
@@ -66,22 +75,24 @@ class EncomiendaController extends Controller
         DB::beginTransaction();
         try {
             $emisor = Persona::updateOrCreate(
-                ['documento' => $request->emisor['documento']],
                 [
-                    'tipo_documento_id' => $request->emisor['tipo_documento_id'] ?? 1,
-                    'distrito_id' => $request->emisor['distrito_id'] ?? 1,
-                    'nombres' => $request->emisor['nombres'],
-                    'apellidos' => $request->emisor['apellidos'] ?? null,
-                    'telefono' => $request->emisor['telefono'] ?? null,
-                    'celular' => $request->emisor['celular'] ?? null,
-                    'correo' => $request->emisor['correo'] ?? null,
-                    'direccion' => $request->emisor['direccion'] ?? null,
-                    'estado' => 'A',
-                    'fecha_creacion' => now(),
+                    'documento' => $request->emisor_documento
+                ],
+                [
+                    'tipo_documento_id' => $request->emisor_tipo_documento_id,
+                    'distrito_id'        => $request->emisor_distrito_id,
+                    'nombres'            => $request->emisor_nombre,
+                    'apellidos'          => $request->emisor_apellido ?? null,
+                    'telefono'           => $request->emisor_telefono ?? null,
+                    'celular'            => $request->emisor_celular ?? null,
+                    'correo'             => $request->emisor_correo ?? null,
+                    'direccion'          => $request->emisor_direccion ?? null,
+                    'estado'             => 'A',
+                    'fecha_creacion'     => now(),
                 ]
             );
 
-            // 🔹 Crear o actualizar persona receptor
+
             $receptor = Persona::updateOrCreate(
                 ['documento' => $request->receptor['documento']],
                 [
@@ -98,7 +109,6 @@ class EncomiendaController extends Controller
                 ]
             );
 
-            // 🔹 Crear encomienda
             $encomienda = Encomienda::create([
                 'sucursal_id' => $request->sucursal_id ?? null,
                 'usuario_id' => Auth::id(),

@@ -13,7 +13,7 @@ class EncomiendaDetalle extends Model
 
     protected $fillable = [
         'encomienda_id',
-        'tipo_equipaje',
+        'tipo_encomienda_id',
         'descripcion',
         'peso',
         'costo',
@@ -22,5 +22,9 @@ class EncomiendaDetalle extends Model
     public function encomienda()
     {
         return $this->belongsTo(Encomienda::class, 'encomienda_id');
+    }
+    public function tipo_encomienda()
+    {
+        return $this->belongsTo(TipoEncomienda::class, 'tipo_encomienda_id');
     }
 }

@@ -28,6 +28,9 @@ class DatabaseSeeder extends Seeder
             TipoVehiculoSeeder::class,
             TipoViajeSeeder::class,
             TipoEventoSeeder::class,
+            BilleteraDigitalSeeder::class,
+            MetodoPagoSeeder::class,
+            TipoDocumentoFacturaSeeder::class,
         ]);
     }
 }
