@@ -150,6 +150,9 @@ $(function () {
             );
 
             $("#tablaDetalles tbody").append(fila);
+
+            actualizarResumen();
+            recalcularTotal();
         }
 
         $(document).on("change", ".tipo", function () {
@@ -178,11 +181,14 @@ $(function () {
 
         function recalcularTotal() {
             let total = 0;
-            $(".costo").each(function () {
-                total += parseFloat($(this).val()) || 0;
+
+            $("#tablaDetalles tbody tr").each(function () {
+                let costo = parseFloat($(this).find(".costo").val()) || 0;
+                total += costo;
             });
+
             $("#total").val(total.toFixed(2));
-            calcularTotalPago(); 
+            $("#costo_total").val(total.toFixed(2));
         }
 
         function calcularCostoFila(tr, tipo) {
@@ -199,11 +205,13 @@ $(function () {
             }
 
             tr.find(".costo").val(costo.toFixed(2));
+
             recalcularTotal();
         }
 
         $(document).on("click", ".btnQuitar", function () {
             $(this).closest("tr").remove();
+            actualizarResumen();
             recalcularTotal();
         });
 
@@ -319,24 +327,21 @@ $(function () {
         });
 
         function actualizarMetodosPago() {
-            let metodo = $("#metodo_pago_id option:selected")
-                .text()
-                .toLowerCase();
+            let metodoId = parseInt($("#metodo_pago_id").val());
 
-            if (metodo.includes("efectivo")) {
+            if (metodoId === 1) {
                 $("#pago_efectivo").closest(".row").show();
                 $("#billetera_id").closest(".row").hide();
                 $("#pago_billetera").closest(".row").hide();
-            } else if (
-                metodo.includes("billetera") ||
-                metodo.includes("pos") ||
-                metodo.includes("yape") ||
-                metodo.includes("plin")
-            ) {
+            }
+
+            if (metodoId === 2) {
                 $("#pago_efectivo").closest(".row").hide();
                 $("#billetera_id").closest(".row").show();
                 $("#pago_billetera").closest(".row").show();
-            } else if (metodo.includes("mixto")) {
+            }
+
+            if (metodoId === 3) {
                 $("#pago_efectivo").closest(".row").show();
                 $("#billetera_id").closest(".row").show();
                 $("#pago_billetera").closest(".row").show();
@@ -350,17 +355,32 @@ $(function () {
             let billetera = parseFloat($("#pago_billetera").val()) || 0;
 
             let suma = efectivo + billetera;
+
             if (suma > total) suma = total;
 
             $("#costo_total").val(total.toFixed(2));
         }
+        $("#metodo_pago_id").on("change", function () {
+            let metodo = $(this).val();
 
-        // Escuchas
-        $("#metodo_pago_id").on("change", actualizarMetodosPago);
-        $("#pago_efectivo, #pago_billetera").on("input", calcularTotalPago);
+            $(".grupo-efectivo").hide();
+            $(".grupo-digital").hide();
+            $(".grupo-mixto").hide();
 
-        // Inicialización al cargar
-        actualizarResumen();
-        actualizarMetodosPago();
+            $(".grupo-efectivo input").not("#total_venta").val("");
+            $(".grupo-digital input").not("#total_venta").val("");
+            $(".grupo-mixto input").not("#total_venta").val("");
+
+            if (metodo == 1) {
+                $(".grupo-efectivo").show();
+            } else if (metodo == 2) {
+                $(".grupo-digital").show();
+            } else if (metodo == 3) {
+                $(".grupo-mixto").show();
+
+                let totalVenta = parseFloat($("#total_venta").val());
+                $("#monto_mixto_1").val(totalVenta.toFixed(2));
+            }
+        });
     });
 });
