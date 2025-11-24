@@ -18,7 +18,7 @@ class Persona extends Model
         'documento',
         'nombres',
         'apellidos',
-        'razon_social',       // si la agregaste en tu migración
+        'razon_social',    
         'telefono',
         'celular',
         'correo',

@@ -16,13 +16,11 @@ return new class extends Migration {
                 ->foreignId("venta_id")
                 ->constrained("ventas")
                 ->cascadeOnDelete();
-            $table->foreignId("almacen_id")->default(1)->constrained("almacen");
-            $table->foreignId("unidad_medida_id")->constrained("unidad_medida");
-            $table->foreignId("producto_id")->constrained("productos");
+            $table->foreignId("tipo_servicio_id")->constrained("tipo_servicio");
+            $table->string("descripcion");
             $table->decimal("descuento", 10, 2)->default(0);
             $table->decimal("cantidad", 10, 2);
             $table->decimal("precio_venta", 10, 2);
-            $table->decimal("precio_compra", 10, 2)->default(0);
             $table->decimal("total", 10, 2);
             $table->timestamps();
         });

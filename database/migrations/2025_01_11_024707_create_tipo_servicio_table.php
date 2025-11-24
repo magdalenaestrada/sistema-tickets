@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('billetas_digitales', function (Blueprint $table) {
+        Schema::create('tipo_servicio', function (Blueprint $table) {
             $table->id();
-            $table->string("descripcion", 100)->index();
+            $table->string("descripcion");
             $table->timestamps();
         });
     }
@@ -23,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('billetas_digitales');
+        Schema::dropIfExists('tipo_servicio');
     }
 };

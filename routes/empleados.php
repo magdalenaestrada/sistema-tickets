@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\EmpleadoController;
 
-Route::prefix('empleados')->name('empleados.')->group(function () {
+Route::middleware(['auth'])->prefix('empleados')->name('empleados.')->group(function () {
     Route::get('/', [EmpleadoController::class, 'index'])->name('index');
     Route::get('/datatable', [EmpleadoController::class, 'datatable'])->name('datatable');
     Route::get('/{id}', [EmpleadoController::class, 'mostrar'])->name('mostrar');

@@ -3,7 +3,7 @@
 use App\Http\Controllers\VehiculoController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('vehiculos')->name('vehiculos.')->group(function () {
+Route::middleware(['auth'])->prefix('vehiculos')->name('vehiculos.')->group(function () {
     Route::get('/', [VehiculoController::class, 'index'])->name('index');
     Route::get('/datatable', [VehiculoController::class, 'datatable'])->name('datatable');
     Route::get('/{vehiculo}', [VehiculoController::class, 'mostrar'])->name('mostrar');

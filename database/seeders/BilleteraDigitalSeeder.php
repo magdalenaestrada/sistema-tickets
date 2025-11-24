@@ -23,7 +23,7 @@ class BilleteraDigitalSeeder extends Seeder
         ];
 
         foreach ($billeteras as $billeta) {
-            DB::table('billetas_digitales')->insert([
+            DB::table('billeteras_digitales')->insert([
                 'descripcion' => $billeta['descripcion'],
             ]);
         }

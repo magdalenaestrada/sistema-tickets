@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create("ventas", function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('tipo_servicio_id');
             $table
                 ->foreignId("sucursal_id")
                 ->nullable()
@@ -54,6 +55,7 @@ return new class extends Migration {
                 ->index();
             $table->dateTime("fecha_emision");
             $table->dateTime("fecha_anulacion")->nullable();
+            $table->foreign('tipo_servicio_id')->references('id')->on('tipo_servicio')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
         });

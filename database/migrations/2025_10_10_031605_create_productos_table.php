@@ -12,9 +12,9 @@ return new class extends Migration {
     {
         Schema::create("productos", function (Blueprint $table) {
             $table->id();
-            $table->foreignId("unidad_medida_id")->constrained("unidad_medida");
-            $table->foreignId("impuesto_id")->constrained("impuestos");
-            $table->string("codigo", 13)->unique();
+            $table->foreignId("unidad_medida_id")->constrained("unidad_medida")->nullable();
+            $table->foreignId("impuesto_id")->constrained("impuestos")->nullable();
+            $table->string("codigo", 13)->unique()->nullable();
             $table->string("descripcion", 255);
             $table->decimal("total", 10, 2)->default(0);
             $table

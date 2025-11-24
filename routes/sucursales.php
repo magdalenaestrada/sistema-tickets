@@ -3,7 +3,7 @@
 use App\Http\Controllers\Sucursal\SucursalController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('sucursales')->name('sucursales.')->group(function () {
+Route::middleware(['auth'])->prefix('sucursales')->name('sucursales.')->group(function () {
     Route::get('/{empresa_id}', [SucursalController::class, 'index'])->name('index');
     Route::get('/{empresa_id}/datatable', [SucursalController::class, 'datatable'])->name('datatable');
     Route::post('/', [SucursalController::class, 'guardar'])->name('guardar');

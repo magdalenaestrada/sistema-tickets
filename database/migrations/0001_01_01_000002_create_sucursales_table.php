@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create("sucursales", function (Blueprint $table) {
             $table->id();
+            $table->string("codigo_emision", 4)->default("0000");
             $table->foreignId("empresa_id")->constrained("empresas");
             $table->foreignId("distrito_id")->constrained("distritos");
             $table->string("nombre_comercial")->nullable();

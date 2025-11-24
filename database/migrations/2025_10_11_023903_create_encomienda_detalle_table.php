@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger("encomienda_id");
             $table->unsignedBigInteger("tipo_encomienda_id");
-            $table->string("descripcion", 100);
+            $table->string("descripcion", 100)->nullable();
             $table->decimal("peso", 10, 2)->default(0);
             $table->decimal("costo", 10, 2)->default(0);
             $table->timestamps();

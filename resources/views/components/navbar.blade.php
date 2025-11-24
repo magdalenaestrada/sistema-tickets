@@ -127,11 +127,18 @@
                              </a>
                          </li>
                          <li>
-                             <a href="javascript:;" class="dropdown-item py-2 text-body ms-0">
+                             <a href="{{ route('logout') }}" class="dropdown-item py-2 text-body ms-0"
+                                 onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                  <i class="me-2 icon-md" data-lucide="log-out"></i>
                                  <span>Log Out</span>
                              </a>
+
+                             <form id="logout-form" action="{{ route('logout') }}" method="POST"
+                                 style="display: none;">
+                                 @csrf
+                             </form>
                          </li>
+
                      </ul>
                  </div>
              </li>

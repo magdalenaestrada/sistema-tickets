@@ -12,6 +12,8 @@ return new class extends Migration {
     {
         Schema::create("caja_detalle", function (Blueprint $table) {
             $table->id();
+            $table->string('numero_ticket')->nullable();
+            $table->boolean('anulado')->default(false);
             $table->foreignId("caja_id")->constrained("caja");
             $table
                 ->foreignId("subtipo_movimiento_caja_id")

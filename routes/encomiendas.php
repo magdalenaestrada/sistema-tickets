@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\EncomiendaController;
 
-Route::prefix('encomiendas')->name('encomiendas.')->group(function () {
+Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(function () {
     Route::get('/', [EncomiendaController::class, 'index'])->name('index');
     Route::get('/datatable', [EncomiendaController::class, 'datatable'])->name('datatable');
     Route::post('/guardar', [EncomiendaController::class, 'guardar'])->name('guardar');

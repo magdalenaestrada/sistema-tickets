@@ -31,6 +31,13 @@ class DatabaseSeeder extends Seeder
             BilleteraDigitalSeeder::class,
             MetodoPagoSeeder::class,
             TipoDocumentoFacturaSeeder::class,
+            PersonaSeeder::class,
+            EmpresaSeeder::class,
+            SucursalesSeeder::class,
+            UserSeeder::class,
+            TipoEncomiendaSeeder::class,
+            TipoServicioSeeder::class,
+            TipoMovimientoCajaSeeder::class,
         ]);
     }
 }

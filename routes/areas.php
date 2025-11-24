@@ -3,7 +3,7 @@
 use App\Http\Controllers\AreaController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('areas')->name('areas.')->group(function () {
+Route::middleware(['auth'])->prefix('areas')->name('areas.')->group(function () {
     Route::get('/', [AreaController::class, 'index'])->name('index');
     Route::get('/datatable', [AreaController::class, 'datatable'])->name('datatable');
     Route::get('/{area}', [AreaController::class, 'mostrar'])->name('mostrar'); // 👈 nuevo

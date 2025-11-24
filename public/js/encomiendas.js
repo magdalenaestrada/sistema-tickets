@@ -1,35 +1,4 @@
 $(function () {
-    // === Buscar persona por documento ===
-    function buscarPersona(tipo) {
-        // 'emisor' o 'receptor'
-        let doc = $(`#${tipo}_documento`).val();
-        if (!doc) return;
-
-        $.get(`/buscar?documento=${doc}`, function (res) {
-            if (res.error) {
-                alert(res.error);
-                return;
-            }
-
-            if (res.tipo === "DNI") {
-                $(`#${tipo}_nombres`).val(res.nombres);
-                $(`#${tipo}_apellidos`).val(
-                    res.apellido_paterno + " " + res.apellido_materno
-                );
-            } else if (res.tipo === "RUC") {
-                $(`#${tipo}_nombres`).val(res.razon_social);
-                $(`#${tipo}_apellidos`).val("");
-                $(`#${tipo}_direccion`).val(res.direccion || "");
-            }
-        }).fail(function (err) {
-            alert(err.responseJSON?.error || "Error al buscar documento");
-        });
-    }
-
-    $("#emisor_documento").on("blur", () => buscarPersona("emisor"));
-    $("#receptor_documento").on("blur", () => buscarPersona("receptor"));
-
-    // === Evitar sucursal repetida en origen/destino ===
     $("#origen").on("change", function () {
         let origen = $(this).val();
         $("#destino option").show();
@@ -64,42 +33,86 @@ $(function () {
         let detalles = [];
         $("#tablaDetalles tbody tr").each(function () {
             detalles.push({
-                tipo_equipaje: $(this).find(".tipo").val(),
-                descripcion: $(this).find(".desc").val(),
+                tipo_encomienda_id: $(this).find(".tipo").val(),
+                tipo_encomienda_nombre: $(this)
+                    .find(".tipo option:selected")
+                    .text(),
                 peso: $(this).find(".peso").val(),
                 costo: $(this).find(".costo").val(),
+                descripcion: $(this).find(".desc").val() || "Sin descripción",
             });
         });
+
+        let pagos = [];
+        let metodo = parseInt($("#metodo_pago_id").val());
+        let total = parseFloat($("#costo_total").val()) || 0;
+
+        if (metodo === 1) {
+            pagos.push({ metodo_pago_id: 1, total: total });
+        } else if (metodo === 2) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: $("#billetera_id").val(),
+                total: total,
+            });
+        } else if (metodo === 3) {
+            pagos.push({
+                metodo_pago_id: 1,
+                total: parseFloat($("#pago_efectivo").val()) || 0,
+            });
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: $("#billetera_id").val(),
+                total: parseFloat($("#pago_billetera").val()) || 0,
+            });
+        }
+
+        let data = {
+            _token: $("input[name=_token]").val(),
+            emisor: {
+                documento: $("#emisor_documento").val(),
+                tipo_documento_id: $("#emisor_tipo_documento_id").val(),
+                nombres: $("#emisor_nombres").val(),
+                apellidos: $("#emisor_apellidos").val(),
+                celular: $("#emisor_celular").val(),
+                telefono: $("#emisor_telefono").val(),
+                direccion: $("#emisor_direccion").val(),
+            },
+            receptor: {
+                documento: $("#receptor_documento").val(),
+                tipo_documento_id: $("#receptor_tipo_documento_id").val(),
+                nombres: $("#receptor_nombres").val(),
+                apellidos: $("#receptor_apellidos").val(),
+                celular: $("#receptor_celular").val(),
+                telefono: $("#receptor_telefono").val(),
+                direccion: $("#receptor_direccion").val(),
+            },
+            origen: $("#origen").val(),
+            destino: $("#destino").val(),
+            tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
+            total: total,
+            detalles: detalles,
+            tipo_servicio_id: 2,
+            sucursal_id: null,
+            serie: null,
+            numero: null,
+            pagos: pagos,
+        };
 
         $.ajax({
             url: "/encomiendas/guardar",
             method: "POST",
-            data: {
-                _token: $("input[name=_token]").val(),
-                emisor: {
-                    documento: $("#emisor_documento").val(),
-                    nombres: $("#emisor_nombres").val(),
-                    apellidos: $("#emisor_apellidos").val(),
-                    celular: $("#emisor_celular").val(),
-                    direccion: $("#emisor_direccion").val(),
-                },
-                receptor: {
-                    documento: $("#receptor_documento").val(),
-                    nombres: $("#receptor_nombres").val(),
-                    apellidos: $("#receptor_apellidos").val(),
-                    celular: $("#receptor_celular").val(),
-                    direccion: $("#receptor_direccion").val(),
-                },
-                origen: $("#origen").val(),
-                destino: $("#destino").val(),
-                total: $("#total").val(),
-                detalles: detalles,
-            },
+            data: data,
             success: function (res) {
                 if (res.success) {
                     $("#modalEncomienda").modal("hide");
                     tabla.ajax.reload();
                 }
+            },
+            error: function (err) {
+                alert(
+                    err.responseJSON?.message || "Error al guardar encomienda"
+                );
             },
         });
     });
@@ -155,6 +168,110 @@ $(function () {
             recalcularTotal();
         }
 
+        $("#emisor_documento").on("blur", function () {
+            let doc = $(this).val();
+            if (!doc) return;
+
+            $.get(`/buscar?documento=${doc}`, function (res) {
+                if (res.error) return alert(res.error);
+
+                if (res.tipo === "DNI") {
+                    $("#emisor_nombres").val(res.nombres);
+                    $("#emisor_apellidos").val(
+                        res.apellido_paterno + " " + res.apellido_materno
+                    );
+                }
+
+                if (res.tipo === "RUC") {
+                    $("#emisor_nombres").val(res.razon_social);
+                    $("#emisor_apellidos").val("");
+                    $("#emisor_direccion").val(res.direccion || "");
+                }
+
+                $("#numero_documento_id").val($("#emisor_documento").val());
+                $("#razon_social").val(
+                    $("#emisor_nombres").val() +
+                        " " +
+                        $("#emisor_apellidos").val()
+                );
+            }).fail(function (err) {
+                alert(err.responseJSON?.error || "Error al buscar documento");
+            });
+        });
+
+        function recalcularTotal() {
+            let total = 0;
+
+            $("#tablaDetalles tbody tr").each(function () {
+                total += parseFloat($(this).find(".costo").val()) || 0;
+            });
+
+            $("#costo_total").val(total.toFixed(2));
+
+            let metodo = parseInt($("#metodo_pago_id").val());
+
+            if (metodo === 1) {
+                $("#pago_efectivo").val(total.toFixed(2));
+                $("#pago_billetera").val(0);
+            } else if (metodo === 2) {
+                $("#pago_billetera").val(total.toFixed(2));
+                $("#pago_efectivo").val(0);
+            } else if (metodo === 3) {
+                let pagoE = parseFloat($("#pago_efectivo").val()) || 0;
+
+                if (pagoE > total) pagoE = total;
+                $("#pago_efectivo").val(pagoE.toFixed(2));
+                $("#pago_billetera").val((total - pagoE).toFixed(2));
+            }
+        }
+
+        function actualizarResumen() {
+            let totalPeso = 0;
+            let totalBultos = 0;
+
+            $("#tablaDetalles tbody tr").each(function () {
+                let peso = parseFloat($(this).find(".peso").val()) || 0;
+                if (peso > 0) totalBultos++;
+                totalPeso += peso;
+            });
+
+            $("#peso_total").val(totalPeso.toFixed(2));
+            $("#cantidad_bultos").val(totalBultos);
+        }
+
+        $(document).on("input", ".peso, .costo", function () {
+            recalcularTotal();
+            actualizarResumen();
+        });
+
+        $("#pago_efectivo").on("input", function () {
+            if ($("#metodo_pago_id").val() != "3") return;
+
+            let total = parseFloat($("#costo_total").val()) || 0;
+            let efectivo = parseFloat($(this).val()) || 0;
+
+            if (efectivo > total) efectivo = total;
+
+            $("#pago_billetera").val((total - efectivo).toFixed(2));
+        });
+
+        $("#pago_billetera").on("input", function () {
+            if ($("#metodo_pago_id").val() != "3") return;
+
+            let total = parseFloat($("#costo_total").val()) || 0;
+            let digital = parseFloat($(this).val()) || 0;
+
+            if (digital > total) digital = total;
+
+            $("#pago_efectivo").val((total - digital).toFixed(2));
+        });
+
+        $("#metodo_pago_id").on("change", function () {
+            refrescarPagos();
+        });
+
+        refrescarPagos();
+
         $(document).on("change", ".tipo", function () {
             let tr = $(this).closest("tr");
             let tipoId = $(this).val();
@@ -179,18 +296,6 @@ $(function () {
             calcularCostoFila(tr, tipo);
         });
 
-        function recalcularTotal() {
-            let total = 0;
-
-            $("#tablaDetalles tbody tr").each(function () {
-                let costo = parseFloat($(this).find(".costo").val()) || 0;
-                total += costo;
-            });
-
-            $("#total").val(total.toFixed(2));
-            $("#costo_total").val(total.toFixed(2));
-        }
-
         function calcularCostoFila(tr, tipo) {
             let peso = parseFloat(tr.find(".peso").val()) || 0;
 
@@ -207,6 +312,10 @@ $(function () {
             tr.find(".costo").val(costo.toFixed(2));
 
             recalcularTotal();
+
+            $(document).ready(function () {
+                $("#metodo_pago_id").trigger("change");
+            });
         }
 
         $(document).on("click", ".btnQuitar", function () {
@@ -214,25 +323,6 @@ $(function () {
             actualizarResumen();
             recalcularTotal();
         });
-
-        function actualizarResumen() {
-            let totalPeso = 0;
-            let totalBultos = 0;
-
-            $("#tablaDetalles tbody tr").each(function () {
-                let peso = parseFloat($(this).find(".peso").val()) || 0;
-                if (peso > 0) totalBultos++;
-                totalPeso += peso;
-            });
-
-            $("#peso_total").val(totalPeso.toFixed(2));
-            $("#cantidad_bultos").val(totalBultos);
-
-            let origenText = $("#origen option:selected").text() || "";
-            let destinoText = $("#destino option:selected").text() || "";
-            $("#origen").val(origenText);
-            $("#destino").val(destinoText);
-        }
 
         $(document).on(
             "input change",
@@ -259,21 +349,18 @@ $(function () {
             }
         });
 
-        function updateRazonSocial() {
-            let tipo = $("#tipo_documento_id").val();
-            if (tipo == "1") {
-                // Boleta
-                $("#razon_social").val(
-                    $("#emisor_nombres").val() +
-                        " " +
-                        $("#emisor_apellidos").val()
-                );
-            }
+        function debounce(fn, delay) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => fn.apply(this, args), delay);
+            };
         }
 
-        // Llamar al completar búsqueda del emisor
-        function buscarPersona(tipo) {
-            let doc = $(`#${tipo}_documento`).val();
+        function buscarPersona(tipo, campoDocumento = null) {
+            let doc = campoDocumento
+                ? $(campoDocumento).val()
+                : $(`#${tipo}_documento`).val();
             if (!doc) return;
 
             $.get(`/buscar?documento=${doc}`, function (res) {
@@ -293,13 +380,40 @@ $(function () {
                     $(`#${tipo}_direccion`).val(res.direccion || "");
                 }
 
-                if (tipo === "emisor") updateRazonSocial(); // actualizar nombre en boleta
+                if (tipo === "emisor") updateRazonSocial();
+
+                if (campoDocumento) {
+                    $("#numero_documento_id").val(doc);
+                }
             }).fail(function (err) {
                 alert(err.responseJSON?.error || "Error al buscar documento");
             });
         }
 
-        // también cuando cambie tipo de documento
+        function updateRazonSocial() {
+            let tipo = $("#tipo_documento_id").val();
+            if (tipo == "1") {
+                $("#razon_social").val(
+                    $("#emisor_nombres").val() +
+                        " " +
+                        $("#emisor_apellidos").val()
+                );
+            }
+        }
+
+        $("#emisor_documento").on(
+            "blur",
+            debounce(() => buscarPersona("emisor"), 300)
+        );
+        $("#receptor_documento").on(
+            "blur",
+            debounce(() => buscarPersona("receptor"), 300)
+        );
+        $("#numero_documento_id").on(
+            "blur",
+            debounce(() => buscarPersona("emisor", "#numero_documento_id"), 300)
+        );
+
         $("#tipo_documento_id").on("change", updateRazonSocial);
 
         $("#numero_documento_id").on("blur", function () {
@@ -326,29 +440,6 @@ $(function () {
             });
         });
 
-        function actualizarMetodosPago() {
-            let metodoId = parseInt($("#metodo_pago_id").val());
-
-            if (metodoId === 1) {
-                $("#pago_efectivo").closest(".row").show();
-                $("#billetera_id").closest(".row").hide();
-                $("#pago_billetera").closest(".row").hide();
-            }
-
-            if (metodoId === 2) {
-                $("#pago_efectivo").closest(".row").hide();
-                $("#billetera_id").closest(".row").show();
-                $("#pago_billetera").closest(".row").show();
-            }
-
-            if (metodoId === 3) {
-                $("#pago_efectivo").closest(".row").show();
-                $("#billetera_id").closest(".row").show();
-                $("#pago_billetera").closest(".row").show();
-            }
-            calcularTotalPago();
-        }
-
         function calcularTotalPago() {
             let total = parseFloat($("#total").val()) || 0;
             let efectivo = parseFloat($("#pago_efectivo").val()) || 0;
@@ -360,27 +451,49 @@ $(function () {
 
             $("#costo_total").val(total.toFixed(2));
         }
-        $("#metodo_pago_id").on("change", function () {
-            let metodo = $(this).val();
+        function refrescarPagos() {
+            let metodo = parseInt($("#metodo_pago_id").val());
+            let total = parseFloat($("#costo_total").val()) || 0;
 
-            $(".grupo-efectivo").hide();
-            $(".grupo-digital").hide();
-            $(".grupo-mixto").hide();
+            $("#pago_efectivo").closest(".row").hide();
+            $("#billetera_id").closest(".row").hide();
+            $("#pago_billetera").closest(".row").hide();
 
-            $(".grupo-efectivo input").not("#total_venta").val("");
-            $(".grupo-digital input").not("#total_venta").val("");
-            $(".grupo-mixto input").not("#total_venta").val("");
+            $("#pago_efectivo").prop("readonly", false);
+            $("#pago_billetera").prop("readonly", false);
 
-            if (metodo == 1) {
-                $(".grupo-efectivo").show();
-            } else if (metodo == 2) {
-                $(".grupo-digital").show();
-            } else if (metodo == 3) {
-                $(".grupo-mixto").show();
+            if (metodo === 1) {
+                $("#pago_efectivo").closest(".row").show();
+                $("#pago_efectivo").val(total.toFixed(2));
+                $("#pago_efectivo").prop("readonly", true);
+                $(".grupo_costo_total").attr("hidden", true);
+            } else if (metodo === 2) {
+                $("#billetera_id").closest(".row").show();
+                $("#pago_billetera").closest(".row").show();
+                $("#pago_billetera").val(total.toFixed(2));
+                $("#pago_billetera").prop("readonly", true);
+                $(".grupo_costo_total").attr("hidden", true);
+            } else if (metodo === 3) {
+                $("#pago_efectivo").closest(".row").show();
+                $("#billetera_id").closest(".row").show();
+                $("#pago_billetera").closest(".row").show();
+                $(".grupo_costo_total").removeAttr("hidden");
 
-                let totalVenta = parseFloat($("#total_venta").val());
-                $("#monto_mixto_1").val(totalVenta.toFixed(2));
+                let pagoE = parseFloat($("#pago_efectivo").val()) || 0;
+                if (pagoE > total) pagoE = total;
+
+                $("#pago_efectivo").val(pagoE.toFixed(2));
+                $("#pago_billetera").val((total - pagoE).toFixed(2));
             }
+        }
+
+        $("#metodo_pago_id").on("change", refrescarPagos);
+
+        $(document).on("input", ".costo", function () {
+            recalcularTotal();
+            refrescarPagos();
         });
+
+        refrescarPagos();
     });
 });

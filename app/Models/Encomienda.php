@@ -22,6 +22,8 @@ class Encomienda extends Model
         'total',
         'fecha_creacion',
         'fecha_procesado',
+        'origen',
+        'destino',
     ];
 
     protected $casts = [
@@ -49,5 +51,14 @@ class Encomienda extends Model
         static::deleting(function ($encomienda) {
             $encomienda->detalles()->delete();
         });
+    }
+    public function origen()
+    {
+        return $this->hasMany(Sucursal::class, 'origen');
+    }
+
+    public function destino()
+    {
+        return $this->hasMany(Sucursal::class, 'destino');
     }
 }

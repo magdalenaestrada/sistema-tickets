@@ -23,8 +23,9 @@ return new class extends Migration {
                 ->comment("Estado de la caja: PE => Pendiente, PA => Pagado")
                 ->default("PA")
                 ->index();
+            $table->foreignId('billetera_id')->nullable()->constrained('billeteras_digitales');
             $table->dateTime("fecha_creacion");
-            $table->dateTime("fecha_fecha_pago")->nullable();
+            $table->dateTime("fecha_pago")->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

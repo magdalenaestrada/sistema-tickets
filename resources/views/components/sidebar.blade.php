@@ -105,6 +105,22 @@
                       </ul>
                   </div>
               </li>
+              <li class="nav-item nav-category">CAJA</li>
+              <li class="nav-item">
+                  <a class="nav-link" data-bs-toggle="collapse" href="#caja" role="button" aria-expanded="false"
+                      aria-controls="caja">
+                      <i class="link-icon" data-lucide="newspaper"></i>
+                      <span class="link-title">Caja</span>
+                      <i class="link-arrow" data-lucide="chevron-down"></i>
+                  </a>
+                  <div class="collapse" id="caja">
+                      <ul class="nav sub-menu">
+                          <li class="nav-item">
+                              <a href="{{ route('caja.index') }}" class="nav-link">Caja</a>
+                          </li>
+                      </ul>
+                  </div>
+              </li>
           </ul>
       </div>
   </nav>

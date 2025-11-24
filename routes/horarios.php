@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\HorarioController;
 
-Route::prefix('horarios')->name('horarios.')->group(function () {
+Route::middleware(['auth'])->prefix('horarios')->name('horarios.')->group(function () {
     Route::get('/', [HorarioController::class, 'index'])->name('index');
     Route::get('/datatable', [HorarioController::class, 'datatable'])->name('datatable');
     Route::post('/', [HorarioController::class, 'guardar'])->name('guardar');
