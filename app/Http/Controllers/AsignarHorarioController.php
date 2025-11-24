@@ -13,7 +13,7 @@ class AsignarHorarioController extends Controller
     public function index()
     {
         $horarios = Horario::all();
-        $empleados = Empleado::where('cargo_id', 2)->get(); // solo conductores
+        $empleados = Empleado::where('cargo_id', 16)->get(); // solo conductores
         $vehiculos = Vehiculo::all();
         return view('asignaciones.index', compact('horarios', 'empleados', 'vehiculos'));
     }
