@@ -58,6 +58,8 @@ class EncomiendaService
                 $ventaData['servicio_model'],
                 $ventaData['servicio_id']
             );
+
+            return $encomienda;
         });
     }
 }

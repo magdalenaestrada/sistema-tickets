@@ -1,4 +1,62 @@
 $(function () {
+    $(document).on("click", ".imprimir", function () {
+        let id = $(this).data("id");
+        let url = "/encomiendas/ticket/" + id;
+        let ventana = window.open(
+            url,
+            "_blank",
+            "width=420,height=650,noopener,noreferrer"
+        );
+        let timer = setInterval(function () {
+            if (ventana.document.readyState === "complete") {
+                ventana.print();
+                clearInterval(timer);
+            }
+        }, 200);
+    });
+
+    $(document).on("click", ".editar", function () {
+        let id = $(this).data("id");
+        window.location.href = `/encomiendas/editar/${id}`;
+    });
+
+    $(document).on("click", ".anular", function () {
+        if (!confirm("¿Seguro de anular esta encomienda?")) return;
+        let id = $(this).data("id");
+        $.post(
+            `/encomiendas/anular/${id}`,
+            { _token: csrf_token },
+            function (res) {
+                if (res.success) {
+                    tabla.ajax.reload();
+                }
+            }
+        ).fail(function () {
+            alert("Error al anular la encomienda");
+        });
+    });
+
+    $("#distrito_id").on("change", function () {
+        let distritoId = $(this).val();
+
+        $("#destino").empty().append(`<option value="">Cargando...</option>`);
+
+        $.get(`/ubigeos/sucursales/${distritoId}`, function (sucursales) {
+            let $destino = $("#destino");
+            $destino
+                .empty()
+                .append(
+                    `<option value="" disabled selected>Seleccione una sucursal</option>`
+                );
+
+            sucursales.forEach((s) => {
+                $destino.append(
+                    `<option value="${s.id}">${s.nombre_comercial}</option>`
+                );
+            });
+        });
+    });
+
     $("#origen").on("change", function () {
         let origen = $(this).val();
         $("#destino option").show();
@@ -17,10 +75,20 @@ $(function () {
             { data: "id" },
             { data: "emisor" },
             { data: "receptor" },
+            { data: "origen" },
+            { data: "destino" },
             { data: "total" },
-            { data: "estado" },
             { data: "acciones", orderable: false, searchable: false },
         ],
+        order: [[0, "desc"]],
+        responsive: false,
+        scrollX: true,
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        },
+        drawCallback: function () {
+            lucide.createIcons();
+        },
     });
 
     $("#btnNueva").click(() => {
@@ -105,8 +173,8 @@ $(function () {
             data: data,
             success: function (res) {
                 if (res.success) {
-                    $("#modalEncomienda").modal("hide");
-                    tabla.ajax.reload();
+                    localStorage.setItem("ticket_encomienda_id", res.ticket_id);
+                    window.location.href = res.redirect;
                 }
             },
             error: function (err) {

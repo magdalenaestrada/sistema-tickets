@@ -57,7 +57,8 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Ubigeo</label>
-                                <input type="text" class="form-control" id="emisor_ubigeo" name="emisor_ubigeo">
+                                <input type="text" class="form-control" id="emisor_ubigeo" name="emisor_ubigeo"
+                                    value="{{ $user->sucursal->distrito->ubigeo }}"readonly>
                             </div>
                         </div>
                     </div>
@@ -109,17 +110,52 @@
                                 <input type="text" class="form-control" id="receptor_telefono" name="receptor_telefono">
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label">Correo electrónico</label>
                                 <input type="text" class="form-control" id="receptor_direccion"
                                     name="receptor_direccion">
                             </div>
+                        </div>
 
-                            <div class="col-md-2">
+                        <div class="row g-2 mt-2">
+                            <div class="col-md-3">
+                                <label class="form-label">DEPARTAMENTO</label>
+                                <select name="receptor_departamento_id" id="departamento_id" class="form-select"
+                                    required>
+                                    <option value="">Seleccione</option>
+                                    @foreach ($departamentos as $departamento)
+                                        <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">PROVINCIA</label>
+                                <select name="receptor_provincia_id" id="provincia_id" class="form-select" required>
+                                    <option value="">Seleccione</option>
+                                    @foreach ($provincias as $provincia)
+                                        <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">DISTRITO</label>
+                                <select name="receptor_distrito_id" id="distrito_id" class="form-select" required>
+                                    <option value="">Seleccione</option>
+                                    @foreach ($distritos as $distrito)
+                                        <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
                                 <label class="form-label">Ubigeo</label>
-                                <input type="text" class="form-control" id="receptor_ubigeo" name="receptor_ubigeo">
+                                <input type="text" class="form-control" id="receptor_ubigeo" name="receptor_ubigeo"
+                                    readonly>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -131,17 +167,21 @@
 
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label">Origen</label>
-                                <select id="origen" class="form-select" name="origen">
-                                    <option value="" disabled selected>Seleccione una sucursal</option>
+                                <label class="form-label">SUCURSAL ORIGEN</label>
+                                <select id="origen" class="form-select" name="origen" disabled>
+                                    <option value="" disabled>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
-                                        <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
+                                        <option value="{{ $s->id }}"
+                                            @if ($s->id == $user->sucursal_id) selected @endif>
+                                            {{ $s->nombre_comercial }}
+                                        </option>
                                     @endforeach
                                 </select>
+
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Destino</label>
+                                <label class="form-label">SUCURSAL DESTINO</label>
                                 <select id="destino" class="form-select" name="destino">
                                     <option value="" disabled selected>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
@@ -202,40 +242,21 @@
                                 <input type="number" id="cantidad_bultos" class="form-control" readonly>
                             </div>
                         </div>
-
-                        <div class="row mb-2">
-                            <label for="origen" class="col-6 col-form-label">Origen</label>
-                            <div class="col-6">
-                                <input type="text" id="origen" name="origen" class="form-control" readonly>
-                            </div>
-                        </div>
-
-                        <div class="row mb-2">
-                            <label for="destino" class="col-6 col-form-label">Destino</label>
-                            <div class="col-6">
-                                <input type="text" id="destino" name="destino" class="form-control" readonly>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Datos Documento -->
                 <div class="card mb-3">
                     <div class="card-body">
-
-                        <div class="row mb-2">
+                        <div class="mb-3">
                             <label for="tipo_documento_factura_id" class="col-6 col-form-label">Tipo de documento</label>
-                            <div class="col-6">
-                                <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
-                                    class="form-select">
-                                    @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
-                                        <option value="{{ $tipo_documento_factura->id }}"
-                                            @if ($index === 1) selected @endif>
-                                            {{ $tipo_documento_factura->descripcion }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            <select name="tipo_documento_factura_id" id="tipo_documento_factura_id" class="form-select">
+                                @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
+                                    <option value="{{ $tipo_documento_factura->id }}"
+                                        @if ($index === 1) selected @endif>
+                                        {{ $tipo_documento_factura->descripcion }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <div class="mb-3">

@@ -190,4 +190,157 @@ $(document).ready(function () {
         if ($("#punto_destino_id").val() === origen)
             $("#punto_destino_id").val("");
     });
+
+    $(document).ready(function () {
+        const modalPuntos = new bootstrap.Modal($("#modalPuntos")[0]);
+        let horarioIdActivo = null;
+        let puntoEditActivo = null;
+
+        $("#tablaHorarios").on("click", ".ver-puntos", function () {
+            horarioIdActivo = $(this).data("id");
+            puntoEditActivo = null;
+            $("#formPunto")[0].reset();
+            cargarPuntos(horarioIdActivo);
+            modalPuntos.show();
+        });
+
+        function cargarPuntos(horarioId) {
+            $("#tablaPuntos tbody").empty();
+            $("#tablaTramos tbody").empty();
+
+            $.get(`/horarios/${horarioId}/puntos`, function (puntos) {
+                puntos.sort((a, b) => b.orden - a.orden);
+
+                // Puntos
+                puntos.forEach((p) => {
+                    $("#tablaPuntos tbody").append(`
+        <tr>
+            <td>${p.origen ? p.origen.nombre_comercial : ""}</td>
+            <td>${p.destino ? p.destino.nombre_comercial : ""}</td>
+<td>${parseFloat(p.costo_acumulado).toFixed(2)}</td>
+            <td>
+                <button class="btn btn-warning btn-xs editarPunto" data-id="${
+                    p.id
+                }">Editar</button>
+                <button class="btn btn-danger btn-xs eliminarPunto" data-id="${
+                    p.id
+                }">Eliminar</button>
+            </td>
+        </tr>
+    `);
+                });
+
+                for (let i = 0; i < puntos.length; i++) {
+                    let origen =
+                        i === 0
+                            ? puntos[i].origen.nombre_comercial
+                            : puntos[i - 1].destino.nombre_comercial;
+                    let destino = puntos[i].destino.nombre_comercial;
+                    let costoTramo =
+                        i === 0
+                            ? puntos[i].costo_acumulado
+                            : puntos[i].costo_acumulado -
+                              puntos[i - 1].costo_acumulado;
+
+                    $("#tablaTramos tbody").append(`
+        <tr>
+            <td>${origen}</td>
+            <td>${destino}</td>
+            <td>${costoTramo.toFixed(2)}</td>
+        </tr>
+    `);
+                }
+
+                // Excluir origen del select
+                const origenNombre =
+                    puntos.length > 0 ? puntos[0].origen.nombre_comercial : "";
+                $("#destino_id option").each(function () {
+                    if ($(this).text() === origenNombre) $(this).hide();
+                    else $(this).show();
+                });
+            });
+        }
+
+        // Guardar o editar punto
+        $("#formPunto").submit(function (e) {
+            e.preventDefault();
+            const formData = $(this).serialize();
+            let url = puntoEditActivo
+                ? `/horarios/${horarioIdActivo}/puntos/${puntoEditActivo}`
+                : `/horarios/${horarioIdActivo}/puntos`;
+            let method = puntoEditActivo ? "PUT" : "POST";
+
+            $.ajax({
+                url: url,
+                type: method,
+                data: formData,
+                success: function (res) {
+                    if (res.success) {
+                        cargarPuntos(horarioIdActivo);
+                        $("#formPunto")[0].reset();
+                        puntoEditActivo = null;
+                        Swal.fire(
+                            "Éxito",
+                            "Punto guardado correctamente",
+                            "success"
+                        );
+                    }
+                },
+                error: function (xhr) {
+                    let errors = xhr.responseJSON?.errors;
+                    let msg = errors
+                        ? Object.values(errors).flat().join("<br>")
+                        : "Error al procesar la solicitud";
+                    Swal.fire("Error", msg, "error");
+                },
+            });
+        });
+
+        // Editar punto
+        $("#tablaPuntos").on("click", ".editarPunto", function () {
+            puntoEditActivo = $(this).data("id");
+            $.get(
+                `/horarios/${horarioIdActivo}/puntos/${puntoEditActivo}`,
+                function (p) {
+                    $("#destino_id").val(p.destino_id);
+                    $("#costo_acumulado").val(p.costo_acumulado);
+                }
+            );
+        });
+
+        // Eliminar punto
+        $("#tablaPuntos").on("click", ".eliminarPunto", function () {
+            const puntoId = $(this).data("id");
+            Swal.fire({
+                title: "¿Eliminar punto?",
+                text: "No se podrá revertir",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/horarios/${horarioIdActivo}/puntos/${puntoId}`,
+                        type: "DELETE",
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                                "content"
+                            ),
+                        },
+                        success: function (res) {
+                            if (res.success) {
+                                cargarPuntos(horarioIdActivo);
+                                Swal.fire(
+                                    "Eliminado",
+                                    "Punto eliminado correctamente",
+                                    "success"
+                                );
+                            }
+                        },
+                    });
+                }
+            });
+        });
+    });
 });

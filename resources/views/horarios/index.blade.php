@@ -32,7 +32,7 @@
     </div>
 
     @include('horarios.modals.create')
-    ```
+    @include('horarios.modals.puntos')
 @endsection
 
 @push('scripts')

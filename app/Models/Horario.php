@@ -41,4 +41,13 @@ class Horario extends Model
     {
         return $this->belongsTo(TipoVehiculo::class, "tipo_vehiculo_id");
     }
+    public function puntos()
+    {
+        return $this->hasMany(HorarioPunto::class)->orderBy('orden');
+    }
+
+    public function tramos()
+    {
+        return $this->hasMany(HorarioTramo::class);
+    }
 }

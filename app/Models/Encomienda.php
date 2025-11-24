@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Encomienda extends Model
 {
@@ -52,13 +53,20 @@ class Encomienda extends Model
             $encomienda->detalles()->delete();
         });
     }
-    public function origen()
+    public function sucursal_origen()
     {
-        return $this->hasMany(Sucursal::class, 'origen');
+        return $this->belongsTo(Sucursal::class, 'origen', 'id');
     }
 
-    public function destino()
+    public function sucursal_destino()
     {
-        return $this->hasMany(Sucursal::class, 'destino');
+        return $this->belongsTo(Sucursal::class, 'destino', 'id');
     }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    use SoftDeletes;
 }

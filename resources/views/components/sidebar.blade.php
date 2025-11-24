@@ -78,6 +78,9 @@
                               <a href="{{ route('horarios.index') }}" class="nav-link">Horarios</a>
                           </li>
                           <li class="nav-item">
+                              <a href="{{ route('asignaciones.index') }}" class="nav-link">Asignaciones</a>
+                          </li>
+                          <li class="nav-item">
                               <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>
                           </li>
                       </ul>

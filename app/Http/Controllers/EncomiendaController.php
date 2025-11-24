@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\BilleteraDigital;
+use App\Models\Departamento;
+use App\Models\Distrito;
 use App\Models\Encomienda;
 use App\Models\MetodoPago;
 use App\Models\Persona;
+use App\Models\Provincia;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
@@ -31,13 +34,17 @@ class EncomiendaController extends Controller
     public function formulario()
     {
         Carbon::now();
+        $user = Auth::user();
+        $departamentos = Departamento::select('id', 'nombre')->get();
+        $provincias = Provincia::select('id', 'nombre')->get();
+        $distritos = Distrito::select('id', 'nombre')->get();
         $metodos_pago = MetodoPago::all();
         $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
-        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales'));
+        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales', 'departamentos', 'provincias', 'distritos'));
     }
     public function datatable()
     {
@@ -46,17 +53,22 @@ class EncomiendaController extends Controller
         return DataTables::of($data)
             ->addColumn('emisor', fn($e) => $e->emisor->nombres . ' ' . $e->emisor->apellidos)
             ->addColumn('receptor', fn($e) => $e->receptor->nombres . ' ' . $e->receptor->apellidos)
+            ->addColumn('origen', fn($e) => $e->sucursal_origen->nombre_comercial)
+            ->addColumn('destino', fn($e) => $e->sucursal_destino->nombre_comercial)
             ->addColumn('acciones', function ($e) {
                 return '
-                    <button class="btn btn-secondary btn-xs ver" data-id="' . $e->id . '">
-                        <i class="link-icon" data-lucide="eye"></i>
+                   <button class="btn btn-info imprimir" data-id="' . $e->id . '">
+                   <i class="link-icon" data-lucide="printer"></i>
+                   </button>
+
+                    <button class="btn btn-warning editar" data-id="' . $e->id . '">
+                    <i class="link-icon" data-lucide="pencil"></i>
                     </button>
-                    <button class="btn btn-warning btn-xs editar" data-id="' . $e->id . '">
-                        <i class="link-icon" data-lucide="pen"></i>
+
+                    <button class="btn btn-danger anular" data-id="' . $e->id . '">
+                    <i class="link-icon" data-lucide="trash-2"></i>
                     </button>
-                    <button class="btn btn-danger btn-xs anular" data-id="' . $e->id . '">
-                        <i class="link-icon" data-lucide="trash-2"></i>
-                    </button>
+
                 ';
             })
             ->rawColumns(['acciones'])
@@ -110,13 +122,13 @@ class EncomiendaController extends Controller
             );
 
             $user_id = Auth::id();
-           
+
             $encomienda = $encomiendaService->crearEncomienda($request, $emisor->id, $receptor->id, $user_id);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Encomienda registrada correctamente',
-                'data' => $encomienda
+                'redirect' => route('encomiendas.index'),
+                'ticket_id' => $encomienda->id
             ]);
         } catch (\Throwable $th) {
             \Log::error('Error al guardar encomienda: ' . $th->getMessage());
@@ -136,12 +148,18 @@ class EncomiendaController extends Controller
 
     public function anular($id)
     {
-        $encomienda = Encomienda::findOrFail($id);
-        $encomienda->update([
-            'estado' => 'P',
-            'fecha_procesado' => now(),
-        ]);
+        $e = Encomienda::findOrFail($id);
+        $e->estado = 'X';  // ❌ ANULADO
+        $e->save();
 
         return response()->json(['success' => true]);
+    }
+
+
+    public function ticket($id)
+    {
+        $encomienda = Encomienda::with(['emisor', 'receptor', 'detalles', 'sucursal_origen', 'sucursal_destino'])->findOrFail($id);
+
+        return view('encomiendas.ticket', compact('encomienda'));
     }
 }

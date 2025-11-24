@@ -29,7 +29,6 @@ class HorarioController extends Controller
             ->addColumn('tipo_viaje', fn($h) => $h->tipo_viaje->descripcion)
             ->addColumn('origen', fn($h) => $h->punto_origen->nombre_comercial)
             ->addColumn('destino', fn($h) => $h->punto_destino->nombre_comercial)
-            ->addColumn('tipo_vehiculo', fn($h) => $h->tipo_vehiculo->descripcion)
             ->addColumn('acciones', function ($h) {
                 return '
                     <button class="btn btn-secondary btn-xs ver" data-id="' . $h->id . '">
@@ -41,6 +40,10 @@ class HorarioController extends Controller
                     <button class="btn btn-danger btn-xs eliminar" data-id="' . $h->id . '">
                         <i class="link-icon" data-lucide="trash-2"></i>
                     </button>
+                    <button class="btn btn-primary btn-xs ver-puntos" data-id="' . $h->id . '">
+    <i class="link-icon" data-lucide="map-pin-house"></i>
+</button>
+
                 ';
             })
             ->rawColumns(['acciones'])
@@ -53,7 +56,6 @@ class HorarioController extends Controller
             'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
             'punto_origen_id' => 'required|exists:sucursales,id',
             'punto_destino_id' => 'required|exists:sucursales,id',
-            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'costo_pasaje' => 'required|numeric',
             'hora_embarque' => 'required',
             'fecha_salida' => 'required|date',
@@ -66,7 +68,7 @@ class HorarioController extends Controller
 
     public function mostrar($id)
     {
-        $horario = Horario::with(['tipo_viaje', 'punto_origen', 'punto_destino', 'tipo_vehiculo'])->findOrFail($id);
+        $horario = Horario::with(['tipo_viaje', 'punto_origen', 'punto_destino'])->findOrFail($id);
         return response()->json($horario);
     }
 
@@ -76,7 +78,6 @@ class HorarioController extends Controller
             'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
             'punto_origen_id' => 'required|exists:sucursales,id',
             'punto_destino_id' => 'required|exists:sucursales,id',
-            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'costo_pasaje' => 'required|numeric',
             'hora_embarque' => 'required',
             'fecha_salida' => 'required|date',

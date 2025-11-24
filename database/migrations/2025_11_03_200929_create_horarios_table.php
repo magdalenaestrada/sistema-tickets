@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId("tipo_viaje_id")->constrained("tipos_viajes")->onDelete("cascade");
             $table->foreignId("punto_origen_id")->constrained("sucursales")->onDelete("cascade");
             $table->foreignId("punto_destino_id")->constrained("sucursales")->onDelete("cascade");
-            $table->foreignId("tipo_vehiculo_id")->constrained("tipo_vehiculos")->onDelete("cascade");
             $table->decimal('costo_pasaje', 8, 2);
             $table->time("hora_embarque");
             $table->date('fecha_salida');
