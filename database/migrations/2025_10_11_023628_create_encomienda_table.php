@@ -20,8 +20,8 @@ return new class extends Migration {
             $table->foreignId("distrito_id")->constrained("distritos");
             $table->foreignId("venta_id")->nullable()->constrained("ventas");
             $table
-                ->enum("estado", ["A", "P"])
-                ->comment("Estado de la caja: A => Activa, P => Procesado")
+                ->enum("estado", ["A", "P", "E"])
+                ->comment("Estado de la caja: A => Activa, P => Procesado , E=>Entregado")
                 ->default("A")
                 ->index();
             $table->decimal("total", 10, 2);

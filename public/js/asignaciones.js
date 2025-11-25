@@ -109,4 +109,22 @@ $(document).ready(function () {
             }
         });
     });
+
+    // Evitar que el segundo conductor muestre el mismo del primero
+    $("#primer_conductor").change(function () {
+        let seleccionado = $(this).val();
+
+        $("#segundo_conductor option").each(function () {
+            if ($(this).val() == seleccionado && seleccionado !== "") {
+                $(this).hide();
+            } else {
+                $(this).show();
+            }
+        });
+
+        // Si el segundo conductor es igual al primero, lo limpiamos
+        if ($("#segundo_conductor").val() == seleccionado) {
+            $("#segundo_conductor").val("");
+        }
+    });
 });

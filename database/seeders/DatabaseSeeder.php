@@ -32,10 +32,7 @@ class DatabaseSeeder extends Seeder
             MetodoPagoSeeder::class,
             TipoDocumentoFacturaSeeder::class,
             PersonaSeeder::class,
-            EmpresaSeeder::class,
-            SucursalesSeeder::class,
             UserSeeder::class,
-            TipoEncomiendaSeeder::class,
             TipoServicioSeeder::class,
             TipoMovimientoCajaSeeder::class,
         ]);

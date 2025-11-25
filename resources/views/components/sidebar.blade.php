@@ -105,6 +105,7 @@
                           <li class="nav-item">
                               <a href="{{ route('encomiendas.index') }}" class="nav-link">Ventas</a>
                           </li>
+                         
                       </ul>
                   </div>
               </li>

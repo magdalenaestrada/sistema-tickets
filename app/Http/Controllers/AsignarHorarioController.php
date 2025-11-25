@@ -27,9 +27,9 @@ class AsignarHorarioController extends Controller
                 'id' => $a->id,
                 'horario' => ($a->horario->tipo_viaje->descripcion ?? '-') . ' (' . ($a->horario->punto_origen->nombre_comercial ?? '-') . ' → ' . ($a->horario->punto_destino->nombre_comercial ?? '-') . ')',
                 'horario_id' => $a->horario_id,
-                'primer_conductor' => $a->primerConductor->nombres . ' ' . $a->primerConductor->apellidos,
-                'segundo_conductor' => $a->segundoConductor ? $a->segundoConductor->nombres . ' ' . $a->segundoConductor->apellidos : null,
-                'vehiculo' => $a->vehiculoObj ? $a->vehiculoObj->placa . ' - ' . $a->vehiculoObj->marca : null,
+                'primer_conductor' => $a->primerConductor->persona->nombres . ' ' . $a->primerConductor->persona->apellidos,
+                'segundo_conductor' => $a->segundoConductor ? $a->segundoConductor->persona->nombres . ' ' . $a->segundoConductor->persona->apellidos : null,
+                'vehiculo' => $a->vehiculoObj ? $a->vehiculoObj->numero_placa . ' - ' . $a->vehiculoObj->tipo_vehiculo->descripcion : null,
             ];
         });
 
@@ -42,7 +42,6 @@ class AsignarHorarioController extends Controller
             'horario_id' => 'required|exists:horarios,id',
             'primer_conductor' => 'required|exists:empleados,id',
             'vehiculo' => 'nullable|exists:vehiculos,id',
-            'segundo_conductor' => 'nullable|exists:empleados,id',
         ]);
 
         AsignarHorario::create($request->all());

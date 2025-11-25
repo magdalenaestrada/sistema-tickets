@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId("tipo_vehiculo_id")->constrained("tipo_vehiculos");
             $table->string("numero_placa", 15)->unique()->index();
-            $table->unsignedInteger("cantidad_conductores")->index();
+            $table->unsignedInteger("cantidad_conductores")->nullable();
             $table->enum("estado", ["A", "I"])->default("A")->index();
             $table->dateTime("fecha_creacion");
             $table->dateTime("fecha_inactivacion")->nullable();

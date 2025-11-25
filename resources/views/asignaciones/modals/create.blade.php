@@ -17,7 +17,9 @@
                             <option value="">Seleccione un horario</option>
                             @foreach ($horarios as $horario)
                                 <option value="{{ $horario->id }}">
-                                    {{ $horario->tipo_viaje->descripcion ?? '-' }}: {{ $horario->punto_origen->nombre_comercial ?? '-' }} → {{ $horario->punto_destino->nombre_comercial ?? '-' }}
+                                    {{ $horario->tipo_viaje->descripcion ?? '-' }}:
+                                    {{ $horario->punto_origen->nombre_comercial ?? '-' }} →
+                                    {{ $horario->punto_destino->nombre_comercial ?? '-' }}
                                 </option>
                             @endforeach
                         </select>
@@ -29,7 +31,8 @@
                         <select name="primer_conductor" id="primer_conductor" class="form-select" required>
                             <option value="">Seleccione un conductor</option>
                             @foreach ($empleados as $empleado)
-                                <option value="{{ $empleado->id }}">{{ $empleado->nombres }} {{ $empleado->apellidos }}</option>
+                                <option value="{{ $empleado->id }}">{{ $empleado->persona->nombres }}
+                                    {{ $empleado->persona->apellidos }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -44,7 +47,8 @@
                         <select name="segundo_conductor" id="segundo_conductor" class="form-select" disabled>
                             <option value="">Seleccione un conductor</option>
                             @foreach ($empleados as $empleado)
-                                <option value="{{ $empleado->id }}">{{ $empleado->nombres }} {{ $empleado->apellidos }}</option>
+                                <option value="{{ $empleado->id }}">{{ $empleado->persona->nombres }}
+                                    {{ $empleado->persona->apellidos }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -55,7 +59,8 @@
                         <select name="vehiculo" id="vehiculo" class="form-select">
                             <option value="">Seleccione un vehículo</option>
                             @foreach ($vehiculos as $vehiculo)
-                                <option value="{{ $vehiculo->id }}">{{ $vehiculo->placa }} - {{ $vehiculo->marca }}</option>
+                                <option value="{{ $vehiculo->id }}">{{ $vehiculo->numero_placa }} - {{ $vehiculo->tipo_vehiculo->descripcion }}
+                                </option>
                             @endforeach
                         </select>
                     </div>

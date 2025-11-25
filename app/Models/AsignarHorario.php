@@ -37,4 +37,8 @@ class AsignarHorario extends Model
     {
         return $this->belongsTo(Vehiculo::class, 'vehiculo');
     }
+    public function encomiendas()
+    {
+        return $this->hasMany(Encomienda::class, "asignacion_id");
+    }
 }
