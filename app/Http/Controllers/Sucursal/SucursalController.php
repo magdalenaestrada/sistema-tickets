@@ -14,16 +14,6 @@ use Illuminate\Support\Str;
 
 class SucursalController extends Controller
 {
-    public function index($empresa_id)
-    {
-        $empresa = Empresa::findOrFail($empresa_id);
-        $departamentos = Departamento::select('id', 'nombre')->get();
-        $provincias = Provincia::select('id', 'nombre')->get();
-        $distritos = Distrito::select('id', 'nombre')->get();
-
-        return view('sucursales.index', compact('empresa', 'distritos', 'departamentos', 'provincias'));
-    }
-
     public function datatable($empresa_id)
     {
         $sucursales = Sucursal::where('empresa_id', $empresa_id)

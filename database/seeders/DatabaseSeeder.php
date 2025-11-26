@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Empresa;
 use App\Models\TipoLicencia;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -32,9 +33,13 @@ class DatabaseSeeder extends Seeder
             MetodoPagoSeeder::class,
             TipoDocumentoFacturaSeeder::class,
             PersonaSeeder::class,
+            EmpresaSeeder::class,
+            SucursalesSeeder::class,
             UserSeeder::class,
             TipoServicioSeeder::class,
             TipoMovimientoCajaSeeder::class,
+            AreasSeeder::class,
+            AreasSeeder::class,
         ]);
     }
 }

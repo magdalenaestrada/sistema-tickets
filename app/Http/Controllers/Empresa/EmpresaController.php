@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Empresa;
 
 use App\Http\Controllers\Controller;
+use App\Models\Departamento;
+use App\Models\Distrito;
 use App\Models\Empresa;
+use App\Models\Provincia;
 use Illuminate\Http\Request;
 use Str;
 use Yajra\DataTables\DataTables;
@@ -12,31 +15,13 @@ class EmpresaController extends Controller
 {
     public function index()
     {
-        return view('empresas.index');
+        $empresa = Empresa::first();
+        $departamentos = Departamento::select('id', 'nombre')->get();
+        $provincias = Provincia::select('id', 'nombre')->get();
+        $distritos = Distrito::select('id', 'nombre')->get();
+
+        return view('empresas.index', compact('empresa', 'departamentos', 'provincias', 'distritos'));
     }
-
-    public function datatable(Request $request)
-    {
-        $empresas = Empresa::select(['id', 'documento', 'razon_social', 'nombre_comercial', 'direccion']);
-
-        return DataTables::of($empresas)
-            ->addColumn('acciones', function ($empresa) {
-                return '
-                    <button class="btn btn-secondary btn-xs ver" data-id="' . $empresa->id . '">
-                        <i class="link-icon" data-lucide="eye"></i> 
-                    </button>
-                    <button class="btn btn-warning btn-xs editar" data-id="' . $empresa->id . '">
-                        <i class="link-icon" data-lucide="pen"></i> 
-                    </button>
-                    <button class="btn btn-primary btn-xs sucursales" data-id="' . $empresa->id . '">
-                        <i class="link-icon" data-lucide="building-2"></i> 
-                    </button>
-                ';
-            })
-            ->rawColumns(['acciones'])
-            ->make(true);
-    }
-
     public function guardar(Request $request)
     {
         $validated = $request->validate([

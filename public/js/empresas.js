@@ -1,96 +1,84 @@
-$(function () {
-    // =======================
-    // 🧾 Inicializar DataTable
-    // =======================
+$(document).ready(function () {
+    const empresaId = $("#empresa_id").val();
 
-    let tabla = $("#tablaEmpresas").DataTable({
-        ajax: "/empresas/datatable",
-        columns: [
-            { title: "ID", data: "id" },
-            { title: "Documento", data: "documento" },
-            { title: "Razón Social", data: "razon_social" },
-            { title: "Nombre Comercial", data: "nombre_comercial" },
-            { title: "Dirección", data: "direccion" },
-            {
-                title: "Acciones",
-                data: "acciones",
-                orderable: false,
-                searchable: false,
+    // SOLO los inputs de texto, excepto _token y empresa_id
+    const inputs = $(
+        "#formEmpresa input[type='text'], #formEmpresa input[type='password']"
+    );
+
+    const btnGuardar = $("#btnGuardar");
+    const btnEditar = $("#btnEditar");
+
+    // Si existe empresa → bloquear inputs
+    if (empresaId) {
+        disableInputs();
+        btnGuardar.addClass("d-none");
+        btnEditar.removeClass("d-none");
+    }
+
+    // Botón editar → habilitar inputs
+    btnEditar.on("click", function () {
+        enableInputs();
+        btnEditar.addClass("d-none");
+        btnGuardar.removeClass("d-none");
+    });
+
+    // Guardar empresa
+    $("#formEmpresa").on("submit", function (e) {
+        e.preventDefault();
+
+        let id = $("#empresa_id").val();
+        let url = id ? `/empresas/${id}` : `/empresas`;
+        let method = id ? "PUT" : "POST";
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: url,
+            type: method,
+            data: formData,
+            success: function (res) {
+                if (res.success) {
+                    // Si es nuevo → recargar
+                    if (!id) {
+                        $("#empresa_id").val(res.empresa.id);
+                        location.reload();
+                    }
+
+                    // Bloquear inputs
+                    disableInputs();
+                    btnGuardar.addClass("d-none");
+                    btnEditar.removeClass("d-none");
+
+                    Swal.fire({
+                        icon: "success",
+                        title: "Guardado",
+                        text: "Los datos se guardaron correctamente",
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
+                }
             },
-        ],
-        responsive: false,
-        scrollX: true,
-        language: {
-            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-        },
-        drawCallback: function () {
-            lucide.createIcons();
-        },
-    });
-
-    // =======================
-    // ➕ Nuevo registro
-    // =======================
-    $("#btnNuevaEmpresa").click(function () {
-        $("#formEmpresa")[0].reset();
-        $("#empresa_id").val("");
-        $("#usuario_facturacion").val("");
-        $("#contrasena_facturacion").val("");
-        $("#modalTitulo").text("Registrar Empresa");
-        $("#btnGuardarEmpresa").text("Guardar");
-        $("#modalEmpresa").modal("show");
-    });
-
-    // =======================
-    // ✏️ Editar registro
-    // =======================
-    $("#tablaEmpresas").on("click", ".editar", function () {
-        const id = $(this).data("id");
-        $.get(`/empresas/${id}`, function (data) {
-            $("#empresa_id").val(data.id);
-            $("#documento").val(data.documento);
-            $("#razon_social").val(data.razon_social);
-            $("#nombre_comercial").val(data.nombre_comercial);
-            $("#direccion").val(data.direccion);
-            $("#usuario_facturacion").val(data.usuario_facturacion);
-            $("#contrasena_facturacion").val(data.contrasena_facturacion);
-            $("#modalTitulo").text("Editar Empresa");
-            $("#btnGuardarEmpresa").text("Actualizar");
-            $("#modalEmpresa").modal("show");
+            error: function (xhr) {
+                console.error(xhr);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "No se pudo guardar la empresa.",
+                });
+            },
         });
     });
 
-    // =======================
-    // 👁️ Ver registro
-    // =======================
-    $("#tablaEmpresas").on("click", ".ver", function () {
-        const id = $(this).data("id");
+    // FUNCIONES
+    function disableInputs() {
+        inputs.prop("disabled", true);
+    }
 
-        $.get(`/empresas/${id}`, function (data) {
-            Swal.fire({
-                title: "Detalles de Empresa",
-                html: `
-                <div style="text-align: left;">
-                    <b> Documento:</b> ${data.documento}<br>
-                    <b> Razón Social:</b> ${data.razon_social}<br>
-                    <b> Nombre Comercial:</b> ${
-                        data.nombre_comercial || "-"
-                    }<br>
-                    <b> Dirección:</b> ${data.direccion || "-"}
-                </div>
-            `,
-                icon: "info",
-                confirmButtonText: "Cerrar",
-                customClass: {
-                    popup: "swal-left-text",
-                },
-            });
-        });
-    });
+    function enableInputs() {
+        inputs.prop("disabled", false);
+    }
 
-    // =======================
-    // 🔍 Buscar RUC o DNI
-    // =======================
+    // Buscar RUC
     $("#btnBuscarRuc").on("click", function () {
         const documento = $("#documento").val();
 
@@ -125,13 +113,11 @@ $(function () {
                 }
 
                 if (data.razon_social) {
-                    $('input[name="razon_social"]').val(data.razon_social);
-                    $('input[name="nombre_comercial"]').val(
-                        data.nombre_comercial || ""
-                    );
-                    $('input[name="direccion"]').val(data.direccion || "");
+                    $("#razon_social").val(data.razon_social);
+                    $("#nombre_comercial").val(data.nombre_comercial || "");
+                    $("#direccion").val(data.direccion || "");
                 } else if (data.nombres) {
-                    $('input[name="razon_social"]').val(
+                    $("#razon_social").val(
                         `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`
                     );
                 } else {
@@ -153,66 +139,9 @@ $(function () {
             complete: function () {
                 $("#btnBuscarRuc")
                     .prop("disabled", false)
-                    .html('<i class="link-icon" data-lucide="search"></i> ');
+                    .html('<i class="link-icon" data-lucide="search"></i>');
                 lucide.createIcons();
             },
         });
     });
-    // --- Guardar empresa (crear o actualizar) ---
-    $("#formEmpresa").on("submit", function (e) {
-        e.preventDefault(); // 🔴 evita la recarga de la página
-
-        let formData = $(this).serialize();
-        let id = $("#empresa_id").val();
-        let url = id ? `/empresas/${id}` : `/empresas`;
-        let method = id ? "PUT" : "POST";
-
-        $.ajax({
-            url: url,
-            type: method,
-            data: formData,
-            success: function (res) {
-                if (res.success) {
-                    $("#modalEmpresa").modal("hide");
-                    $("#tablaEmpresas").DataTable().ajax.reload();
-                    Swal.fire({
-                        icon: "success",
-                        title: "Guardado",
-                        text: res.message,
-                        timer: 2000,
-                        showConfirmButton: false,
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: res.message,
-                    });
-                }
-            },
-            error: function (xhr) {
-                console.error(xhr);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: "No se pudo guardar la empresa. Ver consola para más detalles.",
-                });
-            },
-        });
-    });
-});
-// Escucha los clics en los botones generados dinámicamente
-$(document).on("click", ".ver", function () {
-    const id = $(this).data("id");
-    console.log("Ver empresa ID:", id);
-});
-
-$(document).on("click", ".editar", function () {
-    const id = $(this).data("id");
-    console.log("Editar empresa ID:", id);
-});
-// Ir a sucursales de una empresa
-$("#tablaEmpresas").on("click", ".sucursales", function () {
-    const id = $(this).data("id");
-    window.location.href = `/sucursales/${id}`;
 });

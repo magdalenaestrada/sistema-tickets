@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('direccion');
             $table->string('usuario_facturacion')->nullable();
             $table->string('contrasena_facturacion')->nullable();
+            $table->string('logo')->nullable();
             $table->enum("estado", ["A", "I"])->default("A")->index();
             $table->softDeletes();
             $table->timestamps();

@@ -51,9 +51,7 @@
                         <input type="text" name="telefono" class="form-control" maxlength="9" pattern="\d{9}"
                             oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
                     </div>
-
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-success">Guardar</button>

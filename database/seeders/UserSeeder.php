@@ -14,6 +14,7 @@ class UserSeeder extends Seeder
        
         DB::table('users')->insert([
             'persona_id'       => 1,
+            'sucursal_id'       => 1,
             'documento'        => '71043591',
             'numero_licencia'  => null,
             'username'         => '71043591',
