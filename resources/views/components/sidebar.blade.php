@@ -33,9 +33,6 @@
                           <li class="nav-item">
                               <a href="{{ route('empresas.index') }}" class="nav-link">Mi empresa</a>
                           </li>
-                          <li class="nav-item">
-                              <a href="{{ route('areas.index') }}" class="nav-link">Áreas</a>
-                          </li>
                       </ul>
                   </div>
               </li>
@@ -61,7 +58,6 @@
                       </ul>
                   </div>
               </li>
-              <li class="nav-item nav-category">VEHICULOS</li>
               <li class="nav-item">
                   <a class="nav-link" data-bs-toggle="collapse" href="#vehiculos" role="button" aria-expanded="false"
                       aria-controls="vehiculos">
@@ -76,12 +72,6 @@
                           </li>
                           <li class="nav-item">
                               <a href="{{ route('horarios.index') }}" class="nav-link">Horarios</a>
-                          </li>
-                          <li class="nav-item">
-                              <a href="{{ route('asignaciones.index') }}" class="nav-link">Asignaciones</a>
-                          </li>
-                          <li class="nav-item">
-                              <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>
                           </li>
                       </ul>
                   </div>
@@ -103,9 +93,11 @@
                               <a href="{{ route('encomiendas.index') }}" class="nav-link">Encomiendas</a>
                           </li>
                           <li class="nav-item">
-                              <a href="{{ route('encomiendas.index') }}" class="nav-link">Ventas</a>
+                              <a href="{{ route('asignaciones.index') }}" class="nav-link">Asignaciones</a>
                           </li>
-                         
+                          <li class="nav-item">
+                              <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>
+                          </li>
                       </ul>
                   </div>
               </li>
