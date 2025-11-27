@@ -91,7 +91,7 @@
                           </li>
                           <li class="nav-item">
                               <a href="{{ route('encomiendas.index') }}" class="nav-link">Encomiendas</a>
-                          </li>
+                          </li>Ñ
                           <li class="nav-item">
                               <a href="{{ route('asignaciones.index') }}" class="nav-link">Asignaciones</a>
                           </li>

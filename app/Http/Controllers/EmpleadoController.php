@@ -25,13 +25,12 @@ class EmpleadoController extends Controller
 
     public function datatable()
     {
-        $empleados = Empleado::with(['persona', 'area', 'sucursal', 'cargo'])
+        $empleados = Empleado::with(['persona', 'sucursal', 'cargo'])
             ->select('empleados.*');
 
         return DataTables::of($empleados)
             ->addColumn('nombre', fn($e) => $e->persona->nombres . ' ' . $e->persona->apellidos)
             ->addColumn('documento', fn($e) => $e->persona->documento ?? '-')
-            ->addColumn('area', fn($e) => $e->area->descripcion ?? '-')
             ->addColumn('sucursal', fn($e) => $e->sucursal->nombre_comercial ?? '-')
             ->addColumn('cargo', fn($e) => $e->cargo->descripcion ?? '-')
             ->addColumn('acciones', fn($e) => '
@@ -111,7 +110,6 @@ class EmpleadoController extends Controller
                 ['id' => $request->empleado_id],
                 [
                     'persona_id' => $persona->id,
-                    'area_id' => $request->area_id,
                     'sucursal_id' => $request->sucursal_id,
                     'cargo_id' => $request->cargo_id,
                     'tipo_licencia_id' => $request->tipo_licencia_id,
@@ -140,7 +138,7 @@ class EmpleadoController extends Controller
 
     public function mostrar($id)
     {
-        $empleado = Empleado::with(['persona', 'area', 'cargo', 'sucursal'])->findOrFail($id);
+        $empleado = Empleado::with(['persona', 'cargo', 'sucursal'])->findOrFail($id);
         return response()->json($empleado);
     }
 

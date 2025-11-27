@@ -12,7 +12,6 @@ class Empleado extends Model
 
     protected $fillable = [
         'persona_id',
-        'area_id',
         'sucursal_id',
         'cargo_id',
         'tipo_licencia_id',
@@ -27,11 +26,6 @@ class Empleado extends Model
     public function persona()
     {
         return $this->belongsTo(Persona::class, "persona_id");
-    }
-
-    public function area()
-    {
-        return $this->belongsTo(Area::class, "area_id");
     }
 
     public function sucursal()

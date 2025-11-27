@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('empleados', function (Blueprint $table) {
             $table->id();
             $table->foreignId('persona_id')->constrained('personas', 'id')->onDelete('cascade')->index('idx_empleados_persona');
-            $table->foreignId('area_id')->nullable()->constrained('areas', 'id')->nullOnDelete()->index('idx_empleados_area');
             $table->foreignId('sucursal_id')->nullable()->constrained('sucursales', 'id')->nullOnDelete()->index('idx_empleados_sucursal');
             $table->foreignId('cargo_id')->nullable()->constrained('cargos', 'id')->nullOnDelete()->index('idx_empleados_cargo');
             $table->foreignId('tipo_licencia_id')->nullable()->constrained('tipo_licencias', 'id')->nullOnDelete()->index('idx_empleados_tipo_licencia');
