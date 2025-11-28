@@ -30,7 +30,7 @@ class VehiculoController extends Controller
             </button>
             <button class="btn btn-warning btn-xs editar" data-id="' . $vehiculo->id . '">
                 <i class="link-icon" data-lucide="pen"></i> 
-            </button>Ñ
+            </button>
             <button class="btn btn-danger btn-xs eliminar" data-id="' . $vehiculo->id . '">
                 <i class="link-icon" data-lucide="trash-2"></i> 
             </button>

@@ -21,7 +21,7 @@ class AsignacionEncomiendaController extends Controller
         ]);
     }
 
-    public function datatableNoAsignadas()
+    public function datatable()
     {
         return Encomienda::where("estado", "A")
             ->whereNotIn("id", function ($q) {
@@ -48,7 +48,6 @@ class AsignacionEncomiendaController extends Controller
                     "encomienda_id" => $id
                 ]);
 
-                // Actualizar estado encomienda
                 Encomienda::where("id", $id)->update([
                     "estado" => "P",
                     "fecha_procesado" => now()

@@ -90,8 +90,8 @@
                               <a href="{{ route('tipo-encomienda.index') }}" class="nav-link">Tipo encomiendas</a>
                           </li>
                           <li class="nav-item">
-                              <a href="{{ route('encomiendas.index') }}" class="nav-link">Encomiendas</a>
-                          </li>Ñ
+                              <a href="{{ route('encomiendas.index-no-asignadas') }}" class="nav-link">Encomiendas</a>
+                          </li>
                           <li class="nav-item">
                               <a href="{{ route('asignaciones.index') }}" class="nav-link">Asignaciones</a>
                           </li>
