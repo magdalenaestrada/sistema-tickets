@@ -18,7 +18,6 @@ function cargarUbigeosConSucursales(
         );
         if (selectedDepartamento) depSelect.val(selectedDepartamento);
 
-        // Provincias
         const provSelect = $(provSelectId);
         provSelect
             .empty()

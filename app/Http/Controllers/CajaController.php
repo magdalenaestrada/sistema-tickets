@@ -137,10 +137,10 @@ class CajaController extends Controller
         return back()->with('success', 'Ticket anulado correctamente.');
     }
 
-    public function print_corte(Caja $caja)
+    public function print_corte(int $caja)
     {
-        $caja->load(['usuario.persona', 'detalles.subtipo.tipo_movimiento', 'detalles.metodoPago', 'detalles.servicio']);
-
-        return view('caja.corte_ticket', compact('caja'));
+        $usuario = Auth::user();
+        $caja = Caja::findOrFail($caja);
+        return view('caja.corte_ticket', compact('caja', 'usuario'));
     }
 }

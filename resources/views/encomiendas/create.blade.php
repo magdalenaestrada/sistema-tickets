@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+
     <form id="formEncomienda">
         @csrf
         <div class="row">
@@ -16,7 +17,7 @@
                         <div class="row g-2">
                             <div class="col-md-2">
                                 <label class="form-label">Tipo de documento</label>
-                                <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id">
+                                <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id" required>
                                     @foreach ($tipos_documentos as $tipo_documento)
                                         <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
                                     @endforeach
@@ -25,24 +26,24 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
-                                <input type="text" class="form-control" id="emisor_documento" name="emisor_documento">
+                                <input type="text" class="form-control" id="emisor_documento" name="emisor_documento" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres</label>
-                                <input type="text" class="form-control" id="emisor_nombres" name="emisor_nombres">
+                                <input type="text" class="form-control" id="emisor_nombres" name="emisor_nombres" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos</label>
-                                <input type="text" class="form-control" id="emisor_apellidos" name="emisor_apellidos">
+                                <input type="text" class="form-control" id="emisor_apellidos" name="emisor_apellidos" required>
                             </div>
                         </div>
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control" id="emisor_celular" name="emisor_celular">
+                                <input type="text" class="form-control" id="emisor_celular" name="emisor_celular" required>
                             </div>
 
                             <div class="col-md-3">
@@ -74,7 +75,7 @@
                             <div class="col-md-2">
                                 <label class="form-label">Tipo de documento</label>
                                 <select class="form-select" name="receptor_tipo_documento_id"
-                                    id="receptor_tipo_documento_id">
+                                    id="receptor_tipo_documento_id" required>
                                     @foreach ($tipos_documentos as $tipo_documento)
                                         <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
                                     @endforeach
@@ -84,25 +85,25 @@
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
                                 <input type="text" class="form-control" id="receptor_documento"
-                                    name="receptor_documento">
+                                    name="receptor_documento" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres</label>
-                                <input type="text" class="form-control" id="receptor_nombres" name="receptor_nombres">
+                                <input type="text" class="form-control" id="receptor_nombres" name="receptor_nombres" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos</label>
                                 <input type="text" class="form-control" id="receptor_apellidos"
-                                    name="receptor_apellidos">
+                                    name="receptor_apellidos" required>
                             </div>
                         </div>
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control" id="receptor_celular" name="receptor_celular">
+                                <input type="text" class="form-control" id="receptor_celular" name="receptor_celular" required>
                             </div>
 
                             <div class="col-md-3">
@@ -182,7 +183,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label">SUCURSAL DESTINO</label>
-                                <select id="destino" class="form-select" name="destino">
+                                <select id="destino" class="form-select" name="destino" required>
                                     <option value="" disabled selected>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
                                         <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Caja;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,6 +19,17 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::get('/caja/verificar', function () {
+    $user = Auth::user();
+
+    $tieneCaja = Caja::where('sucursal_id', $user->sucursal_id)
+        ->where('estado', 'A')
+        ->exists();
+
+    return response()->json(['abierta' => $tieneCaja]);
+});
+
 
 require __DIR__ . '/areas.php';
 require __DIR__ . '/auth.php';

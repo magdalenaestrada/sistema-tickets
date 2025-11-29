@@ -50,8 +50,7 @@ class ListaController extends Controller
 
     public function listarTipos()
     {
-        // Trae todos los tipos de vehículo
-        $tipos = TipoVehiculo::all(); // Suponiendo que tu modelo se llama TipoVehiculo
+        $tipos = TipoVehiculo::all(); 
         return response()->json($tipos);
     }
 }

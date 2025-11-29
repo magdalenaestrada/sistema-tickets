@@ -45,7 +45,8 @@
                                 </form>
                             @endif
                             @if ($caja->estado === 'C')
-                                <a href="{{ route('caja.corte.imprimir') }}" target="_blank" class="btn btn-primary">
+                                <a href="{{ route('caja.corte.imprimir', $caja->id) }}" target="_blank"
+                                    class="btn btn-primary">
                                     Imprimir Corte de Caja
                                 </a>
                             @endif

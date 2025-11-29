@@ -98,8 +98,6 @@ class EncomiendaController extends Controller
 
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
-        Log::info('Datos del request', $request->all());
-
         $request->validate([
             'emisor.documento' => 'required|string|max:20',
             'emisor.nombres' => 'required|string|max:200',
@@ -148,7 +146,7 @@ class EncomiendaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'redirect' => route('encomiendas.index'),
+                'redirect' => route('encomiendas.index-no-asignadas'),
                 'ticket_id' => $encomienda->id
             ]);
         } catch (\Throwable $th) {
@@ -170,7 +168,7 @@ class EncomiendaController extends Controller
     public function anular($id)
     {
         $e = Encomienda::findOrFail($id);
-        $e->estado = 'X';  // ❌ ANULADO
+        $e->estado = 'X'; 
         $e->save();
 
         return response()->json(['success' => true]);

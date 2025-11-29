@@ -15,6 +15,6 @@ Route::middleware(['auth'])->prefix('caja')->group(function () {
         ->name('caja.ticket.reimprimir');
     Route::post('/ticket/{detalle}/anular', [CajaController::class, 'anular'])
         ->name('caja.ticket.anular');
-    Route::get('/corte/imprimir', [CajaController::class, 'print_corte'])
+    Route::get('/corte/{caja}/imprimir', [CajaController::class, 'print_corte'])
         ->name('caja.corte.imprimir');
 });
