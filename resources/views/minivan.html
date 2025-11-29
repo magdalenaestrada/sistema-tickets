@@ -1,0 +1,706 @@
+<style>
+    /* Colores base */
+    .seat-body,
+    .seat-base,
+    .armrest {
+        fill: #5bbf5b;
+    }
+    .seat-body,
+    .seat-base {
+        stroke: #2a2a2a;
+        stroke-width: 3;
+    }
+    .armrest {
+        stroke: #2a2a2a;
+        stroke-width: 2;
+    }
+
+    /* Texto del número */
+    .seat-text {
+        font-family: sans-serif;
+        font-size: 22px;
+        font-weight: bold;
+        pointer-events: none;
+        fill: #000;
+    }
+
+    .seat {
+        transition: transform 0.1s ease;
+        cursor: pointer;
+    }
+
+    .seat:hover {
+        filter: brightness(1.1);
+    }
+</style>
+<svg
+    id="minivan-svg"
+    width="760"
+    height="1200"
+    viewBox="0 0 760 1200"
+    xmlns="http://www.w3.org/2000/svg"
+>
+    <!-- CARROCERÍA -->
+    <rect
+        x="30"
+        y="30"
+        width="700"
+        height="1080"
+        rx="40"
+        ry="40"
+        fill="#f3f3f5"
+        stroke="#333"
+        stroke-width="8"
+    />
+
+    <!-- título (opcional) -->
+    <text
+        x="370"
+        y="70"
+        text-anchor="middle"
+        font-family="sans-serif"
+        font-size="20"
+        fill="#333"
+    >
+        PISO 1
+    </text>
+
+    <!-- VOLANTE (V) - fila1 col1, opción B: volante con 3 radios -->
+    <g id="volante" transform="translate(110,120)">
+        <!-- outer rim -->
+        <circle
+            cx="0"
+            cy="0"
+            r="48"
+            fill="#444"
+            stroke="#222"
+            stroke-width="6"
+        />
+        <!-- inner rim gap -->
+        <circle cx="0" cy="0" r="30" fill="#333" />
+        <!-- radios (3) -->
+        <g stroke="#222" stroke-width="8" stroke-linecap="round" fill="none">
+            <line x1="-18" y1="-26" x2="0" y2="0" />
+            <line x1="18" y1="-26" x2="0" y2="0" />
+            <line x1="0" y1="36" x2="0" y2="0" />
+        </g>
+        <!-- small center cap -->
+        <circle cx="0" cy="0" r="8" fill="#222" />
+        <!-- etiqueta opcional -->
+        <text
+            x="0"
+            y="72"
+            text-anchor="middle"
+            font-family="sans-serif"
+            font-size="12"
+            fill="#222"
+        >
+            Volante
+        </text>
+    </g>
+
+    <!-- FILA 1 (V O X X) -> seats: 1 (col3), 2 (col4) -->
+    <g id="seat-1" class="seat" transform="translate(430,120)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">1</text>
+    </g>
+
+    <g id="seat-2" class="seat" transform="translate(590,120)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">2</text>
+    </g>
+
+    <!-- FILA 2 (X X X O) -> seats 3,4,5 at col1,col2,col3 -->
+    <g id="seat-3" class="seat" transform="translate(110,320)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">3</text>
+    </g>
+
+    <g id="seat-4" class="seat" transform="translate(270,320)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">4</text>
+    </g>
+
+    <g id="seat-5" class="seat" transform="translate(430,320)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">5</text>
+    </g>
+
+    <!-- FILA 3 (X X O X) -> seats 6 (col1), 7 (col2), 8 (col4) -->
+    <g id="seat-6" class="seat" transform="translate(110,520)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">6</text>
+    </g>
+
+    <g id="seat-7" class="seat" transform="translate(270,520)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">7</text>
+    </g>
+
+    <g id="seat-8" class="seat" transform="translate(590,520)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">8</text>
+    </g>
+
+    <!-- FILA 4 (X X O X) -> seats 9 (col1), 10 (col2), 11 (col4) -->
+    <g id="seat-9" class="seat" transform="translate(110,720)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">9</text>
+    </g>
+
+    <g id="seat-10" class="seat" transform="translate(270,720)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">10</text>
+    </g>
+
+    <g id="seat-11" class="seat" transform="translate(590,720)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">11</text>
+    </g>
+
+    <!-- FILA 5 (X X X X) -> seats 12,13,14,15 at col1..col4 -->
+    <g id="seat-12" class="seat" transform="translate(110,920)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">12</text>
+    </g>
+
+    <g id="seat-13" class="seat" transform="translate(270,920)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">13</text>
+    </g>
+
+    <g id="seat-14" class="seat" transform="translate(430,920)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">14</text>
+    </g>
+
+    <g id="seat-15" class="seat" transform="translate(590,920)">
+        <rect
+            class="seat-body"
+            x="10"
+            y="0"
+            width="90"
+            height="120"
+            rx="18"
+            ry="18"
+        />
+        <rect
+            class="seat-base"
+            x="0"
+            y="115"
+            width="110"
+            height="48"
+            rx="14"
+            ry="14"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="-12"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <rect
+            vector-effect="non-scaling-stroke"
+            class="armrest"
+            x="110"
+            y="30"
+            width="8"
+            height="72"
+            rx="4"
+        />
+        <text class="seat-text" x="55" y="70" text-anchor="middle">15</text>
+    </g>
+</svg>
