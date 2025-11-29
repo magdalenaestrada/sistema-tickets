@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create("tipo_vehiculos", function (Blueprint $table) {
             $table->id();
             $table->string("descripcion")->index();
-            $table->string("imagen")->index();
+            $table->string("ruta_svg")->index();
             $table->string("capacidad")->index();
             $table->unsignedInteger("peso_bodega")->index();
             $table

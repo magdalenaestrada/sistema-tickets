@@ -13,7 +13,7 @@
 
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-3"> <label for="tipo_viaje_id" class="form-label">Tipo de viaje</label>
+                        <div class="col-md-4"> <label for="tipo_viaje_id" class="form-label">Viaje</label>
                             <select name="tipo_viaje_id" id="tipo_viaje_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($tiposViaje as $tipo)
@@ -21,13 +21,23 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3"> <label class="form-label">Costo pasaje</label> <input type="number"
+                        <div class="col-md-4"> <label for="tipo_vehiculo_id" class="form-label">Vehiculo</label>
+                            <select name="tipo_vehiculo_id" id="tipo_vehiculo_id" class="form-select" required>
+                                <option value="">Seleccione</option>
+                                @foreach ($tipo_vehiculos as $tipo_vehiculo)
+                                    <option value="{{ $tipo_vehiculo->id }}">{{ $tipo_vehiculo->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4"> <label class="form-label">Costo pasaje</label> <input type="number"
                                 step="0.01" name="costo_pasaje" id="costo_pasaje" class="form-control" required>
                         </div>
-                        <div class="col-md-3"> <label class="form-label">Hora embarque</label> <input type="time"
+                        <div class="col-md-4"> <label class="form-label">Hora embarque</label> <input type="time"
                                 name="hora_embarque" id="hora_embarque" class="form-control" required> </div>
-                        <div class="col-md-3"> <label class="form-label">Fecha salida</label> <input type="date"
+                        <div class="col-md-4"> <label class="form-label">Fecha salida</label> <input type="date"
                                 name="fecha_salida" id="fecha_salida" class="form-control" required> </div>
+                        <div class="col-md-4"> <label class="form-label">Repetir hasta</label> <input type="date"
+                                name="repetir_hasta" id="repetir_hasta" class="form-control" required> </div>
                     </div>
                     <div class="row g-3">
 
@@ -64,12 +74,12 @@
                             <div class="form-check form-check-inline"> <input class="form-check-input" type="checkbox"
                                     name="miercoles" id="miercoles"> <label class="form-check-label"
                                     for="miercoles">Miércoles</label> </div>
-                            <div class="form-check form-check-inline"> <input class="form-check-input" type="checkbox"
-                                    name="jueves" id="jueves"> <label class="form-check-label"
+                            <div class="form-check form-check-inline"> <input class="form-check-input"
+                                    type="checkbox" name="jueves" id="jueves"> <label class="form-check-label"
                                     for="jueves">Jueves</label>
                             </div>
-                            <div class="form-check form-check-inline"> <input class="form-check-input" type="checkbox"
-                                    name="viernes" id="viernes"> <label class="form-check-label"
+                            <div class="form-check form-check-inline"> <input class="form-check-input"
+                                    type="checkbox" name="viernes" id="viernes"> <label class="form-check-label"
                                     for="viernes">Viernes</label>
                             </div>
                             <div class="form-check form-check-inline"> <input class="form-check-input"

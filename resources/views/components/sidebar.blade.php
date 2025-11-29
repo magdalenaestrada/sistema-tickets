@@ -98,6 +98,9 @@
                           <li class="nav-item">
                               <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>
                           </li>
+                          <li class="nav-item">
+                              <a href="{{ route('pasajes.index') }}" class="nav-link">Pasajes</a>
+                          </li>
                       </ul>
                   </div>
               </li>

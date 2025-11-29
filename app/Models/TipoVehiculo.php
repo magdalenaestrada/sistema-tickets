@@ -9,7 +9,7 @@ class TipoVehiculo extends Model
     protected $table = "tipo_vehiculos";
     protected $fillable = [
         "descripcion",
-        "imagen",
+        "ruta_svg",
         "capacidad",
         "peso_bodega",
     ];

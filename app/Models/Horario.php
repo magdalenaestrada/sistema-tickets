@@ -25,6 +25,10 @@ class Horario extends Model
         'domingo',
     ];
 
+    protected $casts = [
+        'fecha_salida' => 'date',
+    ];
+
     public function tipo_viaje()
     {
         return $this->belongsTo(TipoViaje::class, "tipo_viaje_id");
@@ -49,5 +53,9 @@ class Horario extends Model
     public function tramos()
     {
         return $this->hasMany(HorarioTramo::class);
+    }
+    public function pasajes()
+    {
+        return $this->hasMany(Pasaje::class);
     }
 }

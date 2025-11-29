@@ -91,6 +91,9 @@ $(document).ready(function () {
         $.get(`/horarios/${id}`, function (data) {
             $("#horario_id").val(data.id);
             $("#tipo_viaje_id").val(data.tipo_viaje_id).prop("disabled", false);
+            $("#tipo_horario_id")
+                .val(data.tipo_horario_id)
+                .prop("disabled", false);
             $("#tipo_vehiculo_id")
                 .val(data.tipo_vehiculo_id)
                 .prop("disabled", false);

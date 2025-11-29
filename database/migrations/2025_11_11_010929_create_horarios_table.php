@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('horarios', function (Blueprint $table) {
             $table->id();
+            $table->foreignId("tipo_vehiculo_id")->constrained("tipo_vehiculos")->onDelete("cascade");
             $table->foreignId("tipo_viaje_id")->constrained("tipos_viajes")->onDelete("cascade");
             $table->foreignId("punto_origen_id")->constrained("sucursales")->onDelete("cascade");
             $table->foreignId("punto_destino_id")->constrained("sucursales")->onDelete("cascade");

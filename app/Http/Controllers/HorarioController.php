@@ -27,7 +27,9 @@ class HorarioController extends Controller
 
         return DataTables::of($horarios)
             ->addColumn('tipo_viaje', fn($h) => $h->tipo_viaje->descripcion)
+            ->addColumn('tipo_vehiculo', fn($h) => $h->tipo_vehiculo->descripcion)
             ->addColumn('origen', fn($h) => $h->punto_origen->nombre_comercial)
+            ->addColumn('fecha_salida', fn($h) => $h->fecha_salida->format('d-m-Y'))
             ->addColumn('destino', fn($h) => $h->punto_destino->nombre_comercial)
             ->addColumn('acciones', function ($h) {
                 return '
@@ -54,17 +56,86 @@ class HorarioController extends Controller
     {
         $request->validate([
             'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
+            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'punto_origen_id' => 'required|exists:sucursales,id',
             'punto_destino_id' => 'required|exists:sucursales,id',
             'costo_pasaje' => 'required|numeric',
             'hora_embarque' => 'required',
             'fecha_salida' => 'required|date',
+            'repetir_hasta' => 'nullable|date',
         ]);
 
-        $horario = Horario::create($request->all());
+        $fechaInicio = \Carbon\Carbon::parse($request->fecha_salida);
+        $fechaFin = $request->repetir_hasta
+            ? \Carbon\Carbon::parse($request->repetir_hasta)
+            : $fechaInicio->copy()->addMonths(6);
 
-        return response()->json(['success' => true, 'horario' => $horario]);
+        $diasSeleccionados = [
+            'lunes'     => $request->input('lunes') == 1,
+            'martes'    => $request->input('martes') == 1,
+            'miercoles' => $request->input('miercoles') == 1,
+            'jueves'    => $request->input('jueves') == 1,
+            'viernes'   => $request->input('viernes') == 1,
+            'sabado'    => $request->input('sabado') == 1,
+            'domingo'   => $request->input('domingo') == 1,
+        ];
+
+
+        $generarRepetidos = collect($diasSeleccionados)->contains(true);
+
+        $fechas = [];
+
+        if ($generarRepetidos) {
+
+            $carbonMap = [
+                1 => 'lunes',
+                2 => 'martes',
+                3 => 'miercoles',
+                4 => 'jueves',
+                5 => 'viernes',
+                6 => 'sabado',
+                7 => 'domingo',
+            ];
+
+            $fecha = $fechaInicio->copy();
+
+            while ($fecha->lte($fechaFin)) {
+
+                $nombreDia = $carbonMap[$fecha->dayOfWeekIso];
+
+                if ($diasSeleccionados[$nombreDia]) {
+                    $fechas[] = $fecha->copy();
+                }
+
+                $fecha->addDay();
+            }
+        } else {
+            $fechas[] = $fechaInicio;
+        }
+
+        foreach ($fechas as $f) {
+            Horario::create([
+                'tipo_viaje_id'    => $request->tipo_viaje_id,
+                'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+                'punto_origen_id'  => $request->punto_origen_id,
+                'punto_destino_id' => $request->punto_destino_id,
+                'costo_pasaje'     => $request->costo_pasaje,
+                'hora_embarque'    => $request->hora_embarque,
+                'fecha_salida'     => $f->format('Y-m-d'),
+
+                'lunes'     => $diasSeleccionados['lunes'],
+                'martes'    => $diasSeleccionados['martes'],
+                'miercoles' => $diasSeleccionados['miercoles'],
+                'jueves'    => $diasSeleccionados['jueves'],
+                'viernes'   => $diasSeleccionados['viernes'],
+                'sabado'    => $diasSeleccionados['sabado'],
+                'domingo'   => $diasSeleccionados['domingo'],
+            ]);
+        }
+
+        return response()->json(['success' => true]);
     }
+
 
     public function mostrar($id)
     {
@@ -76,6 +147,7 @@ class HorarioController extends Controller
     {
         $request->validate([
             'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
+            'tipo_vehiculo_id' => 'required|exists:tipos_vehiculos,id',
             'punto_origen_id' => 'required|exists:sucursales,id',
             'punto_destino_id' => 'required|exists:sucursales,id',
             'costo_pasaje' => 'required|numeric',
@@ -120,7 +192,6 @@ class HorarioController extends Controller
             $fechaBase = \Carbon\Carbon::parse($h->fecha_salida);
             $tieneRepeticion = false;
 
-            // Generar eventos repetidos (si tiene días marcados)
             for ($semana = 0; $semana < 4; $semana++) {
                 foreach ($dias as $nombre => $numeroDia) {
                     if ($h->$nombre) {
@@ -146,7 +217,6 @@ class HorarioController extends Controller
                 }
             }
 
-            // ⚠️ Si no marcó días de repetición, mostrar solo la fecha_salida
             if (!$tieneRepeticion) {
                 $eventos[] = [
                     'title' => $h->punto_destino->nombre_comercial,
