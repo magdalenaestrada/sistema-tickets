@@ -126,10 +126,10 @@
         {{-- SI ES PASAJE --}}
         @if ($servicio instanceof \App\Models\Pasaje)
             <p><strong>Tipo servicio:</strong> Pasaje</p>
-            <p><strong>Pasajero:</strong> {{ $servicio->persona->nombre }}</p>
-            <p><strong>Origen:</strong> {{ $servicio->origen->razon_social }}</p>
-            <p><strong>Destino:</strong> {{ $servicio->destino }}</p>
-            <p><strong>Asiento:</strong> {{ $servicio->asiento }}</p>
+            <p><strong>Pasajero:</strong> {{ $servicio->persona->nombres }} {{ $servicio->persona->apellidos }}</p>
+            <p><strong>Origen:</strong> {{ $servicio->horario->punto_origen->nombre_comercial }}</p>
+            <p><strong>Destino:</strong> {{ $servicio->horario->punto_destino->nombre_comercial }}</p>
+            <p><strong>Asiento:</strong> {{ $servicio->asiento_numero }}</p>
         @endif
 
 

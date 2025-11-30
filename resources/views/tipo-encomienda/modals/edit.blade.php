@@ -1,16 +1,14 @@
 <!-- Modal Global -->
 <div class="modal fade" id="modalForm" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content" id="modalContent">
+        <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Editar Tipo de Encomienda</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <form method="POST" action="{{ route('tipo-encomienda.update', $tipo->id) }}">
+            <form id="formTipoEncomienda" method="POST">
                 @csrf
-                @method('PUT')
-
                 <div class="modal-body">
 
                     <div class="mb-3">
@@ -39,9 +37,10 @@
 
                 </div>
 
+
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button class="btn btn-success">Actualizar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button class="btn btn-success">Guardar</button>
                 </div>
             </form>
 

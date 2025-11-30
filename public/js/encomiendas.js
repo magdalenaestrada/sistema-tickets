@@ -1,6 +1,6 @@
 $(function () {
     let tabla = $("#tablaEncomiendas").DataTable({
-        ajax: "/encomiendas/datatable/no-asignadas",
+        ajax: route("encomiendas.datatable.no-asignadas"),
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
             { data: "id" },
@@ -36,7 +36,7 @@ $(function () {
 
     if (btnNueva) {
         btnNueva.addEventListener("click", function () {
-            fetch("/caja/verificar")
+            fetch(route("caja.verificar"))
                 .then((res) => res.json())
                 .then((data) => {
                     if (!data.abierta) {
@@ -48,7 +48,9 @@ $(function () {
                         });
                         return;
                     }
-                    window.location.href = "/encomiendas/crear-encomienda";
+                    window.location.href = route(
+                        "encomiendas.crear-encomienda"
+                    );
                 });
         });
     }
@@ -152,7 +154,7 @@ $(function () {
         };
 
         $.ajax({
-            url: "/encomiendas/guardar",
+            url: route("encomiendas.guardar"),
             method: "POST",
             data,
             success: function (data) {
@@ -180,7 +182,7 @@ $(function () {
 
     let tiposEncomienda = [];
 
-    $.get("/tipo-encomienda/listar-todos", function (res) {
+    $.get(route("tipo-encomienda.listar-todos"), function (res) {
         tiposEncomienda = res;
         agregarFilaDetalle();
     });
@@ -230,7 +232,7 @@ $(function () {
         let doc = $(this).val();
         if (!doc) return;
 
-        $.get(`/buscar?documento=${doc}`, function (res) {
+        $.get(route("buscar.buscar") + `?documento=${doc}`, function (res) {
             if (res.error) return alert(res.error);
 
             if (res.tipo === "DNI") {
@@ -391,12 +393,10 @@ $(function () {
         let tipo = $(this).val();
 
         if (tipo !== "1") {
-            // asumiendo 1 = Boleta
             $("#numero_documento_id").val("");
             $("#razon_social").val("");
             $("#numero_serie").val("");
         } else {
-            // Por defecto boleta a nombre del emisor
             $("#razon_social").val(
                 $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val()
             );
@@ -417,7 +417,7 @@ $(function () {
             : $(`#${tipo}_documento`).val();
         if (!doc) return;
 
-        $.get(`/buscar?documento=${doc}`, function (res) {
+        $.get(route("buscar.buscar") + `?documento=${doc}`, function (res) {
             if (res.error) {
                 alert(res.error);
                 return;
@@ -472,7 +472,7 @@ $(function () {
         let numero = $(this).val();
         if (!numero) return;
 
-        $.get(`/buscar?documento=${numero}`, function (res) {
+        $.get(route("buscar.buscar") + `?documento=${numero}`, function (res) {
             if (res.error) {
                 alert(res.error);
                 return;
@@ -558,13 +558,11 @@ $(function () {
     $(document).on("change", ".check-encomienda", function () {
         actualizarContador();
 
-        // Actualizar checkAll
         let total = $(".check-encomienda").length;
         let seleccionados = $(".check-encomienda:checked").length;
         $("#checkAll").prop("checked", total === seleccionados && total > 0);
     });
 
-    // Función para actualizar contador
     function actualizarContador() {
         let count = $(".check-encomienda:checked").length;
         $("#contadorSeleccionados").text(
@@ -572,7 +570,6 @@ $(function () {
         );
     }
 
-    // Botón Asignar
     $("#btnAsignar").on("click", function () {
         let asignacionId = $("#asignacion_id").val();
 
@@ -600,7 +597,7 @@ $(function () {
         }
 
         $.ajax({
-            url: "/asignaciones-encomiendas/store",
+            url: route("asignaciones.store"),
             method: "POST",
             data: {
                 _token: csrf_token,
@@ -623,7 +620,6 @@ $(function () {
         });
     });
 
-    // Filtros
     $("#filtroDNI").on("keyup", function () {
         tabla.column(3).search(this.value).draw();
     });
@@ -638,7 +634,7 @@ $(function () {
 
     $(document).on("click", ".imprimir", function () {
         let id = $(this).data("id");
-        let url = "/encomiendas/ticket/" + id;
+        let url = route("encomiendas.ticket", id);
         let ventana = window.open(url, "_blank", "width=420,height=650");
 
         let timer = setInterval(function () {
@@ -651,7 +647,7 @@ $(function () {
 
     $(document).on("click", ".editar", function () {
         let id = $(this).data("id");
-        window.location.href = `/encomiendas/editar/${id}`;
+        window.location.href = route("encomiendas.edit", id);
     });
 
     $(document).on("click", ".anular", function () {
@@ -659,7 +655,7 @@ $(function () {
 
         let id = $(this).data("id");
         $.post(
-            `/encomiendas/anular/${id}`,
+            route("encomiendas.anular", id),
             { _token: csrf_token },
             function (res) {
                 if (res.success) {

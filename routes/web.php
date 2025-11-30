@@ -28,7 +28,8 @@ Route::get('/caja/verificar', function () {
         ->exists();
 
     return response()->json(['abierta' => $tieneCaja]);
-});
+})->name('caja.verificar');
+
 
 
 require __DIR__ . '/areas.php';

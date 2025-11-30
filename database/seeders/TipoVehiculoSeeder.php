@@ -22,7 +22,7 @@ class TipoVehiculoSeeder extends Seeder
             ],
             [
                 'descripcion' => 'Bus',
-                'ruta_svg' => 'vehiculos/minivan.svg',
+                'ruta_svg' => 'vehiculos/bus.svg',
                 'capacidad' => 46,
                 'peso_bodega' => 1500,
             ],

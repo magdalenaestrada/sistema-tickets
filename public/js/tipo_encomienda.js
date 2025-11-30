@@ -17,7 +17,7 @@ $(function () {
     let tabla = $("#tablaTipos").DataTable({
         processing: true,
         serverSide: true,
-        ajax: "/tipo-encomienda/datatable",
+        ajax: route("tipo-encomienda.datatable"),
         columns: [
             { data: "id" },
             { data: "descripcion" },
@@ -33,7 +33,7 @@ $(function () {
 
     $("#btnNuevo").on("click", function () {
         // Cargar formulario de creación por AJAX
-        $.get("/tipo-encomienda/create", function (html) {
+        $.get(route("tipo-encomienda.create"), function (html) {
             $("#modalContent").html(html);
             $("#modalForm").modal("show");
         });
@@ -50,7 +50,7 @@ $(function () {
         modalEl.querySelector(".modal-title").textContent =
             "Editar Tipo de Encomienda";
 
-        $.get("/tipo-encomienda/" + id + "/edit", function (data) {
+        $.get(route("tipo-encomienda.edit", id), function (data) {
             modalEl.querySelector("input[name='descripcion']").value =
                 data.descripcion;
             modalEl.querySelector("input[name='precio_base']").value =
@@ -60,7 +60,10 @@ $(function () {
             modalEl.querySelector("input[name='costo_kilo_extra']").value =
                 data.costo_kilo_extra ?? "";
 
-            modalEl.querySelector("form").action = "/tipo-encomienda/" + id;
+            modalEl.querySelector("form").action = route(
+                "tipo-encomienda.update",
+                id
+            );
             modalEl.querySelector("form").method = "POST";
 
             let methodInput = modalEl.querySelector("input[name='_method']");
@@ -75,6 +78,7 @@ $(function () {
             myModal.show();
         });
     });
+
     $(document).on("click", ".eliminar", function () {
         let id = $(this).data("id");
 
@@ -91,7 +95,7 @@ $(function () {
             if (result.isConfirmed) {
                 // Petición AJAX para eliminar
                 $.ajax({
-                    url: "/tipo-encomienda/" + id,
+                    url: route("tipo-encomienda.destroy", id),
                     type: "POST",
                     data: {
                         _method: "DELETE",
@@ -135,5 +139,11 @@ $(function () {
                 alert("Error al guardar.");
             },
         });
+    });
+    var modalEl = document.getElementById("modalForm");
+    modalEl.addEventListener("hidden.bs.modal", function () {
+        modalEl.querySelector("form").reset(); // resetea campos
+        modalEl.querySelector("form").action = ""; // opcional, limpia la action
+        modalEl.querySelector("form").method = "POST"; // opcional, pone POST por defecto
     });
 });

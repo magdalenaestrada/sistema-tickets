@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Area;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Empleado;

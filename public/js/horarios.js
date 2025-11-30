@@ -2,7 +2,7 @@ $(document).ready(function () {
     const modalHorario = new bootstrap.Modal($("#modalHorario")[0]);
     const formHorario = $("#formHorario");
     const tabla = $("#tablaHorarios").DataTable({
-        ajax: "/horarios/datatable",
+        ajax: route("horarios.datatable"),
         columns: [
             { data: "id" },
             { data: "tipo_viaje" },
@@ -51,8 +51,8 @@ $(document).ready(function () {
         });
 
         let id = $("#horario_id").val();
-        let url = id ? `/horarios/${id}` : $(this).attr("action");
-        let method = "POST";
+        let url = id ? route("horarios.actualizar", id) : $(this).attr("action");
+        let method = id ? "PUT" : "POST";
         if (id) formData.push({ name: "_method", value: "PUT" });
 
         $.ajax({
@@ -88,7 +88,7 @@ $(document).ready(function () {
 
     $("#tablaHorarios").on("click", ".editar", function () {
         let id = $(this).data("id");
-        $.get(`/horarios/${id}`, function (data) {
+        $.get(route("horarios.mostrar", id), function (data) {
             $("#horario_id").val(data.id);
             $("#tipo_viaje_id").val(data.tipo_viaje_id).prop("disabled", false);
             $("#tipo_horario_id")
@@ -123,7 +123,7 @@ $(document).ready(function () {
 
     $("#tablaHorarios").on("click", ".ver", function () {
         let id = $(this).data("id");
-        $.get(`/horarios/${id}`, function (data) {
+        $.get(route("horarios.mostrar", id), function (data) {
             $("#horario_id").val(data.id);
             $("#tipo_viaje_id").val(data.tipo_viaje_id).prop("disabled", true);
             $("#tipo_vehiculo_id")
@@ -165,9 +165,13 @@ $(document).ready(function () {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/horarios/${id}`,
-                    type: "POST",
-                    data: { _method: "DELETE" },
+                    url: route("horarios.eliminar", id),
+                    type: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                            "content"
+                        ),
+                    },
                     success: function (res) {
                         if (res.success) {
                             tabla.ajax.reload(null, false);
@@ -211,7 +215,7 @@ $(document).ready(function () {
             $("#tablaPuntos tbody").empty();
             $("#tablaTramos tbody").empty();
 
-            $.get(`/horarios/${horarioId}/puntos`, function (puntos) {
+            $.get(route("horarios.mostrar", horarioId) + "/puntos", function (puntos) {
                 puntos.sort((a, b) => b.orden - a.orden);
 
                 // Puntos
@@ -220,14 +224,10 @@ $(document).ready(function () {
         <tr>
             <td>${p.origen ? p.origen.nombre_comercial : ""}</td>
             <td>${p.destino ? p.destino.nombre_comercial : ""}</td>
-<td>${parseFloat(p.costo_acumulado).toFixed(2)}</td>
+            <td>${parseFloat(p.costo_acumulado).toFixed(2)}</td>
             <td>
-                <button class="btn btn-warning btn-xs editarPunto" data-id="${
-                    p.id
-                }">Editar</button>
-                <button class="btn btn-danger btn-xs eliminarPunto" data-id="${
-                    p.id
-                }">Eliminar</button>
+                <button class="btn btn-warning btn-xs editarPunto" data-id="${p.id}">Editar</button>
+                <button class="btn btn-danger btn-xs eliminarPunto" data-id="${p.id}">Eliminar</button>
             </td>
         </tr>
     `);
@@ -269,8 +269,8 @@ $(document).ready(function () {
             e.preventDefault();
             const formData = $(this).serialize();
             let url = puntoEditActivo
-                ? `/horarios/${horarioIdActivo}/puntos/${puntoEditActivo}`
-                : `/horarios/${horarioIdActivo}/puntos`;
+                ? route("horarios.mostrar", horarioIdActivo) + "/puntos/" + puntoEditActivo
+                : route("horarios.mostrar", horarioIdActivo) + "/puntos";
             let method = puntoEditActivo ? "PUT" : "POST";
 
             $.ajax({
@@ -303,7 +303,7 @@ $(document).ready(function () {
         $("#tablaPuntos").on("click", ".editarPunto", function () {
             puntoEditActivo = $(this).data("id");
             $.get(
-                `/horarios/${horarioIdActivo}/puntos/${puntoEditActivo}`,
+                route("horarios.mostrar", horarioIdActivo) + "/puntos/" + puntoEditActivo,
                 function (p) {
                     $("#destino_id").val(p.destino_id);
                     $("#costo_acumulado").val(p.costo_acumulado);
@@ -324,7 +324,7 @@ $(document).ready(function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `/horarios/${horarioIdActivo}/puntos/${puntoId}`,
+                        url: route("horarios.mostrar", horarioIdActivo) + "/puntos/" + puntoId,
                         type: "DELETE",
                         headers: {
                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(

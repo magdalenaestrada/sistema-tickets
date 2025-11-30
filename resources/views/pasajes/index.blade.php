@@ -4,6 +4,23 @@
     .seat.selected .seat-base {
         fill: #1e90ff !important;
     }
+
+    .horario-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 3px solid transparent;
+    }
+
+    .horario-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .horario-card.active {
+        border: 3px solid #3498db;
+        background-color: #e8f4f8;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
 </style>
 @section('content')
     <div class="card">

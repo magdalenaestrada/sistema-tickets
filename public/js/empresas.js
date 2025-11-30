@@ -28,7 +28,7 @@ $(document).ready(function () {
         e.preventDefault();
 
         let id = $("#empresa_id").val();
-        let url = id ? `/empresas/${id}` : `/empresas`;
+        let url = id ? route("empresas.actualizar", id) : route("empresas.guardar");
         let method = id ? "PUT" : "POST";
         let formData = $(this).serialize();
 
@@ -97,7 +97,7 @@ $(document).ready(function () {
         lucide.createIcons();
 
         $.ajax({
-            url: `/buscar/?documento=${documento}`,
+            url: route("empresas.buscar") + `?documento=${documento}`, // ← Ziggy
             type: "GET",
             dataType: "json",
             success: function (data) {

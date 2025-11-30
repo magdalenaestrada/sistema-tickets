@@ -1,3 +1,5 @@
+import route from "ziggy-js";
+
 $.ajaxSetup({
     headers: {
         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
@@ -5,12 +7,8 @@ $.ajaxSetup({
 });
 
 $(function () {
-    // =======================
-    // 🧾 Inicializar DataTable
-    // =======================
-
     let tabla = $("#tablaAreas").DataTable({
-        ajax: "/areas/datatable",
+        ajax: route("areas.datatable"),
         columns: [
             { title: "ID", data: "id" },
             { title: "Descripcion", data: "descripcion" },
@@ -32,9 +30,6 @@ $(function () {
         },
     });
 
-    // =======================
-    // ➕ Nuevo registro
-    // =======================
     $("#btnNuevaArea").click(function () {
         $("#formArea")[0].reset();
         $("#area_id").val("");
@@ -44,12 +39,9 @@ $(function () {
         $("#modalArea").modal("show");
     });
 
-    // =======================
-    // ✏️ Editar registro
-    // =======================
     $("#tablaAreas").on("click", ".editar", function () {
         const id = $(this).data("id");
-        $.get(`/areas/${id}`, function (data) {
+        $.get(route("areas.show", id), function (data) {
             $("#area_id").val(id);
             $("#descripcion").val(data.descripcion);
             $("#modalTitulo").text("Editar Area");
@@ -58,13 +50,10 @@ $(function () {
         });
     });
 
-    // =======================
-    // 👁️ Ver registro
-    // =======================
     $("#tablaAreas").on("click", ".ver", function () {
         const id = $(this).data("id");
 
-        $.get(`/areas/${id}`, function (data) {
+        $.get(route("areas.show", id), function (data) {
             Swal.fire({
                 title: "Detalles de Area",
                 html: `
@@ -81,9 +70,6 @@ $(function () {
         });
     });
 
-    // =======================
-    // 🗑️ Eliminar registro
-    // =======================
     $("#tablaAreas").on("click", ".eliminar", function () {
         const id = $(this).data("id");
 
@@ -99,7 +85,7 @@ $(function () {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/areas/${id}`,
+                    url: route("areas.destroy", id),
                     type: "DELETE",
                     success: function (res) {
                         if (res.success) {
@@ -139,14 +125,11 @@ $(function () {
         e.preventDefault();
 
         const id = $("#area_id").val();
-        const url = id ? `/areas/${id}` : `/areas`;
-        const method = id ? "POST" : "POST"; // siempre POST, y enviamos _method si es update
+        const url = id ? route("areas.update", id) : route("areas.store");
+        const method = id ? "PUT" : "POST";
 
         // Incluimos el _method si es edición
         let formData = $(this).serializeArray();
-        if (id) {
-            formData.push({ name: "_method", value: "PUT" });
-        }
 
         $.ajax({
             url: url,

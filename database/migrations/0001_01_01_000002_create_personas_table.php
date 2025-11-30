@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create("personas", function (Blueprint $table) {
             $table->id();
             $table->foreignId("tipo_documento_id")->constrained("tipo_documento_personas");
-            $table->foreignId("distrito_id")->constrained("distritos");
+            $table->foreignId("distrito_id")->nullable()->constrained("distritos");
             $table->string("documento", 20)->unique()->index();
             $table->string("nombres", 200)->index();
             $table->string("apellidos", 200)->nullable()->index();

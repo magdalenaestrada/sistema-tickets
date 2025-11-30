@@ -3,11 +3,15 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UbigeoController;
 
-// Rutas reutilizables para cualquier módulo
 Route::middleware(['auth'])->prefix('ubigeos')->group(function () {
-    Route::get('/departamentos', [UbigeoController::class, 'getDepartamentos']);
-    Route::get('/provincias/{departamento_id}', [UbigeoController::class, 'getProvincias']);
-    Route::get('/distritos/{provincia_id}', [UbigeoController::class, 'getDistritos']);
-    Route::get('/ubigeos-con-sucursales', [UbigeoController::class, 'getUbigeosConSucursales']);
-    Route::get('/sucursales/{distrito_id}', [UbigeoController::class, 'getSucursalesPorDistrito']);
+    Route::get('/departamentos', [UbigeoController::class, 'getDepartamentos'])
+        ->name('ubigeos.departamentos');
+    Route::get('/provincias/{departamento_id}', [UbigeoController::class, 'getProvincias'])
+        ->name('ubigeos.provincias');
+    Route::get('/distritos/{provincia_id}', [UbigeoController::class, 'getDistritos'])
+        ->name('ubigeos.distritos');
+    Route::get('/ubigeos-con-sucursales', [UbigeoController::class, 'getUbigeosConSucursales'])
+        ->name('ubigeos.conSucursales');
+    Route::get('/sucursales/{distrito_id}', [UbigeoController::class, 'getSucursalesPorDistrito'])
+        ->name('ubigeos.sucursalesPorDistrito');
 });

@@ -3,7 +3,7 @@ $(document).ready(function () {
 
     // Inicializar DataTable
     const tabla = $("#tablaVehiculos").DataTable({
-        ajax: "/vehiculos/datatable",
+        ajax: route("vehiculos.datatable"),
         columns: [
             { data: "id" },
             { data: "tipo_vehiculo", title: "Tipo de vehiculo" },
@@ -31,11 +31,12 @@ $(document).ready(function () {
     });
 
     // Función para cargar tipos de vehículo
-    function cargarTiposVehiculo(selectedId = null) {
+    async function cargarTiposVehiculo(selectedId = null) {
         const tipoSelect = $("#tipo_vehiculo_id");
         tipoSelect.empty().append('<option value="">Seleccione</option>');
 
-        $.get("/listas/vehiculos/tipos", function (tipos) {
+        try {
+            const tipos = await $.get(route("listas.vehiculos.tipos")); // Ajusta tu ruta si es otra
             tipos.forEach((tipo) => {
                 tipoSelect.append(
                     `<option value="${tipo.id}" ${
@@ -43,46 +44,33 @@ $(document).ready(function () {
                     }>${tipo.descripcion}</option>`
                 );
             });
-        });
+        } catch (err) {
+            console.error("Error cargando tipos de vehículo:", err);
+        }
     }
 
     // Abrir modal para nuevo vehículo
-    $("#btnNuevaVehiculo").click(function () {
+    $("#btnNuevaVehiculo").click(async function () {
         $("#formVehiculo")[0].reset();
         $("#Vehiculo_id").val("");
-        cargarTiposVehiculo();
+        await cargarTiposVehiculo();
         modal.show();
     });
 
     // Guardar o actualizar vehículo
-    // Guardar o actualizar vehículo
-    $("#formVehiculo").on("submit", function (e) {
+    $("#formVehiculo").on("submit", async function (e) {
         e.preventDefault();
         const formData = $(this).serialize();
         const id = $("#Vehiculo_id").val();
 
-        if (id) {
-            // Actualizar → método PUT
-            $.ajax({
-                url: `/vehiculos/${id}`,
-                type: "PUT",
-                data: formData,
-                success: function (res) {
-                    if (res.success) {
-                        Swal.fire("Éxito", res.message, "success");
-                        modal.hide();
-                        tabla.ajax.reload(null, false);
-                    } else {
-                        Swal.fire("Error", res.message, "error");
-                    }
-                },
-                error: function () {
-                    Swal.fire("Error", "Error en la petición", "error");
-                },
-            });
-        } else {
-            // Guardar → método POST
-            $.post("/vehiculos", formData, function (res) {
+        try {
+            if (id) {
+                // Actualizar → PUT
+                const res = await $.ajax({
+                    url: route("vehiculos.actualizar", id),
+                    type: "PUT",
+                    data: formData,
+                });
                 if (res.success) {
                     Swal.fire("Éxito", res.message, "success");
                     modal.hide();
@@ -90,20 +78,38 @@ $(document).ready(function () {
                 } else {
                     Swal.fire("Error", res.message, "error");
                 }
-            }).fail(() => Swal.fire("Error", "Error en la petición", "error"));
+            } else {
+                // Crear → POST
+                const res = await $.post(route("vehiculos.guardar"), formData);
+                if (res.success) {
+                    Swal.fire("Éxito", res.message, "success");
+                    modal.hide();
+                    tabla.ajax.reload(null, false);
+                } else {
+                    Swal.fire("Error", res.message, "error");
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            Swal.fire("Error", "Error en la petición", "error");
         }
     });
 
     // Editar vehículo
-    $("#tablaVehiculos").on("click", ".editar", function () {
+    $("#tablaVehiculos").on("click", ".editar", async function () {
         const id = $(this).data("id");
-        $.get(`/vehiculos/${id}`, function (res) {
+
+        try {
+            const res = await $.get(route("vehiculos.mostrar", id));
             $("#Vehiculo_id").val(res.id);
             $("#numero_placa").val(res.numero_placa);
             $("#cantidad_conductores").val(res.cantidad_conductores);
-            cargarTiposVehiculo(res.tipo_vehiculo_id);
+            await cargarTiposVehiculo(res.tipo_vehiculo_id);
             modal.show();
-        });
+        } catch (err) {
+            console.error(err);
+            Swal.fire("Error", "No se pudo cargar el vehículo", "error");
+        }
     });
 
     // Eliminar vehículo
@@ -116,20 +122,28 @@ $(document).ready(function () {
             showCancelButton: true,
             confirmButtonText: "Sí, eliminar",
             cancelButtonText: "Cancelar",
-        }).then((result) => {
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                $.post(
-                    `/vehiculos/${id}/eliminar`,
-                    { _token: $('input[name="_token"]').val() },
-                    function (res) {
-                        if (res.success) {
-                            Swal.fire("Eliminado", res.message, "success");
-                            tabla.ajax.reload(null, false);
-                        } else {
-                            Swal.fire("Error", res.message, "error");
-                        }
+                try {
+                    const res = await $.ajax({
+                        url: route("vehiculos.eliminar", id),
+                        type: "DELETE",
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr(
+                                "content"
+                            ),
+                        },
+                    });
+                    if (res.success) {
+                        Swal.fire("Eliminado", res.message, "success");
+                        tabla.ajax.reload(null, false);
+                    } else {
+                        Swal.fire("Error", res.message, "error");
                     }
-                );
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire("Error", "Error en la petición", "error");
+                }
             }
         });
     });

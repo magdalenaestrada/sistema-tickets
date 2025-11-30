@@ -60,8 +60,10 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Celular</label>
-                            <input type="text" name="celular" id="celular" class="form-control">
+                            <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
+                                maxlength="9" title="Ingrese 9 dígitos numéricos" required>
                         </div>
+
 
                         <div class="col-md-12">
                             <label class="form-label">Dirección</label>

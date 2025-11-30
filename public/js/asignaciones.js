@@ -1,10 +1,12 @@
+import route from "ziggy-js";
+
 const modalAsignacion = new bootstrap.Modal(
     document.getElementById("modalAsignacion")
 );
 const tabla = $("#tablaAsignaciones");
 
 function cargarTabla() {
-    $.get("/asignaciones/list", function (data) {
+    $.get(route("asignaciones.list"), function (data) {
         let tbody = "";
         data.forEach((a) => {
             tbody += `<tr>
@@ -45,7 +47,7 @@ $(document).ready(function () {
     $("#formAsignacion").submit(function (e) {
         e.preventDefault();
         let id = $("#asignacion_id").val();
-        let url = id ? `/asignaciones/${id}` : "/asignaciones";
+        let url = id ? route("asignaciones.update", id) : route("asignaciones.store");
         let method = id ? "PUT" : "POST";
         $.ajax({
             url: url,
@@ -68,7 +70,7 @@ $(document).ready(function () {
 
     tabla.on("click", ".editar", function () {
         let id = $(this).data("id");
-        $.get(`/asignaciones/${id}`, function (a) {
+        $.get(route("asignaciones.show", id), function (a) {
             $("#asignacion_id").val(a.id);
             $("#horario_id").val(a.horario_id);
             $("#primer_conductor").val(a.primer_conductor);
@@ -99,7 +101,7 @@ $(document).ready(function () {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/asignaciones/${id}`,
+                    url: route("asignaciones.destroy", id),
                     type: "DELETE",
                     success: function (res) {
                         cargarTabla();
@@ -110,7 +112,6 @@ $(document).ready(function () {
         });
     });
 
-    // Evitar que el segundo conductor muestre el mismo del primero
     $("#primer_conductor").change(function () {
         let seleccionado = $(this).val();
 
@@ -122,7 +123,6 @@ $(document).ready(function () {
             }
         });
 
-        // Si el segundo conductor es igual al primero, lo limpiamos
         if ($("#segundo_conductor").val() == seleccionado) {
             $("#segundo_conductor").val("");
         }

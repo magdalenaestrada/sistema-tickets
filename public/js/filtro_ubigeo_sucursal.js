@@ -8,7 +8,7 @@ function cargarUbigeosConSucursales(
     selectedProvincia = null,
     selectedDistrito = null
 ) {
-    $.get("/ubigeos/ubigeos-con-sucursales", function (departamentos) {
+    $.get(route('ubigeos.ubigeos-con-sucursales'), function (departamentos) {
         const depSelect = $(depSelectId);
         depSelect
             .empty()
@@ -30,7 +30,6 @@ function cargarUbigeosConSucursales(
         );
         if (selectedProvincia) provSelect.val(selectedProvincia);
 
-        // Distritos
         const distSelect = $(distSelectId);
         distSelect
             .empty()
@@ -42,7 +41,6 @@ function cargarUbigeosConSucursales(
         );
         if (selectedDistrito) distSelect.val(selectedDistrito);
 
-        // Sucursales (si ya hay distrito seleccionado)
         if (selectedDistrito) {
             cargarSucursales(selectedDistrito, sucSelectId);
         } else {
@@ -62,7 +60,7 @@ function cargarSucursales(distritoId, sucSelectId = "#sucursal_id") {
 
     if (!distritoId) return;
 
-    $.get(`/ubigeos/sucursales/${distritoId}`, function (sucursales) {
+    $.get(route('ubigeos.sucursales', distritoId), function (sucursales) {
         sucursales.forEach((s) =>
             sucursalSelect.append(
                 `<option value="${s.id}">${s.nombre_comercial}</option>`

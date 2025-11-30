@@ -5,11 +5,8 @@ $.ajaxSetup({
 });
 
 $(document).ready(function () {
-    // ==============================
-    // 🧾 Inicializar DataTable
-    // ==============================
     let tabla = $("#tablaSucursales").DataTable({
-        ajax: `/sucursales/${EMPRESA_ID}/datatable`,
+        ajax: route("sucursales.datatable", EMPRESA_ID),
         columns: [
             { title: "ID", data: "id" },
             { title: "Distrito", data: "distrito" },
@@ -33,11 +30,8 @@ $(document).ready(function () {
         },
     });
 
-    // ==============================
-    // 🌎 Cargar ubigeos dinámicamente
-    // ==============================
     function cargarDepartamentos(selected = null) {
-        $.get("/ubigeos/departamentos", function (departamentos) {
+        $.get(route("ubigeos.departamentos"), function (departamentos) {
             let $select = $("#departamento_id");
             $select.empty().append('<option value="">Seleccione</option>');
             departamentos.forEach((d) =>
@@ -49,19 +43,24 @@ $(document).ready(function () {
 
     function cargarProvincias(departamento_id, selected = null) {
         if (!departamento_id) return;
-        $.get(`/ubigeos/provincias/${departamento_id}`, function (provincias) {
-            let $select = $("#provincia_id");
-            $select.empty().append('<option value="">Seleccione</option>');
-            provincias.forEach((p) =>
-                $select.append(`<option value="${p.id}">${p.nombre}</option>`)
-            );
-            if (selected) $select.val(selected);
-        });
+        $.get(
+            route("ubigeos.provincias", departamento_id),
+            function (provincias) {
+                let $select = $("#provincia_id");
+                $select.empty().append('<option value="">Seleccione</option>');
+                provincias.forEach((p) =>
+                    $select.append(
+                        `<option value="${p.id}">${p.nombre}</option>`
+                    )
+                );
+                if (selected) $select.val(selected);
+            }
+        );
     }
 
     function cargarDistritos(provincia_id, selected = null) {
         if (!provincia_id) return;
-        $.get(`/ubigeos/distritos/${provincia_id}`, function (distritos) {
+        $.get(route("ubigeos.distritos", provincia_id), function (distritos) {
             let $select = $("#distrito_id");
             $select.empty().append('<option value="">Seleccione</option>');
             distritos.forEach((d) =>
@@ -90,28 +89,22 @@ $(document).ready(function () {
         cargarDistritos(id);
     });
 
-    // ==============================
-    // ➕ Nueva sucursal
-    // ==============================
     $("#btnNuevaSucursal").click(() => {
         $("#formSucursal")[0].reset();
         $("#sucursal_id").val("");
         $("#modalTitulo").text("Registrar Sucursal");
 
-        // cargar los ubigeos
         cargarDepartamentos();
-
         $("#modalSucursal").modal("show");
     });
 
-    // ==============================
-    // 💾 Guardar sucursal
-    // ==============================
     $("#formSucursal").submit(function (e) {
         e.preventDefault();
 
         const id = $("#sucursal_id").val();
-        const url = id ? `/sucursales/${id}` : "/sucursales";
+        const url = id
+            ? route("sucursales.actualizar", id)
+            : route("sucursales.guardar");
         const method = id ? "PUT" : "POST";
 
         let formData = $(this).serializeArray();
@@ -137,13 +130,10 @@ $(document).ready(function () {
         });
     });
 
-    // ==============================
-    // ✏️ Editar sucursal
-    // ==============================
     $("#tablaSucursales").on("click", ".editar", function () {
         const id = $(this).data("id");
 
-        $.get(`/sucursales/detalle/${id}`, function (data) {
+        $.get(route("sucursales.detalle", id), function (data) {
             $("#sucursal_id").val(data.id);
             $("#empresa_id").val(data.empresa_id);
             $('input[name="nombre_comercial"]').val(data.nombre_comercial);
@@ -160,12 +150,9 @@ $(document).ready(function () {
         });
     });
 
-    // ==============================
-    // 👁️ Ver detalles
-    // ==============================
     $("#tablaSucursales").on("click", ".ver", function () {
         const id = $(this).data("id");
-        $.get(`/sucursales/detalle/${id}`, function (data) {
+        $.get(route("sucursales.detalle", id), function (data) {
             Swal.fire({
                 title: "Detalles de Sucursal",
                 html: `

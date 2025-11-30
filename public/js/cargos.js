@@ -5,12 +5,9 @@ $.ajaxSetup({
 });
 
 $(function () {
-    // =======================
-    // 🧾 Inicializar DataTable
-    // =======================
-
+   
     let tabla = $("#tablaCargos").DataTable({
-        ajax: "/cargos/datatable",
+        ajax: route("cargos.datatable"), // ← cambio a Ziggy
         columns: [
             { title: "ID", data: "id" },
             { title: "Descripcion", data: "descripcion" },
@@ -32,9 +29,6 @@ $(function () {
         },
     });
 
-    // =======================
-    // ➕ Nuevo registro
-    // =======================
     $("#btnNuevaCargo").click(function () {
         $("#formCargo")[0].reset();
         $("#cargo_id").val("");
@@ -44,12 +38,9 @@ $(function () {
         $("#modalCargo").modal("show");
     });
 
-    // =======================
-    // ✏️ Editar registro
-    // =======================
     $("#tablaCargos").on("click", ".editar", function () {
         const id = $(this).data("id");
-        $.get(`/cargos/${id}`, function (data) {
+        $.get(route("cargos.mostrar", id), function (data) { // ← Ziggy
             $("#cargo_id").val(id);
             $("#descripcion").val(data.descripcion);
             $("#modalTitulo").text("Editar Cargo");
@@ -58,13 +49,10 @@ $(function () {
         });
     });
 
-    // =======================
-    // 👁️ Ver registro
-    // =======================
     $("#tablaCargos").on("click", ".ver", function () {
         const id = $(this).data("id");
 
-        $.get(`/cargos/${id}`, function (data) {
+        $.get(route("cargos.mostrar", id), function (data) { // ← Ziggy
             Swal.fire({
                 title: "Detalles de Cargo",
                 html: `
@@ -81,9 +69,6 @@ $(function () {
         });
     });
 
-    // =======================
-    // 🗑️ Eliminar registro
-    // =======================
     $("#tablaCargos").on("click", ".eliminar", function () {
         const id = $(this).data("id");
 
@@ -99,7 +84,7 @@ $(function () {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: `/cargos/${id}`,
+                    url: route("cargos.eliminar", id), // ← Ziggy
                     type: "DELETE",
                     success: function (res) {
                         if (res.success) {
@@ -139,14 +124,11 @@ $(function () {
         e.preventDefault();
 
         const id = $("#cargo_id").val();
-        const url = id ? `/cargos/${id}` : `/cargos`;
-        const method = id ? "POST" : "POST"; // siempre POST, y enviamos _method si es update
+        const url = id ? route("cargos.actualizar", id) : route("cargos.guardar"); // ← Ziggy
+        const method = id ? "PUT" : "POST"; // ahora PUT si es update
 
         // Incluimos el _method si es edición
         let formData = $(this).serializeArray();
-        if (id) {
-            formData.push({ name: "_method", value: "PUT" });
-        }
 
         $.ajax({
             url: url,

@@ -22,11 +22,11 @@ return new class extends Migration {
             $table->integer('asiento_numero'); // 1 a 15
             $table->foreignId('horario_id')->constrained('horarios')->cascadeOnDelete();
             $table->unique(['horario_id', 'asiento_numero'], 'asiento_unico_por_horario');
-            $table
-                ->enum("estado", ["A", "I"])
-                ->comment("Estado de la caja: A => Activo, I => Inactivo")
-                ->default("A")
+            $table->enum("estado", ["R", "V"])
+                ->comment("R = Reservado, V = Vendido")
+                ->default("R")
                 ->index();
+
             $table->dateTime("fecha_creacion");
             $table->dateTime("fecha_inactivacion")->nullable();
             $table->timestamps();

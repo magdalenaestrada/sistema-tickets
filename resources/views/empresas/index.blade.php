@@ -92,8 +92,5 @@
     @endif
 @endsection
 @push('scripts')
-    <script>
-        const EMPRESA_ID = {{ $empresa->id }};
-    </script>
     <script src="{{ asset('js/empresas.js') }}"></script>
 @endpush

@@ -143,4 +143,5 @@ class CajaController extends Controller
         $caja = Caja::findOrFail($caja);
         return view('caja.corte_ticket', compact('caja', 'usuario'));
     }
+    
 }

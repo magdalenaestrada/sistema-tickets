@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Pasaje;
 use App\Models\Venta;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,52 @@ class VentaService
         }
     }
 
+    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1)
+    {
+        $user = Auth::user();
+        $precioFinal = $precio - $descuento;
+
+        $comprobante = $this->generarSerieYNumero($tipo_documento_factura_id, $user->sucursal_id);
+
+        DB::beginTransaction();
+        try {
+            $venta = Venta::create([
+                'tipo_servicio_id'  => 1, // Pasajes
+                'sucursal_id'       => $user->sucursal_id,
+                'usuario_id'        => $user->id,
+                'persona_id'        => $user->persona_id,
+                'tipo_documento_factura_id' => $tipo_documento_factura_id,
+                'serie'             => $comprobante['serie'],
+                'numero'            => $comprobante['numero'],
+                'total'             => $precioFinal,
+                'fecha_emision'     => now(),
+            ]);
+
+            $descripcion = $horario->punto_origen->nombre_comercial . ' → ' .
+                $horario->punto_destino->nombre_comercial .
+                ' - Asiento ' . $asiento;
+
+            $venta->detalles()->create([
+                'tipo_servicio_id' => 1,
+                'descripcion'      => $descripcion,
+                'cantidad'         => 1,
+                'precio_venta'     => $precio,
+                'total'            => $precioFinal,
+                'descuento'        => $descuento,
+            ]);
+
+            DB::commit();
+
+            return [
+                'venta' => $venta,
+                'servicio_model' => Pasaje::class,
+                'servicio_id' => null,
+            ];
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
+        }
+    }
     private function generarSerieYNumero($tipo_documento_factura_id, $sucursal_id)
     {
         $series = [

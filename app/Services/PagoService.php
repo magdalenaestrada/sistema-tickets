@@ -6,6 +6,7 @@ use App\Models\VentaPago;
 use App\Models\Caja;
 use App\Models\CajaDetalle;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class PagoService
 {
@@ -28,6 +29,14 @@ class PagoService
                 ->first();
 
             if ($caja) {
+
+                Log::info('Pago a registrar', [
+                    'ventaId' => $ventaId,
+                    'metodo_pago_id' => $pago['metodo_pago_id'],
+                    'billetera_id' => $pago['billetera_id'] ?? null,
+                    'total' => $pago['total']
+                ]);
+
 
                 CajaDetalle::create([
                     'caja_id'       => $caja->id,

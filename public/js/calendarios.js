@@ -20,7 +20,10 @@ $(document).ready(function () {
             center: "title",
             right: "",
         },
-        events: "/horarios/calendario/eventos",
+
+        // ⬇️ Ziggy aquí
+        events: route("horarios.calendario.eventos"),
+
         eventDisplay: "block",
         eventClick: function (info) {
             const props = info.event.extendedProps;

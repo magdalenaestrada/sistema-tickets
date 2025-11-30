@@ -40,4 +40,28 @@ class CajaDetalle extends Model
     {
         return $this->morphTo(null, 'table_name', 'table_id');
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($detalle) {
+
+            $prefijo = match ($detalle->table_name) {
+                'App\Models\Pasaje' => 'P',
+                'App\Models\Encomienda' => 'E',
+                default => 'X',
+            };
+
+            $fecha = now()->format('dmy');
+
+            $count = CajaDetalle::where('table_name', $detalle->table_name)
+                ->whereDate('created_at', today())
+                ->count();
+
+            $correlativo = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+
+            $detalle->numero_ticket = "{$prefijo}-{$fecha}-{$correlativo}";
+        });
+    }
 }
