@@ -3,8 +3,14 @@
 @section('content')
     <div class="container mt-4">
         <div class="row mt-3">
-            <form action="{{ route('pasajes.guardar') }}" method="POST" enctype="multipart/form-data" id="formVenta">
+            <form method="POST" enctype="multipart/form-data" id="formVenta">
                 @csrf
+
+                {{-- 🔥 Si se está editando un pasaje, agregamos el ID --}}
+                @if (isset($pasaje))
+                    <input type="hidden" name="pasaje_id" value="{{ $pasaje->id }}">
+                @endif
+
                 <div class="row">
                     <div class="col-md-9 mb-3">
                         @foreach ($asientos as $index => $asiento)
@@ -22,7 +28,8 @@
                                             <select class="form-select" name="tipo_documento_id[]"
                                                 id="tipo_documento_id_{{ $index }}" required>
                                                 @foreach ($tipos_documentos as $tipo_documento)
-                                                    <option value="{{ $tipo_documento->id }}">
+                                                    <option value="{{ $tipo_documento->id }}"
+                                                        @if (isset($pasaje) && $pasaje->persona->tipo_documento_id == $tipo_documento->id) selected @endif>
                                                         {{ $tipo_documento->codigo }}
                                                     </option>
                                                 @endforeach
@@ -32,43 +39,45 @@
                                         <div class="col-md-2 mb-2">
                                             <label class="form-label">Documento</label>
                                             <input type="text" class="form-control" id="documento_{{ $index }}"
-                                                name="documento[]" required>
+                                                name="documento[]" required value="{{ $pasaje->persona->documento ?? '' }}">
                                         </div>
 
                                         <div class="col-md-4 mb-2">
                                             <label class="form-label">Nombres</label>
                                             <input type="text" class="form-control" id="nombres_{{ $index }}"
-                                                name="nombres[]" required>
+                                                name="nombres[]" required value="{{ $pasaje->persona->nombres ?? '' }}">
                                         </div>
 
                                         <div class="col-md-4 mb-2">
                                             <label class="form-label">Apellidos</label>
                                             <input type="text" class="form-control" id="apellidos_{{ $index }}"
-                                                name="apellidos[]" required>
+                                                name="apellidos[]" required
+                                                value="{{ $pasaje->persona->apellidos ?? '' }}">
                                         </div>
 
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Celular</label>
                                             <input type="text" class="form-control" id="celular_{{ $index }}"
-                                                name="celular[]" required>
+                                                name="celular[]" required value="{{ $pasaje->persona->celular ?? '' }}">
                                         </div>
 
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Teléfono</label>
                                             <input type="text" class="form-control" id="telefono_{{ $index }}"
-                                                name="telefono[]">
+                                                name="telefono[]" value="{{ $pasaje->persona->telefono ?? '' }}">
                                         </div>
 
                                         <div class="col-md-4 mb-2">
                                             <label class="form-label">Correo electrónico</label>
                                             <input type="email" class="form-control" id="correo_{{ $index }}"
-                                                name="direccion[]">
+                                                name="direccion[]" value="{{ $pasaje->persona->correo ?? '' }}">
                                         </div>
 
                                         <div class="col-md-2 mb-2">
                                             <label class="form-label">Descuento</label>
                                             <input type="number" step="0.01" class="form-control"
-                                                id="descuento_{{ $index }}" name="descuento[]" value="0">
+                                                id="descuento_{{ $index }}" name="descuento[]"
+                                                value="{{ $pasaje->descuento ?? 0 }}">
                                         </div>
                                     </div>
 
@@ -76,7 +85,8 @@
                                         <div class="col-md-6 form-check">
                                             <input type="checkbox" class="form-check-input"
                                                 id="pasajero_menor_{{ $index }}"
-                                                name="pasajero_menor[{{ $index }}]" value="1">
+                                                name="pasajero_menor[{{ $index }}]" value="1"
+                                                @if (isset($pasaje) && $pasaje->pasajero_menor) checked @endif>
                                             <label class="form-check-label" for="pasajero_menor_{{ $index }}">
                                                 ¿Pasajero menor de edad?
                                             </label>
@@ -93,7 +103,6 @@
                     </div>
 
                     <div class="col-md-3">
-                        <!-- Info del viaje -->
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
@@ -107,19 +116,18 @@
                             </div>
                         </div>
 
-                        <!-- Datos de facturación -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <strong>Facturación</strong>
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <label for="tipo_documento_factura_id" class="form-label">Tipo de documento</label>
+                                    <label class="form-label">Tipo de documento</label>
                                     <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
                                         class="form-select">
                                         @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
                                             <option value="{{ $tipo_documento_factura->id }}"
-                                                @if ($index === 1) selected @endif>
+                                                @if (optional($pasaje->venta)?->tipo_documento_factura_id == $tipo_documento_factura->id) selected @endif>
                                                 {{ $tipo_documento_factura->descripcion }}
                                             </option>
                                         @endforeach
@@ -127,29 +135,41 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="numero_documento_id" class="form-label">Número documento</label>
+                                    <label class="form-label">Número documento</label>
                                     <input type="text" id="numero_documento_id" name="numero_documento_id"
-                                        class="form-control">
+                                        class="form-control" value="{{ $pasaje->venta->documento ?? '' }}">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="razon_social" class="form-label">Razón social</label>
-                                    <input type="text" id="razon_social" name="razon_social" class="form-control">
+                                    <label class="form-label">Razón social</label>
+                                    <input type="text" id="razon_social" name="razon_social" class="form-control"
+                                        value="{{ $pasaje->venta->razon_social ?? '' }}">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Métodos de Pago -->
                         <div class="card mb-3">
                             <div class="card-header">
                                 <strong>Método de Pago</strong>
                             </div>
                             <div class="card-body">
+
+                                @php
+                                    $precioBoleto = $horario->costo_pasaje ?? 0;
+                                    $pagos = collect(optional($pasaje->venta)?->pagos);
+
+                                    $pagoDigital = $pagos->where('tipo', 'digital')->sum('monto') ?: $precioBoleto;
+                                    $pagoEfectivo = $pagos->where('tipo', 'efectivo')->sum('monto') ?: 0;
+                                    $pagoBilletera = $pagos->where('tipo', 'billetera')->first();
+                                    $costoTotal = optional($pasaje->venta)->total ?: $precioBoleto;
+                                @endphp
+
                                 <div class="mb-3">
-                                    <label for="metodo_pago_id" class="form-label">Método</label>
+                                    <label class="form-label">Método</label>
                                     <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
                                         @foreach ($metodos_pago as $metodo_pago)
-                                            <option value="{{ $metodo_pago->id }}">
+                                            <option value="{{ $metodo_pago->id }}"
+                                                @if (isset($pasaje) && $pasaje->venta?->pagos?->first()?->metodo_pago_id == $metodo_pago->id) selected @endif>
                                                 {{ $metodo_pago->descripcion }}
                                             </option>
                                         @endforeach
@@ -157,51 +177,51 @@
                                 </div>
 
                                 <div class="mb-3 grupo_costo_total" hidden>
-                                    <label for="costo_total" class="form-label">Costo total</label>
+                                    <label class="form-label">Costo total</label>
                                     <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control" readonly>
+                                        class="form-control" readonly value="{{ $costoTotal }}">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="pago_efectivo" class="form-label">Pago efectivo</label>
+                                    <label class="form-label">Pago efectivo</label>
                                     <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
-                                        class="form-control" value="0">
+                                        class="form-control" value="{{ $pagoEfectivo }}">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="billetera_id" class="form-label">Yape/Plin/POS</label>
+                                    <label class="form-label">Yape/Plin/POS</label>
                                     <select name="billetera_id" id="billetera_id" class="form-select">
                                         <option value="">Seleccionar...</option>
-                                        @foreach ($billeteras_digitales as $billetera_digital)
-                                            <option value="{{ $billetera_digital->id }}">
-                                                {{ $billetera_digital->descripcion }}
+                                        @foreach ($billeteras_digitales as $billetera)
+                                            <option value="{{ $billetera->id }}"
+                                                @if ($pagoBilletera && $pagoBilletera->billetera_id == $billetera->id) selected @endif>
+                                                {{ $billetera->descripcion }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="pago_billetera" class="form-label">Pago digital</label>
+                                    <label class="form-label">Pago digital</label>
                                     <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
-                                        class="form-control" value="0">
+                                        class="form-control" value="{{ $pagoDigital }}">
+                                </div>
+
+                            </div>
+
+                            <div class="card mb-3">
+                                <div class="card-body text-center">
+                                    <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
+                                        <i class="bi bi-bookmark"></i> Reservar
+                                    </button>
+
+                                    <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
+                                        <i class="bi bi-cash-coin"></i> Terminar venta
+                                    </button>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Botones de acción -->
-                        <div class="card mb-3">
-                            <div class="card-body text-center">
-                                <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
-                                    <i class="bi bi-bookmark"></i> Reservar
-                                </button>
-
-                                <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
-                                    <i class="bi bi-cash-coin"></i> Terminar venta
-                                </button>
-                            </div>
-                        </div>
                     </div>
-                </div>
             </form>
         </div>
     </div>

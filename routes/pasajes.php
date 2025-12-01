@@ -9,4 +9,7 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
         ->name('horario.asientos');
     Route::get('/vender', [PasajeController::class, 'vender'])->name('vender');
     Route::post('/reservar', [PasajeController::class, 'reservar'])->name('reservar');
+    Route::get('/buscar', [PasajeController::class, 'buscarPasaje'])->name('buscar');
+    Route::get('/{pasaje}/editar', [PasajeController::class, 'editar'])
+        ->name('editar');
 });

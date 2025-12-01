@@ -15,7 +15,7 @@
           <ul class="nav" id="sidebarNav">
               <li class="nav-item nav-category">HOME</li>
               <li class="nav-item">
-                  <a href="dashboard-1.html" class="nav-link">
+                  <a href="{{ route('dashboard') }}" class="nav-link">
                       <i class="link-icon" data-lucide="box"></i>
                       <span class="link-title">Dashboard</span>
                   </a>

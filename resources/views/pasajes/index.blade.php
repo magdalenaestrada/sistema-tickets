@@ -64,6 +64,9 @@
                         <button id="sell-button" class="btn btn-primary mb-2" style="display:none;">
                             Vender pasaje
                         </button>
+                        <button id="edit-button" class="btn btn-warning mb-2" style="display:none;">
+                            Editar pasaje
+                        </button>
 
                         <div id="svg-container" style="max-width: 350px; overflow: auto;">
                             <p>Seleccione un horario para ver los asientos.</p>

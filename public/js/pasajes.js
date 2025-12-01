@@ -2,9 +2,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const horarioCards = document.querySelectorAll(".horario-card");
     const svgContainer = document.getElementById("svg-container");
     const sellButton = document.getElementById("sell-button");
+    const editButton = document.getElementById("edit-button");
 
     let selectedSeats = [];
     let currentHorarioId = null;
+    let selectedReservedPasajeId = null; // ID del pasaje reservado seleccionado
 
     horarioCards.forEach((card) => {
         card.addEventListener("click", function () {
@@ -18,8 +20,11 @@ document.addEventListener("DOMContentLoaded", function () {
             // Agregar clase active a la tarjeta seleccionada
             this.classList.add("active");
 
+            // Resetear selecciones
             selectedSeats = [];
+            selectedReservedPasajeId = null;
             updateSellButton();
+            updateEditButton();
 
             fetch(`/pasajes/horario/${horarioId}/asientos`)
                 .then((res) => res.json())
@@ -32,7 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
-                    // Aplicar clases según estado
                     Object.keys(data.asientos).forEach((numero) => {
                         const estado = data.asientos[numero];
                         const g = svgEl.querySelector(`#seat-${numero}`);
@@ -47,33 +51,35 @@ document.addEventListener("DOMContentLoaded", function () {
                             "selected-seat"
                         );
 
-                        // Agregar clase según estado
                         g.classList.add(estado);
 
-                        // Guardar estado
                         g.dataset.estado = estado;
                         g.dataset.numero = numero;
 
-                        // Configurar interactividad
                         if (estado === "libre") {
                             g.style.cursor = "pointer";
                             g.style.opacity = "1";
 
                             g.onclick = function (e) {
                                 e.stopPropagation();
-                                toggleSeatSelection(g, numero);
+                                toggleSeatSelection(g, numero, "libre");
                             };
-                        } else {
-                            g.style.cursor = "not-allowed";
-                            g.style.opacity = "0.7";
+                        } else if (estado === "reservado") {
+                            g.style.cursor = "pointer";
+                            g.style.opacity = "1";
 
                             g.onclick = function (e) {
                                 e.stopPropagation();
-                                const mensaje =
-                                    estado === "ocupado"
-                                        ? "Este asiento está vendido"
-                                        : "Este asiento está reservado";
-                                alert(mensaje);
+                                // Obtener el ID del pasaje reservado
+                                obtenerPasajeReservado(horarioId, numero);
+                            };
+                        } else {
+                            g.style.cursor = "not-allowed";
+                            g.style.opacity = "0.6";
+
+                            g.onclick = function (e) {
+                                e.stopPropagation();
+                                alert("Este asiento está vendido");
                             };
                         }
                     });
@@ -84,23 +90,68 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    function toggleSeatSelection(seatElement, numero) {
+    function toggleSeatSelection(seatElement, numero, tipo) {
         const seatNum = parseInt(numero);
-        const isSelected = selectedSeats.includes(seatNum);
 
-        if (isSelected) {
-            // Deseleccionar
-            selectedSeats = selectedSeats.filter((s) => s !== seatNum);
-            seatElement.classList.remove("selected-seat");
-            seatElement.classList.add("libre");
-        } else {
-            // Seleccionar
-            selectedSeats.push(seatNum);
-            seatElement.classList.remove("libre");
-            seatElement.classList.add("selected-seat");
+        if (tipo === "libre") {
+            const isSelected = selectedSeats.includes(seatNum);
+
+            if (isSelected) {
+                selectedSeats = selectedSeats.filter((s) => s !== seatNum);
+                seatElement.classList.remove("selected-seat");
+                seatElement.classList.add("libre");
+            } else {
+                selectedSeats.push(seatNum);
+                seatElement.classList.remove("libre");
+                seatElement.classList.add("selected-seat");
+            }
+
+            // Limpiar selección de reservado
+            selectedReservedPasajeId = null;
         }
 
         updateSellButton();
+        updateEditButton();
+    }
+
+    async function obtenerPasajeReservado(horarioId, numeroAsiento) {
+        try {
+            // Buscar el pasaje reservado en ese horario y asiento
+            const response = await fetch(
+                `/pasajes/horario/${horarioId}/asientos`
+            );
+            const data = await response.json();
+
+            // Necesitamos obtener el ID del pasaje - haremos una búsqueda adicional
+            const pasajeResponse = await fetch(
+                `/pasajes/buscar?horario_id=${horarioId}&asiento=${numeroAsiento}`
+            );
+            const pasajeData = await pasajeResponse.json();
+
+            if (pasajeData.success && pasajeData.pasaje_id) {
+                selectedReservedPasajeId = pasajeData.pasaje_id;
+
+                // Limpiar selección de asientos libres
+                selectedSeats = [];
+                document.querySelectorAll(".selected-seat").forEach((seat) => {
+                    seat.classList.remove("selected-seat");
+                    seat.classList.add("libre");
+                });
+
+                // Marcar visualmente el asiento reservado seleccionado
+                const seatElement = document.querySelector(
+                    `#seat-${numeroAsiento}`
+                );
+                if (seatElement) {
+                    seatElement.classList.add("selected-seat");
+                }
+
+                updateSellButton();
+                updateEditButton();
+            }
+        } catch (error) {
+            console.error("Error al obtener pasaje reservado:", error);
+        }
     }
 
     function updateSellButton() {
@@ -109,6 +160,15 @@ document.addEventListener("DOMContentLoaded", function () {
             sellButton.textContent = `Vender ${selectedSeats.length} asiento(s)`;
         } else {
             sellButton.style.display = "none";
+        }
+    }
+
+    function updateEditButton() {
+        if (selectedReservedPasajeId) {
+            editButton.style.display = "block";
+            editButton.textContent = "Editar reserva";
+        } else {
+            editButton.style.display = "none";
         }
     }
 
@@ -148,7 +208,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const seats = selectedSeats.sort((a, b) => a - b).join(",");
-            window.location.href = `/pasajes/vender?asientos=${seats}&horario=${currentHorarioId}`;
+            window.location.href = route("pasajes.vender", {
+                asientos: seats,
+                horario: currentHorarioId,
+            });
         } catch (err) {
             console.error(err);
             Swal.fire({
@@ -158,5 +221,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 confirmButtonText: "Entendido",
             });
         }
+    });
+
+    editButton.addEventListener("click", function () {
+        if (!selectedReservedPasajeId) {
+            Swal.fire({
+                icon: "warning",
+                title: "No hay asiento seleccionado",
+                text: "Selecciona un asiento reservado para editar.",
+                confirmButtonText: "Entendido",
+            });
+            return;
+        }
+
+        // Redirigir a la página de edición usando Ziggy
+        window.location.href = route("pasajes.editar", {
+            pasaje: selectedReservedPasajeId,
+        });
     });
 });

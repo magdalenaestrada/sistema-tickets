@@ -27,37 +27,32 @@ $(function () {
         costoTotalInput.val(precioTotal.toFixed(2));
         refrescarPagos();
     }
+
     function refrescarPagos() {
         const metodo = parseInt(metodoPagoSelect.val());
         const total = parseFloat(costoTotalInput.val()) || 0;
 
-        // Ocultar todos los campos inicialmente
         pagoEfectivoInput.closest(".mb-3").hide();
         pagoBilleteraInput.closest(".mb-3").hide();
         billeteraSelect.closest(".mb-3").hide();
         grupoCostoTotal.attr("hidden", true);
 
-        // Limpiar readonly por defecto
         pagoEfectivoInput.prop("readonly", false);
         pagoBilleteraInput.prop("readonly", false);
 
         if (metodo === 1) {
-            // Solo efectivo
             pagoEfectivoInput.closest(".mb-3").show();
             pagoEfectivoInput.val(total.toFixed(2)).prop("readonly", true);
         } else if (metodo === 2) {
-            // Solo billetera digital
             pagoBilleteraInput.closest(".mb-3").show();
             billeteraSelect.closest(".mb-3").show();
             pagoBilleteraInput.val(total.toFixed(2)).prop("readonly", true);
         } else if (metodo === 3) {
-            // Mixto: ambos editables
             pagoEfectivoInput.closest(".mb-3").show();
             pagoBilleteraInput.closest(".mb-3").show();
             billeteraSelect.closest(".mb-3").show();
             grupoCostoTotal.removeAttr("hidden");
 
-            // Inicializa con reparto equitativo si ambos están en cero
             let pagoE = parseFloat(pagoEfectivoInput.val()) || 0;
             let pagoB = parseFloat(pagoBilleteraInput.val()) || 0;
 
@@ -66,7 +61,6 @@ $(function () {
                 pagoEfectivoInput.val(mitad.toFixed(2));
                 pagoBilleteraInput.val((total - mitad).toFixed(2));
             }
-            // No llamamos a actualizarPagosCombinados aquí para no sobrescribir
         }
     }
 
@@ -75,7 +69,6 @@ $(function () {
         let pagoE = pagoEfectivoInput.val();
         let pagoB = pagoBilleteraInput.val();
 
-        // Permitir temporalmente que quede vacío
         pagoE = pagoE === "" ? 0 : parseFloat(pagoE) || 0;
         pagoB = pagoB === "" ? 0 : parseFloat(pagoB) || 0;
 
@@ -87,14 +80,12 @@ $(function () {
             if (pagoE < 0) pagoE = 0;
         }
 
-        // Solo actualizamos los valores si no está vacío
         if (document.activeElement !== pagoEfectivoInput[0])
             pagoEfectivoInput.val(pagoE.toFixed(2));
         if (document.activeElement !== pagoBilleteraInput[0])
             pagoBilleteraInput.val(pagoB.toFixed(2));
     }
 
-    // Formatear al perder foco
     pagoEfectivoInput.on("blur", function () {
         let val = parseFloat(this.value) || 0;
         if (val > parseFloat(costoTotalInput.val()))
@@ -111,20 +102,7 @@ $(function () {
         actualizarPagosCombinados();
     });
 
-    // Eventos
     metodoPagoSelect.on("change", refrescarPagos);
-    pagoEfectivoInput.on("input", function () {
-        if (parseInt(metodoPagoSelect.val()) === 3) {
-            actualizarPagosCombinados();
-        }
-    });
-    pagoBilleteraInput.on("input", function () {
-        if (parseInt(metodoPagoSelect.val()) === 3) {
-            actualizarPagosCombinados();
-        }
-    });
-
-    // Eventos para pagos mixtos
     pagoEfectivoInput.on("input", function () {
         if (parseInt(metodoPagoSelect.val()) === 3) {
             actualizarPagosCombinados();
@@ -146,32 +124,22 @@ $(function () {
         if (seat)
             seat.querySelector(".seat-body").setAttribute("fill", "orange");
     }
-    metodoPagoSelect.on("change", refrescarPagos);
-
-    pagoEfectivoInput.on("input", function () {
-        if (parseInt(metodoPagoSelect.val()) === 3) {
-            actualizarPagosCombinados();
-        }
-    });
-
-    pagoBilleteraInput.on("input", function () {
-        if (parseInt(metodoPagoSelect.val()) === 3) {
-            actualizarPagosCombinados();
-        }
-    });
 
     if (horarioId) {
-        $.getJSON(`/pasajes/horario/${horarioId}/asientos`, function (data) {
-            seatPrices = data.precios || {};
-            actualizarCostoTotal();
-        });
+        $.getJSON(
+            route("pasajes.horario.asientos", horarioId),
+            function (data) {
+                seatPrices = data.precios || {};
+                actualizarCostoTotal();
+            }
+        );
     }
 
     $("#btnReservar").on("click", function (e) {
         e.preventDefault();
 
         if (selectedSeatNumbers.length === 0) {
-            alert("No hay asientos seleccionados");
+            Swal.fire("Atención", "No hay asientos seleccionados", "warning");
             return;
         }
 
@@ -198,24 +166,30 @@ $(function () {
                 },
             };
 
-            const promesa = $.post("/pasajes/reservar", datosReserva)
+            const promesa = $.post(route("pasajes.reservar"), datosReserva)
                 .done((res) => {
                     if (res.success) {
                         marcarAsientoReservado(res.asiento_numero);
                         reservasExitosas++;
                     }
                 })
-                .fail((err) => {
+                .fail(() => {
                     reservasFallidas++;
-                    alert(`Error en asiento ${asientoNum}`);
+                    Swal.fire(
+                        "Error",
+                        `Error en asiento ${asientoNum}`,
+                        "error"
+                    );
                 });
 
             promesas.push(promesa);
         });
 
         Promise.all(promesas).then(() => {
-            alert(
-                `Reservas: ${reservasExitosas} exitosas, ${reservasFallidas} fallidas`
+            Swal.fire(
+                "Resultado",
+                `Reservas: ${reservasExitosas} exitosas, ${reservasFallidas} fallidas`,
+                "info"
             );
         });
     });
@@ -223,29 +197,17 @@ $(function () {
     $("#btnTerminarVenta").on("click", function (e) {
         e.preventDefault();
 
-        const formData = new FormData();
+        let form = document.getElementById("formVenta");
+        let formData = new FormData(form);
         formData.append("accion", "terminar");
-        formData.append(
-            "tipo_documento_factura_id",
-            $("#tipo_documento_factura_id").val()
-        );
 
-        selectedSeatNumbers.forEach((n) => formData.append("asientos[]", n));
-
-        // Agregar todos los demás campos
-        $("#formVenta")
-            .serializeArray()
-            .filter((f) => f.name !== "asientos[]")
-            .forEach((f) => formData.append(f.name, f.value));
-
-        // Archivos
         $('input[type="file"]').each(function () {
             if (this.files.length > 0)
                 formData.append(this.name, this.files[0]);
         });
 
         $.ajax({
-            url: "/pasajes/guardar",
+            url: route("pasajes.guardar"),
             type: "POST",
             data: formData,
             processData: false,
@@ -256,15 +218,70 @@ $(function () {
                     selectedSeatNumbers.forEach((num) =>
                         marcarAsientoOcupado(num)
                     );
-                    alert("Venta realizada correctamente");
-                    window.location.href = res.redirect;
+                    Swal.fire(
+                        "Éxito",
+                        "Venta realizada correctamente",
+                        "success"
+                    ).then(() => {
+                        window.location.href = res.redirect;
+                    });
                 }
             },
             error: function () {
-                alert("Error al procesar la venta");
+                Swal.fire("Error", "Error al procesar la venta", "error");
             },
         });
     });
 
     refrescarPagos();
+
+    // Buscar documento automáticamente cuando el usuario sale del input
+    $("[id^='documento_']").on("blur", function () {
+        const input = $(this);
+        const documento = input.val().trim();
+
+        if (!documento) return;
+
+        // obtener el index desde el id (documento_0, documento_1, etc.)
+        const index = input.attr("id").split("_")[1];
+
+        // loader mientras consulta
+        input.prop("disabled", true);
+        input.addClass("loading-input");
+
+        $.getJSON(route("buscar.buscar") + `?documento=${documento}`)
+            .done((data) => {
+                if (data.error) {
+                    Swal.fire(
+                        "No encontrado",
+                        "No se encontró información: " + data.error,
+                        "warning"
+                    );
+                    return;
+                }
+
+                if (data.razon_social) {
+                    // Empresa
+                    $(`#nombres_${index}`).val(data.razon_social);
+                    $(`#apellidos_${index}`).val("");
+                    $(`#correo_${index}`).val(data.direccion || "");
+                } else {
+                    // Persona
+                    $(`#nombres_${index}`).val(data.nombres || "");
+                    $(`#apellidos_${index}`).val(
+                        `${data.apellido_paterno || ""} ${
+                            data.apellido_materno || ""
+                        }`.trim()
+                    );
+                    $(`#correo_${index}`).val(data.direccion || "");
+                }
+            })
+            .fail(() => {
+                Swal.fire("Error", "No se pudo conectar con la API.", "error");
+            })
+            .always(() => {
+                input.prop("disabled", false);
+                input.removeClass("loading-input");
+            });
+    });
 });

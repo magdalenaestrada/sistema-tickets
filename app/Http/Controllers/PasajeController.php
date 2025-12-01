@@ -76,9 +76,8 @@ class PasajeController extends Controller
         $request->validate($rules);
     }
 
-    protected function crearPasajeMultiple(Request $request, $personaId, $i, $estado)
+    protected function crearPasajeMultiple(Request $request, $personaId, $i, $estado, $cantidadPasajes)
     {
-
         $asiento = $request->asientos[$i];
         $horario_id = $request->horario_id[$i];
 
@@ -129,10 +128,11 @@ class PasajeController extends Controller
 
         if ($ventaData) {
             $pagoData = [];
+            $pagoEfectivoTotal = floatval(str_replace(',', '.', $request->pago_efectivo ?? 0));
+            $pagoBilleteraTotal = floatval(str_replace(',', '.', $request->pago_billetera ?? 0));
 
-            // Normalizamos valores antes de floatval
-            $pagoEfectivo = floatval(str_replace(',', '.', $request->pago_efectivo[$i] ?? 0));
-            $pagoBilletera = floatval(str_replace(',', '.', $request->pago_billetera[$i] ?? 0));
+            $pagoEfectivo = $pagoEfectivoTotal / $cantidadPasajes;
+            $pagoBilletera = $pagoBilleteraTotal / $cantidadPasajes;
 
             if ($pagoEfectivo > 0) {
                 $pagoData[] = [
@@ -149,7 +149,6 @@ class PasajeController extends Controller
                     'billetera_id' => $request->billetera_id[$i] ?? null
                 ];
             }
-
             $this->pagoService->registrarPagos(
                 $ventaData['venta']->id,
                 $pagoData,
@@ -164,12 +163,7 @@ class PasajeController extends Controller
 
     public function guardar(Request $request)
     {
-        $accion = $request->accion; // reservar | terminar
-
-        Log::info('Guardando pasajes', [
-            'accion' => $accion,
-            'asientos' => $request->asientos
-        ]);
+        $accion = $request->accion;
 
         try {
             DB::beginTransaction();
@@ -178,32 +172,35 @@ class PasajeController extends Controller
 
             $estado = ($accion === 'terminar') ? 'V' : 'R';
 
+            $cantidadPasajes = count($asientos);
+
             foreach ($asientos as $index => $asiento) {
 
                 if ($accion === 'terminar') {
                     $this->validarTerminarVenta($request, $index);
+
+                    $persona = Persona::updateOrCreate(
+                        ['documento' => $request->documento[$index] ?? null],
+                        [
+                            'tipo_documento_id' => $request->tipo_documento_id[$index] ?? 1,
+                            'nombres' => $request->nombres[$index] ?? null,
+                            'apellidos' => $request->apellidos[$index] ?? null,
+                            'telefono' => $request->telefono[$index] ?? null,
+                            'celular' => $request->celular[$index] ?? null,
+                            'correo' => $request->direccion[$index] ?? null,
+                            'fecha_creacion' => now(),
+
+                        ]
+                    );
+
+                    $this->crearPasajeMultiple(
+                        $request,
+                        $persona->id,
+                        $index,
+                        $estado,
+                        $cantidadPasajes
+                    );
                 }
-
-                $persona = Persona::updateOrCreate(
-                    ['documento' => $request->documento[$index] ?? null],
-                    [
-                        'tipo_documento_id' => $request->tipo_documento_id[$index] ?? 1,
-                        'nombres' => $request->nombres[$index] ?? null,
-                        'apellidos' => $request->apellidos[$index] ?? null,
-                        'telefono' => $request->telefono[$index] ?? null,
-                        'celular' => $request->celular[$index] ?? null,
-                        'correo' => $request->direccion[$index] ?? null,
-                        'fecha_creacion' => now(),
-
-                    ]
-                );
-
-                Log::info("Creando pasaje para asiento {$asiento}", [
-                    'estado' => $estado,
-                    'persona_id' => $persona->id
-                ]);
-
-                $this->crearPasajeMultiple($request, $persona->id, $index, $estado);
             }
 
             DB::commit();
@@ -425,6 +422,63 @@ class PasajeController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al reservar: ' . $th->getMessage()
+            ], 500);
+        }
+    }
+
+    public function editar(Pasaje $pasaje)
+    {
+        $pasaje->load([
+            'persona',
+            'horario.punto_origen',
+            'horario.punto_destino',
+            'horario.tipo_vehiculo',
+            'venta.pagos'
+        ]);
+
+        $tipos_documentos = TipoDocumentoPersona::all();
+        $tipos_documentos_facturas = TipoDocumentoFactura::all();
+        $metodos_pago = MetodoPago::all();
+        $billeteras_digitales = BilleteraDigital::all();
+
+        // Para editar, solo hay 1 asiento
+        $asientos = [$pasaje->asiento_numero];
+        $horario = $pasaje->horario;
+
+        return view('pasajes.venta', compact(
+            'pasaje',
+            'asientos',
+            'horario',
+            'tipos_documentos',
+            'billeteras_digitales',
+            'tipos_documentos_facturas',
+            'metodos_pago'
+        ));
+    }
+
+    public function buscarPasaje(Request $request)
+    {
+        try {
+            $pasaje = Pasaje::where('horario_id', $request->horario_id)
+                ->where('asiento_numero', $request->asiento)
+                ->where('estado', 'R') 
+                ->first();
+
+            if ($pasaje) {
+                return response()->json([
+                    'success' => true,
+                    'pasaje_id' => $pasaje->id
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Pasaje no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar pasaje: ' . $e->getMessage()
             ], 500);
         }
     }
