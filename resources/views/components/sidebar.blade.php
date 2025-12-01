@@ -55,6 +55,9 @@
                           <li class="nav-item">
                               <a href="{{ route('eventos.index') }}" class="nav-link">Cumpleaños</a>
                           </li>
+                          <li class="nav-item">
+                              <a href="{{ route('descuentos.index') }}" class="nav-link">Cupones</a>
+                          </li>
                       </ul>
                   </div>
               </li>

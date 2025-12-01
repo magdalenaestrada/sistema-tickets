@@ -168,7 +168,7 @@ class EncomiendaController extends Controller
     public function anular($id)
     {
         $e = Encomienda::findOrFail($id);
-        $e->estado = 'X'; 
+        $e->estado = 'X';
         $e->save();
 
         return response()->json(['success' => true]);

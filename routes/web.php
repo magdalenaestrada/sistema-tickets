@@ -51,3 +51,4 @@ require __DIR__ . '/caja.php';
 require __DIR__ . '/horario.php';
 require __DIR__ . '/asignaciones.php';
 require __DIR__ . '/pasajes.php';
+require __DIR__ . '/descuentos.php';
