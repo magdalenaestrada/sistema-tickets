@@ -6,16 +6,22 @@ use Illuminate\Http\Request;
 use App\Models\AsignarHorario;
 use App\Models\Horario;
 use App\Models\Empleado;
+use App\Models\Sucursal;
+use App\Models\TipoVehiculo;
+use App\Models\TipoViaje;
 use App\Models\Vehiculo;
 
 class AsignarHorarioController extends Controller
 {
     public function index()
     {
+        $sucursales = Sucursal::all();
+        $tipo_viajes = TipoViaje::all();
+        $tipo_vehiculos = TipoVehiculo::all();
         $horarios = Horario::all();
-        $empleados = Empleado::where('cargo_id', 16)->get(); // solo conductores
+        $empleados = Empleado::where('cargo_id', 3)->get();
         $vehiculos = Vehiculo::all();
-        return view('asignaciones.index', compact('horarios', 'empleados', 'vehiculos'));
+        return view('asignaciones.index', compact('horarios', 'empleados', 'vehiculos', 'tipo_vehiculos', 'tipo_viajes', 'sucursales'));
     }
 
     public function list()
@@ -27,8 +33,8 @@ class AsignarHorarioController extends Controller
                 'id' => $a->id,
                 'horario' => ($a->horario->tipo_viaje->descripcion ?? '-') . ' (' . ($a->horario->punto_origen->nombre_comercial ?? '-') . ' → ' . ($a->horario->punto_destino->nombre_comercial ?? '-') . ')',
                 'horario_id' => $a->horario_id,
-                'primer_conductor' => $a->primerConductor->persona->nombres . ' ' . $a->primerConductor->persona->apellidos,
-                'segundo_conductor' => $a->segundoConductor ? $a->segundoConductor->persona->nombres . ' ' . $a->segundoConductor->persona->apellidos : null,
+                'primer_conductor_id' => $a->primerConductor->persona->nombres . ' ' . $a->primerConductor->persona->apellidos,
+                'segundo_conductor_id' => $a->segundoConductor ? $a->segundoConductor->persona->nombres . ' ' . $a->segundoConductor->persona->apellidos : null,
                 'vehiculo' => $a->vehiculoObj ? $a->vehiculoObj->numero_placa . ' - ' . $a->vehiculoObj->tipo_vehiculo->descripcion : null,
             ];
         });
@@ -40,7 +46,7 @@ class AsignarHorarioController extends Controller
     {
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
-            'primer_conductor' => 'required|exists:empleados,id',
+            'primer_conductor_id' => 'required|exists:empleados,id',
             'vehiculo' => 'nullable|exists:vehiculos,id',
         ]);
 
@@ -54,8 +60,8 @@ class AsignarHorarioController extends Controller
         return response()->json([
             'id' => $asignacion->id,
             'horario_id' => $asignacion->horario_id,
-            'primer_conductor' => $asignacion->primer_conductor,
-            'segundo_conductor' => $asignacion->segundo_conductor,
+            'primer_conductor_id' => $asignacion->primer_conductor_id,
+            'segundo_conductor_id' => $asignacion->segundo_conductor_id,
             'vehiculo' => $asignacion->vehiculo,
         ]);
     }
@@ -64,9 +70,9 @@ class AsignarHorarioController extends Controller
     {
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
-            'primer_conductor' => 'required|exists:empleados,id',
+            'primer_conductor_id' => 'required|exists:empleados,id',
             'vehiculo' => 'nullable|exists:vehiculos,id',
-            'segundo_conductor' => 'nullable|exists:empleados,id',
+            'segundo_conductor_id' => 'nullable|exists:empleados,id',
         ]);
 
         $asignacion->update($request->all());

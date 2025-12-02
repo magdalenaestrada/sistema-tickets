@@ -9,7 +9,7 @@
         <div class="card-body">
 
             <div class="row mb-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label>DNI Emisor</label>
                     <input type="text" id="filtroDNI" class="form-control" placeholder="DNI del emisor">
                 </div>
@@ -34,25 +34,28 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
-                    <label>Horario/Asignación</label>
+                <div class="col-md-5">
+                    <label>Salidas</label>
                     <select id="asignacion_id" class="form-select" required>
                         <option value="">-- Seleccione --</option>
                         @foreach ($asignaciones as $a)
-                            <option value="{{ $a->id }}">{{ $a->descripcion }}</option>
+                            <option value="{{ $a->id }}">{{ $a->horario->tipo_vehiculo->descripcion }} |
+                                {{ $a->horario->fecha_formateada }} |
+                                {{ $a->horario->hora_formateada }} | {{ $a->horario->punto_origen->nombre_comercial }} ->
+                                {{ $a->horario->punto_destino->nombre_comercial }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-1 d-flex align-items-end">
                     <button class="btn btn-success w-100" id="btnAsignar">
-                        <i data-lucide="check-circle"></i> Asignar
+                        Asignar
                     </button>
                 </div>
             </div>
 
             <!-- Tabla -->
-            <table class="table table-bordered table-hover" id="tablaEncomiendas">
+            <table class="table table-bordered table-hover w-100" id="tablaEncomiendas">
                 <thead>
                     <tr>
                         <th width="50px">
@@ -69,6 +72,7 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
+                <tbody></tbody>
             </table>
 
             <div class="mt-3">

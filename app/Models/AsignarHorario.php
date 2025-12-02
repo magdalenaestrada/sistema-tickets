@@ -13,8 +13,8 @@ class AsignarHorario extends Model
 
     protected $fillable = [
         'horario_id',
-        'primer_conductor',
-        'segundo_conductor',
+        'primer_conductor_id',
+        'segundo_conductor_id',
         'vehiculo',
     ];
 
@@ -25,12 +25,12 @@ class AsignarHorario extends Model
 
     public function primerConductor()
     {
-        return $this->belongsTo(Empleado::class, 'primer_conductor');
+        return $this->belongsTo(Empleado::class, 'primer_conductor_id');
     }
 
     public function segundoConductor()
     {
-        return $this->belongsTo(Empleado::class, 'segundo_conductor');
+        return $this->belongsTo(Empleado::class, 'segundo_conductor_id');
     }
 
     public function vehiculoObj()

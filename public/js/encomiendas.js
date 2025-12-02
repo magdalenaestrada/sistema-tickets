@@ -1,6 +1,7 @@
 $(function () {
     let tabla = $("#tablaEncomiendas").DataTable({
         ajax: route("encomiendas.datatable.no-asignadas"),
+
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
             { data: "id" },
@@ -15,6 +16,8 @@ $(function () {
         ],
         order: [[1, "desc"]],
         scrollX: true,
+        lengthChange: false,
+        searching: false,
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
@@ -597,7 +600,7 @@ $(function () {
         }
 
         $.ajax({
-            url: route("asignaciones.store"),
+            url: route("encomiendas-asignacion.guardar"),
             method: "POST",
             data: {
                 _token: csrf_token,

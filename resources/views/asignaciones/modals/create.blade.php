@@ -1,5 +1,5 @@
 <div class="modal fade" id="modalAsignacion" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <form id="formAsignacion">
             @csrf
             <input type="hidden" name="_method" id="method">
@@ -10,66 +10,110 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Horario -->
-                    <div class="mb-3">
-                        <label for="horario_id" class="form-label">Horario</label>
-                        <select name="horario_id" id="horario_id" class="form-select" required>
-                            <option value="">Seleccione un horario</option>
-                            @foreach ($horarios as $horario)
-                                <option value="{{ $horario->id }}">
-                                    {{ $horario->tipo_viaje->descripcion ?? '-' }}:
-                                    {{ $horario->punto_origen->nombre_comercial ?? '-' }} →
-                                    {{ $horario->punto_destino->nombre_comercial ?? '-' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Punto de Origen</label>
+                            <select id="filtro_origen" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($sucursales as $sucursal)
+                                    <option value="{{ $sucursal->id }}">
+                                        {{ $sucursal->nombre_comercial }}</option>
+                                @endforeach
 
-                    <!-- Primer Conductor -->
-                    <div class="mb-3">
-                        <label for="primer_conductor" class="form-label">Primer Conductor</label>
-                        <select name="primer_conductor" id="primer_conductor" class="form-select" required>
-                            <option value="">Seleccione un conductor</option>
-                            @foreach ($empleados as $empleado)
-                                <option value="{{ $empleado->id }}">{{ $empleado->persona->nombres }}
-                                    {{ $empleado->persona->apellidos }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                            </select>
+                        </div>
 
-                    <!-- Segundo Conductor -->
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="otroConductorCheck">
-                        <label class="form-check-label" for="otroConductorCheck">¿Otro conductor?</label>
-                    </div>
-                    <div class="mb-3">
-                        <label for="segundo_conductor" class="form-label">Segundo Conductor</label>
-                        <select name="segundo_conductor" id="segundo_conductor" class="form-select" disabled>
-                            <option value="">Seleccione un conductor</option>
-                            @foreach ($empleados as $empleado)
-                                <option value="{{ $empleado->id }}">{{ $empleado->persona->nombres }}
-                                    {{ $empleado->persona->apellidos }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Punto de Destino</label>
+                            <select id="filtro_destino" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($sucursales as $sucursal)
+                                    <option value="{{ $sucursal->id }}">
+                                        {{ $sucursal->nombre_comercial }}</option>
+                                @endforeach
 
-                    <!-- Vehículo -->
-                    <div class="mb-3">
-                        <label for="vehiculo" class="form-label">Vehículo</label>
-                        <select name="vehiculo" id="vehiculo" class="form-select">
-                            <option value="">Seleccione un vehículo</option>
-                            @foreach ($vehiculos as $vehiculo)
-                                <option value="{{ $vehiculo->id }}">{{ $vehiculo->numero_placa }} - {{ $vehiculo->tipo_vehiculo->descripcion }}
-                                </option>
-                            @endforeach
-                        </select>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Tipo de Viaje</label>
+                            <select id="filtro_tipo_viaje" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($tipo_viajes as $tipo_viaje)
+                                    <option value="{{ $tipo_viaje->id }}">
+                                        {{ $tipo_viaje->descripcion }}</option>
+                                @endforeach
+
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Tipo Vehículo</label>
+                            <select id="filtro_tipo_vehiculo" class="form-select">
+
+                                <option value="">Todos</option>
+                                @foreach ($tipo_vehiculos as $tipo_vehiculo)
+                                    <option value="{{ $tipo_vehiculo->id }}">
+                                        {{ $tipo_vehiculo->descripcion }}</option>
+                                @endforeach
+
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha de salida</label>
+                            <input type="date" id="filtro_fecha" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="horario_id" class="form-label">Horario</label>
+                            <select name="horario_id" id="horario_id" class="form-select" required>
+                                <option value="">Seleccione un horario</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="primer_conductor_id" class="form-label">Primer Conductor</label>
+                            <select name="primer_conductor_id" id="primer_conductor_id" class="form-select" required>
+                                <option value="">Seleccione un conductor</option>
+                                @foreach ($empleados as $empleado)
+                                    <option value="{{ $empleado->id }}">{{ $empleado->persona->nombres }}
+                                        {{ $empleado->persona->apellidos }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Segundo Conductor -->
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="otroConductorCheck">
+                            <label class="form-check-label" for="otroConductorCheck">¿Otro conductor?</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="segundo_conductor_id" class="form-label">Segundo Conductor</label>
+                            <select name="segundo_conductor_id" id="segundo_conductor_id" class="form-select" disabled>
+                                <option value="">Seleccione un conductor</option>
+                                @foreach ($empleados as $empleado)
+                                    <option value="{{ $empleado->id }}">{{ $empleado->persona->nombres }}
+                                        {{ $empleado->persona->apellidos }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="vehiculo" class="form-label">Vehículo</label>
+                            <select name="vehiculo" id="vehiculo" class="form-select">
+                                <option value="">Seleccione un vehículo</option>
+                                @foreach ($vehiculos as $vehiculo)
+                                    <option value="{{ $vehiculo->id }}" data-tipo="{{ $vehiculo->tipo_vehiculo_id }}">
+                                        {{ $vehiculo->numero_placa }} - {{ $vehiculo->tipo_vehiculo->descripcion }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-            </div>
         </form>
     </div>
 </div>

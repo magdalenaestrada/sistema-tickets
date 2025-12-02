@@ -33,6 +33,9 @@
                           <li class="nav-item">
                               <a href="{{ route('empresas.index') }}" class="nav-link">Mi empresa</a>
                           </li>
+                          <li class="nav-item">
+                              <a href="{{ route('reportes.index') }}" class="nav-link">Reportes</a>
+                          </li>
                       </ul>
                   </div>
               </li>
@@ -96,7 +99,7 @@
                               <a href="{{ route('encomiendas.index-no-asignadas') }}" class="nav-link">Encomiendas</a>
                           </li>
                           <li class="nav-item">
-                              <a href="{{ route('asignaciones.index') }}" class="nav-link">Asignaciones</a>
+                              <a href="{{ route('asignaciones.index') }}" class="nav-link">Salidas</a>
                           </li>
                           <li class="nav-item">
                               <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>

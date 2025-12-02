@@ -114,7 +114,6 @@ class DescuentoController extends Controller
     public function buscar(Request $request)
     {
         $codigo = $request->codigo;
-
         $descuento = Descuento::where('codigo', $codigo)->first();
 
         if (!$descuento) {

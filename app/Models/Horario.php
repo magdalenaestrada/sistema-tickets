@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Horario extends Model
@@ -57,5 +58,18 @@ class Horario extends Model
     public function pasajes()
     {
         return $this->hasMany(Pasaje::class);
+    }
+    public function getFechaFormateadaAttribute()
+    {
+        return $this->fecha_salida
+            ? Carbon::parse($this->fecha_salida)->format('d/m/Y')
+            : null;
+    }
+
+    public function getHoraFormateadaAttribute()
+    {
+        return $this->hora_embarque
+            ? Carbon::parse($this->hora_embarque)->format('H:i')
+            : null;
     }
 }

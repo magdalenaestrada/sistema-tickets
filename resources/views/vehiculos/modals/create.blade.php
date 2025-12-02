@@ -23,12 +23,6 @@
                         <label class="form-label">Placa</label>
                         <input type="text" name="numero_placa" id="numero_placa" class="form-control" required>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">N° conductores</label>
-                        <input type="number" name="cantidad_conductores" id="cantidad_conductores" class="form-control"
-                            required>
-                    </div>
                 </div>
 
                 <div class="modal-footer">

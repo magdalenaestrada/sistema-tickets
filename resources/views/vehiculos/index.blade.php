@@ -20,7 +20,6 @@
                             <th>ID</th>
                             <th>Tipo de vehiculo</th>
                             <th>Placa</th>
-                            <th>N° conductores</th>
                             <th style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>

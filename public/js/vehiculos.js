@@ -8,7 +8,6 @@ $(document).ready(function () {
             { data: "id" },
             { data: "tipo_vehiculo", title: "Tipo de vehiculo" },
             { data: "numero_placa" },
-            { data: "cantidad_conductores" },
             {
                 data: "acciones",
                 orderable: false,
@@ -103,7 +102,6 @@ $(document).ready(function () {
             const res = await $.get(route("vehiculos.mostrar", id));
             $("#Vehiculo_id").val(res.id);
             $("#numero_placa").val(res.numero_placa);
-            $("#cantidad_conductores").val(res.cantidad_conductores);
             await cargarTiposVehiculo(res.tipo_vehiculo_id);
             modal.show();
         } catch (err) {

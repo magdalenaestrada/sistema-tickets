@@ -7,6 +7,7 @@ use App\Models\Sucursal;
 use App\Models\TipoVehiculo;
 use App\Models\TipoViaje;
 use App\Models\Vehiculo;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -233,5 +234,40 @@ class HorarioController extends Controller
         }
 
         return response()->json($eventos);
+    }
+
+    public function filtrar(Request $request)
+    {
+        $query = Horario::query()
+            ->with(['tipo_viaje', 'punto_origen', 'punto_destino', 'tipo_vehiculo']);
+
+        if ($request->origen) {
+            $query->where('punto_origen_id', $request->origen);
+        }
+
+        if ($request->destino) {
+            $query->where('punto_destino_id', $request->destino);
+        }
+
+        if ($request->tipo_viaje) {
+            $query->where('tipo_viaje_id', $request->tipo_viaje);
+        }
+
+        if ($request->tipo_vehiculo) {
+            $query->where('tipo_vehiculo_id', $request->tipo_vehiculo);
+        }
+
+        if ($request->fecha) {
+            $query->whereDate('fecha_salida', $request->fecha);
+        }
+
+        $horarios = $query->get();
+
+        $horarios = $horarios->map(function ($h) {
+            $h->fecha_salida_formateada = Carbon::parse($h->fecha_salida)->format('d-m-Y');
+            return $h;
+        });
+
+        return response()->json($horarios);
     }
 }

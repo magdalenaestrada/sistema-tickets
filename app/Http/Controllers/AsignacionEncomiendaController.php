@@ -42,7 +42,6 @@ class AsignacionEncomiendaController extends Controller
 
             foreach ($request->encomiendas as $id) {
 
-                // Insertar en pivote
                 AsignacionEncomienda::create([
                     "asignacion_id" => $request->asignacion_id,
                     "encomienda_id" => $id

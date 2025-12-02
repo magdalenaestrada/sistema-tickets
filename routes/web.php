@@ -52,3 +52,5 @@ require __DIR__ . '/horario.php';
 require __DIR__ . '/asignaciones.php';
 require __DIR__ . '/pasajes.php';
 require __DIR__ . '/descuentos.php';
+require __DIR__ . '/reportes.php';
+require __DIR__ . '/encomienda-asignacion.php';

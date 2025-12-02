@@ -28,7 +28,7 @@ class EncomiendaController extends Controller
     public function index_no_asignadas()
     {
         $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
-        $asignaciones = AsignarHorario::all();
+        $asignaciones = AsignarHorario::with('horario')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
 
         return view('encomiendas.index', compact('sucursales', 'tipos_documentos', 'asignaciones'));

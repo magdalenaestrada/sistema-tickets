@@ -6,9 +6,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth'])->prefix('descuentos')->name('descuentos.')->group(function () {
     Route::get('/', [DescuentoController::class, 'index'])->name('index');
     Route::get('/datatable', [DescuentoController::class, 'datatable'])->name('datatable');
+    Route::get('/buscar', [DescuentoController::class, 'buscar'])->name('buscar');
     Route::get('/{descuento}', [DescuentoController::class, 'mostrar'])->name('mostrar');
     Route::post('/', [DescuentoController::class, 'guardar'])->name('guardar');
     Route::delete('/{descuento}', [DescuentoController::class, 'eliminar'])->name('eliminar');
-    Route::get('/buscar', [DescuentoController::class, 'buscar'])->name('buscar');
-
 });

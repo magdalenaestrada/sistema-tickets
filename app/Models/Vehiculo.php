@@ -10,7 +10,6 @@ class Vehiculo extends Model
     protected $fillable = [
         "tipo_vehiculo_id",
         "numero_placa",
-        "cantidad_conductores",
         "fecha_creacion"
     ];
 

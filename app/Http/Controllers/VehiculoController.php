@@ -17,7 +17,7 @@ class VehiculoController extends Controller
 
     public function datatable(Request $request)
     {
-        $vehiculos = Vehiculo::with('tipo_vehiculo')->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'cantidad_conductores']);
+        $vehiculos = Vehiculo::with('tipo_vehiculo')->select(['id', 'tipo_vehiculo_id', 'numero_placa']);
 
         return DataTables::of($vehiculos)
             ->addColumn('tipo_vehiculo', function ($vehiculo) {
@@ -46,7 +46,6 @@ class VehiculoController extends Controller
         $vehiculo = Vehiculo::create([
             "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
             "numero_placa" => Str::upper($request->numero_placa),
-            "cantidad_conductores" => $request->cantidad_conductores,
             "fecha_creacion" => $hoy,
         ]);
 
@@ -58,7 +57,6 @@ class VehiculoController extends Controller
         $vehiculo->update([
             "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
             "numero_placa" => $request->numero_placa,
-            "cantidad_conductores" => $request->cantidad_conductores,
         ]);
 
         return response()->json(['success' => true]);
@@ -69,6 +67,26 @@ class VehiculoController extends Controller
         $vehiculo = Vehiculo::findOrFail($id);
         return response()->json($vehiculo);
     }
+
+    public function filtrar(Request $request)
+    {
+        $request->validate([
+            'tipo' => 'required|integer'
+        ]);
+
+        $search = $request->search;
+
+        $vehiculos = Vehiculo::where('tipo_vehiculo_id', $request->tipo)
+            ->when($search, function ($q) use ($search) {
+                $q->where('numero_placa', 'like', "%$search%");
+            })
+            ->select('id', 'numero_placa')
+            ->take(20)
+            ->get();
+
+        return response()->json($vehiculos);
+    }
+
 
     /*public function eliminar(Vehiculo $vehiculo)
     {

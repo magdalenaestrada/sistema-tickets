@@ -4,7 +4,7 @@
     <div class="container">
         <div class="row mb-3">
             <div class="col-12 d-flex justify-content-between align-items-center">
-                <h4>Asignaciones de Horarios</h4>
+                <h4>Salidas</h4>
                 <button class="btn btn-primary" id="btnNuevo">Nueva Asignación</button>
             </div>
         </div>

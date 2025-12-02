@@ -104,6 +104,7 @@
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
+                                <p class="mb-1"><strong>Precio C/U:</strong> {{ $horario->costo_pasaje }}
                                 <p class="mb-1"><strong>Origen:</strong> {{ $horario->punto_origen->nombre_comercial }}
                                 </p>
                                 <p class="mb-1"><strong>Destino:</strong> {{ $horario->punto_destino->nombre_comercial }}
