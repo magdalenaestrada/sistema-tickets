@@ -48,9 +48,11 @@ class DescuentoController extends Controller
     {
         $request->validate([
             'codigo' => 'required|string|unique:descuentos,codigo,' . $request->id,
-            'persona.documento' => 'nullable|string|max:20',
-            'persona.nombres' => 'nullable|string|max:200',
-            'persona.apellidos' => 'nullable|string|max:200',
+            'tipo_documento_id' => 'required|integer',
+            'documento' => 'nullable|string|max:20',
+            'nombres' => 'nullable|string|max:200',
+            'apellidos' => 'nullable|string|max:200',
+            'razon_social' => 'nullable|string|max:255',
             'cantidad_usos' => 'nullable|integer|min:1',
             'fecha_maxima' => 'nullable|date',
             'monto_efectivo' => 'nullable|numeric|min:0',
@@ -58,42 +60,50 @@ class DescuentoController extends Controller
         ]);
 
         try {
+
             $persona_id = null;
 
-            if ($request->filled('persona.documento')) {
+            if ($request->filled('documento')) {
                 $persona = Persona::updateOrCreate(
-                    ['documento' => $request->input('persona.documento')],
                     [
-                        'nombres' => $request->input('persona.nombres'),
-                        'apellidos' => $request->input('persona.apellidos', ''),
-                        'tipo_documento_id' => $request->input('persona.tipo_documento_id', 1),
-                        'distrito_id' => $request->input('persona.distrito_id', 1),
-                        'telefono' => $request->input('persona.telefono'),
-                        'correo' => $request->input('persona.correo'),
-                        'estado' => 'A',
+                        'documento' => $request->documento
+                    ],
+                    [
+                        'tipo_documento_id' => $request->tipo_documento_id,
+                        'nombres' => $request->tipo_documento_id == 1 ? $request->nombres : null,
+                        'apellidos' => $request->tipo_documento_id == 1 ? $request->apellidos : null,
+                        'razon_social' => $request->tipo_documento_id == 2 ? $request->razon_social : null,
+                        'estado' => 'A'
                     ]
                 );
+
                 $persona_id = $persona->id;
             }
 
-            $data = $request->all();
-            $data['persona_id'] = $persona_id;
+            $cantidad_usos = $request->filled('cantidad_usos')
+                ? $request->cantidad_usos
+                : null;
 
             $descuento = Descuento::updateOrCreate(
                 ['id' => $request->id],
-                $data
+                [
+                    'codigo' => $request->codigo,
+                    'cantidad_usos' => $cantidad_usos,
+                    'fecha_maxima' => $request->fecha_maxima,
+                    'monto_efectivo' => $request->monto_efectivo,
+                    'porcentaje' => $request->porcentaje,
+                    'activo' => 1,
+                    'persona_id' => $persona_id,
+                ]
             );
-
-            return response()->json([
-                'success' => true,
-                'descuento_id' => $descuento->id
-            ]);
+            return response()->json(['success' => true]);
         } catch (\Throwable $th) {
-            \Log::error('Error al guardar descuento: ' . $th->getMessage());
-            return response()->json(['success' => false, 'message' => $th->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => $th->getMessage()
+            ], 500);
         }
     }
-
     public function eliminar($id)
     {
         $descuento = Descuento::findOrFail($id);

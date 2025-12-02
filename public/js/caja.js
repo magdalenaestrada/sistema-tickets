@@ -11,7 +11,7 @@ $(document).ready(function () {
                         text: "Ya tienes una caja abierta en esta sucursal. Debes cerrarla antes de abrir otra.",
                     });
                 } else {
-                    $("#modalCrearCaja").modal("show");
+                    $("#createCaja").modal("show");
                 }
             },
             error: function () {

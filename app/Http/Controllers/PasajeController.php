@@ -7,6 +7,7 @@ use App\Models\Pasaje;
 use App\Models\Persona;
 use App\Models\Horario;
 use App\Models\MetodoPago;
+use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
 use App\Services\VentaService;
@@ -51,14 +52,16 @@ class PasajeController extends Controller
         ));
     }
 
-
     public function index()
     {
+        $puntos_origen = Sucursal::all();
+        $puntos_destino = Sucursal::all();
+
         $horarios = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino'])
             ->withCount('pasajes')
             ->get();
 
-        return view('pasajes.index', compact('horarios'));
+        return view('pasajes.index', compact('horarios', 'puntos_origen', 'puntos_destino'));
     }
 
     protected function validarTerminarVenta($request, $i)
@@ -81,12 +84,18 @@ class PasajeController extends Controller
         $asiento = $request->asientos[$i];
         $horario_id = $request->horario_id[$i];
 
-        $existe = Pasaje::where('horario_id', $horario_id)
+        $reserva = Pasaje::where('horario_id', $horario_id)
             ->where('asiento_numero', $asiento)
+            ->where('estado', 'R')
+            ->first();
+
+        $ocupado = Pasaje::where('horario_id', $horario_id)
+            ->where('asiento_numero', $asiento)
+            ->where('estado', 'V')
             ->exists();
 
-        if ($existe) {
-            throw new \Exception("El asiento $asiento ya está ocupado.");
+        if ($ocupado) {
+            throw new \Exception("El asiento $asiento ya está vendido.");
         }
 
         $pdf = null;
@@ -112,6 +121,48 @@ class PasajeController extends Controller
             );
 
             $venta_id = $ventaData['venta']->id;
+
+            if ($reserva) {
+                $reserva->update([
+                    'estado' => 'V',
+                    'venta_id' => $venta_id,
+                ]);
+
+                // 🔥 AGREGAR ESTO PARA GENERAR PAGO
+                if ($ventaData) {
+                    $pagoData = [];
+
+                    $pagoEfectivoTotal = floatval(str_replace(',', '.', $request->pago_efectivo ?? 0));
+                    $pagoBilleteraTotal = floatval(str_replace(',', '.', $request->pago_billetera ?? 0));
+
+                    $pagoEfectivo = $pagoEfectivoTotal / $cantidadPasajes;
+                    $pagoBilletera = $pagoBilleteraTotal / $cantidadPasajes;
+
+                    if ($pagoEfectivo > 0) {
+                        $pagoData[] = [
+                            'metodo_pago_id' => 1,
+                            'total' => $pagoEfectivo,
+                            'billetera_id' => null,
+                        ];
+                    }
+
+                    if ($pagoBilletera > 0) {
+                        $pagoData[] = [
+                            'metodo_pago_id' => 2,
+                            'total' => $pagoBilletera,
+                            'billetera_id' => $request->billetera_id[$i] ?? null,
+                        ];
+                    }
+
+                    $this->pagoService->registrarPagos(
+                        $ventaData['venta']->id,
+                        $pagoData,
+                        Pasaje::class,
+                        $reserva->id
+                    );
+                }
+                return $reserva;
+            }
         }
 
         $pasaje = Pasaje::create([
@@ -445,7 +496,7 @@ class PasajeController extends Controller
         $asientos = [$pasaje->asiento_numero];
         $horario = $pasaje->horario;
 
-        return view('pasajes.venta', compact(
+        return view('pasajes.editar', compact(
             'pasaje',
             'asientos',
             'horario',
@@ -461,7 +512,7 @@ class PasajeController extends Controller
         try {
             $pasaje = Pasaje::where('horario_id', $request->horario_id)
                 ->where('asiento_numero', $request->asiento)
-                ->where('estado', 'R') 
+                ->where('estado', 'R')
                 ->first();
 
             if ($pasaje) {
@@ -481,5 +532,27 @@ class PasajeController extends Controller
                 'message' => 'Error al buscar pasaje: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function filtrarHorarios(Request $request)
+    {
+        $query = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino'])
+            ->withCount('pasajes');
+
+        if ($request->fecha) {
+            $query->whereDate('fecha_salida', $request->fecha);
+        }
+
+        if ($request->origen) {
+            $query->where('punto_origen_id', $request->origen);
+        }
+
+        if ($request->destino) {
+            $query->where('punto_destino_id', $request->destino);
+        }
+
+        $horarios = $query->get();
+
+        return response()->json(['horarios' => $horarios]);
     }
 }

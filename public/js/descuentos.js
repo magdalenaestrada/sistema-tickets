@@ -10,7 +10,12 @@ $(document).ready(function () {
             { data: "cantidad_usos" },
             { data: "fecha_maxima" },
             { data: "monto_efectivo" },
-            { data: "porcentaje" },
+            {
+                data: "porcentaje",
+                render: function (data) {
+                    return data ? data + " %" : "";
+                },
+            },
             { data: "activo" },
             { data: "acciones", orderable: false, searchable: false },
         ],
@@ -43,11 +48,38 @@ $(document).ready(function () {
 
     $("#formDescuento").submit(function (e) {
         e.preventDefault();
+        let monto = parseFloat($("#monto_efectivo").val());
+        let porcentaje = parseFloat($("#porcentaje").val());
+
+        if ((!monto || monto <= 0) && (!porcentaje || porcentaje <= 0)) {
+            Swal.fire(
+                "Error",
+                "Debes ingresar un Monto en fectivo o un porcentaje.",
+                "error"
+            );
+            return;
+        }
+        if ((!monto && !porcentaje) || (monto && porcentaje)) {
+            Swal.fire(
+                "Error",
+                "Debe ingresar solo un valor, monto efectivo o porcentaje.",
+                "error"
+            );
+            return;
+        }
+
         $.post(
             route("descuentos.guardar"),
             $(this).serialize(),
             function (res) {
                 if (res.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Descuento guardado correctamente",
+                        showConfirmButton: false,
+                        timer: 1500,
+                    });
+
                     $("#modalDescuento").modal("hide");
                     tabla.ajax.reload();
                 }
@@ -99,4 +131,27 @@ $(document).ready(function () {
                 Swal.fire("Error", "Error al consultar la API.", "error");
             });
     });
+    function actualizarCamposSegunTipo() {
+        const tipo = $("#tipo_documento_id").val();
+
+        if (tipo == "2") {
+            // RUC
+            $("#nombres").closest(".col-md-4").hide();
+            $("#apellidos").closest(".col-md-4").hide();
+
+            $("#razon_social").closest(".col-md-8").show();
+        } else {
+            // DNI
+            $("#nombres").closest(".col-md-4").show();
+            $("#apellidos").closest(".col-md-4").show();
+
+            $("#razon_social").closest(".col-md-8").hide();
+        }
+    }
+
+    // Evento cuando se cambia el tipo
+    $("#tipo_documento_id").on("change", actualizarCamposSegunTipo);
+
+    // Ejecutar al abrir modal también
+    actualizarCamposSegunTipo();
 });

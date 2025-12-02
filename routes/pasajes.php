@@ -12,4 +12,5 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::get('/buscar', [PasajeController::class, 'buscarPasaje'])->name('buscar');
     Route::get('/{pasaje}/editar', [PasajeController::class, 'editar'])
         ->name('editar');
+    Route::get('/filtrar', [PasajeController::class, 'filtrarHorarios'])->name('filtrar');
 });

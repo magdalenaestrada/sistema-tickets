@@ -239,4 +239,85 @@ document.addEventListener("DOMContentLoaded", function () {
             pasaje: selectedReservedPasajeId,
         });
     });
+
+    $(document).ready(function () {
+        function cargarHorarios() {
+            let fecha = $("#filtro_fecha").val();
+            let origen = $("#filtro_origen").val();
+            let destino = $("#filtro_destino").val();
+
+            $.ajax({
+                url: "/pasajes/filtrar",
+                method: "GET",
+                data: {
+                    fecha: fecha,
+                    origen: origen,
+                    destino: destino,
+                },
+                success: function (res) {
+                    $(".row .col-md-6.mb-3").remove(); // limpiar horarios
+
+                    let contenedor = $(".row").first(); // donde están los horarios
+
+                    if (res.horarios.length === 0) {
+                        contenedor.append(`
+                        <div class="col-md-12">
+                            <p class="text-center text-muted">No hay horarios disponibles.</p>
+                        </div>
+                    `);
+                        return;
+                    }
+
+                    res.horarios.forEach((h) => {
+                        let capacidad = h.tipo_vehiculo.capacidad;
+                        let vendidos = h.pasajes_count;
+                        let disponibles = capacidad - vendidos;
+
+                        contenedor.append(`
+                        <div class="col-md-6 mb-3">
+                            <div class="card horario-card" data-horario-id="${h.id}">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        ${h.tipo_vehiculo.descripcion} – ${disponibles} asientos disponibles
+                                    </h5>
+
+                                    <p class="card-text">
+                                        ${h.punto_origen.nombre_comercial} → ${h.punto_destino.nombre_comercial} <br>
+                                        ${h.fecha_salida} - ${h.hora_embarque}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    });
+                },
+            });
+        }
+
+        // FILTRO AUTO
+        $("#filtro_fecha, #filtro_origen, #filtro_destino").on(
+            "change",
+            function () {
+                cargarHorarios();
+            }
+        );
+
+        // OCULTAR DESTINOS QUE NO CORRESPONDEN
+        $("#filtro_origen").on("change", function () {
+            let origen = $(this).val();
+
+            $("#filtro_destino option").show();
+
+            if (origen) {
+                $("#filtro_destino option").each(function () {
+                    if ($(this).val() == origen) {
+                        $(this).hide();
+                    }
+                });
+            }
+
+            $("#filtro_destino").val("");
+            cargarHorarios();
+        });
+    });
 });

@@ -18,7 +18,6 @@ class Descuento extends Model
         'fecha_maxima',
         'monto_efectivo',
         'porcentaje',
-        'activo',
     ];
 
     public function persona()

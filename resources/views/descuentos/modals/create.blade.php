@@ -12,6 +12,9 @@
                 <input type="hidden" name="id" id="descuento_id">
 
                 <div class="modal-body">
+                    <h5 style="font-weight: bold">DATOS PERSONALES (OPCIONAL)</h5>
+                    <hr class="border-gray-300 my-1">
+                    <br>
                     <div class="row g-3">
                         <div class="row mb-2">
                             <div class="col-md-2 mb-3">
@@ -39,23 +42,16 @@
                                 <input type="text" name="razon_social" id="razon_social" class="form-control">
                             </div>
                         </div>
+                        <h5 style="font-weight: bold">DATOS DEL CUPÓN</h5>
+                        <hr class="border-gray-300 my-1">
+                        <br>
                         <div class="row mb-3">
                             <div class="col-md-2">
                                 <label for="codigo" class="form-label">Código</label>
                                 <input type="text" name="codigo" id="codigo" class="form-control" required>
                             </div>
-                            <div class="col-md-1">
-                                <label for="cantidad_usos" class="form-label">Usos</label>
-                                <input type="number" name="cantidad_usos" id="cantidad_usos" class="form-control"
-                                    min="1">
-                            </div>
-
-                            <div class="col-md-4">
-                                <label for="fecha_maxima" class="form-label">Fecha Máxima</label>
-                                <input type="date" name="fecha_maxima" id="fecha_maxima" class="form-control">
-                            </div>
                             <div class="col-md-2">
-                                <label for="monto_efectivo" class="form-label">Monto Efectivo</label>
+                                <label for="monto_efectivo" class="form-label">Monto Efectivo (S/)</label>
                                 <input type="number" step="0.01" name="monto_efectivo" id="monto_efectivo"
                                     class="form-control">
                             </div>
@@ -63,6 +59,15 @@
                                 <label for="porcentaje" class="form-label">Porcentaje (%)</label>
                                 <input type="number" step="0.01" name="porcentaje" id="porcentaje"
                                     class="form-control" min="0" max="100">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="cantidad_usos" class="form-label">Usos</label>
+                                <input type="number" name="cantidad_usos" id="cantidad_usos" class="form-control">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="fecha_maxima" class="form-label">Fecha Máxima</label>
+                                <input type="date" name="fecha_maxima" id="fecha_maxima" class="form-control">
                             </div>
                         </div>
 

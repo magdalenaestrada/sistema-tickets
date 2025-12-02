@@ -29,6 +29,33 @@
         </div>
 
         <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label>Fecha:</label>
+                    <input type="date" id="filtro_fecha" class="form-control">
+                </div>
+
+                <div class="col-md-3">
+                    <label>Punto de origen:</label>
+                    <select id="filtro_origen" class="form-control">
+                        <option value="">-- Todos --</option>
+                        @foreach ($puntos_origen as $origen)
+                            <option value="{{ $origen->id }}">{{ $origen->nombre_comercial }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label>Punto de destino:</label>
+                    <select id="filtro_destino" class="form-control">
+                        <option value="">-- Todos --</option>
+                        @foreach ($puntos_destino as $destino)
+                            <option value="{{ $destino->id }}">{{ $destino->nombre_comercial }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-md-8">
