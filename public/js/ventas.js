@@ -284,4 +284,59 @@ $(function () {
                 input.removeClass("loading-input");
             });
     });
+
+    $(".descuento-input").on("blur", function () {
+        const input = $(this);
+        const index = input.data("index");
+        const codigo = input.val().trim();
+
+        if (!codigo) return;
+
+        input.prop("disabled", true);
+
+        $.getJSON(route("descuentos.buscar") + `?codigo=${codigo}`)
+            .done((res) => {
+                if (res.error) {
+                    Swal.fire("Atención", res.error, "warning");
+                    input.val("");
+                    return;
+                }
+
+                const asientoNumero = selectedSeatNumbers[index];
+                const precioOriginal = parseFloat(seatPrices[asientoNumero]);
+
+                let descuentoAplicado = 0;
+
+                if (res.monto_efectivo) {
+                    descuentoAplicado = res.monto_efectivo;
+                } else if (res.porcentaje) {
+                    descuentoAplicado = precioOriginal * (res.porcentaje / 100);
+                }
+
+                const nuevoPrecio = Math.max(
+                    0,
+                    precioOriginal - descuentoAplicado
+                );
+
+                seatPrices[asientoNumero] = nuevoPrecio;
+
+                actualizarCostoTotal();
+
+                Swal.fire(
+                    "Descuento aplicado",
+                    `Descuento aplicado al asiento ${asientoNumero}`,
+                    "success"
+                );
+            })
+            .fail(() => {
+                Swal.fire(
+                    "Error",
+                    "No se pudo conectar con el servidor",
+                    "error"
+                );
+            })
+            .always(() => {
+                input.prop("disabled", false);
+            });
+    });
 });

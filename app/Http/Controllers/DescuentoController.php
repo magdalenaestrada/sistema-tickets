@@ -110,4 +110,24 @@ class DescuentoController extends Controller
         $descuento->delete();
         return response()->json(['success' => true]);
     }
+
+    public function buscar(Request $request)
+    {
+        $codigo = $request->codigo;
+
+        $descuento = Descuento::where('codigo', $codigo)->first();
+
+        if (!$descuento) {
+            return response()->json(['error' => 'Código no encontrado']);
+        }
+
+        if (!$descuento->isActivo()) {
+            return response()->json(['error' => 'Descuento inactivo o vencido']);
+        }
+
+        return response()->json([
+            'monto_efectivo' => $descuento->monto_efectivo,
+            'porcentaje' => $descuento->porcentaje,
+        ]);
+    }
 }
