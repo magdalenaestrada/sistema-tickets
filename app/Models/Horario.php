@@ -59,6 +59,10 @@ class Horario extends Model
     {
         return $this->hasMany(Pasaje::class);
     }
+    public function asignaciones()
+    {
+        return $this->hasMany(AsignarHorario::class);
+    }
     public function getFechaFormateadaAttribute()
     {
         return $this->fecha_salida

@@ -48,7 +48,7 @@
                 <tr>
                     <td>{{ $cupon->id }}</td>
                     <td>{{ $cupon->codigo }}</td>
-                    <td>{{ $cupon->persona->nombre ?? '' }}</td>
+                    <td>{{ $cupon->persona->nombres ?? '' }} {{ $cupon->persona->apellidos ?? '' }}</td>
                     <td>{{ $cupon->monto_efectivo }}</td>
                     <td>{{ $cupon->porcentaje . '%' }}</td>
                     <td>{{ $cupon->created_at }}</td>

@@ -55,7 +55,7 @@
                     <td>{{ $pasaje->horario->punto_origen->nombre_comercial ?? '' }}</td>
                     <td>{{ $pasaje->horario->punto_destino->nombre_comercial ?? '' }}</td>
                     <td>{{ $pasaje->asiento_numero }}</td>
-                    <td>{{ $pasaje->horario->tipoVehiculo->descripcion ?? '' }}</td>
+                    <td>{{ $pasaje->horario->tipo_vehiculo->descripcion ?? '' }}</td>
                 </tr>
             @endforeach
         </tbody>

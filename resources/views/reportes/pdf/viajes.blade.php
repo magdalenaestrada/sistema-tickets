@@ -35,7 +35,7 @@
                 <td>{{ $horario->punto_destino->nombre_comercial ?? '' }}</td>
                 <td>
                     @foreach($horario->asignaciones as $a)
-                        {{ $a->vehiculo->placa ?? '' }}<br>
+                        {{ $a->vehiculo->numero_placa ?? '' }} {{ $a->vehiculo->tipo_vehiculo->descripcion ?? '' }}<br>
                     @endforeach
                 </td>
                 <td>{{ $horario->pasajes->count() }}</td>

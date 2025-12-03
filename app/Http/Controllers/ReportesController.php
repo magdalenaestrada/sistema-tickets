@@ -66,7 +66,7 @@ class ReportesController extends Controller
                 $data = $query->get();
                 break;
 
-            case 'equipaje':
+            case 'encomiendas':
                 $query = Encomienda::with(['emisor', 'receptor', 'detalles', 'sucursal_origen', 'sucursal_destino']);
                 if ($request->fecha_inicio && $request->fecha_fin) {
                     $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);

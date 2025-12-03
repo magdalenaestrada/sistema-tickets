@@ -34,6 +34,15 @@ class EncomiendaController extends Controller
         return view('encomiendas.index', compact('sucursales', 'tipos_documentos', 'asignaciones'));
     }
 
+    public function index_asignadas()
+    {
+        $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
+        $asignaciones = AsignarHorario::with('horario')->get();
+        $tipos_documentos = TipoDocumentoPersona::all();
+
+        return view('encomiendas.asignadas', compact('sucursales', 'tipos_documentos', 'asignaciones'));
+    }
+
     public function formulario()
     {
         Carbon::now();
@@ -96,6 +105,49 @@ class EncomiendaController extends Controller
             ->make(true);
     }
 
+    public function datatable_asignadas()
+    {
+        $data = Encomienda::with([
+            'emisor',
+            'receptor',
+            'sucursal_origen',
+            'sucursal_destino'
+        ])
+            ->where('estado', 'P')
+            ->orderBy('id', 'desc');
+
+        return DataTables::of($data)
+            ->addColumn('emisor', fn($e) => ($e->emisor?->nombres ?? '') . ' ' . ($e->emisor?->apellidos ?? ''))
+            ->addColumn('dni_emisor', fn($e) => $e->emisor?->documento ?? '-')
+            ->addColumn('receptor', fn($e) => ($e->receptor?->nombres ?? '') . ' ' . ($e->receptor?->apellidos ?? ''))
+            ->addColumn('origen', fn($e) => $e->sucursal_origen?->nombre_comercial ?? '-')
+            ->addColumn('destino', fn($e) => $e->sucursal_destino?->nombre_comercial ?? '-')
+            ->addColumn('total', fn($e) => 'S/ ' . number_format($e->total ?? 0, 2))
+            ->addColumn('estado', function ($e) {
+                $estados = [
+                    'E' => '<span class="badge bg-warning">Espera</span>',
+                    'P' => '<span class="badge bg-info">Pendiente</span>',
+                    'A' => '<span class="badge bg-danger">Sin asignar</span>',
+                    'EN' => '<span class="badge bg-success">Entregada</span>',
+                ];
+                return $estados[$e->estado] ?? '<span class="badge bg-secondary">Desconocido</span>';
+            })
+            ->addColumn('acciones', function ($e) {
+                return '
+                <button class="btn btn-sm btn-info imprimir" data-id="' . $e->id . '" title="Imprimir">
+                    <i class="link-icon" data-lucide="printer"></i>
+                </button>
+                <button class="btn btn-sm btn-warning editar" data-id="' . $e->id . '" title="Editar">
+                    <i class="link-icon" data-lucide="pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-danger anular" data-id="' . $e->id . '" title="Anular">
+                    <i class="link-icon" data-lucide="trash-2"></i>
+                </button>
+            ';
+            })
+            ->rawColumns(['checkbox', 'estado', 'acciones'])
+            ->make(true);
+    }
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
         $request->validate([

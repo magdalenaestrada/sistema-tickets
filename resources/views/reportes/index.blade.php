@@ -14,7 +14,7 @@
                             <option value="ventas">Ventas</option>
                             <option value="pasajeros">Pasajeros</option>
                             <option value="cupones">Uso de Cupones</option>
-                            <option value="equipaje">Equipaje</option>
+                            <option value="encomiendas">Encomiendas</option>
                             <option value="viajes">Viajes</option>
                         </select>
                     </div>
