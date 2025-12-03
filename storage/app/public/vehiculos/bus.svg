@@ -1,0 +1,567 @@
+<style>
+    /* Color por defecto (libre) */
+    .seat-body,
+    .seat-base,
+    .armrest {
+        fill: #95a5a6; /* Gris para libre */
+    }
+
+    .seat-body,
+    .seat-base {
+        stroke: #2a2a2a;
+        stroke-width: 3;
+    }
+    .armrest {
+        stroke: #2a2a2a;
+        stroke-width: 2;
+    }
+
+    /* Estados (ejemplos) */
+    .seat.ocupado .seat-body,
+    .seat.ocupado .seat-base,
+    .seat.ocupado .armrest {
+        fill: #e74c3c !important; /* Rojo */
+    }
+
+    .seat.reservado .seat-body,
+    .seat.reservado .seat-base,
+    .seat.reservado .armrest {
+        fill: #f39c12 !important; /* Naranja */
+    }
+
+    .seat.selected-seat .seat-body,
+    .seat.selected-seat .seat-base,
+    .seat.selected-seat .armrest {
+        fill: #3498db !important; /* Azul */
+    }
+
+    .seat-text {
+        font-family: sans-serif;
+        font-size: 22px;
+        font-weight: bold;
+        pointer-events: none;
+        fill: #000;
+    }
+
+    .seat {
+        transition: transform 0.1s ease, fill 0.2s ease;
+        cursor: pointer;
+    }
+
+    .seat:hover {
+        filter: brightness(1.1);
+    }
+
+    /* Placeholder para espacios (O) */
+    .aisle {
+        fill: rgba(0,0,0,0.02);
+        stroke: rgba(0,0,0,0.06);
+        stroke-dasharray: 6 6;
+    }
+
+    /* Televisor y baños estilo */
+    .tv-screen { fill: #111827; stroke:#000; stroke-width:2; }
+    .tv-stand { fill:#333; }
+    .wc-icon { fill:#2a2a2a; }
+</style>
+
+<svg id="bus-svg" viewBox="0 0 870 3200" xmlns="http://www.w3.org/2000/svg" >
+    <!-- CARROCERÍA -->
+    <rect x="30" y="30" width="820" height="3120" rx="40" ry="40" fill="#f3f3f5" stroke="#333" stroke-width="8" />
+
+    <!-- título -->
+
+    <!-- columnas X positions (5 cols) -->
+    <!-- colX: 70, 230, 390, 550, 710  (manteniendo márgenes) -->
+    <!-- filas startY: 120 then +200 per row -->
+    <!-- Seat template (copiada de tu ejemplo): width ~110 total footprint, body at x=10 y=0 w=90 h=120 -->
+    <!-- Voy a usar el mismo grupo de asientos que enviaste; IDs seat-1..seat-46 -->
+
+    <!-- DEFINICIÓN: función visual repetida (no JS, sólo grupos) -->
+    <!-- Row loop implemented manualmente para asegurar numeración idéntica -->
+
+    <!-- ---------- FILA 1  (rowY = 120): X X O X X ---------- -->
+    <!-- col positions -->
+    <!-- seat counter starts at 1 -->
+    <g id="seat-1" class="seat" transform="translate(70,120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">1</text>
+    </g>
+
+    <g id="seat-2" class="seat" transform="translate(230,120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">2</text>
+    </g>
+
+    <!-- espacio (O) col3 -->
+    <g transform="translate(390,120)">
+        <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
+    </g>
+
+    <g id="seat-3" class="seat" transform="translate(550,120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">3</text>
+    </g>
+
+    <g id="seat-4" class="seat" transform="translate(710,120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">4</text>
+    </g>
+
+    <!-- ---------- FILA 2 (rowY = 320): X X O X X ---------- -->
+    <g id="seat-5" class="seat" transform="translate(70,320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">5</text>
+    </g>
+
+    <g id="seat-6" class="seat" transform="translate(230,320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">6</text>
+    </g>
+
+    <!-- espacio -->
+    <g transform="translate(390,320)">
+        <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
+    </g>
+
+    <g id="seat-7" class="seat" transform="translate(550,320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">7</text>
+    </g>
+
+    <g id="seat-8" class="seat" transform="translate(710,320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">8</text>
+    </g>
+
+    <!-- ---------- FILA 3 (rowY = 520): X X O X X ---------- -->
+    <g id="seat-9" class="seat" transform="translate(70,520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">9</text>
+    </g>
+
+    <g id="seat-10" class="seat" transform="translate(230,520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">10</text>
+    </g>
+
+    <!-- espacio -->
+    <g transform="translate(390,520)">
+        <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
+    </g>
+
+    <g id="seat-11" class="seat" transform="translate(550,520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">11</text>
+    </g>
+
+    <g id="seat-12" class="seat" transform="translate(710,520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">12</text>
+    </g>
+
+    <!-- ---------- FILA 4 (rowY = 720): X X O X X ---------- -->
+    <g id="seat-13" class="seat" transform="translate(70,720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">13</text>
+    </g>
+
+    <g id="seat-14" class="seat" transform="translate(230,720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">14</text>
+    </g>
+
+    <!-- espacio -->
+    <g transform="translate(390,720)">
+        <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
+    </g>
+
+    <g id="seat-15" class="seat" transform="translate(550,720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">15</text>
+    </g>
+
+    <g id="seat-16" class="seat" transform="translate(710,720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">16</text>
+    </g>
+
+    <!-- ---------- FILA 5 (rowY = 920): X X O X X ---------- -->
+    <g id="seat-17" class="seat" transform="translate(70,920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">17</text>
+    </g>
+
+    <g id="seat-18" class="seat" transform="translate(230,920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">18</text>
+    </g>
+
+    <!-- espacio -->
+    <g transform="translate(390,920)">
+        <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
+    </g>
+
+    <g id="seat-19" class="seat" transform="translate(550,920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">19</text>
+    </g>
+
+    <g id="seat-20" class="seat" transform="translate(710,920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">20</text>
+    </g>
+
+    <!-- ---------- FILA 6 (rowY = 1120): O O O T O  -> TV at col4 ---------- -->
+    <g transform="translate(70,1120)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+    <g transform="translate(230,1120)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+    <g transform="translate(390,1120)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <!-- TV at col4 -->
+    <g transform="translate(550,1120)">
+        <!-- TV screen -->
+        <rect class="tv-screen" x="5" y="10" width="100" height="70" rx="6" ry="6"/>
+        <!-- small stand -->
+        <rect class="tv-stand" x="45" y="82" width="20" height="10" rx="2"/>
+        <text x="55" y="110" text-anchor="middle" font-size="12" fill="#111">TV</text>
+    </g>
+
+    <g transform="translate(710,1120)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <!-- ---------- FILA 7 (rowY = 1320): X X O X X ---------- -->
+    <g id="seat-21" class="seat" transform="translate(70,1320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">21</text>
+    </g>
+
+    <g id="seat-22" class="seat" transform="translate(230,1320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">22</text>
+    </g>
+
+    <!-- espacio -->
+    <g transform="translate(390,1320)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <g id="seat-23" class="seat" transform="translate(550,1320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">23</text>
+    </g>
+
+    <g id="seat-24" class="seat" transform="translate(710,1320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">24</text>
+    </g>
+
+    <!-- ---------- FILA 8 (rowY = 1520): X X O X X ---------- -->
+    <g id="seat-25" class="seat" transform="translate(70,1520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">25</text>
+    </g>
+
+    <g id="seat-26" class="seat" transform="translate(230,1520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">26</text>
+    </g>
+
+    <g transform="translate(390,1520)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <g id="seat-27" class="seat" transform="translate(550,1520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">27</text>
+    </g>
+
+    <g id="seat-28" class="seat" transform="translate(710,1520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">28</text>
+    </g>
+
+    <!-- ---------- FILA 9 (rowY = 1720): O T O O O  -> TV at col2 ---------- -->
+    <g transform="translate(70,1720)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <!-- TV at col2 -->
+    <g transform="translate(230,1720)">
+        <rect class="tv-screen" x="5" y="10" width="100" height="70" rx="6" ry="6"/>
+        <rect class="tv-stand" x="45" y="82" width="20" height="10" rx="2"/>
+        <text x="55" y="110" text-anchor="middle" font-size="12" fill="#111">TV</text>
+    </g>
+
+    <g transform="translate(390,1720)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+    <g transform="translate(550,1720)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+    <g transform="translate(710,1720)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <!-- ---------- FILA 10 (rowY = 1920): X X O X X ---------- -->
+    <g id="seat-29" class="seat" transform="translate(70,1920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">29</text>
+    </g>
+
+    <g id="seat-30" class="seat" transform="translate(230,1920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">30</text>
+    </g>
+
+    <g transform="translate(390,1920)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <g id="seat-31" class="seat" transform="translate(550,1920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">31</text>
+    </g>
+
+    <g id="seat-32" class="seat" transform="translate(710,1920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">32</text>
+    </g>
+
+    <!-- ---------- FILA 11 (rowY = 2120): X X O X X ---------- -->
+    <g id="seat-33" class="seat" transform="translate(70,2120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">33</text>
+    </g>
+
+    <g id="seat-34" class="seat" transform="translate(230,2120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">34</text>
+    </g>
+
+    <g transform="translate(390,2120)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <g id="seat-35" class="seat" transform="translate(550,2120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">35</text>
+    </g>
+
+    <g id="seat-36" class="seat" transform="translate(710,2120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">36</text>
+    </g>
+
+    <!-- ---------- FILA 12 (rowY = 2320): X X O X X ---------- -->
+    <g id="seat-37" class="seat" transform="translate(70,2320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">37</text>
+    </g>
+
+    <g id="seat-38" class="seat" transform="translate(230,2320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">38</text>
+    </g>
+
+    <g transform="translate(390,2320)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <g id="seat-39" class="seat" transform="translate(550,2320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">39</text>
+    </g>
+
+    <g id="seat-40" class="seat" transform="translate(710,2320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">40</text>
+    </g>
+
+    <!-- ---------- FILA 13 (rowY = 2520): X X O X X ---------- -->
+    <g id="seat-41" class="seat" transform="translate(70,2520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">41</text>
+    </g>
+
+    <g id="seat-42" class="seat" transform="translate(230,2520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">42</text>
+    </g>
+
+    <g transform="translate(390,2520)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <g id="seat-43" class="seat" transform="translate(550,2520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">43</text>
+    </g>
+
+    <g id="seat-44" class="seat" transform="translate(710,2520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">44</text>
+    </g>
+
+    <!-- ---------- FILA 14 (rowY = 2720): X X O B B  -> baños at col4 & col5 ---------- -->
+    <g id="seat-45" class="seat" transform="translate(70,2720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">45</text>
+    </g>
+
+    <g id="seat-46" class="seat" transform="translate(230,2720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">46</text>
+    </g>
+
+    <!-- espacio (col3) -->
+    <g transform="translate(390,2720)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
+
+    <!-- BAÑO col4 -->
+    <g transform="translate(550,2720)">
+        <!-- rectangle background -->
+        <rect x="10" y="10" width="90" height="140" rx="12" ry="12" fill="#e9f2ff" stroke="#2a2a2a" />
+        <!-- hombre -->
+        <g transform="translate(28,36)" fill="#2a2a2a">
+            <circle cx="12" cy="10" r="7" class="wc-icon"/>
+            <rect x="6" y="20" width="12" height="28" rx="2" />
+        </g>
+        <!-- mujer -->
+        <g transform="translate(56,36)" fill="#2a2a2a">
+            <circle cx="12" cy="10" r="7" class="wc-icon"/>
+            <path d="M12 20 L6 44 L18 44 Z" />
+        </g>
+        <text x="55" y="160" text-anchor="middle" font-size="12" fill="#111">WC</text>
+    </g>
+
+    <!-- BAÑO col5 -->
+    <g transform="translate(710,2720)">
+        <rect x="10" y="10" width="90" height="140" rx="12" ry="12" fill="#e9f2ff" stroke="#2a2a2a" />
+        <g transform="translate(28,36)" fill="#2a2a2a">
+            <circle cx="12" cy="10" r="7" class="wc-icon"/>
+            <rect x="6" y="20" width="12" height="28" rx="2" />
+        </g>
+        <g transform="translate(56,36)" fill="#2a2a2a">
+            <circle cx="12" cy="10" r="7" class="wc-icon"/>
+            <path d="M12 20 L6 44 L18 44 Z" />
+        </g>
+        <text x="55" y="160" text-anchor="middle" font-size="12" fill="#111">WC</text>
+    </g>
+
+</svg>
