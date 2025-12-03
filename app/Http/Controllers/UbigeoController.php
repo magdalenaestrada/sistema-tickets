@@ -63,4 +63,14 @@ class UbigeoController extends Controller
 
         return response()->json($sucursales);
     }
+    public function byDistrito($id)
+    {
+        $distrito = Distrito::findOrFail($id);
+
+        return [
+            'departamento_id' => $distrito->provincia->departamento->id,
+            'provincia_id'    => $distrito->provincia->id,
+            'distrito_id'     => $distrito->id,
+        ];
+    }
 }

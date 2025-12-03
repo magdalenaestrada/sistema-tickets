@@ -1,0 +1,43 @@
+@extends('layouts.app')
+
+@section('content')
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Gestión de Clientes</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" id="btnNuevoCliente">
+                    <i class="link-icon" data-lucide="plus"></i>
+                    Añadir Cliente
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label>Numero de documento</label>
+                    <input type="text" id="filtroDocumento" class="form-control" placeholder="Buscar por DNI">
+                </div>
+
+                <div class="col-md-4">
+                    <label>Nombres</label>
+                    <input type="text" id="filtroNombres" class="form-control" placeholder="Buscar nombres">
+                </div>
+
+                <div class="col-md-4">
+                    <label>Apellidos</label>
+                    <input type="text" id="filtroApellidos" class="form-control" placeholder="Buscar apellidos">
+                </div>
+            </div>
+
+            <table id="tablaClientes" class="table table-striped w-100"></table>
+        </div>
+    </div>
+    @include('clientes.modals.create')
+@endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="{{ asset('js/clientes.js') }}"></script>
+@endpush
