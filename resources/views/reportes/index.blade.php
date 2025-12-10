@@ -53,8 +53,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
-
-                        <!-- Filtros -->
+                        <!-- Filtros comunes -->
                         <div class="col-md-3">
                             <label>Fecha inicio</label>
                             <input type="date" id="fecha_inicio" class="form-control">
@@ -63,6 +62,8 @@
                             <label>Fecha fin</label>
                             <input type="date" id="fecha_fin" class="form-control">
                         </div>
+
+                        <!-- Filtros ventas -->
                         <div class="col-md-2 filter-ventas" style="display:none;">
                             <label>Tipo Documento</label>
                             <select id="tipo_documento" class="form-select">
@@ -89,7 +90,6 @@
                                 <option value="A">Anulados</option>
                             </select>
                         </div>
-
                         <div class="col-md-5 filter-ventas" style="display:none;">
                             <label>Cliente</label>
                             <input type="text" id="cliente" class="form-control" placeholder="Nombre cliente">
@@ -98,8 +98,72 @@
                             <label>Vendedor</label>
                             <input type="text" id="vendedor" class="form-control" placeholder="Usuario vendedor">
                         </div>
-                        <!-- Botones de export -->
-                        <div class="col-md-3 mt-2 d-flex gap-2">
+
+                        <!-- Filtros viajes -->
+                        <div class="col-md-3 filter-pasajes" style="display:none;">
+                            <label>Tipo Vehículo</label>
+                            <select id="tipo_vehiculo" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($tipos_vehiculo as $vehiculo)
+                                    <option value="{{ $vehiculo->id }}">{{ $vehiculo->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 filter-pasajes" style="display:none;">
+                            <label>Tipo Viaje</label>
+                            <select id="tipo_viaje" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($tipos_viaje as $tipo)
+                                    <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 filter-pasajes" style="display:none;">
+                            <label>Punto Origen</label>
+                            <select id="punto_origen" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($puntos as $punto)
+                                    <option value="{{ $punto->id }}">{{ $punto->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 filter-pasajes" style="display:none;">
+                            <label>Punto Destino</label>
+                            <select id="punto_destino" class="form-select">
+                                <option value="">Todos</option>
+                                @foreach ($puntos as $punto)
+                                    <option value="{{ $punto->id }}">{{ $punto->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 filter-pasajes" style="display:none;">
+                            <label>Costo Pasaje</label>
+                            <input type="number" step="0.01" id="costo_pasaje" class="form-control">
+                        </div>
+                        <div class="col-md-2 filter-pasajes" style="display:none;">
+                            <label>Hora Embarque</label>
+                            <input type="time" id="hora_embarque" class="form-control">
+                        </div>
+                        <div class="col-md-2 filter-pasajes" style="display:none;">
+                            <label>Fecha Salida</label>
+                            <input type="date" id="fecha_salida_pasaje" class="form-control">
+                        </div>
+                        <div class="col-md-6 filter-pasajes" style="display:none;">
+                            <label>Días de la semana</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <div><input type="checkbox" id="lunes" value="1"> Lunes</div>
+                                <div><input type="checkbox" id="martes" value="1"> Martes</div>
+                                <div><input type="checkbox" id="miercoles" value="1"> Miércoles</div>
+                                <div><input type="checkbox" id="jueves" value="1"> Jueves</div>
+                                <div><input type="checkbox" id="viernes" value="1"> Viernes</div>
+                                <div><input type="checkbox" id="sabado" value="1"> Sábado</div>
+                                <div><input type="checkbox" id="domingo" value="1"> Domingo</div>
+                            </div>
+                        </div>
+
+                        <!-- Botones export -->
+                        <div class="col-12 mt-2 d-flex gap-2">
                             <button id="btnExcel" class="btn btn-success btn-sm">Exportar Excel</button>
                             <button id="btnPDF" class="btn btn-danger btn-sm">Exportar PDF</button>
                         </div>
@@ -110,7 +174,6 @@
         </div>
 
 
-        {{-- Tabla dinámica --}}
         <div class="card mt-3">
             <div class="card-body">
                 <table id="tablaReportes" class="table table-bordered">
