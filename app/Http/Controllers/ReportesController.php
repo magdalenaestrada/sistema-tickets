@@ -12,9 +12,11 @@ use App\Models\Descuento;
 use App\Models\Encomienda;
 use App\Models\MetodoPago;
 use App\Models\Sucursal;
+use App\Models\TipoDocumentoFactura;
 use App\Models\TipoVehiculo;
 use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
 use PDF;
+use Yajra\DataTables\DataTables;
 
 class ReportesController extends Controller
 {
@@ -24,69 +26,118 @@ class ReportesController extends Controller
         $sucursales = Sucursal::all();
         $metodosPago = MetodoPago::all();
         $vehiculos = TipoVehiculo::all();
-        return view('reportes.index', compact('sucursales', 'metodosPago', 'vehiculos'));
+        $tipos_documento = TipoDocumentoFactura::all();
+        return view('reportes.index', compact('sucursales', 'metodosPago', 'vehiculos', 'tipos_documento'));
     }
 
-    // Generar PDF según tipo de reporte
-    public function generar(Request $request)
+    public function datos($tipo, Request $request)
     {
-        $tipo = $request->tipo; 
-        $data = [];
-
         switch ($tipo) {
             case 'ventas':
-                $query = Venta::with(['persona', 'pagos.metodoPago', 'detalles']);
-                if ($request->fecha_inicio && $request->fecha_fin) {
-                    $query->whereBetween('fecha_emision', [$request->fecha_inicio, $request->fecha_fin]);
+                $query = Venta::with(['persona', 'usuario.persona', 'sucursal', 'tipoDocumentoFactura']);
+
+                if ($request->fecha_inicio) {
+                    $query->whereDate('fecha_emision', '>=', $request->fecha_inicio);
                 }
-                if ($request->sucursal_id) $query->where('sucursal_id', $request->sucursal_id);
-                if ($request->estado) $query->where('estado', $request->estado);
-                if ($request->metodo_pago_id) {
-                    $query->whereHas('ventaPagos', fn($q) => $q->where('metodo_pago_id', $request->metodo_pago_id));
+                if ($request->fecha_fin) {
+                    $query->whereDate('fecha_emision', '<=', $request->fecha_fin);
                 }
-                $data = $query->get();
-                break;
+                if ($request->tipo_documento) {
+                    $query->where('tipo_documento_factura_id', $request->tipo_documento);
+                }
+                if ($request->cliente) {
+                    $query->whereHas('persona', fn($q) => $q->where('nombres', 'like', "%{$request->cliente}%")
+                        ->orWhere('apellidos', 'like', "%{$request->cliente}%"));
+                }
+                if ($request->vendedor) {
+                    $query->whereHas('usuario.persona', fn($q) => $q->where('nombres', 'like', "%{$request->vendedor}%")
+                        ->orWhere('apellidos', 'like', "%{$request->vendedor}%"));
+                }
+                if ($request->sucursal) {
+                    $query->where('sucursal_id', $request->sucursal);
+                }
+
+                if ($request->estado) {
+                    $query->where('estado', $request->estado);
+                }
+                return DataTables::of($query)
+                    ->addColumn('fecha', fn($row) => optional($row->fecha_emision)->format('Y-m-d'))
+                    ->addColumn('descripcion', fn($row) => $row->tipoDocumentoFactura->descripcion ?? $row->serie . '-' . $row->numero)
+                    ->addColumn('vendedor', fn($row) => optional($row->usuario->persona)->nombres . ' ' . optional($row->usuario->persona)->apellidos)
+                    ->addColumn('cliente', fn($row) => optional($row->persona)->nombres . ' ' . optional($row->persona)->apellidos)
+                    ->addColumn('sucursal', fn($row) => optional($row->sucursal)->nombre_comercial)
+                    ->addColumn('monto', fn($row) => $row->total)
+                    ->rawColumns(['fecha', 'descripcion', 'cliente', 'vendedor', 'monto'])
+                    ->make(true);
 
             case 'pasajeros':
-                $query = Pasaje::with(['persona', 'horario', 'venta.persona', 'horario.tipo_vehiculo']);
-                if ($request->fecha_inicio && $request->fecha_fin) {
-                    $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);
-                }
-                if ($request->horario_id) $query->where('horario_id', $request->horario_id);
-                $data = $query->get();
-                break;
+                $query = Pasaje::query();
+                return DataTables::of($query)->make(true);
 
             case 'cupones':
-                $query = Descuento::with('persona');
-                if ($request->fecha_inicio && $request->fecha_fin) {
-                    $query->whereBetween('created_at', [$request->fecha_inicio, $request->fecha_fin]);
-                }
-                if ($request->codigo) $query->where('codigo', $request->codigo);
-                if ($request->persona_id) $query->where('persona_id', $request->persona_id);
-                $data = $query->get();
-                break;
+                $query = Descuento::query();
+                return DataTables::of($query)->make(true);
 
             case 'encomiendas':
-                $query = Encomienda::with(['emisor', 'receptor', 'detalles', 'sucursal_origen', 'sucursal_destino']);
-                if ($request->fecha_inicio && $request->fecha_fin) {
-                    $query->whereBetween('fecha_creacion', [$request->fecha_inicio, $request->fecha_fin]);
-                }
-                if ($request->origen) $query->where('origen', $request->origen);
-                if ($request->destino) $query->where('destino', $request->destino);
-                $data = $query->get();
-                break;
+                $query = Encomienda::query();
+                return DataTables::of($query)->make(true);
 
             case 'viajes':
-                $query = Horario::with(['asignaciones.vehiculo', 'pasajes']);
-                if ($request->fecha_inicio && $request->fecha_fin) {
-                    $query->whereBetween('fecha_salida', [$request->fecha_inicio, $request->fecha_fin]);
-                }
-                if ($request->vehiculo_id) $query->whereHas('asignaciones', fn($q) => $q->where('vehiculo', $request->vehiculo_id));
-                $data = $query->get();
-                break;
+                $query = Horario::query();
+                return DataTables::of($query)->make(true);
+
+            default:
+                abort(404);
+        }
+    }
+
+    public function generar(Request $request)
+    {
+        $tipo = $request->tipo;
+        $filtros = [
+            'fecha_inicio' => $request->fecha_inicio,
+            'fecha_fin' => $request->fecha_fin,
+            'estado' => $request->estado ?? 'todos', // por defecto todos
+        ];
+
+        if ($tipo === 'ventas') {
+            $query = Venta::with(['persona', 'usuario.persona', 'sucursal', 'tipoDocumentoFactura', 'pagos.metodoPago']);
+
+            if ($request->fecha_inicio && $request->fecha_fin) {
+                $query->whereBetween('fecha_emision', [$request->fecha_inicio, $request->fecha_fin]);
+            }
+            if ($request->sucursal) $query->where('sucursal_id', $request->sucursal);
+            if ($request->tipo_documento) $query->where('tipo_documento_factura_id', $request->tipo_documento);
+            if ($request->cliente) {
+                $query->whereHas(
+                    'persona',
+                    fn($q) =>
+                    $q->where('nombres', 'like', "%{$request->cliente}%")
+                        ->orWhere('apellidos', 'like', "%{$request->cliente}%")
+                );
+            }
+            if ($request->vendedor) {
+                $query->whereHas(
+                    'usuario.persona',
+                    fn($q) =>
+                    $q->where('nombres', 'like', "%{$request->vendedor}%")
+                        ->orWhere('apellidos', 'like', "%{$request->vendedor}%")
+                );
+            }
+            if ($request->estado) {
+                $query->where('estado', $request->estado);
+            }
+
+            $ventas = $query->get();
+
+            // separar emitidos y anulados
+            $emitidos = $ventas->where('estado', 'E');
+            $anulados = $ventas->where('estado', 'A');
         }
 
-        $pdf = FacadePdf::loadView("reportes.pdf.$tipo", compact('data', 'request'));
+        $pdf = FacadePdf::loadView("reportes.pdf.$tipo", compact('emitidos', 'anulados', 'filtros'))
+            ->setPaper('a4', 'landscape');
+
         return $pdf->download("reporte_$tipo.pdf");
     }
 }

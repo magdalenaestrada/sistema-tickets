@@ -37,6 +37,11 @@ class Venta extends Model
         'fecha_anulacion',
     ];
 
+    protected $casts = [
+        'fecha_emision' => 'datetime',
+        'fecha_anulacion' => 'datetime',
+    ];
+
     public function detalles()
     {
         return $this->hasMany(VentaDetalle::class);
@@ -55,6 +60,11 @@ class Venta extends Model
     public function persona()
     {
         return $this->belongsTo(Persona::class);
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function sucursal()

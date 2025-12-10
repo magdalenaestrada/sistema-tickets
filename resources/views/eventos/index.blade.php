@@ -19,19 +19,21 @@
 @endsection
 
 @push('styles')
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css">
+
     <style>
         #calendar {
             font-family: 'Inter', sans-serif;
             font-size: 14px;
+            min-height: 600px;
         }
 
         .fc-event {
-            border: none;
-            border-radius: 6px;
-            background-color: #ffaae4;
+            border: none !important;
+            border-radius: 6px !important;
+            background-color: #ffaae4 !important;
             color: white;
-            padding: 3px 6px;
+            padding: 4px 6px;
         }
     </style>
 @endpush
@@ -45,40 +47,42 @@
         const eventosLaravel = @json($datos_eventos);
 
         document.addEventListener("DOMContentLoaded", function() {
+            const calendarEl = document.getElementById("calendar");
+            setTimeout(() => {
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: "dayGridMonth",
+                    locale: "es",
+                    height: "auto",
+                    events: eventosLaravel,
 
-            let calendarEl = document.getElementById("calendar");
+                    eventContent(info) {
+                        const tipo = info.event.extendedProps.tipo ?? info.event.title;
+                        const persona = info.event.extendedProps.persona ?? '';
+                        const edad = info.event.extendedProps.edad ?? null;
 
-            let calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: "dayGridMonth",
-                locale: "es",
-                events: eventosLaravel,
+                        return {
+                            html: `
+                        <div>${tipo}</div>
+                        <div class="fc-event-title">${persona}</div>
+                        ${edad ? `<div style="font-size:13px;font-weight:bold;opacity:.8">${edad} años</div>` : ""}
+                    `
+                        };
+                    },
 
-                eventContent: function(info) {
-                    let edad = info.event.extendedProps.edad ?? null;
-                    let persona = info.event.extendedProps.persona ?? null;
-                    let tipo = info.event.extendedProps.tipo ?? null;
-                    let html = `
-                <div>🎂 ${tipo}</div>
-                <div class="fc-event-title">${persona}</div>
-                <div style="font-size:14px; font-weight:bold; opacity:.8">${edad ? edad + " años" : ""}</div>
-            `;
+                    eventClick(info) {
+                        $("#ModalVerEvento").modal("show");
+                        $("#verTitulo").text(info.event.title);
+                        const edad = info.event.extendedProps.edad ?? null;
+                        $("#verEdad").text(edad ? edad + " años" : "Sin edad");
+                    }
+                });
 
-                    return {
-                        html: html
-                    };
-                },
+                calendar.render();
 
-                eventClick: function(info) {
-                    $("#ModalVerEvento").modal("show");
-
-                    $("#verTitulo").text(info.event.title);
-                    $("#verEdad").text(info.event.extendedProps.edad ?
-                        info.event.extendedProps.edad + " años" :
-                        "Sin edad");
-                }
-            });
-
-            calendar.render();
+                document.getElementById("btnHoy").onclick = () => calendar.today();
+                document.getElementById("btnMes").onclick = () => calendar.changeView("dayGridMonth");
+                document.getElementById("btnSemana").onclick = () => calendar.changeView("timeGridWeek");
+            }, 50);
         });
     </script>
 @endpush
