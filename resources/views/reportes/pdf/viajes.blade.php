@@ -26,7 +26,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($data as $horario)
+            @foreach($horarios as $horario)
             <tr>
                 <td>{{ $horario->id }}</td>
                 <td>{{ $horario->fecha_salida }}</td>
@@ -35,7 +35,7 @@
                 <td>{{ $horario->punto_destino->nombre_comercial ?? '' }}</td>
                 <td>
                     @foreach($horario->asignaciones as $a)
-                        {{ $a->vehiculo->numero_placa ?? '' }} {{ $a->vehiculo->tipo_vehiculo->descripcion ?? '' }}<br>
+                        {{ $a->vehiculoObj->numero_placa ?? '' }} {{ $a->vehiculoObj->tipo_vehiculo->descripcion ?? '' }}<br>
                     @endforeach
                 </td>
                 <td>{{ $horario->pasajes->count() }}</td>

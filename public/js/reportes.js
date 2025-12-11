@@ -18,7 +18,7 @@ function inicializarTabla() {
         );
     } else if (reporteSeleccionado === "viajes") {
         thead.append(
-            "<th>Fecha</th><th>Hora</th><th>Tipo Vehículo</th><th>Tipo Viaje</th><th>Origen</th><th>Destino</th><th>Costo</th>"
+            "<th>Fecha</th><th>Hora</th><th>Tipo Vehículo</th><th>Tipo Viaje</th><th>Origen</th><th>Destino</th>"
         );
     }
 
@@ -50,7 +50,6 @@ function inicializarTabla() {
             { data: "tipo_viaje", name: "tipo_viaje" },
             { data: "origen", name: "origen" },
             { data: "destino", name: "destino" },
-            { data: "costo", name: "costo" },
         ];
     }
 
@@ -71,19 +70,13 @@ function inicializarTabla() {
                     d.sucursal = $("#sucursal").val();
                     d.estado = $("#estado").val();
                 } else if (reporteSeleccionado === "viajes") {
+                    d.fecha_inicio = $("#fecha_inicio").val();
+                    d.fecha_fin = $("#fecha_fin").val();
                     d.tipo_vehiculo = $("#tipo_vehiculo").val();
                     d.tipo_viaje = $("#tipo_viaje").val();
                     d.punto_origen = $("#punto_origen").val();
                     d.punto_destino = $("#punto_destino").val();
                     d.hora_embarque = $("#hora_embarque").val();
-                    d.fecha_salida = $("#fecha_salida_pasaje").val();
-                    d.lunes = $("#lunes").is(":checked") ? 1 : 0;
-                    d.martes = $("#martes").is(":checked") ? 1 : 0;
-                    d.miercoles = $("#miercoles").is(":checked") ? 1 : 0;
-                    d.jueves = $("#jueves").is(":checked") ? 1 : 0;
-                    d.viernes = $("#viernes").is(":checked") ? 1 : 0;
-                    d.sabado = $("#sabado").is(":checked") ? 1 : 0;
-                    d.domingo = $("#domingo").is(":checked") ? 1 : 0;
                 }
             },
         },
@@ -98,6 +91,10 @@ function inicializarTabla() {
 function recargarTabla() {
     if (tabla) tabla.ajax.reload(null, false);
 }
+
+$(
+    "#tipo_vehiculo, #tipo_viaje, #punto_origen, #punto_destino, #hora_embarque, #fecha_salida_pasaje"
+).on("change", recargarTabla);
 
 function debounce(fn, delay) {
     let timer;
