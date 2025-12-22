@@ -1,8 +1,13 @@
   <!-- partial:partials/_sidebar.html -->
   <nav class="sidebar">
       <div class="sidebar-header">
-          <a href="#" class="sidebar-brand">
-              Noble<span>UI</span>
+          <a href="{{ route('empresas.index') }}" class="sidebar-brand d-flex align-items-center">
+              @if ($empresaGlobal && $empresaGlobal->logo)
+                  <img src="{{ asset('storage/' . $empresaGlobal->logo) }}" alt="Logo" style="height:40px"
+                      class="me-2">
+              @else
+                  <span>Mi Empresa</span>
+              @endif
           </a>
           <div class="sidebar-toggler">
               <span></span>

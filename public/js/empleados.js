@@ -9,17 +9,49 @@ $(document).ready(function () {
             { data: "nombre", title: "Nombre" },
             { data: "sucursal", title: "Sucursal" },
             { data: "cargo", title: "Cargo" },
-            { data: "acciones", title: "Acciones", orderable: false, searchable: false },
+            {
+                data: "acciones",
+                title: "Acciones",
+                orderable: false,
+                searchable: false,
+            },
         ],
         responsive: false,
         scrollX: true,
-        language: { url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
+        searching: true, 
+        paging: false, 
+        info: false, 
+        dom: 'rt',
+        lengthChange: false,
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        },
         drawCallback: () => lucide.createIcons(),
     });
 
     initUbigeos("#departamento_id", "#provincia_id", "#distrito_id");
 
-    // Función para mostrar u ocultar la sección de conductor
+    $("#filtroDni").on("keyup change", function () {
+        tabla.column(0).search(this.value).draw();
+    });
+
+    $("#filtroSucursal").on("keyup change", function () {
+        tabla.column(2).search(this.value).draw();
+    });
+
+    $("#filtroCargo").on("keyup change", function () {
+        tabla.column(3).search(this.value).draw();
+    });
+
+    $("#filtroDni").on("input", function () {
+        this.value = this.value.replace(/\D/g, "").slice(0, 8);
+    });
+
+    function limpiarFiltros() {
+        $("#filtroDni, #filtroSucursal, #filtroCargo").val("");
+        tabla.columns().search("").draw();
+    }
+
     function toggleConductor(cargoVal, cargoDesc = "") {
         const $conductor = $(".conductor");
         if (cargoVal == 16 || cargoDesc.toLowerCase().includes("conductor")) {
@@ -33,15 +65,34 @@ $(document).ready(function () {
     // Cargar listas de selects
     function cargarListasEmpleado(callback = null) {
         $.get("/listas", function (res) {
-            const fillSelect = (selector, items, placeholder, key = "descripcion") => {
+            const fillSelect = (
+                selector,
+                items,
+                placeholder,
+                key = "descripcion"
+            ) => {
                 const select = $(selector);
-                select.empty().append(`<option value="">${placeholder}</option>`);
-                items.forEach(i => select.append(`<option value="${i.id}">${i[key]}</option>`));
+                select
+                    .empty()
+                    .append(`<option value="">${placeholder}</option>`);
+                items.forEach((i) =>
+                    select.append(`<option value="${i.id}">${i[key]}</option>`)
+                );
             };
 
             fillSelect("#cargo_id", res.cargos, "Seleccione un cargo");
-            fillSelect("#sucursal_id", res.sucursales, "Seleccione una sucursal", "nombre_comercial");
-            fillSelect("#tipo_documento_id", res.tipos_documento, "Seleccione", "codigo");
+            fillSelect(
+                "#sucursal_id",
+                res.sucursales,
+                "Seleccione una sucursal",
+                "nombre_comercial"
+            );
+            fillSelect(
+                "#tipo_documento_id",
+                res.tipos_documento,
+                "Seleccione",
+                "codigo"
+            );
             fillSelect("#tipo_licencia_id", res.tipos_licencia, "Seleccione");
 
             if (callback) callback();
@@ -51,28 +102,50 @@ $(document).ready(function () {
     // Buscar documento
     $("#btnBuscarDocumento").on("click", function () {
         const documento = $("#documento").val().trim();
-        if (!documento) return Swal.fire("Atención", "Por favor ingrese un número de documento", "warning");
+        if (!documento)
+            return Swal.fire(
+                "Atención",
+                "Por favor ingrese un número de documento",
+                "warning"
+            );
 
-        $("#btnBuscarDocumento").prop("disabled", true).html('<i data-lucide="search"></i>');
+        $("#btnBuscarDocumento")
+            .prop("disabled", true)
+            .html('<i data-lucide="search"></i>');
         lucide.createIcons();
 
         $.getJSON(`/buscar/?documento=${documento}`)
-            .done(data => {
-                if (data.error) return Swal.fire("Error", "No se encontró información: " + data.error, "error");
+            .done((data) => {
+                if (data.error)
+                    return Swal.fire(
+                        "Error",
+                        "No se encontró información: " + data.error,
+                        "error"
+                    );
 
                 if (data.razon_social) {
                     $('input[name="nombres"]').val(data.razon_social);
                     $('input[name="apellidos"]').val("");
-                    $('input[name="nombre_comercial"]').val(data.nombre_comercial || "");
+                    $('input[name="nombre_comercial"]').val(
+                        data.nombre_comercial || ""
+                    );
                     $('input[name="direccion"]').val(data.direccion || "");
                 } else {
                     $('input[name="nombres"]').val(data.nombres || "");
-                    $('input[name="apellidos"]').val(`${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim());
+                    $('input[name="apellidos"]').val(
+                        `${data.apellido_paterno || ""} ${
+                            data.apellido_materno || ""
+                        }`.trim()
+                    );
                 }
             })
-            .fail(() => Swal.fire("Error", "Error al consultar la API.", "error"))
+            .fail(() =>
+                Swal.fire("Error", "Error al consultar la API.", "error")
+            )
             .always(() => {
-                $("#btnBuscarDocumento").prop("disabled", false).html('<i data-lucide="search"></i>');
+                $("#btnBuscarDocumento")
+                    .prop("disabled", false)
+                    .html('<i data-lucide="search"></i>');
                 lucide.createIcons();
             });
     });
@@ -86,16 +159,26 @@ $(document).ready(function () {
 
     // Mostrar/ocultar sección usuario
     $("#chkUsuario").on("change", function () {
-        if ($(this).is(":checked")) $("#seccionUsuario").removeAttr("hidden").slideDown(200);
-        else $("#seccionUsuario").slideUp(200, () => { $(this).attr("hidden", true); $("#usuario, #password").val(""); });
+        if ($(this).is(":checked"))
+            $("#seccionUsuario").removeAttr("hidden").slideDown(200);
+        else
+            $("#seccionUsuario").slideUp(200, () => {
+                $(this).attr("hidden", true);
+                $("#usuario, #password").val("");
+            });
     });
 
     // Toggle password
     $("#togglePassword").on("click", function () {
         const input = $("#password");
         const icon = $(this).find("i");
-        if (input.attr("type") === "password") { input.attr("type", "text"); icon.attr("data-lucide", "eye-off"); }
-        else { input.attr("type", "password"); icon.attr("data-lucide", "eye"); }
+        if (input.attr("type") === "password") {
+            input.attr("type", "text");
+            icon.attr("data-lucide", "eye-off");
+        } else {
+            input.attr("type", "password");
+            icon.attr("data-lucide", "eye");
+        }
         lucide.createIcons();
     });
 
@@ -119,7 +202,7 @@ $(document).ready(function () {
     // Editar y ver empleado
     function cargarEmpleado(id, viewOnly = false) {
         cargarListasEmpleado(() => {
-            $.get(`/empleados/${id}`, res => {
+            $.get(`/empleados/${id}`, (res) => {
                 const persona = res.persona ?? {};
                 $("#empleado_id").val(res.id);
                 $("#documento").val(persona.documento ?? "");
@@ -130,8 +213,12 @@ $(document).ready(function () {
                 $("#celular").val(persona.celular ?? "");
                 $("#direccion").val(persona.direccion ?? "");
                 cargarUbicacionPorIds(
-                    persona.departamento_id ?? persona.distrito?.provincia?.departamento_id ?? null,
-                    persona.provincia_id ?? persona.distrito?.provincia_id ?? null,
+                    persona.departamento_id ??
+                        persona.distrito?.provincia?.departamento_id ??
+                        null,
+                    persona.provincia_id ??
+                        persona.distrito?.provincia_id ??
+                        null,
                     persona.distrito_id ?? null
                 );
 
@@ -141,12 +228,19 @@ $(document).ready(function () {
                 toggleConductor(res.cargo_id, res.cargo?.descripcion ?? "");
 
                 if (viewOnly) {
-                    $("#formEmpleado").find("input, select, textarea").not('[type="hidden"]').prop("disabled", true);
+                    $("#formEmpleado")
+                        .find("input, select, textarea")
+                        .not('[type="hidden"]')
+                        .prop("disabled", true);
                     $("#btnGuardar").addClass("d-none");
                     $("#btnCerrarModal").removeClass("d-none").show();
-                    $("#modalEmpleado .modal-title").html('<i data-lucide="eye"></i> Ver Empleado');
+                    $("#modalEmpleado .modal-title").html(
+                        '<i data-lucide="eye"></i> Ver Empleado'
+                    );
                 } else {
-                    $("#formEmpleado").find("input, select, textarea").prop("disabled", false);
+                    $("#formEmpleado")
+                        .find("input, select, textarea")
+                        .prop("disabled", false);
                     $("#btnGuardar").removeClass("d-none");
                     $("#btnCerrarModal").addClass("d-none").hide();
                 }
@@ -157,35 +251,92 @@ $(document).ready(function () {
         });
     }
 
-    $("#tablaEmpleados").on("click", ".editar", function () { cargarEmpleado($(this).data("id")); });
-    $("#tablaEmpleados").on("click", ".ver", function () { cargarEmpleado($(this).data("id"), true); });
+    $("#tablaEmpleados").on("click", ".editar", function () {
+        cargarEmpleado($(this).data("id"));
+    });
+    $("#tablaEmpleados").on("click", ".ver", function () {
+        cargarEmpleado($(this).data("id"), true);
+    });
 
-    // Guardar empleado
+    function esMayorDeEdad(fechaNacimiento) {
+        if (!fechaNacimiento) return false;
+
+        const hoy = new Date();
+        const nacimiento = new Date(fechaNacimiento);
+
+        let edad = hoy.getFullYear() - nacimiento.getFullYear();
+        const mes = hoy.getMonth() - nacimiento.getMonth();
+
+        if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+            edad--;
+        }
+
+        return edad >= 18;
+    }
+
+    $("#licencia_conducir").on("input", function () {
+        this.value = this.value.replace(/\D/g, "").slice(0, 8);
+    });
+
     $("#formEmpleado").on("submit", function (e) {
         e.preventDefault();
+        const fechaNacimiento = $("#fecha_nacimiento").val();
+
+        if (!esMayorDeEdad(fechaNacimiento)) {
+            Swal.fire({
+                icon: "warning",
+                title: "Edad no permitida",
+                text: "El empleado debe ser mayor de 18 años.",
+                confirmButtonText: "Entendido",
+            });
+            return;
+        }
+
         $.post("/empleados/guardar", $(this).serialize())
-            .done(res => {
+            .done((res) => {
                 if (res.success) {
-                    Swal.fire({ icon: "success", title: "Éxito", text: res.message, timer: 2000, showConfirmButton: false });
+                    Swal.fire({
+                        icon: "success",
+                        title: "Éxito",
+                        text: res.message,
+                        timer: 2000,
+                        showConfirmButton: false,
+                    });
                     $("#modalEmpleado").modal("hide");
                     tabla.ajax.reload(null, false);
                 } else Swal.fire("Atención", res.message, "warning");
             })
-            .fail(() => Swal.fire("Error", "No se pudo guardar el empleado.", "error"));
+            .fail(() =>
+                Swal.fire("Error", "No se pudo guardar el empleado.", "error")
+            );
     });
 
     // Reset modal
     $("#modalEmpleado").on("hidden.bs.modal", () => {
-        $("#formEmpleado").find("input, select, textarea").not('[type="hidden"]').prop("disabled", false);
+        $("#formEmpleado")
+            .find("input, select, textarea")
+            .not('[type="hidden"]')
+            .prop("disabled", false);
         $("#btnGuardar").removeClass("d-none");
         $("#btnCerrarModal").addClass("d-none").hide();
         $(".campo-ubicacion").show();
         $("#seccionUsuario").hide().attr("hidden", true);
         $(".conductor").attr("hidden", true).hide();
-        $("#modalEmpleado .modal-title").html('<i data-lucide="user"></i> Registrar / Editar Empleado');
+        $("#modalEmpleado .modal-title").html(
+            '<i data-lucide="user"></i> Registrar / Editar Empleado'
+        );
     });
 });
 
 // Funciones de Ubigeos
-function initUbigeos(depSelectId, provSelectId, distSelectId) { /* tu lógica actual */ }
-function cargarUbicacionPorIds(departamentoId, provinciaId, distritoId, sucursalId) { /* tu lógica actual */ }
+function initUbigeos(depSelectId, provSelectId, distSelectId) {
+    /* tu lógica actual */
+}
+function cargarUbicacionPorIds(
+    departamentoId,
+    provinciaId,
+    distritoId,
+    sucursalId
+) {
+    /* tu lógica actual */
+}

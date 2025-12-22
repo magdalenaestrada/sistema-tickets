@@ -13,6 +13,18 @@
         </div>
 
         <div class="card-body">
+            <div class="row mb-2">
+                <div class="col-md-3">
+                    <input type="text" id="filtroDni" class="form-control" placeholder="Buscar DNI">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="filtroSucursal" class="form-control" placeholder="Buscar Sucursal">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="filtroCargo" class="form-control" placeholder="Buscar Cargo">
+                </div>
+            </div>
+
             <table id="tablaEmpleados" class="table table-striped w-100"></table>
         </div>
     </div>

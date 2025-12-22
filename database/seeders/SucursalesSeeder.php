@@ -26,7 +26,7 @@ class SucursalesSeeder extends Seeder
         ]);
 
         Sucursal::create([
-            'empresa_id'      => 2,
+            'empresa_id'      => 1,
             'distrito_id'     => 3,
             'nombre_comercial' => 'Sucursal Cusco Centro',
             'direccion'       => 'Av. El Sol 789',

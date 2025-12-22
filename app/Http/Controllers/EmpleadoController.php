@@ -34,7 +34,8 @@ class EmpleadoController extends Controller
             ->addColumn('cargo', fn($e) => $e->cargo->descripcion ?? '-')
             ->addColumn('acciones', fn($e) => '
                 <button class="btn btn-secondary btn-xs ver" data-id="' . $e->id . '">
-                    <i class="link-icon" data-lucide="eye"></i>
+                    <i class="link-icon " <i data-lucide="info"></i>
+
                 </button>
                 <button class="btn btn-warning btn-xs editar" data-id="' . $e->id . '">
                     <i class="link-icon" data-lucide="pen"></i>

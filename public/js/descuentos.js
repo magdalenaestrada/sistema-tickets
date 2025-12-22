@@ -1,8 +1,9 @@
 $(document).ready(function () {
     let tabla = $("#tablaDescuentos").DataTable({
         processing: true,
-        serverSide: true,
+        serverSide: false,
         ajax: route("descuentos.datatable"),
+        dom: "rtip",
         columns: [
             { data: "id" },
             { data: "codigo" },
@@ -26,6 +27,14 @@ $(document).ready(function () {
         $("#descuento_id").val("");
         $("#modalTitulo").text("Registrar Descuento");
         $("#modalDescuento").modal("show");
+    });
+
+    $("#filtroCodigo").on("keyup change", function () {
+        tabla.column(1).search(this.value).draw();
+    });
+
+    $("#filtroPersona").on("keyup change", function () {
+        tabla.column(2).search(this.value).draw();
     });
 
     $("#tablaDescuentos").on("click", ".editar", function () {

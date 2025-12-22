@@ -18,15 +18,5 @@ class EmpresaSeeder extends Seeder
             'contrasena_facturacion' => 'claveSecreta',
             'estado'                 => 'A',
         ]);
-
-        Empresa::create([
-            'documento'              => '20456789123',
-            'razon_social'           => 'Encomiendas del Sur S.A.',
-            'nombre_comercial'       => 'EDS Cargo',
-            'direccion'              => 'Av. Independencia 456, Arequipa',
-            'usuario_facturacion'    => null,
-            'contrasena_facturacion' => null,
-            'estado'                 => 'A',
-        ]);
     }
 }

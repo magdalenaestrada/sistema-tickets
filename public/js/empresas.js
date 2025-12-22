@@ -3,7 +3,7 @@ $(document).ready(function () {
 
     // SOLO los inputs de texto, excepto _token y empresa_id
     const inputs = $(
-        "#formEmpresa input[type='text'], #formEmpresa input[type='password']"
+        "#formEmpresa input[type='text'], #formEmpresa input[type='password'], #formEmpresa input[type='file']"
     );
 
     const btnGuardar = $("#btnGuardar");
@@ -23,19 +23,24 @@ $(document).ready(function () {
         btnGuardar.removeClass("d-none");
     });
 
-    // Guardar empresa
     $("#formEmpresa").on("submit", function (e) {
         e.preventDefault();
+        enableInputs();
 
         let id = $("#empresa_id").val();
-        let url = id ? route("empresas.actualizar", id) : route("empresas.guardar");
-        let method = id ? "PUT" : "POST";
-        let formData = $(this).serialize();
+        let url = id
+            ? route("empresas.actualizar", id)
+            : route("empresas.guardar");
+
+        let formData = new FormData(this);
 
         $.ajax({
             url: url,
-            type: method,
+            type: "POST", 
             data: formData,
+            contentType: false,
+            processData: false,
+
             success: function (res) {
                 if (res.success) {
                     // Si es nuevo → recargar

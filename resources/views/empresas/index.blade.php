@@ -5,19 +5,17 @@
         <div class="card-header">
             <h5 class="mb-0">Datos de la Empresa</h5>
         </div>
-
         <div class="card-body">
-
-            <form id="formEmpresa">
+            <form id="formEmpresa" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" id="empresa_id" value="{{ $empresa->id ?? '' }}">
-
+                <input type="hidden" id="empresa_id" name="empresa_id" value="{{ $empresa->id ?? '' }}">
                 <div class="row g-3">
 
                     <div class="col-md-2">
                         <label class="form-label">RUC / Documento</label>
                         <div class="input-group">
-                            <input type="text" name="documento" id="documento" class="form-control" value="{{ $empresa->documento ?? '' }}" required>
+                            <input type="text" name="documento" id="documento" class="form-control"
+                                value="{{ $empresa->documento ?? '' }}" required>
                             <button class="btn btn-outline-primary" type="button" id="btnBuscarRuc">
                                 <i class="link-icon" data-lucide="search"></i> </button>
                         </div>
@@ -35,10 +33,20 @@
                             value="{{ $empresa->nombre_comercial ?? '' }}">
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="col-md-8">
                         <label class="form-label">Dirección</label>
                         <input type="text" class="form-control" id="direccion" name="direccion"
                             value="{{ $empresa->direccion ?? '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Logo</label>
+                        <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+
+                        @if (isset($empresa) && $empresa->logo)
+                            <div class="mt-2">
+                                <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo" style="max-height:80px">
+                            </div>
+                        @endif
                     </div>
 
                     <div class="col-md-6">

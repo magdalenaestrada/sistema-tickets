@@ -9,6 +9,15 @@
                     Añadir Descuento </button> </div>
         </div>
         <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <input type="text" id="filtroCodigo" class="form-control" placeholder="Buscar código">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="filtroPersona" class="form-control" placeholder="Buscar persona">
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table id="tablaDescuentos" class="table table-striped table-hover align-middle w-100">
                     <thead>

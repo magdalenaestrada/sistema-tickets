@@ -12,10 +12,7 @@
                 <h5 class="modal-title">Registrar / Editar Empleado</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
-
             <div class="modal-body">
-
                 <div class="row g-1">
                     <div class="row">
                         <h5 style="font-weight: bold">DATOS PERSONALES</h5>
@@ -72,7 +69,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>Departamento</label>
-                            <select name="departamento_id" id="departamento_id" class="form-select" required>
+                            <select name="departamento_id" id="departamento_id" class="form-select">
                                 <option value="">Espere...</option>
                                 @foreach ($departamentos as $departamento)
                                     <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
@@ -82,7 +79,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>Provincia</label>
-                            <select name="provincia_id" id="provincia_id" class="form-select" required>
+                            <select name="provincia_id" id="provincia_id" class="form-select">
                                 <option value="">Espere...</option>
                                 @foreach ($provincias as $provincia)
                                     <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
@@ -92,7 +89,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>Distrito</label>
-                            <select name="distrito_id" id="distrito_id" class="form-select" required>
+                            <select name="distrito_id" id="distrito_id" class="form-select">
                                 <option value="">Espere...</option>
                                 @foreach ($distritos as $distrito)
                                     <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
@@ -170,12 +167,13 @@
             </div>
 
             <div class="modal-footer">
-                <button type="submit" id="btnGuardar" class="btn btn-primary">
-                    <i data-lucide="save"></i> Guardar
-                </button>
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                     <i data-lucide="x"></i> Cerrar
                 </button>
+                <button type="submit" id="btnGuardar" class="btn btn-primary">
+                    <i data-lucide="save"></i> Guardar
+                </button>
+
             </div>
         </form>
     </div>
