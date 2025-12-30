@@ -3,7 +3,8 @@ $(document).ready(function () {
 
     const tabla = $("#tablaClientes").DataTable({
         processing: true,
-        serverSide: true,
+        serverSide: false,
+        dom: "rtip",
         ajax: {
             url: route("clientes.datatable"),
             data: function (d) {
@@ -35,12 +36,13 @@ $(document).ready(function () {
         drawCallback: () => lucide.createIcons(),
     });
 
-    $("#filtroDocumento, #filtroNombres, #filtroApellidos").on(
-        "keyup change",
-        function () {
-            tabla.ajax.reload();
-        }
-    );
+    $("#filtroDocumento").on("keyup change", function () {
+        tabla.column(0).search(this.value).draw();
+    });
+
+    $("#filtroNombres").on("keyup change", function () {
+        tabla.column(1).search(this.value).draw();
+    });
 
     initUbigeos("#departamento_id", "#provincia_id", "#distrito_id");
 
@@ -212,16 +214,46 @@ $(document).ready(function () {
 
         cargarCliente(url);
     });
-
     $(document).on("click", ".eliminar", function () {
         let id = $(this).data("id");
-        $.ajax({
-            url: route("clientes.destroy", id),
-            type: "DELETE",
-            data: { _token: $('meta[name="csrf-token"]').attr("content") },
-            success: function () {
-                tabla.ajax.reload();
-            },
+
+        Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Este cliente será eliminado permanentemente",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("clientes.destroy", id),
+                    type: "DELETE",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function () {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Eliminado",
+                            text: "El cliente fue eliminado correctamente",
+                            timer: 1500,
+                            showConfirmButton: false,
+                        });
+
+                        tabla.ajax.reload();
+                    },
+                    error: function () {
+                        Swal.fire(
+                            "Error",
+                            "No se pudo eliminar el cliente",
+                            "error"
+                        );
+                    },
+                });
+            }
         });
     });
 

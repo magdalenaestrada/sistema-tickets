@@ -23,11 +23,6 @@
                     <label>Nombres</label>
                     <input type="text" id="filtroNombres" class="form-control" placeholder="Buscar nombres">
                 </div>
-
-                <div class="col-md-4">
-                    <label>Apellidos</label>
-                    <input type="text" id="filtroApellidos" class="form-control" placeholder="Buscar apellidos">
-                </div>
             </div>
 
             <table id="tablaClientes" class="table table-striped w-100"></table>

@@ -1,22 +1,61 @@
 $(document).ready(function () {
     const modal = new bootstrap.Modal($("#modalVehiculo")[0]);
+    const modalMantenimiento = new bootstrap.Modal($("#modalMantenimiento")[0]);
 
-    // Inicializar DataTable
     const tabla = $("#tablaVehiculos").DataTable({
         ajax: route("vehiculos.datatable"),
+        dom: "rtip",
         columns: [
             { data: "id" },
             { data: "tipo_vehiculo", title: "Tipo de vehiculo" },
             { data: "numero_placa" },
             {
+                data: "estado",
+                title: "Estado",
+                render: function (data) {
+                    if (data === "A") {
+                        return `<span class="badge bg-success">Activo</span>`;
+                    }
+
+                    if (data === "M") {
+                        return `<span class="badge bg-danger">Mantenimiento</span>`;
+                    }
+
+                    return `<span class="badge bg-secondary">${data}</span>`;
+                },
+            },
+            {
                 data: "acciones",
                 orderable: false,
                 searchable: false,
                 render: function (data, type, row) {
+                    let btnActualizar = "";
+
+                    if (row.estado === "A") {
+                        btnActualizar = `
+                <button class="btn btn-sm btn-secondary mantenimiento" data-id="${row.id}">
+                    <i data-lucide="wrench"></i>
+                </button>
+            `;
+                    }
+
+                    if (row.estado === "M") {
+                        btnActualizar = `
+                <button class="btn btn-sm btn-secondary actualizar" data-id="${row.id}">
+                    <i data-lucide="wrench"></i>
+                </button>
+            `;
+                    }
+
                     return `
-                        <button class="btn btn-sm btn-warning editar" data-id="${row.id}"><i data-lucide="edit"></i></button>
-                        <button class="btn btn-sm btn-danger eliminar" data-id="${row.id}"><i data-lucide="trash-2"></i></button>
-                    `;
+            ${btnActualizar}
+            <button class="btn btn-sm btn-warning editar" data-id="${row.id}">
+                <i data-lucide="edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger eliminar" data-id="${row.id}">
+                <i data-lucide="trash-2"></i>
+            </button>
+        `;
                 },
             },
         ],
@@ -48,7 +87,6 @@ $(document).ready(function () {
         }
     }
 
-    // Abrir modal para nuevo vehículo
     $("#btnNuevaVehiculo").click(async function () {
         $("#formVehiculo")[0].reset();
         $("#Vehiculo_id").val("");
@@ -94,7 +132,30 @@ $(document).ready(function () {
         }
     });
 
-    // Editar vehículo
+    $("#formMantenimiento").on("submit", async function (e) {
+        e.preventDefault();
+        const formData = $(this).serialize();
+        const id = $("#vehiculo_id").val();
+
+        try {
+            const res = await $.ajax({
+                url: route("vehiculos.mantenimiento", id),
+                type: "POST",
+                data: formData,
+            });
+            if (res.success) {
+                Swal.fire("Éxito", res.message, "success");
+                modalMantenimiento.hide();
+                tabla.ajax.reload(null, false);
+            } else {
+                Swal.fire("Error", res.message, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            Swal.fire("Error", "Error en la petición", "error");
+        }
+    });
+
     $("#tablaVehiculos").on("click", ".editar", async function () {
         const id = $(this).data("id");
 
@@ -110,7 +171,13 @@ $(document).ready(function () {
         }
     });
 
-    // Eliminar vehículo
+    $(document).on("click", ".mantenimiento", function () {
+        const id = $(this).data("id");
+        console.log("ID vehículo:", id);
+        $("#vehiculo_id").val(id);
+        modalMantenimiento.show();
+    });
+
     $("#tablaVehiculos").on("click", ".eliminar", function () {
         const id = $(this).data("id");
         Swal.fire({

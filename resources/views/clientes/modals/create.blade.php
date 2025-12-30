@@ -46,7 +46,7 @@
                         <div class="col-md-3">
                             <label class="form-label">Fecha de nacimiento</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento"
-                                max="{{ $hoy }}" class="form-control" required>
+                                max="{{ $hoy }}" class="form-control">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Correo</label>
@@ -59,7 +59,7 @@
                         <div class="col-md-3">
                             <label class="form-label">Celular</label>
                             <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
-                                maxlength="9" title="Ingrese 9 dígitos numéricos" required>
+                                maxlength="9" title="Ingrese 9 dígitos numéricos">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">Dirección</label>
@@ -68,7 +68,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>Departamento</label>
-                            <select name="departamento_id" id="departamento_id" class="form-select" required>
+                            <select name="departamento_id" id="departamento_id" class="form-select">
                                 <option value="">Espere...</option>
                                 @foreach ($departamentos as $departamento)
                                     <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
@@ -78,7 +78,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>Provincia</label>
-                            <select name="provincia_id" id="provincia_id" class="form-select" required>
+                            <select name="provincia_id" id="provincia_id" class="form-select">
                                 <option value="">Espere...</option>
                                 @foreach ($provincias as $provincia)
                                     <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
@@ -88,7 +88,7 @@
 
                         <div class="col-md-4 mb-3">
                             <label>Distrito</label>
-                            <select name="distrito_id" id="distrito_id" class="form-select" required>
+                            <select name="distrito_id" id="distrito_id" class="form-select">
                                 <option value="">Espere...</option>
                                 @foreach ($distritos as $distrito)
                                     <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>

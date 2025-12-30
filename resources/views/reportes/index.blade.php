@@ -144,7 +144,7 @@
                             <label>Fecha Salida</label>
                             <input type="date" id="fecha_salida_pasaje" class="form-control">
                         </div>
-                        
+
                         <!-- Botones export -->
                         <div class="col-12 mt-2 d-flex gap-2">
                             <button id="btnExcel" class="btn btn-success btn-sm">Exportar Excel</button>
@@ -155,8 +155,6 @@
                 </div>
             </div>
         </div>
-
-
         <div class="card mt-3">
             <div class="card-body">
                 <table id="tablaReportes" class="table table-bordered">

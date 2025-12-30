@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vehiculo;
+use App\Models\VehiculoMantenimiento;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Str;
@@ -17,24 +18,11 @@ class VehiculoController extends Controller
 
     public function datatable(Request $request)
     {
-        $vehiculos = Vehiculo::with('tipo_vehiculo')->select(['id', 'tipo_vehiculo_id', 'numero_placa']);
+        $vehiculos = Vehiculo::with('tipo_vehiculo')->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'estado']);
 
         return DataTables::of($vehiculos)
             ->addColumn('tipo_vehiculo', function ($vehiculo) {
                 return $vehiculo->tipo_vehiculo ? $vehiculo->tipo_vehiculo->descripcion : '';
-            })
-            ->addColumn('acciones', function ($vehiculo) {
-                return '
-            <button class="btn btn-secondary btn-xs ver" data-id="' . $vehiculo->id . '">
-                <i class="link-icon" data-lucide="eye"></i> 
-            </button>
-            <button class="btn btn-warning btn-xs editar" data-id="' . $vehiculo->id . '">
-                <i class="link-icon" data-lucide="pen"></i> 
-            </button>
-            <button class="btn btn-danger btn-xs eliminar" data-id="' . $vehiculo->id . '">
-                <i class="link-icon" data-lucide="trash-2"></i> 
-            </button>
-        ';
             })
             ->rawColumns(['acciones'])
             ->make(true);
@@ -111,4 +99,22 @@ class VehiculoController extends Controller
             ]);
         }
     }*/
+
+    public function mantenimiento($vehiculo, Request $request)
+    {
+        Vehiculo::where('id', $vehiculo)->update([
+            'estado' => 'M'
+        ]);
+
+        VehiculoMantenimiento::create([
+            'vehiculo_id' => $vehiculo,
+            'fecha_inicio' => $request->fecha_inicio,
+            'hora_inicio' => $request->hora_inicio,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vehículo enviado a mantenimiento'
+        ]);
+    }
 }

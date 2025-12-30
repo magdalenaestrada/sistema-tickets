@@ -28,28 +28,12 @@ class ClientesController extends Controller
     {
         $query = Cliente::with(['persona', 'user']);
 
-        if ($request->documento) {
-            $query->whereHas('persona', function ($q) use ($request) {
-                $q->where('documento', 'like', '%' . $request->documento . '%');
-            });
-        }
-
-        if ($request->nombre) {
-            $query->whereHas('persona', function ($q) use ($request) {
-                $q->where('nombres', 'like', '%' . $request->nombre . '%');
-            });
-        }
-
-        if ($request->apellido) {
-            $query->whereHas('persona', function ($q) use ($request) {
-                $q->where('apellidos', 'like', '%' . $request->apellido . '%');
-            });
-        }
-
         return datatables()->of($query)
             ->addColumn('documento', fn($c) => $c->persona->documento)
-            ->addColumn('nombre', fn($c) => $c->persona->nombres)
-            ->addColumn('apellido', fn($c) => $c->persona->apellidos)
+            ->addColumn('nombre', fn($c) => $c->persona->nombres . ' ' . $c->persona->apellidos)
+            ->addColumn('telefono', fn($c) => $c->persona->telefono ?? '-')
+            ->addColumn('celular', fn($c) => $c->persona->celular)
+            ->addColumn('correo', fn($c) => $c->persona->correo)
             ->addColumn('acciones', fn($c) => '
             <button class="btn btn-danger btn-xs eliminar" data-id="' . $c->id . '">
                 <i class="link-icon" data-lucide="trash-2"></i>

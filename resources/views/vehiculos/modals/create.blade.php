@@ -9,7 +9,7 @@
             <form id="formVehiculo" method="POST" action="{{ route('vehiculos.guardar') }}">
 
                 @csrf
-                <input type="hidden" name="id" id="Vehiculo_id">
+                <input type="hidden" id="vehiculo_id" name="vehiculo_id">
 
                 <div class="modal-body">
                     <div class="mb-3">

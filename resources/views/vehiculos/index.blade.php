@@ -20,6 +20,7 @@
                             <th>ID</th>
                             <th>Tipo de vehiculo</th>
                             <th>Placa</th>
+                            <th>Estado</th>
                             <th style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>
@@ -30,6 +31,7 @@
     </div>
 
     @include('vehiculos.modals.create')
+    @include('vehiculos.modals.mantenimiento')
 @endsection
 
 @push('scripts')
