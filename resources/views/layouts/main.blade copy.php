@@ -881,7 +881,7 @@ License: You must have a valid license to legally use this template for your pro
                           <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                         </a>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                          <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                          <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -916,7 +916,7 @@ License: You must have a valid license to legally use this template for your pro
                           <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                         </a>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                          <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                          <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -951,7 +951,7 @@ License: You must have a valid license to legally use this template for your pro
                           <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                         </a>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-                          <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                          <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                           <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -991,7 +991,7 @@ License: You must have a valid license to legally use this template for your pro
                       <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
-                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -1029,7 +1029,7 @@ License: You must have a valid license to legally use this template for your pro
                       <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton4">
-                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -1052,7 +1052,7 @@ License: You must have a valid license to legally use this template for your pro
                       <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton5">
-                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -1094,7 +1094,7 @@ License: You must have a valid license to legally use this template for your pro
                       <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton6">
-                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>
@@ -1177,7 +1177,7 @@ License: You must have a valid license to legally use this template for your pro
                       <i class="icon-lg text-secondary pb-3px" data-lucide="more-horizontal"></i>
                     </a>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton7">
-                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="eye" class="icon-sm me-2"></i> <span class="">View</span></a>
+                      <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="info" class="icon-sm me-2"></i> <span class="">View</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="edit-2" class="icon-sm me-2"></i> <span class="">Edit</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="trash" class="icon-sm me-2"></i> <span class="">Delete</span></a>
                       <a class="dropdown-item d-flex align-items-center" href="javascript:;"><i data-lucide="printer" class="icon-sm me-2"></i> <span class="">Print</span></a>

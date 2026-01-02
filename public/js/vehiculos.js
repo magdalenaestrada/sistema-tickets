@@ -94,7 +94,6 @@ $(document).ready(function () {
         modal.show();
     });
 
-    // Guardar o actualizar vehículo
     $("#formVehiculo").on("submit", async function (e) {
         e.preventDefault();
         const formData = $(this).serialize();
@@ -102,7 +101,6 @@ $(document).ready(function () {
 
         try {
             if (id) {
-                // Actualizar → PUT
                 const res = await $.ajax({
                     url: route("vehiculos.actualizar", id),
                     type: "PUT",

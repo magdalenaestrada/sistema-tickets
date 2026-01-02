@@ -25,11 +25,12 @@ class SucursalController extends Controller
             ->addColumn('distrito', fn($row) => $row->distrito->nombre ?? '-')
             ->addColumn('acciones', function ($sucursal) {
                 return '
-        <button class="btn btn-secondary btn-xs ver" data-id="' . $sucursal->id . '">
-            <i class="link-icon" data-lucide="eye"></i>
-        </button>
+       
         <button class="btn btn-warning btn-xs editar" data-id="' . $sucursal->id . '">
             <i class="link-icon" data-lucide="pen"></i>
+        </button>
+         <button class="btn btn-xs ver" data-id="' . $sucursal->id . '">
+            <i class="link-icon" data-lucide="info"></i>
         </button>
     ';
             })

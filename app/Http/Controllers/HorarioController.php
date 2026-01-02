@@ -35,7 +35,7 @@ class HorarioController extends Controller
             ->addColumn('acciones', function ($h) {
                 return '
                     <button class="btn btn-secondary btn-xs ver" data-id="' . $h->id . '">
-                        <i class="link-icon" data-lucide="eye"></i>
+                        <i class="link-icon" data-lucide="info"></i>
                     </button>
                     <button class="btn btn-warning btn-xs editar" data-id="' . $h->id . '">
                         <i class="link-icon" data-lucide="pen"></i>

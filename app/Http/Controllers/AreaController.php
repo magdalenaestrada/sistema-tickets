@@ -21,7 +21,7 @@ class AreaController extends Controller
             ->addColumn('acciones', function ($area) {
                 return '
                     <button class="btn btn-secondary btn-xs ver" data-id="' . $area->id . '">
-                        <i class="link-icon" data-lucide="eye"></i> 
+                        <i class="link-icon" data-lucide="info"></i> 
                     </button>
                     <button class="btn btn-warning btn-xs editar" data-id="' . $area->id . '">
                         <i class="link-icon" data-lucide="pen"></i> 

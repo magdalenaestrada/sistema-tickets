@@ -1,28 +1,27 @@
-/* Primero: todos los imports */
+/* Imports */
 @import './core.css';
 @import './flatpickr.min.css';
 @import './style.css';
 
-/* Luego Tailwind */
+/* Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Variables globales */
+/* Variables */
 :root {
-  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
-.btn-xs {
-    padding: 2px 6px;
-    font-size: 12px;
-    line-height: 1;
+@layer components {
+    .btn-xs {
+        padding: 2px 6px;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .btn-xs svg {
+        width: 16px;
+        height: 16px;
+    }
 }
-
-.btn-xs svg {
-    width: 12px;
-    height: 12px;
-}
-
-

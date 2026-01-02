@@ -235,7 +235,7 @@ $(document).ready(function () {
                     $("#btnGuardar").addClass("d-none");
                     $("#btnCerrarModal").removeClass("d-none").show();
                     $("#modalEmpleado .modal-title").html(
-                        '<i data-lucide="eye"></i> Ver Empleado'
+                        '<i data-lucide="info"></i> Ver Empleado'
                     );
                 } else {
                     $("#formEmpleado")
