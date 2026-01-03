@@ -52,15 +52,54 @@ class PasajeController extends Controller
         ));
     }
 
-    public function index_busqueda(){
+    public function index_busqueda()
+    {
         $pasajes = Pasaje::with([
             'persona',
             'horario.punto_origen',
             'horario.punto_destino',
             'venta'
         ])->get();
-        return view('pasajes.busqueda', compact('pasajes'));
+        $sucursales = Sucursal::all();
+        return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
     }
+
+    public function listarVendidos(Request $request)
+    {
+        $query = Pasaje::with([
+            'persona',
+            'horario.punto_origen',
+            'horario.punto_destino'
+        ])
+            ->where('estado', 'V');
+
+        if ($request->dni) {
+            $query->whereHas('persona', function ($q) use ($request) {
+                $q->where('documento', 'like', '%' . $request->dni . '%');
+            });
+        }
+
+        if ($request->fecha) {
+            $query->whereHas('horario', function ($q) use ($request) {
+                $q->whereDate('fecha_salida', $request->fecha);
+            });
+        }
+
+        if ($request->origen) {
+            $query->whereHas('horario', function ($q) use ($request) {
+                $q->where('punto_origen_id', $request->origen);
+            });
+        }
+
+        if ($request->destino) {
+            $query->whereHas('horario', function ($q) use ($request) {
+                $q->where('punto_destino_id', $request->destino);
+            });
+        }
+
+        return response()->json($query->get());
+    }
+
     public function index()
     {
         $puntos_origen = Sucursal::all();
@@ -563,5 +602,72 @@ class PasajeController extends Controller
         $horarios = $query->get();
 
         return response()->json(['horarios' => $horarios]);
+    }
+
+    public function abordo(Pasaje $pasaje)
+    {
+        if ($pasaje->estado !== 'V') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo pasajes vendidos pueden finalizarse'
+            ], 422);
+        }
+
+        $pasaje->update([
+            'estado' => 'F',
+            'fecha_inactivacion' => now()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pasajero abordó correctamente'
+        ]);
+    }
+    public function show(Pasaje $pasaje)
+    {
+        $pasaje->load([
+            'persona',
+            'horario.punto_origen',
+            'horario.punto_destino',
+            'horario.tipo_vehiculo',
+            'venta.pagos.metodoPago'
+        ]);
+
+        return response()->json([
+            'id' => $pasaje->id,
+            'estado' => $pasaje->estado,
+            'asiento' => $pasaje->asiento_numero,
+            'fecha' => $pasaje->horario->fecha_salida,
+            'hora' => $pasaje->horario->hora_embarque,
+            'origen' => $pasaje->horario->punto_origen->nombre_comercial,
+            'destino' => $pasaje->horario->punto_destino->nombre_comercial,
+            'pasajero' => $pasaje->persona ? [
+                'documento' => $pasaje->persona->documento,
+                'nombres' => $pasaje->persona->nombres,
+                'apellidos' => $pasaje->persona->apellidos,
+                'celular' => $pasaje->persona->celular,
+            ] : null,
+            'pagos' => $pasaje->venta?->pagos ?? [],
+        ]);
+    }
+
+    public function noAbordo(Pasaje $pasaje)
+    {
+        if ($pasaje->estado !== 'V') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo pasajes vendidos pueden cancelarse'
+            ], 422);
+        }
+
+        $pasaje->update([
+            'estado' => 'X',
+            'fecha_inactivacion' => now()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pasajero marcado como NO abordó'
+        ]);
     }
 }

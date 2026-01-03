@@ -75,46 +75,47 @@ class VehiculoController extends Controller
         return response()->json($vehiculos);
     }
 
-
-    /*public function eliminar(Vehiculo $vehiculo)
+    public function mantenimiento(Request $request, Vehiculo $vehiculo)
     {
-        try {
-            if ($vehiculo->empleados()->exists()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se puede eliminar el área porque tiene empleados asociados.'
-                ]);
-            }
+        if ($vehiculo->estado === 'A') {
+            $vehiculo->update(['estado' => 'M']);
 
-            $vehiculo->delete();
+            VehiculoMantenimiento::create([
+                'vehiculo_id' => $vehiculo->id,
+                'fecha_inicio' => $request->fecha_inicio,
+                'hora_inicio' => $request->hora_inicio,
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Área eliminada correctamente.'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar: ' . $e->getMessage()
+                'message' => 'Vehículo enviado a mantenimiento'
             ]);
         }
-    }*/
 
-    public function mantenimiento($vehiculo, Request $request)
-    {
-        Vehiculo::where('id', $vehiculo)->update([
-            'estado' => 'M'
-        ]);
+        if ($vehiculo->estado === 'M') {
+            $mantenimiento = VehiculoMantenimiento::where('vehiculo_id', $vehiculo->id)
+                ->whereNull('fecha_fin')
+                ->latest()
+                ->first();
 
-        VehiculoMantenimiento::create([
-            'vehiculo_id' => $vehiculo,
-            'fecha_inicio' => $request->fecha_inicio,
-            'hora_inicio' => $request->hora_inicio,
-        ]);
+            if (!$mantenimiento) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró mantenimiento activo'
+                ], 422);
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Vehículo enviado a mantenimiento'
-        ]);
+            $mantenimiento->update([
+                'fecha_fin' => $request->fecha_fin,
+                'hora_fin' => $request->hora_fin,
+            ]);
+
+            $vehiculo->update(['estado' => 'A']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Vehículo habilitado nuevamente'
+            ]);
+        }
     }
 }

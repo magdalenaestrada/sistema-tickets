@@ -29,29 +29,17 @@ $(document).ready(function () {
                 orderable: false,
                 searchable: false,
                 render: function (data, type, row) {
-                    let btnActualizar = "";
-
-                    if (row.estado === "A") {
-                        btnActualizar = `
-                <button class="btn btn-sm btn-secondary mantenimiento" data-id="${row.id}">
-                    <i data-lucide="wrench"></i>
-                </button>
-            `;
-                    }
-
-                    if (row.estado === "M") {
-                        btnActualizar = `
-                <button class="btn btn-sm btn-secondary actualizar" data-id="${row.id}">
-                    <i data-lucide="wrench"></i>
-                </button>
-            `;
-                    }
-
                     return `
-            ${btnActualizar}
+            <button class="btn btn-sm btn-secondary mantenimiento"
+                data-id="${row.id}"
+                data-estado="${row.estado}">
+                <i data-lucide="wrench"></i>
+            </button>
+
             <button class="btn btn-sm btn-warning editar" data-id="${row.id}">
                 <i data-lucide="edit"></i>
             </button>
+
             <button class="btn btn-sm btn-danger eliminar" data-id="${row.id}">
                 <i data-lucide="trash-2"></i>
             </button>
@@ -68,13 +56,27 @@ $(document).ready(function () {
         },
     });
 
-    // Función para cargar tipos de vehículo
+    $("#numero_placa").on("input", function () {
+        let valor = $(this)
+            .val()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, "");
+
+        valor = valor.substring(0, 6);
+
+        if (valor.length > 3) {
+            valor = valor.substring(0, 3) + "-" + valor.substring(3);
+        }
+
+        $(this).val(valor);
+    });
+
     async function cargarTiposVehiculo(selectedId = null) {
         const tipoSelect = $("#tipo_vehiculo_id");
         tipoSelect.empty().append('<option value="">Seleccione</option>');
 
         try {
-            const tipos = await $.get(route("listas.vehiculos.tipos")); // Ajusta tu ruta si es otra
+            const tipos = await $.get(route("listas.vehiculos.tipos"));
             tipos.forEach((tipo) => {
                 tipoSelect.append(
                     `<option value="${tipo.id}" ${
@@ -132,25 +134,21 @@ $(document).ready(function () {
 
     $("#formMantenimiento").on("submit", async function (e) {
         e.preventDefault();
-        const formData = $(this).serialize();
+
         const id = $("#vehiculo_id").val();
+        const formData = $(this).serialize();
 
         try {
-            const res = await $.ajax({
-                url: route("vehiculos.mantenimiento", id),
-                type: "POST",
-                data: formData,
-            });
-            if (res.success) {
-                Swal.fire("Éxito", res.message, "success");
-                modalMantenimiento.hide();
-                tabla.ajax.reload(null, false);
-            } else {
-                Swal.fire("Error", res.message, "error");
-            }
+            const res = await $.post(
+                route("vehiculos.mantenimiento", id),
+                formData
+            );
+
+            Swal.fire("Éxito", res.message, "success");
+            modalMantenimiento.hide();
+            tabla.ajax.reload(null, false);
         } catch (err) {
-            console.error(err);
-            Swal.fire("Error", "Error en la petición", "error");
+            Swal.fire("Error", "No se pudo procesar", "error");
         }
     });
 
@@ -169,13 +167,31 @@ $(document).ready(function () {
         }
     });
 
-    $(document).on("click", ".mantenimiento", function () {
+    $("#tablaVehiculos").on("click", ".mantenimiento", function () {
         const id = $(this).data("id");
-        console.log("ID vehículo:", id);
+        const estado = $(this).data("estado");
+
+        $("#formMantenimiento")[0].reset();
         $("#vehiculo_id").val(id);
+
+        if (estado === "A") {
+            $("#tituloMantenimiento").text("Enviar a mantenimiento");
+            $("#inicioMantenimiento").removeClass("d-none");
+            $("#finMantenimiento").addClass("d-none");
+
+            $("input[name='fecha_inicio']").val("");
+            $("input[name='hora_inicio']").val("");
+        } else {
+            $("#tituloMantenimiento").text("Finalizar mantenimiento");
+            $("#inicioMantenimiento").addClass("d-none");
+            $("#finMantenimiento").removeClass("d-none");
+
+            $("input[name='fecha_fin']").val("");
+            $("input[name='hora_fin']").val("");
+        }
+
         modalMantenimiento.show();
     });
-
     $("#tablaVehiculos").on("click", ".eliminar", function () {
         const id = $(this).data("id");
         Swal.fire({

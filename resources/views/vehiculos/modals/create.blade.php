@@ -21,7 +21,8 @@
 
                     <div class="mb-3">
                         <label class="form-label">Placa</label>
-                        <input type="text" name="numero_placa" id="numero_placa" class="form-control" required>
+                        <input type="text" name="numero_placa" id="numero_placa" class="form-control"
+                            placeholder="ABC-123" maxlength="7" pattern="[A-Za-z]{3}-[0-9]{3}" required>
                     </div>
                 </div>
 

@@ -26,8 +26,6 @@ return new class extends Migration {
                 ->comment("R = Reservado, V = Vendido, F = Finalizado, X = Cancelado")
                 ->default("R")
                 ->index();
-
-
             $table->dateTime("fecha_creacion");
             $table->dateTime("fecha_inactivacion")->nullable();
             $table->timestamps();

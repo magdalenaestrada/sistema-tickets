@@ -30,6 +30,7 @@ class Horario extends Model
         'fecha_salida' => 'date',
     ];
 
+    
     public function tipo_viaje()
     {
         return $this->belongsTo(TipoViaje::class, "tipo_viaje_id");

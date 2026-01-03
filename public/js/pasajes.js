@@ -13,14 +13,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const horarioId = this.dataset.horarioId;
             currentHorarioId = horarioId;
             window.selectedHorario = horarioId;
-
-            // Remover clase active de todas las tarjetas
             horarioCards.forEach((c) => c.classList.remove("active"));
-
-            // Agregar clase active a la tarjeta seleccionada
             this.classList.add("active");
-
-            // Resetear selecciones
             selectedSeats = [];
             selectedReservedPasajeId = null;
             updateSellButton();
@@ -33,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     const svgEl = svgContainer.querySelector("svg");
                     if (!svgEl) {
-                        console.error("❌ SVG no encontrado");
+                        console.error("SVG no encontrado");
                         return;
                     }
 
@@ -43,7 +37,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         if (!g) return;
 
-                        // Limpiar clases previas
                         g.classList.remove(
                             "ocupado",
                             "reservado",
@@ -70,7 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             g.onclick = function (e) {
                                 e.stopPropagation();
-                                // Obtener el ID del pasaje reservado
                                 obtenerPasajeReservado(horarioId, numero);
                             };
                         } else {
@@ -85,10 +77,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 })
                 .catch((err) => {
-                    console.error("❌ Error:", err);
+                    console.error("Error:", err);
                 });
         });
     });
+
+   
+
+    $(document).ready(cargarPasajes);
 
     function toggleSeatSelection(seatElement, numero, tipo) {
         const seatNum = parseInt(numero);
@@ -106,7 +102,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 seatElement.classList.add("selected-seat");
             }
 
-            // Limpiar selección de reservado
             selectedReservedPasajeId = null;
         }
 
@@ -116,13 +111,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function obtenerPasajeReservado(horarioId, numeroAsiento) {
         try {
-            // Buscar el pasaje reservado en ese horario y asiento
             const response = await fetch(
                 `/pasajes/horario/${horarioId}/asientos`
             );
             const data = await response.json();
 
-            // Necesitamos obtener el ID del pasaje - haremos una búsqueda adicional
             const pasajeResponse = await fetch(
                 `/pasajes/buscar?horario_id=${horarioId}&asiento=${numeroAsiento}`
             );
@@ -131,14 +124,12 @@ document.addEventListener("DOMContentLoaded", function () {
             if (pasajeData.success && pasajeData.pasaje_id) {
                 selectedReservedPasajeId = pasajeData.pasaje_id;
 
-                // Limpiar selección de asientos libres
                 selectedSeats = [];
                 document.querySelectorAll(".selected-seat").forEach((seat) => {
                     seat.classList.remove("selected-seat");
                     seat.classList.add("libre");
                 });
 
-                // Marcar visualmente el asiento reservado seleccionado
                 const seatElement = document.querySelector(
                     `#seat-${numeroAsiento}`
                 );
@@ -234,7 +225,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Redirigir a la página de edición usando Ziggy
         window.location.href = route("pasajes.editar", {
             pasaje: selectedReservedPasajeId,
         });

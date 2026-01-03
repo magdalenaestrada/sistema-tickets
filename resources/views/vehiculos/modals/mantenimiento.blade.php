@@ -1,35 +1,41 @@
-<div class="modal fade" id="modalMantenimiento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xs modal-dialog-centered">
+<div class="modal fade" id="modalMantenimiento" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitulo">Inicio de mantenimiento</h5>
+                <h5 class="modal-title" id="tituloMantenimiento"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="formMantenimiento" method="POST">
-                <input type="hidden" name="vehiculo_id" id="vehiculo_id">
 
-                @php
-                    $hoy = \Carbon\Carbon::now('America/Lima')->format('Y-m-d');
-                    $ahora = \Carbon\Carbon::now('America/Lima')->format('H:i');
-                @endphp
-
+            <form id="formMantenimiento">
                 @csrf
+                <input type="hidden" id="vehiculo_id">
+
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <label for="fecha_inicio" class="form-label">Fecha</label>
-                            <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control"
-                                value="{{ $hoy }}" required>
+                    <div id="inicioMantenimiento">
+                        <div class="mb-3">
+                            <label>Fecha inicio</label>
+                            <input type="date" name="fecha_inicio" class="form-control">
                         </div>
-                        <div class="col-6">
-                            <label class="form-label">Hora</label>
-                            <input type="time" name="hora_inicio" id="hora_inicio" class="form-control"
-                                value="{{ $ahora }}" required>
+                        <div class="mb-3">
+                            <label>Hora inicio</label>
+                            <input type="time" name="hora_inicio" class="form-control">
+                        </div>
+                    </div>
+
+                    <div id="finMantenimiento" class="d-none">
+                        <div class="mb-3">
+                            <label>Fecha fin</label>
+                            <input type="date" name="fecha_fin" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label>Hora fin</label>
+                            <input type="time" name="hora_fin" class="form-control">
                         </div>
                     </div>
                 </div>
+
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
             </form>
