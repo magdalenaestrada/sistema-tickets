@@ -117,7 +117,10 @@
                               <a href="{{ route('horarios.calendario') }}" class="nav-link">Calendario</a>
                           </li>
                           <li class="nav-item">
-                              <a href="{{ route('pasajes.index') }}" class="nav-link">Pasajes</a>
+                              <a href="{{ route('pasajes.index') }}" class="nav-link">Vender Pasajes</a>
+                          </li>
+                          <li class="nav-item">
+                              <a href="{{ route('pasajes.index-busqueda') }}" class="nav-link">Buscar Pasajes</a>
                           </li>
                       </ul>
                   </div>

@@ -52,6 +52,15 @@ class PasajeController extends Controller
         ));
     }
 
+    public function index_busqueda(){
+        $pasajes = Pasaje::with([
+            'persona',
+            'horario.punto_origen',
+            'horario.punto_destino',
+            'venta'
+        ])->get();
+        return view('pasajes.busqueda', compact('pasajes'));
+    }
     public function index()
     {
         $puntos_origen = Sucursal::all();
