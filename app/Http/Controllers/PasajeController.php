@@ -260,30 +260,6 @@ class PasajeController extends Controller
         return $pasaje;
     }
 
-    public function cambiarHorario(Request $request, Pasaje $pasaje)
-    {
-        $ocupado = Pasaje::where('horario_id', $request->horario_id)
-            ->where('asiento_numero', $request->asiento_numero)
-            ->where('id', '!=', $pasaje->id)
-            ->whereIn('estado', ['reservado', 'vendido'])
-            ->exists();
-
-        if ($ocupado) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Asiento no disponible'
-            ]);
-        }
-
-        $pasaje->update([
-            'horario_id' => $request->horario_id,
-            'asiento_numero' => $request->asiento_numero,
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-
     public function guardar(Request $request)
     {
         $accion = $request->accion;

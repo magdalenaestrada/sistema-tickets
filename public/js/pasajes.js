@@ -4,22 +4,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const sellButton = document.getElementById("sell-button");
     const editButton = document.getElementById("edit-button");
 
-    let selectedSeats = [];mira
+    let selectedSeats = [];
     let currentHorarioId = null;
-    let selectedReservedPasajeId = null;
-
-    let modalHorarioId = null;
-    let modalAsientoSeleccionado = null;
+    let selectedReservedPasajeId = null; // ID del pasaje reservado seleccionado
 
     horarioCards.forEach((card) => {
         card.addEventListener("click", function () {
             const horarioId = this.dataset.horarioId;
             currentHorarioId = horarioId;
             window.selectedHorario = horarioId;
-
             horarioCards.forEach((c) => c.classList.remove("active"));
             this.classList.add("active");
-
             selectedSeats = [];
             selectedReservedPasajeId = null;
             updateSellButton();
@@ -31,92 +26,70 @@ document.addEventListener("DOMContentLoaded", function () {
                     svgContainer.innerHTML = data.svg;
 
                     const svgEl = svgContainer.querySelector("svg");
-                    if (!svgEl) return;
+                    if (!svgEl) {
+                        console.error("SVG no encontrado");
+                        return;
+                    }
 
                     Object.keys(data.asientos).forEach((numero) => {
                         const estado = data.asientos[numero];
                         const g = svgEl.querySelector(`#seat-${numero}`);
+
                         if (!g) return;
 
-                        g.className.baseVal = "";
+                        g.classList.remove(
+                            "ocupado",
+                            "reservado",
+                            "libre",
+                            "selected-seat"
+                        );
+
                         g.classList.add(estado);
+
                         g.dataset.estado = estado;
                         g.dataset.numero = numero;
 
                         if (estado === "libre") {
                             g.style.cursor = "pointer";
                             g.style.opacity = "1";
-                            g.onclick = (e) => {
+
+                            g.onclick = function (e) {
                                 e.stopPropagation();
                                 toggleSeatSelection(g, numero, "libre");
                             };
                         } else if (estado === "reservado") {
                             g.style.cursor = "pointer";
                             g.style.opacity = "1";
-                            g.onclick = (e) => {
+
+                            g.onclick = function (e) {
                                 e.stopPropagation();
                                 obtenerPasajeReservado(horarioId, numero);
                             };
                         } else {
                             g.style.cursor = "not-allowed";
                             g.style.opacity = "0.6";
-                            g.onclick = () => {
+
+                            g.onclick = function (e) {
+                                e.stopPropagation();
                                 alert("Este asiento está vendido");
                             };
                         }
                     });
+                })
+                .catch((err) => {
+                    console.error("Error:", err);
                 });
         });
     });
 
-    function seleccionarAsientoModal(g, numero) {
-        document.querySelectorAll(".selected-seat").forEach((s) => {
-            s.classList.remove("selected-seat");
-            s.classList.add("libre");
-        });
-
-        g.classList.remove("libre");
-        g.classList.add("selected-seat");
-
-        modalAsientoSeleccionado = numero;
-        document.getElementById("btnGuardarCambioHorario").disabled = false;
-    }
-
-    document
-        .getElementById("btnGuardarCambioHorario")
-        ?.addEventListener("click", async () => {
-            if (!modalHorarioId || !modalAsientoSeleccionado) return;
-
-            const pasajeId = PASAJE_ID; // ← define esto en blade
-
-            const res = await fetch(`/pasajes/${pasajeId}/cambiar-horario`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]'
-                    ).content,
-                },
-                body: JSON.stringify({
-                    horario_id: modalHorarioId,
-                    asiento_numero: modalAsientoSeleccionado,
-                }),
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                location.reload();
-            } else {
-                Swal.fire("Error", data.message, "error");
-            }
-        });
 
     function toggleSeatSelection(seatElement, numero, tipo) {
         const seatNum = parseInt(numero);
 
         if (tipo === "libre") {
-            if (selectedSeats.includes(seatNum)) {
+            const isSelected = selectedSeats.includes(seatNum);
+
+            if (isSelected) {
                 selectedSeats = selectedSeats.filter((s) => s !== seatNum);
                 seatElement.classList.remove("selected-seat");
                 seatElement.classList.add("libre");
@@ -135,12 +108,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function obtenerPasajeReservado(horarioId, numeroAsiento) {
         try {
+            const response = await fetch(
+                `/pasajes/horario/${horarioId}/asientos`
+            );
+            const data = await response.json();
+
             const pasajeResponse = await fetch(
                 `/pasajes/buscar?horario_id=${horarioId}&asiento=${numeroAsiento}`
             );
             const pasajeData = await pasajeResponse.json();
 
-            if (pasajeData.success) {
+            if (pasajeData.success && pasajeData.pasaje_id) {
                 selectedReservedPasajeId = pasajeData.pasaje_id;
 
                 selectedSeats = [];
@@ -149,45 +127,101 @@ document.addEventListener("DOMContentLoaded", function () {
                     seat.classList.add("libre");
                 });
 
-                document
-                    .querySelector(`#seat-${numeroAsiento}`)
-                    ?.classList.add("selected-seat");
+                const seatElement = document.querySelector(
+                    `#seat-${numeroAsiento}`
+                );
+                if (seatElement) {
+                    seatElement.classList.add("selected-seat");
+                }
 
                 updateSellButton();
                 updateEditButton();
             }
-        } catch (e) {
-            console.error(e);
+        } catch (error) {
+            console.error("Error al obtener pasaje reservado:", error);
         }
     }
 
     function updateSellButton() {
-        sellButton.style.display = selectedSeats.length > 0 ? "block" : "none";
-        sellButton.textContent = `Vender ${selectedSeats.length} asiento(s)`;
+        if (selectedSeats.length > 0) {
+            sellButton.style.display = "block";
+            sellButton.textContent = `Vender ${selectedSeats.length} asiento(s)`;
+        } else {
+            sellButton.style.display = "none";
+        }
     }
 
     function updateEditButton() {
-        editButton.style.display = selectedReservedPasajeId ? "block" : "none";
+        if (selectedReservedPasajeId) {
+            editButton.style.display = "block";
+            editButton.textContent = "Editar reserva";
+        } else {
+            editButton.style.display = "none";
+        }
     }
 
-    sellButton.addEventListener("click", async () => {
-        if (!selectedSeats.length || !currentHorarioId) return;
-
-        const res = await fetch("/caja/verificar");
-        const data = await res.json();
-        if (!data.abierta) {
-            Swal.fire("Caja cerrada", "Abre caja primero", "warning");
+    sellButton.addEventListener("click", async function () {
+        if (selectedSeats.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "No hay asientos seleccionados",
+                text: "Selecciona al menos un asiento antes de continuar.",
+                confirmButtonText: "Entendido",
+            });
             return;
         }
 
-        window.location.href = route("pasajes.vender", {
-            asientos: selectedSeats.join(","),
-            horario: currentHorarioId,
-        });
+        if (!currentHorarioId) {
+            Swal.fire({
+                icon: "warning",
+                title: "No hay horario seleccionado",
+                text: "Selecciona un horario antes de continuar.",
+                confirmButtonText: "Entendido",
+            });
+            return;
+        }
+
+        try {
+            const res = await fetch("/caja/verificar");
+            const data = await res.json();
+
+            if (!data.abierta) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Caja no abierta",
+                    text: "Aún no has abierto caja. No puedes vender pasajes.",
+                    confirmButtonText: "Entendido",
+                });
+                return;
+            }
+
+            const seats = selectedSeats.sort((a, b) => a - b).join(",");
+            window.location.href = route("pasajes.vender", {
+                asientos: seats,
+                horario: currentHorarioId,
+            });
+        } catch (err) {
+            console.error(err);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "No se pudo verificar el estado de la caja.",
+                confirmButtonText: "Entendido",
+            });
+        }
     });
 
-    editButton.addEventListener("click", () => {
-        if (!selectedReservedPasajeId) return;
+    editButton.addEventListener("click", function () {
+        if (!selectedReservedPasajeId) {
+            Swal.fire({
+                icon: "warning",
+                title: "No hay asiento seleccionado",
+                text: "Selecciona un asiento reservado para editar.",
+                confirmButtonText: "Entendido",
+            });
+            return;
+        }
+
         window.location.href = route("pasajes.editar", {
             pasaje: selectedReservedPasajeId,
         });
@@ -195,16 +229,82 @@ document.addEventListener("DOMContentLoaded", function () {
 
     $(document).ready(function () {
         function cargarHorarios() {
-            $.get("/pasajes/filtrar", {
-                fecha: $("#filtro_fecha").val(),
-                origen: $("#filtro_origen").val(),
-                destino: $("#filtro_destino").val(),
-            }).done(() => location.reload());
+            let fecha = $("#filtro_fecha").val();
+            let origen = $("#filtro_origen").val();
+            let destino = $("#filtro_destino").val();
+
+            $.ajax({
+                url: "/pasajes/filtrar",
+                method: "GET",
+                data: {
+                    fecha: fecha,
+                    origen: origen,
+                    destino: destino,
+                },
+                success: function (res) {
+                    $(".row .col-md-6.mb-3").remove(); // limpiar horarios
+
+                    let contenedor = $(".row").first(); // donde están los horarios
+
+                    if (res.horarios.length === 0) {
+                        contenedor.append(`
+                        <div class="col-md-12">
+                            <p class="text-center text-muted">No hay horarios disponibles.</p>
+                        </div>
+                    `);
+                        return;
+                    }
+
+                    res.horarios.forEach((h) => {
+                        let capacidad = h.tipo_vehiculo.capacidad;
+                        let vendidos = h.pasajes_count;
+                        let disponibles = capacidad - vendidos;
+
+                        contenedor.append(`
+                        <div class="col-md-6 mb-3">
+                            <div class="card horario-card" data-horario-id="${h.id}">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        ${h.tipo_vehiculo.descripcion} – ${disponibles} asientos disponibles
+                                    </h5>
+
+                                    <p class="card-text">
+                                        ${h.punto_origen.nombre_comercial} → ${h.punto_destino.nombre_comercial} <br>
+                                        ${h.fecha_salida} - ${h.hora_embarque}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    });
+                },
+            });
         }
 
+        // FILTRO AUTO
         $("#filtro_fecha, #filtro_origen, #filtro_destino").on(
             "change",
-            cargarHorarios
+            function () {
+                cargarHorarios();
+            }
         );
+
+        // OCULTAR DESTINOS QUE NO CORRESPONDEN
+        $("#filtro_origen").on("change", function () {
+            let origen = $(this).val();
+
+            $("#filtro_destino option").show();
+
+            if (origen) {
+                $("#filtro_destino option").each(function () {
+                    if ($(this).val() == origen) {
+                        $(this).hide();
+                    }
+                });
+            }
+
+            $("#filtro_destino").val("");
+            cargarHorarios();
+        });
     });
 });

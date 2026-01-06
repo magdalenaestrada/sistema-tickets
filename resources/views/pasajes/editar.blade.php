@@ -6,6 +6,7 @@
             <form method="POST" enctype="multipart/form-data" id="formVenta">
                 @csrf
 
+                {{-- 🔥 Si se está editando un pasaje, agregamos el ID --}}
                 @if (isset($pasaje))
                     <input type="hidden" name="pasaje_id" value="{{ $pasaje->id }}">
                 @endif
@@ -14,15 +15,9 @@
                     <div class="col-md-9 mb-3">
                         @foreach ($asientos as $index => $asiento)
                             <div class="card shadow-sm mb-3">
-                                <div class="card-header align-items-center d-flex justify-content-between">
+                                <div class="card-header">
                                     <strong>Asiento {{ $asiento }}</strong>
-                                    <button class="btn btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#modalCambiarHorario">
-                                        <i class="bi bi-calendar-event"></i> Cambiar horario / asiento
-                                    </button>
-
                                 </div>
-
                                 <div class="card-body">
                                     <input type="hidden" name="asientos[]" value="{{ $asiento }}">
                                     <input type="hidden" name="horario_id[]" value="{{ $horario->id }}">
@@ -113,13 +108,10 @@
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
                                 <p class="mb-1"><strong>Origen:</strong> {{ $horario->punto_origen->nombre_comercial }}
                                 </p>
-                                <p class="mb-1"><strong>Destino:</strong>
-                                    {{ $horario->punto_destino->nombre_comercial }}
+                                <p class="mb-1"><strong>Destino:</strong> {{ $horario->punto_destino->nombre_comercial }}
                                 </p>
-                                <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}
-                                </p>
-                                <p class="mb-1"><strong>Fecha:</strong> {{ $horario->fecha_salida->format('d-m-Y') }}
-                                </p>
+                                <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}</p>
+                                <p class="mb-1"><strong>Fecha:</strong> {{ $horario->fecha_salida->format('d-m-Y') }}</p>
                                 <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_embarque }}</p>
                             </div>
                         </div>
@@ -232,7 +224,6 @@
                     </div>
             </form>
         </div>
-        @include("pasajes.modals.cambio")
     </div>
 @endsection
 
