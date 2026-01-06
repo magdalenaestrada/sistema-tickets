@@ -1,3 +1,19 @@
+let empresaOriginal = {};
+function guardarEstadoOriginal() {
+    empresaOriginal = {
+        documento: $("#documento").val(),
+        razon_social: $("#razon_social").val(),
+        nombre_comercial: $("#nombre_comercial").val(),
+        direccion: $("#direccion").val(),
+        usuario_facturacion: $("#usuario_facturacion").val(),
+        contrasena_facturacion: $("#contrasena_facturacion").val(),
+    };
+}
+
+$(document).ready(function () {
+    guardarEstadoOriginal();
+});
+
 $(document).ready(function () {
     const empresaId = $("#empresa_id").val();
 
@@ -8,6 +24,7 @@ $(document).ready(function () {
 
     const btnGuardar = $("#btnGuardar");
     const btnEditar = $("#btnEditar");
+    const btnCancelar = $("#btnCancelar");
 
     // Si existe empresa → bloquear inputs
     if (empresaId) {
@@ -21,11 +38,40 @@ $(document).ready(function () {
         enableInputs();
         btnEditar.addClass("d-none");
         btnGuardar.removeClass("d-none");
+        btnCancelar.removeClass("d-none");
+    });
+
+    btnCancelar.click(function () {
+        Swal.fire({
+            title: "¿Cancelar cambios?",
+            text: "Se perderán todos los cambios realizados",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, cancelar",
+            cancelButtonText: "No",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $("#documento").val(empresaOriginal.documento);
+                $("#razon_social").val(empresaOriginal.razon_social);
+                $("#nombre_comercial").val(empresaOriginal.nombre_comercial);
+                $("#direccion").val(empresaOriginal.direccion);
+                $("#usuario_facturacion").val(
+                    empresaOriginal.usuario_facturacion
+                );
+                $("#contrasena_facturacion").val(
+                    empresaOriginal.contrasena_facturacion
+                );
+                disableInputs();
+                $("#btnCancelar").addClass("d-none");
+                $("#btnGuardar").addClass("d-none");
+                $("#btnEditar").removeClass("d-none");
+
+            }
+        });
     });
 
     $("#formEmpresa").on("submit", function (e) {
         e.preventDefault();
-        enableInputs();
 
         let id = $("#empresa_id").val();
         let url = id
@@ -36,20 +82,19 @@ $(document).ready(function () {
 
         $.ajax({
             url: url,
-            type: "POST", 
+            type: "POST",
             data: formData,
             contentType: false,
             processData: false,
 
             success: function (res) {
                 if (res.success) {
-                    // Si es nuevo → recargar
+                    guardarEstadoOriginal(); 
                     if (!id) {
                         $("#empresa_id").val(res.empresa.id);
                         location.reload();
                     }
 
-                    // Bloquear inputs
                     disableInputs();
                     btnGuardar.addClass("d-none");
                     btnEditar.removeClass("d-none");

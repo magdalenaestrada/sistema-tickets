@@ -13,39 +13,28 @@
                         <label>Departamento</label>
                         <select name="departamento_id" id="departamento_id" class="form-select" required>
                             <option value="">Seleccione</option>
-                            @foreach ($departamentos as $departamento)
-                                <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
-                            @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
                         <label>Provincia</label>
                         <select name="provincia_id" id="provincia_id" class="form-select" required>
                             <option value="">Seleccione</option>
-                            @foreach ($provincias as $provincia)
-                                <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
-                            @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
                         <label>Distrito</label>
                         <select name="distrito_id" id="distrito_id" class="form-select" required>
                             <option value="">Seleccione</option>
-                            @foreach ($distritos as $distrito)
-                                <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
-                            @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
                         <label>Nombre Comercial</label>
                         <input type="text" name="nombre_comercial" class="form-control">
                     </div>
-
                     <div class="mb-3">
                         <label>Dirección</label>
                         <input type="text" name="direccion" class="form-control" required>
                     </div>
-
                     <div class="mb-3">
                         <label>Teléfono</label>
                         <input type="text" name="telefono" class="form-control" maxlength="9" pattern="\d{9}"

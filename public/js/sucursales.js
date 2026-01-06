@@ -30,43 +30,63 @@ $(document).ready(function () {
         },
     });
 
-    function cargarDepartamentos(selected = null) {
+    function cargarDepartamentos(selected = null, callback = null) {
+
         $.get(route("ubigeos.departamentos"), function (departamentos) {
             let $select = $("#departamento_id");
             $select.empty().append('<option value="">Seleccione</option>');
+
             departamentos.forEach((d) =>
                 $select.append(`<option value="${d.id}">${d.nombre}</option>`)
             );
+
             if (selected) $select.val(selected);
+
+            if (callback) callback();
         });
     }
 
-    function cargarProvincias(departamento_id, selected = null) {
+    function cargarProvincias(
+        departamento_id,
+        selected = null,
+        callback = null
+    ) {
         if (!departamento_id) return;
+
+
         $.get(
             route("ubigeos.provincias", departamento_id),
             function (provincias) {
                 let $select = $("#provincia_id");
                 $select.empty().append('<option value="">Seleccione</option>');
+
                 provincias.forEach((p) =>
                     $select.append(
                         `<option value="${p.id}">${p.nombre}</option>`
                     )
                 );
+
                 if (selected) $select.val(selected);
+
+                if (callback) callback();
             }
         );
     }
 
     function cargarDistritos(provincia_id, selected = null) {
         if (!provincia_id) return;
+
+
         $.get(route("ubigeos.distritos", provincia_id), function (distritos) {
             let $select = $("#distrito_id");
             $select.empty().append('<option value="">Seleccione</option>');
+
             distritos.forEach((d) =>
                 $select.append(`<option value="${d.id}">${d.nombre}</option>`)
             );
+
             if (selected) $select.val(selected);
+
         });
     }
 
@@ -135,16 +155,21 @@ $(document).ready(function () {
 
         $.get(route("sucursales.detalle", id), function (data) {
             $("#sucursal_id").val(data.id);
-            $("#empresa_id").val(data.empresa_id);
             $('input[name="nombre_comercial"]').val(data.nombre_comercial);
             $('input[name="direccion"]').val(data.direccion);
             $('input[name="telefono"]').val(data.telefono);
 
             $("#modalTitulo").text("Editar Sucursal");
 
-            cargarDepartamentos(data.departamento_id);
-            cargarProvincias(data.departamento_id, data.provincia_id);
-            cargarDistritos(data.provincia_id, data.distrito_id);
+            cargarDepartamentos(data.departamento_id, function () {
+                cargarProvincias(
+                    data.departamento_id,
+                    data.provincia_id,
+                    function () {
+                        cargarDistritos(data.provincia_id, data.distrito_id);
+                    }
+                );
+            });
 
             $("#modalSucursal").modal("show");
         });

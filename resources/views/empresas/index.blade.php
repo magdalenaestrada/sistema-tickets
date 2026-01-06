@@ -69,6 +69,10 @@
                     <button type="button" class="btn btn-warning d-none" id="btnEditar">
                         Editar
                     </button>
+
+                    <button type="button" class="btn btn-secondary d-none" id="btnCancelar">
+                        Cancelar
+                    </button>
                 </div>
             </form>
 
