@@ -12,6 +12,10 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::get('/vender', [PasajeController::class, 'vender'])->name('vender');
     Route::post('/reservar', [PasajeController::class, 'reservar'])->name('reservar');
     Route::get('/buscar', [PasajeController::class, 'buscarPasaje'])->name('buscar');
+    Route::put(
+        '/{pasaje}/cambiar-horario',
+        [PasajeController::class, 'cambiarHorario']
+    );
     Route::get('/{pasaje}', [PasajeController::class, 'show'])->name('show');
     Route::post('/{pasaje}/abordo', [PasajeController::class, 'abordo'])->name('abordar');
     Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('noAbordo');
