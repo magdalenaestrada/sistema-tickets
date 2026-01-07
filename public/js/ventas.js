@@ -19,6 +19,105 @@ $(function () {
     let seatPrices = {};
     let precioTotal = 0;
 
+    let indexAsientoCambio = null;
+    let asientoOriginal = null;
+    let horarioOriginal = null;
+    let asientoNuevo = null;
+
+    window.seleccionarHorarioCambio = function (horarioId) {
+    horarioNuevoId = horarioId;
+
+    $.get(
+        route("horarios.asientos", horarioId),
+        function (res) {
+            $("#svgBusCambio").html(res.svg);
+            $("#contenedorAsientosCambio").removeClass("d-none");
+        }
+    ).fail(function () {
+        Swal.fire(
+            "Error",
+            "No se pudieron cargar los asientos",
+            "error"
+        );
+    });
+};
+
+
+    window.abrirCambioHorario = function (index, asiento, horarioId) {
+        pasajeCambioIndex = index;
+        asientoNuevo = null;
+        horarioNuevoId = null;
+
+        $("#listaHorariosCambio").html("");
+        $("#contenedorAsientosCambio").addClass("d-none");
+    };
+
+   window.buscarHorariosCambio = function () {
+    $.get(
+        route("horarios.buscar"),
+        {
+            fecha: $("#filtroFechaCambio").val(),
+            origen_id: $("#filtroOrigenCambio").val(),
+            destino_id: $("#filtroDestinoCambio").val(),
+        },
+        function (res) {
+            let html = "";
+
+            res.forEach((h) => {
+                html += `
+                <div class="col-md-4">
+                    <div class="card horario-card h-100"
+                         onclick="seleccionarHorarioCambio(${h.id})">
+                        <div class="card-body text-center">
+                            <h6>${h.hora_embarque}</h6>
+                            <p class="mb-1">${h.tipo_vehiculo.descripcion}</p>
+                            <small>${h.fecha_salida}</small>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            $("#listaHorariosCambio").html(html);
+        }
+    ).fail(function () {
+        Swal.fire("Error", "No se pudieron buscar horarios", "error");
+    });
+};
+
+    $("#btnBuscarCambio").on("click", function () {
+        buscarHorariosCambio();
+    });
+
+
+    window.seleccionarAsientoCambio = function (asiento) {
+        asientoNuevo = asiento;
+
+        document
+            .querySelectorAll(".seat")
+            .forEach((s) => s.classList.remove("selected"));
+
+        document.getElementById(`seat-${asiento}`)?.classList.add("selected");
+    };
+
+    window.confirmarCambioHorario = function () {
+        if (!horarioNuevoId || !asientoNuevo) {
+            Swal.fire("Atención", "Seleccione horario y asiento", "warning");
+            return;
+        }
+
+        document.querySelectorAll('input[name="asientos[]"]')[
+            pasajeCambioIndex
+        ].value = asientoNuevo;
+
+        document.querySelectorAll('input[name="horario_id[]"]')[
+            pasajeCambioIndex
+        ].value = horarioNuevoId;
+
+        bootstrap.Modal.getInstance(
+            document.getElementById("modalCambioHorario")
+        ).hide();
+    };
+
     function actualizarCostoTotal() {
         precioTotal = selectedSeatNumbers.reduce(
             (sum, num) => sum + parseFloat(seatPrices[num] || 0),
@@ -338,5 +437,41 @@ $(function () {
             .always(() => {
                 input.prop("disabled", false);
             });
+    });
+
+    $("#btnActualizarPasaje").on("click", function (e) {
+        e.preventDefault();
+
+        let form = document.getElementById("formVenta");
+        let formData = new FormData(form);
+
+        const pasajeId = $('input[name="pasaje_id"]').val();
+
+        $('input[type="file"]').each(function () {
+            if (this.files.length > 0)
+                formData.append(this.name, this.files[0]);
+        });
+
+        $.ajax({
+            url: route("pasajes.actualizar", pasajeId),
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRF-TOKEN": csrf_token,
+                "X-HTTP-Method-Override": "PUT",
+            },
+            success: function (res) {
+                if (res.success) {
+                    Swal.fire("Éxito", res.message, "success").then(() => {
+                        window.location.href = res.redirect;
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire("Error", "Error al actualizar el pasaje", "error");
+            },
+        });
     });
 });
