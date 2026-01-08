@@ -362,7 +362,6 @@ class PasajeController extends Controller
             if ($ventaData) {
                 $pagoData = [];
 
-                // Normalizamos valores antes de floatval
                 $pagoEfectivo = floatval(str_replace(',', '.', $request->pago_efectivo ?? 0));
                 $pagoBilletera = floatval(str_replace(',', '.', $request->pago_billetera ?? 0));
 
@@ -527,6 +526,10 @@ class PasajeController extends Controller
 
     public function editar(Pasaje $pasaje)
     {
+
+        $puntos_origen = Sucursal::all();
+        $puntos_destino = Sucursal::all();
+
         $pasaje->load([
             'persona',
             'horario.punto_origen',
@@ -551,7 +554,9 @@ class PasajeController extends Controller
             'tipos_documentos',
             'billeteras_digitales',
             'tipos_documentos_facturas',
-            'metodos_pago'
+            'metodos_pago',
+            'puntos_origen',
+            'puntos_destino'
         ));
     }
 
@@ -668,6 +673,97 @@ class PasajeController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Pasajero marcado como NO abordó'
+        ]);
+    }
+
+
+    public function cambiarHorario(Pasaje $pasaje)
+    {
+        // Cargar las relaciones necesarias
+        $pasaje->load(['persona', 'horario.punto_origen', 'horario.punto_destino', 'horario.tipo_vehiculo']);
+
+        // Obtener horarios disponibles (mismo origen y destino, fechas futuras)
+        $horarios = Horario::where('punto_origen_id', $pasaje->horario->punto_origen_id)
+            ->where('punto_destino_id', $pasaje->horario->punto_destino_id)
+            ->where('fecha_salida', '>=', now()->toDateString())
+            ->with(['punto_origen', 'punto_destino', 'tipo_vehiculo'])
+            ->orderBy('fecha_salida')
+            ->orderBy('hora_salida')
+            ->get();
+
+        return view('pasajes.cambiar-horario', compact('pasaje', 'horarios'));
+    }
+
+    public function asientosDisponibles(Horario $horario)
+    {
+        // Obtener asientos ocupados y reservados
+        $asientosOcupados = Pasaje::where('horario_id', $horario->id)
+            ->whereIn('estado', ['vendido', 'reservado'])
+            ->pluck('asiento_numero')
+            ->toArray();
+
+        // Generar estructura de asientos según el tipo de vehículo
+        $totalAsientos = $horario->tipo_vehiculo->cantidad_asientos ?? 40;
+
+        $asientosDisponibles = [];
+        for ($i = 1; $i <= $totalAsientos; $i++) {
+            $asientosDisponibles[] = [
+                'numero' => $i,
+                'disponible' => !in_array($i, $asientosOcupados)
+            ];
+        }
+
+        return response()->json([
+            'asientos' => $asientosDisponibles,
+            'precio' => $horario->costo_pasaje
+        ]);
+    }
+
+    public function actualizarHorario(Request $request, Pasaje $pasaje)
+    {
+        $request->validate([
+            'nuevo_horario_id' => 'required|exists:horarios,id',
+            'nuevo_asiento_numero' => 'required|integer|min:1',
+        ]);
+
+        $nuevoHorario = Horario::findOrFail($request->nuevo_horario_id);
+        $nuevoAsiento = $request->nuevo_asiento_numero;
+
+        $asientoOcupado = Pasaje::where('horario_id', $nuevoHorario->id)
+            ->where('asiento_numero', $nuevoAsiento)
+            ->whereIn('estado', ['vendido', 'reservado'])
+            ->exists();
+
+        if ($asientoOcupado) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El asiento seleccionado ya no está disponible'
+            ], 422);
+        }
+
+        $horarioAnterior = $pasaje->horario_id;
+        $asientoAnterior = $pasaje->asiento_numero;
+
+        $pasaje->update([
+            'horario_id' => $nuevoHorario->id,
+            'asiento_numero' => $nuevoAsiento,
+        ]);
+
+        if ($pasaje->venta) {
+            $diferenciaPrecio = $nuevoHorario->costo_pasaje - $pasaje->horario->costo_pasaje;
+
+            if ($diferenciaPrecio != 0) {
+                $pasaje->venta->update([
+                    'total' => $pasaje->venta->total + $diferenciaPrecio,
+                    'subtotal' => $pasaje->venta->subtotal + $diferenciaPrecio,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Horario y asiento actualizados correctamente',
+            'redirect' => route('pasajes.index')
         ]);
     }
 }

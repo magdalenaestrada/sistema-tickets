@@ -6,7 +6,6 @@
             <form method="POST" enctype="multipart/form-data" id="formVenta">
                 @csrf
 
-                {{-- 🔥 Si se está editando un pasaje, agregamos el ID --}}
                 @if (isset($pasaje))
                     <input type="hidden" name="pasaje_id" value="{{ $pasaje->id }}">
                 @endif
@@ -15,9 +14,18 @@
                     <div class="col-md-9 mb-3">
                         @foreach ($asientos as $index => $asiento)
                             <div class="card shadow-sm mb-3">
-                                <div class="card-header">
+                                <div class="card-header d-flex justify-content-between align-items-center">
                                     <strong>Asiento {{ $asiento }}</strong>
+
+                                    <button class="btn btn-sm btn-primary btn-cambio-horario"
+                                        data-index="{{ $index }}" data-asiento="{{ $asiento }}"
+                                        data-horario="{{ $horario->id }}" data-bs-toggle="modal"
+                                        data-bs-target="#modalCambioHorario">
+                                        Cambiar asiento / horario
+                                    </button>
+
                                 </div>
+
                                 <div class="card-body">
                                     <input type="hidden" name="asientos[]" value="{{ $asiento }}">
                                     <input type="hidden" name="horario_id[]" value="{{ $horario->id }}">
@@ -39,7 +47,8 @@
                                         <div class="col-md-2 mb-2">
                                             <label class="form-label">Documento</label>
                                             <input type="text" class="form-control" id="documento_{{ $index }}"
-                                                name="documento[]" required value="{{ $pasaje->persona->documento ?? '' }}">
+                                                name="documento[]" required
+                                                value="{{ $pasaje->persona->documento ?? '' }}">
                                         </div>
 
                                         <div class="col-md-4 mb-2">
@@ -108,10 +117,13 @@
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
                                 <p class="mb-1"><strong>Origen:</strong> {{ $horario->punto_origen->nombre_comercial }}
                                 </p>
-                                <p class="mb-1"><strong>Destino:</strong> {{ $horario->punto_destino->nombre_comercial }}
+                                <p class="mb-1"><strong>Destino:</strong>
+                                    {{ $horario->punto_destino->nombre_comercial }}
                                 </p>
-                                <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}</p>
-                                <p class="mb-1"><strong>Fecha:</strong> {{ $horario->fecha_salida->format('d-m-Y') }}</p>
+                                <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}
+                                </p>
+                                <p class="mb-1"><strong>Fecha:</strong> {{ $horario->fecha_salida->format('d-m-Y') }}
+                                </p>
                                 <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_embarque }}</p>
                             </div>
                         </div>
@@ -200,15 +212,12 @@
                                         @endforeach
                                     </select>
                                 </div>
-
                                 <div class="mb-3">
                                     <label class="form-label">Pago digital</label>
                                     <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
                                         class="form-control" value="{{ $pagoDigital }}">
                                 </div>
-
                             </div>
-
                             <div class="card mb-3">
                                 <div class="card-body text-center">
                                     <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
@@ -224,6 +233,7 @@
                     </div>
             </form>
         </div>
+        @include('pasajes.modals.cambio')
     </div>
 @endsection
 
