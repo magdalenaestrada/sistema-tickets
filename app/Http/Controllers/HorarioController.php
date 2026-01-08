@@ -239,7 +239,13 @@ class HorarioController extends Controller
     public function filtrar(Request $request)
     {
         $query = Horario::query()
-            ->with(['tipo_viaje', 'punto_origen', 'punto_destino', 'tipo_vehiculo']);
+            ->with([
+                'tipo_viaje',
+                'punto_origen',
+                'punto_destino',
+                'tipo_vehiculo'
+            ])
+            ->withCount('pasajes');
 
         if ($request->origen) {
             $query->where('punto_origen_id', $request->origen);
@@ -268,6 +274,18 @@ class HorarioController extends Controller
             return $h;
         });
 
-        return response()->json($horarios);
+        return response()->json(
+            $query->get()->map(function ($h) {
+                return [
+                    'id' => $h->id,
+                    'hora_embarque' => $h->hora_embarque,
+                    'fecha_salida' => $h->fecha_salida->format('d-m-Y'),
+                    'pasajes_count' => $h->pasajes_count,
+                    'tipo_vehiculo' => $h->tipo_vehiculo,
+                    'punto_origen' => $h->punto_origen,
+                    'punto_destino' => $h->punto_destino,
+                ];
+            })
+        );
     }
 }

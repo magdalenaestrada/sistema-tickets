@@ -18,6 +18,248 @@ $(function () {
 
     let seatPrices = {};
     let precioTotal = 0;
+    let asientoNuevo = null;
+
+    window.abrirCambioHorario = function (index, asiento, horarioId) {
+        pasajeCambioIndex = index;
+        asientoNuevo = null;
+        horarioNuevoId = null;
+
+        $("#listaHorariosCambio").html("");
+        $("#contenedorAsientosCambio").addClass("d-none");
+    };
+
+    window.buscarHorariosCambio = function () {
+        $.get(
+            route("horarios.filtrar"),
+            {
+                fecha: $("#filtroFechaCambio").val(),
+                origen_id: $("#filtroOrigenCambio").val(),
+                destino_id: $("#filtroDestinoCambio").val(),
+            },
+            function (res) {
+                let html = "";
+
+                res.forEach((h) => {
+                    const capacidad = h.tipo_vehiculo.capacidad;
+                    const vendidos = h.pasajes_count;
+                    const disponibles = capacidad - vendidos;
+
+                    html += `
+<div class="col-md-6 mb-4">
+    <!-- TARJETA HORARIO -->
+    <div class="card horario-card mb-2"
+         onclick="seleccionarHorarioCambio(${h.id})"
+         style="cursor:pointer">
+        <div class="card-body">
+            <h6 class="mb-1">
+                ${h.tipo_vehiculo.descripcion} –
+                ${disponibles} asientos disponibles
+            </h6>
+            <small>
+                ${h.punto_origen.nombre_comercial}
+                →
+                ${h.punto_destino.nombre_comercial}<br>
+                ${h.fecha_salida} - ${h.hora_embarque}
+            </small>
+        </div>
+    </div>
+
+    <!-- TARJETA SVG -->
+    <div class="card d-none" id="svg-card-${h.id}">
+        <div class="card-body p-2">
+            <div id="svg-bus-${h.id}" class="text-center"></div>
+        </div>
+    </div>
+</div>`;
+                });
+
+                $("#listaHorariosCambio").html(html);
+            }
+        ).fail(function () {
+            Swal.fire("Error", "No se pudieron buscar horarios", "error");
+        });
+    };
+
+    $("#btnBuscarCambio").on("click", function () {
+        buscarHorariosCambio();
+    });
+
+    window.seleccionarHorarioCambio = function (horarioId) {
+        horarioNuevoId = horarioId;
+        asientoNuevo = null;
+        $("[id^='svg-card-']").addClass("d-none");
+        $.get(route("pasajes.horario.asientos", horarioId), function (res) {
+            const contenedor = $(`#svg-bus-${horarioId}`);
+            contenedor.html(res.svg);
+
+            $(`#svg-card-${horarioId}`).removeClass("d-none");
+
+            setTimeout(() => {
+                pintarAsientos(res.asientos || []);
+
+                agregarEventListenersAsientos();
+
+                $("#leyendaAsientos").slideDown();
+            }, 100);
+        }).fail(function () {
+            Swal.fire("Error", "No se pudieron cargar los asientos", "error");
+        });
+    };
+
+    function pintarAsientos(asientos) {
+        Object.entries(asientos).forEach(([numero, estado]) => {
+            const seat = document.getElementById(`seat-${numero}`);
+            if (!seat) {
+                console.warn(`Asiento seat-${numero} no encontrado en el SVG`);
+                return;
+            }
+
+            const shape = seat.querySelector("path, rect, polygon, circle");
+
+            if (!shape) {
+                console.warn(`Shape no encontrado para asiento ${numero}`);
+                return;
+            }
+
+            seat.setAttribute("data-estado", estado);
+
+            if (estado === "ocupado") {
+                shape.setAttribute("fill", "red");
+                seat.style.cursor = "not-allowed";
+            } else if (estado === "reservado") {
+                shape.setAttribute("fill", "orange");
+                seat.style.cursor = "not-allowed";
+            } else {
+                shape.setAttribute("fill", "#d3d3d3");
+                seat.style.cursor = "pointer";
+            }
+        });
+    }
+
+    function agregarEventListenersAsientos() {
+        const seats = document.querySelectorAll('.seat, [id^="seat-"]');
+
+        seats.forEach((seat) => {
+            const asientoNum = seat.id ? seat.id.replace("seat-", "") : null;
+
+            if (!asientoNum) return;
+            const clickHandler = function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                seleccionarAsientoCambio(asientoNum);
+            };
+
+            const mouseEnterHandler = function () {
+                if (
+                    this.dataset.estado === "ocupado" ||
+                    this.dataset.estado === "reservado"
+                ) {
+                    return;
+                }
+                this.classList.add("seat-hover");
+            };
+
+            const mouseLeaveHandler = function () {
+                this.classList.remove("seat-hover");
+            };
+
+            seat.removeEventListener("click", seat._clickHandler);
+            seat.removeEventListener("mouseenter", seat._mouseEnterHandler);
+            seat.removeEventListener("mouseleave", seat._mouseLeaveHandler);
+
+            seat._clickHandler = clickHandler;
+            seat._mouseEnterHandler = mouseEnterHandler;
+            seat._mouseLeaveHandler = mouseLeaveHandler;
+
+            seat.addEventListener("click", clickHandler);
+            seat.addEventListener("mouseenter", mouseEnterHandler);
+            seat.addEventListener("mouseleave", mouseLeaveHandler);
+        });
+
+        console.log(
+            `Event listeners agregados a ${seats.length} asientos (sin clonar)`
+        );
+    }
+
+    window.seleccionarAsientoCambio = function (asiento) {
+        const seat = document.getElementById(`seat-${asiento}`);
+        if (!seat) {
+            console.error(`Asiento seat-${asiento} no encontrado`);
+            return;
+        }
+
+        const shape = seat.querySelector("path, rect, polygon, circle");
+        if (!shape) {
+            console.error(`Shape no encontrado para asiento ${asiento}`);
+            return;
+        }
+
+        const color = shape.getAttribute("fill");
+
+        if (color === "red" || color === "orange") {
+            Swal.fire({
+                icon: "warning",
+                title: "Asiento no disponible",
+                text: "Este asiento ya está ocupado o reservado",
+                timer: 2000,
+                showConfirmButton: false,
+            });
+            return;
+        }
+
+        document.querySelectorAll(".seat").forEach((s) => {
+            s.classList.remove("selected");
+            const prevShape = s.querySelector("path, rect, polygon, circle");
+            if (prevShape && prevShape.getAttribute("fill") === "#0d6efd") {
+                prevShape.setAttribute("fill", "#d3d3d3");
+            }
+        });
+
+        asientoNuevo = asiento;
+        seat.classList.add("selected");
+        shape.setAttribute("fill", "#0d6efd");
+
+        console.log(`Asiento ${asiento} seleccionado`);
+
+        Swal.fire({
+            icon: "success",
+            title: `Asiento ${asiento} seleccionado`,
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+        });
+    };
+
+    window.confirmarCambioHorario = function () {
+        if (!horarioNuevoId || !asientoNuevo) {
+            Swal.fire({
+                icon: "warning",
+                title: "Datos incompletos",
+                text: "Debe seleccionar un horario y un asiento",
+            });
+            return;
+        }
+
+        document.querySelectorAll('input[name="asientos[]"]')[
+            pasajeCambioIndex
+        ].value = asientoNuevo;
+        document.querySelectorAll('input[name="horario_id[]"]')[
+            pasajeCambioIndex
+        ].value = horarioNuevoId;
+
+        const modalElement = document.getElementById("modalCambioHorario");
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance.hide();
+
+        Swal.fire({
+            icon: "success",
+            title: "Cambio registrado",
+            text: `Nuevo asiento: ${asientoNuevo}`,
+            timer: 2000,
+        });
+    };
 
     function actualizarCostoTotal() {
         precioTotal = selectedSeatNumbers.reduce(

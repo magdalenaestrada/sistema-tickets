@@ -238,5 +238,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/ventas.js') }}"></script>
+    <script src="{{ asset('js/cambiar_horario.js') }}"></script>
 @endpush

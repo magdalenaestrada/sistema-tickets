@@ -51,7 +51,7 @@
                     <i class="link-arrow" data-lucide="chevron-down"></i>
                 </a>
 
-                <div class="collapse {{ $gestionOpen ? 'show' : '' }}" id="gestion">
+                <div class="collapse {{ $gestionOpen ? 'show' : '' }}" id="gestion" data-bs-parent="#sidebarNav">
                     <ul class="nav sub-menu">
                         <li class="nav-item">
                             <a href="{{ route('empresas.index') }}"

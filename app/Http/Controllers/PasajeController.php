@@ -10,6 +10,8 @@ use App\Models\MetodoPago;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
+use App\Models\TipoVehiculo;
+use App\Models\TipoViaje;
 use App\Services\VentaService;
 use App\Services\PagoService;
 use Illuminate\Http\Request;
@@ -391,7 +393,6 @@ class PasajeController extends Controller
             return $pasaje;
         });
     }
-
     public function asientosHorario(Horario $horario)
     {
         $pasajes = $horario->pasajes()->get();
@@ -529,6 +530,10 @@ class PasajeController extends Controller
 
         $puntos_origen = Sucursal::all();
         $puntos_destino = Sucursal::all();
+        $tipos_viaje = TipoViaje::all();
+        $tipos_vehiculos = TipoVehiculo::all();
+        $puntos_origen = Sucursal::all();
+        $puntos_destino = Sucursal::all();
 
         $pasaje->load([
             'persona',
@@ -555,6 +560,8 @@ class PasajeController extends Controller
             'billeteras_digitales',
             'tipos_documentos_facturas',
             'metodos_pago',
+            'tipos_viaje',
+            'tipos_vehiculos',
             'puntos_origen',
             'puntos_destino'
         ));
