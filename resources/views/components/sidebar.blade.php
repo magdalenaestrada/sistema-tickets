@@ -34,15 +34,12 @@
     <div class="sidebar-body">
         <ul class="nav" id="sidebarNav">
 
-            {{-- Dashboard --}}
-            <li class="nav-item">
-                <a href="{{ route('dashboard') }}"
-                    class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <a href="{{ route('dashboard') }}" class="nav-link">
                     <i class="link-icon" data-lucide="box"></i>
                     <span class="link-title">Dashboard</span>
                 </a>
             </li>
-
             <li class="nav-item nav-category">GESTIÓN</li>
 
             {{-- Empresa --}}
@@ -121,31 +118,17 @@
                     </ul>
                 </div>
             </li>
-            <li class="nav-item nav-category">CAJA</li>
 
-            {{-- Caja --}}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#caja"
-                    aria-expanded="{{ $cajaOpen ? 'true' : 'false' }}">
-                    <i class="link-icon" data-lucide="wallet"></i>
-                    <span class="link-title">Caja</span>
-                    <i class="link-arrow" data-lucide="chevron-down"></i>
-                </a>
-
-                <div class="collapse {{ $cajaOpen ? 'show' : '' }}" id="caja">
-                    <ul class="nav sub-menu">
-                        <li class="nav-item">
-                            <a href="{{ route('caja.index') }}"
-                                class="nav-link {{ request()->routeIs('caja.*') ? 'active' : '' }}">
-                                Caja
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
             <li class="nav-item nav-category">VENTAS</li>
 
-            {{-- Ventas --}}
+            <li class="nav-item {{ request()->is('caja*') ? 'active' : '' }}">
+                <a href="{{ route('caja.index') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="wallet"></i>
+                    <span class="link-title">Caja</span>
+                </a>
+            </li>
+
+
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="collapse" href="#ventas"
                     aria-expanded="{{ $ventasOpen ? 'true' : 'false' }}">
@@ -156,33 +139,59 @@
 
                 <div class="collapse {{ $ventasOpen ? 'show' : '' }}" id="ventas">
                     <ul class="nav sub-menu">
-                        <li class="nav-item"><a href="{{ route('tipo-encomienda.index') }}"
-                                class="nav-link {{ request()->routeIs('tipo-encomienda.*') ? 'active' : '' }}">Tipo
-                                encomiendas</a></li>
-                        <li class="nav-item"><a href="{{ route('encomiendas.index-no-asignadas') }}"
-                                class="nav-link {{ request()->routeIs('encomiendas.index-no-asignadas') ? 'active' : '' }}">Crear
-                                encomienda</a></li>
-                        <li class="nav-item"><a href="{{ route('encomiendas.index-asignadas') }}"
-                                class="nav-link {{ request()->routeIs('encomiendas.index-asignadas') ? 'active' : '' }}">Encomiendas</a>
+
+                        <li class="nav-item">
+                            <a href="{{ route('tipo-encomienda.index') }}"
+                                class="nav-link {{ request()->routeIs('tipo-encomienda.*') ? 'active' : '' }}">
+                                Tipo encomiendas
+                            </a>
                         </li>
-                        <li class="nav-item"><a href="{{ route('asignaciones.index') }}"
-                                class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">Salidas</a>
+
+                        <li class="nav-item">
+                            <a href="{{ route('encomiendas.index-no-asignadas') }}"
+                                class="nav-link {{ request()->routeIs('encomiendas.index-no-asignadas') ? 'active' : '' }}">
+                                Crear encomienda
+                            </a>
                         </li>
-                        <li class="nav-item"><a href="{{ route('horarios.calendario') }}"
-                                class="nav-link {{ request()->routeIs('horarios.calendario') ? 'active' : '' }}">Calendario</a>
+
+                        <li class="nav-item">
+                            <a href="{{ route('encomiendas.index-asignadas') }}"
+                                class="nav-link {{ request()->routeIs('encomiendas.index-asignadas') ? 'active' : '' }}">
+                                Encomiendas
+                            </a>
                         </li>
-                        <li class="nav-item"><a href="{{ route('pasajes.index') }}"
-                                class="nav-link {{ request()->routeIs('pasajes.index') ? 'active' : '' }}">Vender
-                                Pasajes</a></li>
-                        <li class="nav-item"><a href="{{ route('pasajes.index-busqueda') }}"
-                                class="nav-link {{ request()->routeIs('pasajes.index-busqueda') ? 'active' : '' }}">Buscar
-                                Pasajes</a></li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('asignaciones.index') }}"
+                                class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">
+                                Salidas
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('horarios.calendario') }}"
+                                class="nav-link {{ request()->routeIs('horarios.calendario') ? 'active' : '' }}">
+                                Calendario
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pasajes.index') }}"
+                                class="nav-link {{ request()->routeIs('pasajes.index') ? 'active' : '' }}">
+                                Vender Pasajes
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a href="{{ route('pasajes.index-busqueda') }}"
+                                class="nav-link {{ request()->routeIs('pasajes.index-busqueda') ? 'active' : '' }}">
+                                Buscar Pasajes
+                            </a>
+                        </li>
+
                     </ul>
                 </div>
             </li>
-
-
-
         </ul>
     </div>
 </nav>
