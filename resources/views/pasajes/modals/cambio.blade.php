@@ -49,7 +49,6 @@
                 <h5 class="modal-title">Cambiar asiento / horario</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
             <div class="modal-body">
                 <div class="card mb-3">
                     <div class="card-body">
@@ -109,20 +108,22 @@
 
                             <div class="col-md-12 d-flex align-items-end">
                                 <button id="btnBuscarCambio" class="btn btn-primary w-100">
-                                    Buscar
+                                    <i class="link-icon"></i>
+                                    Buscar horarios
                                 </button>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
-                <div id="listaHorariosCambio" class="row g-3"></div>
-
-                <hr>
-
+                <div id="listaHorariosCambio" class="row g-3">
+                    <div class="col-12">
+                        <p class="text-center text-muted">
+                            Use los filtros y haga clic en "Buscar horarios" para comenzar
+                        </p>
+                    </div>
+                </div>
             </div>
-
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button class="btn btn-success" onclick="confirmarCambioHorario()">
