@@ -14,19 +14,18 @@
     </div>
 
     @php
-        $gestionOpen = request()->routeIs('empresas.*', 'reportes.*', 'clientes.*', 'usuarios.*');
+        $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*');
+        $maestrosOpen = request()->routeIs('cargos.*', 'tipo-encomienda.*', 'roles.*', 'permisos.*');
 
-        $personalOpen = request()->routeIs('cargos.*', 'empleados.*', 'eventos.*', 'descuentos.*');
+        $personalOpen = request()->routeIs('eventos.*');
 
-        $vehiculosOpen = request()->routeIs('vehiculos.*', 'horarios.index');
+        $transportesOpen =
+            request()->routeIs('vehiculos.*') ||
+            (request()->routeIs('horarios.*', 'asignaciones.*') && !request()->routeIs('horarios.calendario'));
 
-        $ventasOpen = request()->routeIs(
-            'pasajes.*',
-            'encomiendas.*',
-            'asignaciones.*',
-            'horarios.*',
-            'tipo-encomienda.*',
-        );
+        $gestionOpen = request()->routeIs('clientes.*', 'descuentos.*', 'reportes.*');
+
+        $encomiendasOpen = request()->routeIs('encomiendas.*');
 
         $cajaOpen = request()->routeIs('caja.*');
     @endphp
@@ -36,124 +35,44 @@
 
             <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <a href="{{ route('dashboard') }}" class="nav-link">
-                    <i class="link-icon" data-lucide="box"></i>
-                    <span class="link-title">Dashboard</span>
+                    <i class="link-icon" data-lucide="home"></i>
+                    <span class="link-title">INICIO</span>
                 </a>
-            </li>
-            <li class="nav-item nav-category">GESTIÓN</li>
-
-            {{-- Empresa --}}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#gestion"
-                    aria-expanded="{{ $gestionOpen ? 'true' : 'false' }}">
-                    <i class="link-icon" data-lucide="building"></i>
-                    <span class="link-title">Empresa</span>
-                    <i class="link-arrow" data-lucide="chevron-down"></i>
-                </a>
-
-                <div class="collapse {{ $gestionOpen ? 'show' : '' }}" id="gestion" data-bs-parent="#sidebarNav">
-                    <ul class="nav sub-menu">
-                        <li class="nav-item">
-                            <a href="{{ route('empresas.index') }}"
-                                class="nav-link {{ request()->routeIs('empresas.*') ? 'active' : '' }}">
-                                Mi empresa
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('reportes.index') }}"
-                                class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
-                                Reportes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('clientes.index') }}"
-                                class="nav-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}">Clientes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('usuarios.index') }}"
-                                class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}">Usuarios
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-
-            {{-- Personal --}}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#personal"
-                    aria-expanded="{{ $personalOpen ? 'true' : 'false' }}">
-                    <i class="link-icon" data-lucide="users"></i>
-                    <span class="link-title">Personal</span>
-                    <i class="link-arrow" data-lucide="chevron-down"></i>
-                </a>
-
-                <div class="collapse {{ $personalOpen ? 'show' : '' }}" id="personal">
-                    <ul class="nav sub-menu">
-                        <li class="nav-item"><a href="{{ route('cargos.index') }}"
-                                class="nav-link {{ request()->routeIs('cargos.*') ? 'active' : '' }}">Cargos</a></li>
-                        <li class="nav-item"><a href="{{ route('empleados.index') }}"
-                                class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}">Empleados</a>
-                        </li>
-                        <li class="nav-item"><a href="{{ route('eventos.index') }}"
-                                class="nav-link {{ request()->routeIs('eventos.*') ? 'active' : '' }}">Cumpleaños</a>
-                        </li>
-                        <li class="nav-item"><a href="{{ route('descuentos.index') }}"
-                                class="nav-link {{ request()->routeIs('descuentos.*') ? 'active' : '' }}">Cupones</a>
-                        </li>
-
-                    </ul>
-                </div>
-            </li>
-
-            {{-- Vehículos --}}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#vehiculos"
-                    aria-expanded="{{ $vehiculosOpen ? 'true' : 'false' }}">
-                    <i class="link-icon" data-lucide="car-front"></i>
-                    <span class="link-title">Vehículos</span>
-                    <i class="link-arrow" data-lucide="chevron-down"></i>
-                </a>
-
-                <div class="collapse {{ $vehiculosOpen ? 'show' : '' }}" id="vehiculos">
-                    <ul class="nav sub-menu">
-                        <li class="nav-item"><a href="{{ route('vehiculos.index') }}"
-                                class="nav-link {{ request()->routeIs('vehiculos.*') ? 'active' : '' }}">Vehículos</a>
-                        </li>
-                        <li class="nav-item"><a href="{{ route('horarios.index') }}"
-                                class="nav-link {{ request()->routeIs('horarios.index') ? 'active' : '' }}">Horarios</a>
-                        </li>
-                    </ul>
-                </div>
             </li>
 
             <li class="nav-item nav-category">VENTAS</li>
 
             <li class="nav-item {{ request()->is('caja*') ? 'active' : '' }}">
                 <a href="{{ route('caja.index') }}" class="nav-link">
-                    <i class="link-icon" data-lucide="wallet"></i>
+                    <i class="link-icon" data-lucide="piggy-bank"></i>
                     <span class="link-title">Caja</span>
                 </a>
             </li>
 
+            <li class="nav-item {{ request()->is('pasajes*') ? 'active' : '' }}">
+                <a href="{{ route('pasajes.index') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="receipt-text"></i>
+                    <span class="link-title">Vender pasajes</span>
+                </a>
+            </li>
 
+            <li class="nav-item {{ request()->is('pasajes.index-busqueda') ? 'active' : '' }}">
+                <a href="{{ route('pasajes.index-busqueda') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="user-search"></i>
+                    <span class="link-title">Buscar pasajes</span>
+                </a>
+            </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#ventas"
-                    aria-expanded="{{ $ventasOpen ? 'true' : 'false' }}">
-                    <i class="link-icon" data-lucide="newspaper"></i>
-                    <span class="link-title">Ventas</span>
+                <a class="nav-link" data-bs-toggle="collapse" href="#encomiendas"
+                    aria-expanded="{{ $encomiendasOpen ? 'true' : 'false' }}">
+                    <i class="link-icon" data-lucide="package"></i>
+                    <span class="link-title">Encomiendas</span>
                     <i class="link-arrow" data-lucide="chevron-down"></i>
                 </a>
 
-                <div class="collapse {{ $ventasOpen ? 'show' : '' }}" id="ventas">
+                <div class="collapse {{ $encomiendasOpen ? 'show' : '' }}" id="encomiendas"
+                    data-bs-parent="#sidebarNav">
                     <ul class="nav sub-menu">
-
-                        <li class="nav-item">
-                            <a href="{{ route('tipo-encomienda.index') }}"
-                                class="nav-link {{ request()->routeIs('tipo-encomienda.*') ? 'active' : '' }}">
-                                Tipo encomiendas
-                            </a>
-                        </li>
 
                         <li class="nav-item">
                             <a href="{{ route('encomiendas.index-no-asignadas') }}"
@@ -168,32 +87,159 @@
                                 Encomiendas
                             </a>
                         </li>
+                    </ul>
+                </div>
+            </li>
 
+            <li class="nav-item {{ request()->routeIs('horarios.calendario') ? 'active' : '' }}">
+                <a href="{{ route('horarios.calendario') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="calendar-days"></i>
+                    <span class="link-title">Calendario de salidas</span>
+                </a>
+            </li>
+
+
+            <li class="nav-item nav-category">ADMINISTRACIÓN</li>
+
+            {{-- Empresa --}}
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#empresa"
+                    aria-expanded="{{ $empresaOpen ? 'true' : 'false' }}">
+                    <i class="link-icon" data-lucide="building"></i>
+                    <span class="link-title">Empresa</span>
+                    <i class="link-arrow" data-lucide="chevron-down"></i>
+                </a>
+
+                <div class="collapse {{ $empresaOpen ? 'show' : '' }}" id="empresa" data-bs-parent="#sidebarNav">
+                    <ul class="nav sub-menu">
+                        <li class="nav-item">
+                            <a href="{{ route('empresas.index') }}"
+                                class="nav-link {{ request()->routeIs('empresas.*') ? 'active' : '' }}">
+                                Mi empresa
+                            </a>
+                        </li>
+
+                        <li class="nav-item"><a href="{{ route('empleados.index') }}"
+                                class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}">Empleados</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('usuarios.index') }}"
+                                class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}">Usuarios
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#maestros"
+                    aria-expanded="{{ $maestrosOpen ? 'true' : 'false' }}">
+                    <i class="link-icon" data-lucide="puzzle"></i>
+                    <span class="link-title">Maestros</span>
+                    <i class="link-arrow" data-lucide="chevron-down"></i>
+                </a>
+
+                <div class="collapse {{ $maestrosOpen ? 'show' : '' }}" id="maestros" data-bs-parent="#sidebarNav">
+                    <ul class="nav sub-menu">
+                        <li class="nav-item"><a href="{{ route('cargos.index') }}"
+                                class="nav-link {{ request()->routeIs('cargos.*') ? 'active' : '' }}">Cargos
+                            </a>
+                        </li>
+                        <li class="nav-item"><a href="{{ route('roles.index') }}"
+                                class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">Roles
+                            </a>
+                        </li>
+                        <li class="nav-item"><a href="{{ route('permisos.index') }}"
+                                class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}">Permisos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('tipo-encomienda.index') }}"
+                                class="nav-link {{ request()->routeIs('tipo-encomienda.*') ? 'active' : '' }}">
+                                Tipo encomiendas
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+            </li>
+
+            {{-- Personal --}}
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" data-bs-target="#personal" role="button"
+                    aria-expanded="{{ $personalOpen ? 'true' : 'false' }}" aria-controls="personal">
+
+                    <i class="link-icon" data-lucide="users"></i>
+                    <span class="link-title">Personal</span>
+                    <i class="link-arrow" data-lucide="chevron-down"></i>
+                </a>
+
+                <div class="collapse {{ $personalOpen ? 'show' : '' }}" id="personal" data-bs-parent="#sidebarNav">
+                    <ul class="nav sub-menu">
+
+
+                        <li class="nav-item"><a href="{{ route('eventos.index') }}"
+                                class="nav-link {{ request()->routeIs('eventos.*') ? 'active' : '' }}">Cumpleaños</a>
+                        </li>
+
+
+                    </ul>
+                </div>
+            </li>
+
+            {{-- Vehículos --}}
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#transportes"
+                    aria-expanded="{{ $transportesOpen ? 'true' : 'false' }}">
+                    <i class="link-icon" data-lucide="tram-front"></i>
+                    <span class="link-title">Transportes y operación</span>
+                    <i class="link-arrow" data-lucide="chevron-down"></i>
+                </a>
+
+                <div class="collapse {{ $transportesOpen ? 'show' : '' }}" id="transportes"
+                    data-bs-parent="#sidebarNav">
+                    <ul class="nav sub-menu">
+                        <li class="nav-item"><a href="{{ route('vehiculos.index') }}"
+                                class="nav-link {{ request()->routeIs('vehiculos.*') ? 'active' : '' }}">Transportes</a>
+                        </li>
                         <li class="nav-item">
                             <a href="{{ route('asignaciones.index') }}"
                                 class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">
                                 Salidas
                             </a>
                         </li>
-
-                        <li class="nav-item">
-                            <a href="{{ route('horarios.calendario') }}"
-                                class="nav-link {{ request()->routeIs('horarios.calendario') ? 'active' : '' }}">
-                                Calendario
-                            </a>
+                        <li class="nav-item"><a href="{{ route('horarios.index') }}"
+                                class="nav-link {{ request()->routeIs('horarios.index') ? 'active' : '' }}">Salidas
+                                programadas</a>
                         </li>
 
+
+                    </ul>
+                </div>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#gestion"
+                    aria-expanded="{{ $gestionOpen ? 'true' : 'false' }}">
+                    <i class="link-icon" data-lucide="newspaper"></i>
+                    <span class="link-title">Gestión</span>
+                    <i class="link-arrow" data-lucide="chevron-down"></i>
+                </a>
+
+                <div class="collapse {{ $gestionOpen ? 'show' : '' }}" id="gestion" data-bs-parent="#sidebarNav">
+                    <ul class="nav sub-menu">
                         <li class="nav-item">
-                            <a href="{{ route('pasajes.index') }}"
-                                class="nav-link {{ request()->routeIs('pasajes.index') ? 'active' : '' }}">
-                                Vender Pasajes
+                            <a href="{{ route('clientes.index') }}"
+                                class="nav-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}">Clientes
                             </a>
                         </li>
-
+                        <li class="nav-item"><a href="{{ route('descuentos.index') }}"
+                                class="nav-link {{ request()->routeIs('descuentos.*') ? 'active' : '' }}">Cupones</a>
+                        </li>
                         <li class="nav-item">
-                            <a href="{{ route('pasajes.index-busqueda') }}"
-                                class="nav-link {{ request()->routeIs('pasajes.index-busqueda') ? 'active' : '' }}">
-                                Buscar Pasajes
+                            <a href="{{ route('reportes.index') }}"
+                                class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
+                                Reportes
                             </a>
                         </li>
 

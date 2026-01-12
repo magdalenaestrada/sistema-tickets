@@ -18,7 +18,10 @@ class ListaController extends Controller
         try {
             $areas = Area::select('id', 'descripcion')->orderBy('descripcion')->get();
             $cargos = Cargo::select('id', 'descripcion')->orderBy('descripcion')->get();
-            $sucursales = Sucursal::select('id', 'nombre_comercial')->orderBy('nombre_comercial')->get();
+            $sucursales = Sucursal::where('estado', 'A')
+                ->select('id', 'nombre_comercial')
+                ->orderBy('nombre_comercial')
+                ->get();
             $tiposLicencia = TipoLicencia::select('id', 'descripcion')->orderBy('descripcion')->get();
             $tiposDocumento = TipoDocumentoPersona::select('id', 'codigo')->orderBy('id')->get();
 
@@ -50,7 +53,7 @@ class ListaController extends Controller
 
     public function listarTipos()
     {
-        $tipos = TipoVehiculo::all(); 
+        $tipos = TipoVehiculo::all();
         return response()->json($tipos);
     }
 }

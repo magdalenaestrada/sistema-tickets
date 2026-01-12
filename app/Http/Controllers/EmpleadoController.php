@@ -8,6 +8,8 @@ use App\Models\Empleado;
 use App\Models\Evento;
 use App\Models\Persona;
 use App\Models\Provincia;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +20,9 @@ class EmpleadoController extends Controller
     {
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();
+        $roles = Role::all();
         $distritos = Distrito::select('id', 'nombre')->get();
-        return view('empleados.index', compact('distritos', 'departamentos', 'provincias'));
+        return view('empleados.index', compact('distritos', 'roles', 'departamentos', 'provincias'));
     }
 
     public function datatable()
@@ -120,6 +123,28 @@ class EmpleadoController extends Controller
                 ]
             );
 
+            if ($request->chkUsuario) {
+                $user = User::updateOrCreate(
+                    ['persona_id' => $persona->id],
+                    [
+                        'username' => $request->usuario,
+                        'password' => $request->password ? bcrypt($request->password) : bcrypt('12345678'),
+                        'numero_licencia' => $request->licencia_conducir,
+                        'tipo_licencia_id' => $request->tipo_licencia_id,
+                        'sucursal_id' => $request->sucursal_id,
+                        'documento' => $persona->documento,
+                        'estado' => $request->estado ?? 'A',
+                        'fecha_creacion' => now(),
+                    ]
+                );
+
+                if ($request->rol_id) {
+                    $rol = Role::find($request->rol_id);
+                    if ($rol) {
+                        $user->syncRoles([$rol]);
+                    }
+                }
+            }
             DB::commit();
 
             return response()->json([

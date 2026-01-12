@@ -1,5 +1,15 @@
 @extends('layouts.app')
-
+<style>
+    input[type="file"]::file-selector-button {
+        background-color: #4a4a4a;
+        /* morado */
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+</style>
 @section('content')
     <div class="card">
         <div class="card-header">
@@ -48,18 +58,6 @@
                             </div>
                         @endif
                     </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Usuario Facturación</label>
-                        <input type="text" class="form-control" id="usuario_facturacion" name="usuario_facturacion"
-                            value="{{ $empresa->usuario_facturacion ?? '' }}">
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Contraseña Facturación</label>
-                        <input type="password" class="form-control" id="contrasena_facturacion"
-                            name="contrasena_facturacion" value="{{ $empresa->contrasena_facturacion ?? '' }}">
-                    </div>
                 </div>
                 <div class="mt-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary" id="btnGuardar">
@@ -93,16 +91,17 @@
                 <table id="tablaSucursales" class="table table-striped w-100"></table>
             </div>
         </div>
-
         @include('empresas.modals.create_sucursal')
-        @push('scripts')
-            <script>
-                const EMPRESA_ID = {{ $empresa->id }};
-            </script>
-            <script src="{{ asset('js/sucursales.js') }}"></script>
-        @endpush
     @endif
 @endsection
+
 @push('scripts')
+    @if (isset($empresa))
+        <script>
+            const EMPRESA_ID = {{ $empresa->id }};
+        </script>
+        <script src="{{ asset('js/sucursales.js') }}"></script>
+    @endif
+
     <script src="{{ asset('js/empresas.js') }}"></script>
 @endpush

@@ -9,11 +9,11 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-4">
-                    <input type="text" id="filtroEmpleado" class="form-control" placeholder="Buscar empleado">
+                    <input type="text" id="filtroEmpleado" class="form-control" placeholder="Buscar por nombre">
                 </div>
 
                 <div class="col-md-4">
-                    <input type="text" id="filtroUsuario" class="form-control" placeholder="Buscar usuario">
+                    <input type="text" id="filtroUsuario" class="form-control" placeholder="Buscar por username">
                 </div>
             </div>
 

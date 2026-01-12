@@ -1,4 +1,3 @@
-// Función para cargar toda la jerarquía: departamentos → provincias → distritos con sucursales
 function cargarUbigeosConSucursales(
     depSelectId = "#departamento_id",
     provSelectId = "#provincia_id",

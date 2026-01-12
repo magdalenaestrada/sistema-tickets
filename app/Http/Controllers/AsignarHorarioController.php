@@ -15,7 +15,7 @@ class AsignarHorarioController extends Controller
 {
     public function index()
     {
-        $sucursales = Sucursal::all();
+        $sucursales = Sucursal::where('estado', 'A')->get();
         $tipo_viajes = TipoViaje::all();
         $tipo_vehiculos = TipoVehiculo::all();
         $horarios = Horario::all();

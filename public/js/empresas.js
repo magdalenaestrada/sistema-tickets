@@ -17,7 +17,6 @@ $(document).ready(function () {
 $(document).ready(function () {
     const empresaId = $("#empresa_id").val();
 
-    // SOLO los inputs de texto, excepto _token y empresa_id
     const inputs = $(
         "#formEmpresa input[type='text'], #formEmpresa input[type='password'], #formEmpresa input[type='file']"
     );
@@ -26,14 +25,12 @@ $(document).ready(function () {
     const btnEditar = $("#btnEditar");
     const btnCancelar = $("#btnCancelar");
 
-    // Si existe empresa → bloquear inputs
     if (empresaId) {
         disableInputs();
         btnGuardar.addClass("d-none");
         btnEditar.removeClass("d-none");
     }
 
-    // Botón editar → habilitar inputs
     btnEditar.on("click", function () {
         enableInputs();
         btnEditar.addClass("d-none");
@@ -65,7 +62,6 @@ $(document).ready(function () {
                 $("#btnCancelar").addClass("d-none");
                 $("#btnGuardar").addClass("d-none");
                 $("#btnEditar").removeClass("d-none");
-
             }
         });
     });
@@ -89,25 +85,22 @@ $(document).ready(function () {
 
             success: function (res) {
                 if (res.success) {
-                    guardarEstadoOriginal(); 
-                    if (!id) {
-                        $("#empresa_id").val(res.empresa.id);
-                        location.reload();
-                    }
-
-                    disableInputs();
-                    btnGuardar.addClass("d-none");
-                    btnEditar.removeClass("d-none");
+                    guardarEstadoOriginal();
 
                     Swal.fire({
                         icon: "success",
                         title: "Guardado",
                         text: "Los datos se guardaron correctamente",
-                        timer: 2000,
+                        timer: 1500,
                         showConfirmButton: false,
                     });
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
                 }
             },
+
             error: function (xhr) {
                 console.error(xhr);
                 Swal.fire({
@@ -128,7 +121,6 @@ $(document).ready(function () {
         inputs.prop("disabled", false);
     }
 
-    // Buscar RUC
     $("#btnBuscarRuc").on("click", function () {
         const documento = $("#documento").val();
 

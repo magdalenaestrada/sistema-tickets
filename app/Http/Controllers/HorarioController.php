@@ -17,7 +17,7 @@ class HorarioController extends Controller
     {
         $tiposViaje = TipoViaje::all();
         $tipo_vehiculos   = TipoVehiculo::all();
-        $sucursales  = Sucursal::all();
+        $sucursales  = Sucursal::where('estado', 'A')->get();
 
         return view('horarios.index', compact('tiposViaje', 'tipo_vehiculos', 'sucursales'));
     }

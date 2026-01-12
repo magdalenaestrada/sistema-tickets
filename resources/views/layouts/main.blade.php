@@ -1,7 +1,28 @@
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .sidebar-body {
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        .page-wrapper {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Buses</title>

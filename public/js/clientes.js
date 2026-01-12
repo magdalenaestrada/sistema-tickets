@@ -57,7 +57,7 @@ $(document).ready(function () {
     }
 
     function cargarListasCliente(callback = null) {
-        $.get("/listas", function (res) {
+        $.get(route("listas.all"), function (res) {
             const fillSelect = (
                 selector,
                 items,
@@ -106,7 +106,7 @@ $(document).ready(function () {
             .html('<i data-lucide="search"></i>');
         lucide.createIcons();
 
-        $.getJSON(`/buscar/?documento=${documento}`)
+        $.getJSON(route("clientes.buscar", { documento }))
             .done((data) => {
                 if (data.error)
                     return Swal.fire(

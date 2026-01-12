@@ -63,7 +63,7 @@ class PasajeController extends Controller
             'horario.punto_destino',
             'venta'
         ])->get();
-        $sucursales = Sucursal::all();
+        $sucursales = Sucursal::where('estado', 'A')->get();
         return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
     }
 
@@ -111,8 +111,8 @@ class PasajeController extends Controller
 
     public function index()
     {
-        $puntos_origen = Sucursal::all();
-        $puntos_destino = Sucursal::all();
+        $puntos_origen = Sucursal::where('estado', 'A')->get();
+        $puntos_destino = Sucursal::where('estado', 'A')->get();
 
         $horarios = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino'])
             ->withCount('pasajes')
@@ -533,12 +533,12 @@ class PasajeController extends Controller
     public function editar(Pasaje $pasaje)
     {
 
-        $puntos_origen = Sucursal::all();
-        $puntos_destino = Sucursal::all();
+        $puntos_origen = Sucursal::where('estado', 'A')->get();
+        $puntos_destino = Sucursal::where('estado', 'A')->get();
         $tipos_viaje = TipoViaje::all();
         $tipos_vehiculos = TipoVehiculo::all();
-        $puntos_origen = Sucursal::all();
-        $puntos_destino = Sucursal::all();
+        $puntos_origen = Sucursal::where('estado', 'A')->get();
+        $puntos_destino = Sucursal::where('estado', 'A')->get();
 
         $pasaje->load([
             'persona',

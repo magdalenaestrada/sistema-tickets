@@ -29,9 +29,7 @@ $(document).ready(function () {
             lucide.createIcons();
         },
     });
-
     function cargarDepartamentos(selected = null, callback = null) {
-
         $.get(route("ubigeos.departamentos"), function (departamentos) {
             let $select = $("#departamento_id");
             $select.empty().append('<option value="">Seleccione</option>');
@@ -40,7 +38,9 @@ $(document).ready(function () {
                 $select.append(`<option value="${d.id}">${d.nombre}</option>`)
             );
 
-            if (selected) $select.val(selected);
+            if (selected) {
+                $select.val(String(selected)).trigger("change");
+            }
 
             if (callback) callback();
         });
@@ -52,7 +52,6 @@ $(document).ready(function () {
         callback = null
     ) {
         if (!departamento_id) return;
-
 
         $.get(
             route("ubigeos.provincias", departamento_id),
@@ -66,16 +65,16 @@ $(document).ready(function () {
                     )
                 );
 
-                if (selected) $select.val(selected);
+                if (selected) {
+                    $select.val(String(selected)).trigger("change");
+                }
 
                 if (callback) callback();
             }
         );
     }
-
     function cargarDistritos(provincia_id, selected = null) {
         if (!provincia_id) return;
-
 
         $.get(route("ubigeos.distritos", provincia_id), function (distritos) {
             let $select = $("#distrito_id");
@@ -85,29 +84,35 @@ $(document).ready(function () {
                 $select.append(`<option value="${d.id}">${d.nombre}</option>`)
             );
 
-            if (selected) $select.val(selected);
-
+            if (selected) {
+                $select.val(String(selected));
+            }
         });
     }
 
-    $("#departamento_id").on("change", function () {
-        const id = $(this).val();
-        $("#provincia_id")
-            .empty()
-            .append('<option value="">Seleccione</option>');
-        $("#distrito_id")
-            .empty()
-            .append('<option value="">Seleccione</option>');
-        cargarProvincias(id);
-    });
+    function vincularEventosUbigeo() {
+        $("#departamento_id").off("change");
+        $("#provincia_id").off("change");
 
-    $("#provincia_id").on("change", function () {
-        const id = $(this).val();
-        $("#distrito_id")
-            .empty()
-            .append('<option value="">Seleccione</option>');
-        cargarDistritos(id);
-    });
+        $("#departamento_id").on("change", function () {
+            const id = $(this).val();
+            $("#provincia_id")
+                .empty()
+                .append('<option value="">Seleccione</option>');
+            $("#distrito_id")
+                .empty()
+                .append('<option value="">Seleccione</option>');
+            cargarProvincias(id);
+        });
+
+        $("#provincia_id").on("change", function () {
+            const id = $(this).val();
+            $("#distrito_id")
+                .empty()
+                .append('<option value="">Seleccione</option>');
+            cargarDistritos(id);
+        });
+    }
 
     $("#btnNuevaSucursal").click(() => {
         $("#formSucursal")[0].reset();
@@ -115,7 +120,82 @@ $(document).ready(function () {
         $("#modalTitulo").text("Registrar Sucursal");
 
         cargarDepartamentos();
+        vincularEventosUbigeo(); // Vincular eventos para nuevo registro
         $("#modalSucursal").modal("show");
+    });
+
+    $(document).on("click", ".activar", function () {
+        const id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Activar sucursal?",
+            text: "La sucursal volverá a estar disponible.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, activar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#28a745",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("sucursales.activar", id),
+                    type: "PATCH",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function () {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Activada",
+                            text: "La sucursal fue activada correctamente",
+                            timer: 1500,
+                            showConfirmButton: false,
+                        });
+
+                        $("#tablaSucursales")
+                            .DataTable()
+                            .ajax.reload(null, false);
+                    },
+                });
+            }
+        });
+    });
+
+    $(document).on("click", ".desactivar", function () {
+        const id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Desactivar sucursal?",
+            text: "No podrás usar esta sucursal mientras esté inactiva.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, desactivar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#dc3545",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("sucursales.desactivar", id),
+                    type: "PATCH",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function () {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Desactivada",
+                            text: "La sucursal fue desactivada correctamente",
+                            timer: 1500,
+                            showConfirmButton: false,
+                        });
+
+                        $("#tablaSucursales")
+                            .DataTable()
+                            .ajax.reload(null, false);
+                    },
+                });
+            }
+        });
     });
 
     $("#formSucursal").submit(function (e) {
@@ -154,6 +234,16 @@ $(document).ready(function () {
         const id = $(this).data("id");
 
         $.get(route("sucursales.detalle", id), function (data) {
+            console.log("Datos recibidos:", data);
+            console.log(
+                "DEP:",
+                data.departamento_id,
+                "PROV:",
+                data.provincia_id,
+                "DIST:",
+                data.distrito_id
+            );
+
             $("#sucursal_id").val(data.id);
             $('input[name="nombre_comercial"]').val(data.nombre_comercial);
             $('input[name="direccion"]').val(data.direccion);
@@ -161,17 +251,24 @@ $(document).ready(function () {
 
             $("#modalTitulo").text("Editar Sucursal");
 
+            const departamentoId =
+                data.distrito?.provincia?.departamento_id ?? null;
+            const provinciaId = data.distrito?.provincia_id ?? null;
+            const distritoId = data.distrito_id ?? null;
+
             cargarDepartamentos(data.departamento_id, function () {
                 cargarProvincias(
                     data.departamento_id,
                     data.provincia_id,
                     function () {
                         cargarDistritos(data.provincia_id, data.distrito_id);
+                        vincularEventosUbigeo();
+                        setTimeout(() => {
+                            $("#modalSucursal").modal("show");
+                        }, 70);
                     }
                 );
             });
-
-            $("#modalSucursal").modal("show");
         });
     });
 

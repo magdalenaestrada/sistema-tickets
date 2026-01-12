@@ -10,7 +10,6 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
     /**
@@ -19,10 +18,18 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'persona_id',
+        'username',
         'email',
         'password',
+        'numero_licencia',
+        'tipo_licencia_id',
+        'sucursal_id',
+        'documento',
+        'estado',
+        'fecha_creacion',
     ];
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -57,8 +64,18 @@ class User extends Authenticatable
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
-      public function caja()
+    public function caja()
     {
         return $this->hasOne(Caja::class, 'usuario_id');
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(
+            Role::class,
+            'user_has_roles',
+            'user_id',
+            'role_id'
+        );
     }
 }

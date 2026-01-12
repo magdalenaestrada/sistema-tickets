@@ -169,7 +169,7 @@
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <label class="form-label">SUCURSAL ORIGEN</label>
-                                <select id="origen" class="form-select" name="origen" disabled>
+                                <select id="origen" class="form-select" name="origen">
                                     <option value="" disabled>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
                                         <option value="{{ $s->id }}"

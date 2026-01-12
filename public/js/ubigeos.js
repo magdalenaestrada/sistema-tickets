@@ -1,13 +1,11 @@
 
 $(document).ready(function () {
-    // Cargar departamentos al iniciar
     $.get(route('ubigeos.departamentos'), function (departamentos) {
         const $select = $('#departamento_id');
         $select.empty().append('<option value="">Seleccione</option>');
         departamentos.forEach(d => $select.append(`<option value="${d.id}">${d.nombre}</option>`));
     });
 
-    // Al cambiar departamento → cargar provincias
     $('#departamento_id').change(function () {
         const id = $(this).val();
         $('#provincia_id').empty().append('<option value="">Seleccione</option>');
@@ -19,7 +17,6 @@ $(document).ready(function () {
         });
     });
 
-    // Al cambiar provincia → cargar distritos
     $('#provincia_id').change(function () {
         const id = $(this).val();
         $('#distrito_id').empty().append('<option value="">Seleccione</option>');

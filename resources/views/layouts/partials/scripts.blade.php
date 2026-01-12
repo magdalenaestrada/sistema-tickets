@@ -12,5 +12,5 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script src="{{ asset('js/global.js') }}"></script>
-<script src="{{ asset('js/ubigeos.js') }}"></script>
-<script src="{{ asset('js/filtro_ubigeo_sucursal.js') }}"></script>
+{{-- <script src="{{ asset('js/ubigeos.js') }}"></script>
+<script src="{{ asset('js/filtro_ubigeo_sucursal.js') }}"></script> --}}

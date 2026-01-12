@@ -24,7 +24,7 @@ class ReportesController extends Controller
     // Página de filtros
     public function index()
     {
-        $sucursales = Sucursal::all();
+        $sucursales = Sucursal::where('estado', 'A')->get();
         $metodosPago = MetodoPago::all();
         $vehiculos = TipoVehiculo::all();
         $tipos_documento = TipoDocumentoFactura::all();

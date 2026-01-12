@@ -10,4 +10,8 @@ Route::middleware(['auth'])->prefix('sucursales')->name('sucursales.')->group(fu
     Route::get('/show/{sucursal}', [SucursalController::class, 'show'])->name('show');
     Route::put('/{sucursal}', [SucursalController::class, 'actualizar'])->name('actualizar');
     Route::get('/detalle/{id}', [SucursalController::class, 'show'])->name('detalle');
+    Route::patch('/{sucursal}/activar', [SucursalController::class, 'activar'])
+        ->name('activar');
+    Route::patch('/{sucursal}/desactivar', [SucursalController::class, 'desactivar'])
+        ->name('desactivar');
 });

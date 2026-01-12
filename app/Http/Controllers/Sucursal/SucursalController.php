@@ -24,16 +24,34 @@ class SucursalController extends Controller
             ->addColumn('empresa', fn($row) => $row->empresa->razon_social ?? '-')
             ->addColumn('distrito', fn($row) => $row->distrito->nombre ?? '-')
             ->addColumn('acciones', function ($sucursal) {
-                return '
-       
-        <button class="btn btn-warning btn-xs editar" data-id="' . $sucursal->id . '">
-            <i class="link-icon" data-lucide="pen"></i>
-        </button>
-         <button class="btn btn-xs ver" data-id="' . $sucursal->id . '">
+
+                $acciones = '
+        <button class="btn btn-xs ver" data-id="' . $sucursal->id . '">
             <i class="link-icon" data-lucide="info"></i>
         </button>
     ';
+
+                if ($sucursal->estado === 'A') {
+                    $acciones .= '
+            <button class="btn btn-warning btn-xs editar" data-id="' . $sucursal->id . '">
+                <i class="link-icon" data-lucide="pen"></i>
+            </button>
+
+            <button class="btn btn-danger btn-xs desactivar" data-id="' . $sucursal->id . '">
+                <i class="link-icon" data-lucide="power-off"></i>
+            </button>
+        ';
+                } else {
+                    $acciones .= '
+            <button class="btn btn-success btn-xs activar" data-id="' . $sucursal->id . '">
+                <i class="link-icon" data-lucide="circle-power"></i>
+            </button>
+        ';
+                }
+
+                return $acciones;
             })
+
             ->rawColumns(['acciones'])
             ->make(true);
     }
@@ -53,13 +71,37 @@ class SucursalController extends Controller
     }
     public function show($id)
     {
-        $sucursal = Sucursal::with(['empresa', 'distrito'])->findOrFail($id);
+        $sucursal = Sucursal::with('distrito.provincia.departamento')
+            ->findOrFail($id);
 
-        return response()->json($sucursal);
+        return response()->json([
+            'id' => $sucursal->id,
+            'nombre_comercial' => $sucursal->nombre_comercial,
+            'direccion' => $sucursal->direccion,
+            'telefono' => $sucursal->telefono,
+
+            'distrito_id' => $sucursal->distrito_id,
+            'provincia_id' => optional($sucursal->distrito)->provincia_id,
+            'departamento_id' => optional(
+                optional($sucursal->distrito)->provincia
+            )->departamento_id,
+        ]);
     }
+
     public function actualizar(Request $request, Sucursal $sucursal)
     {
         $sucursal->update($request->all());
+        return response()->json(['success' => true]);
+    }
+    public function activar(Sucursal $sucursal)
+    {
+        $sucursal->update(['estado' => 'A']);
+        return response()->json(['success' => true]);
+    }
+
+    public function desactivar(Sucursal $sucursal)
+    {
+        $sucursal->update(['estado' => 'I']);
         return response()->json(['success' => true]);
     }
 }

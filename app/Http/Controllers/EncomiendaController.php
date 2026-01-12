@@ -27,7 +27,10 @@ class EncomiendaController extends Controller
 {
     public function index_no_asignadas()
     {
-        $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
+        $sucursales = Sucursal::where('estado', 'A')
+    ->select('id', 'nombre_comercial')
+    ->orderBy('nombre_comercial')
+    ->get();;
         $asignaciones = AsignarHorario::with('horario')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
 
@@ -36,7 +39,10 @@ class EncomiendaController extends Controller
 
     public function index_asignadas()
     {
-        $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
+        $sucursales = Sucursal::where('estado', 'A')
+    ->select('id', 'nombre_comercial')
+    ->orderBy('nombre_comercial')
+    ->get();;
         $asignaciones = AsignarHorario::with('horario')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
 
@@ -51,7 +57,10 @@ class EncomiendaController extends Controller
         $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
         $metodos_pago = MetodoPago::all();
-        $sucursales = Sucursal::select('id', 'nombre_comercial')->get();
+        $sucursales = Sucursal::where('estado', 'A')
+    ->select('id', 'nombre_comercial')
+    ->orderBy('nombre_comercial')
+    ->get();;
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();

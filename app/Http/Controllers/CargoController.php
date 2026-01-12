@@ -20,9 +20,6 @@ class CargoController extends Controller
         return DataTables::of($cargos)
             ->addColumn('acciones', function ($cargo) {
                 return '
-                    <button class="btn btn-secondary btn-xs ver" data-id="' . $cargo->id . '">
-                        <i class="link-icon" data-lucide="info"></i> 
-                    </button>
                      <button class="btn btn-danger btn-xs eliminar" data-id="' . $cargo->id . '">
             <i class="link-icon" data-lucide="trash-2"></i> 
         </button>

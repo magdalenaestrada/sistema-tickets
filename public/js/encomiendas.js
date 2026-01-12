@@ -1,4 +1,32 @@
 $(function () {
+    filtrarOrigenDestino();
+    actualizarResumen();
+
+    function filtrarOrigenDestino() {
+        const origen = $("#origen").val();
+        const destino = $("#destino").val();
+        $("#origen option, #destino option").show();
+        if (origen) {
+            $("#destino option[value='" + origen + "']").hide();
+        }
+        if (destino) {
+            $("#origen option[value='" + destino + "']").hide();
+        }
+        if (origen && destino && origen === destino) {
+            $("#destino").val("");
+        }
+    }
+
+    $("#origen").on("change", function () {
+        filtrarOrigenDestino();
+        actualizarResumen();
+    });
+
+    $("#destino").on("change", function () {
+        filtrarOrigenDestino();
+        actualizarResumen();
+    });
+
     let tabla = $("#tablaEncomiendas").DataTable({
         ajax: route("encomiendas.datatable.no-asignadas"),
 

@@ -63,7 +63,7 @@ $(document).ready(function () {
 
     // Cargar listas de selects
     function cargarListasEmpleado(callback = null) {
-        $.get("/listas", function (res) {
+        $.get(route("listas.all"), function (res) {
             const fillSelect = (
                 selector,
                 items,
@@ -86,12 +86,17 @@ $(document).ready(function () {
                 "Seleccione una sucursal",
                 "nombre_comercial"
             );
+            const tiposPermitidos = res.tipos_documento.filter(
+                (t) => t.id != 2
+            );
+
             fillSelect(
                 "#tipo_documento_id",
-                res.tipos_documento,
+                tiposPermitidos,
                 "Seleccione",
                 "codigo"
             );
+
             fillSelect("#tipo_licencia_id", res.tipos_licencia, "Seleccione");
 
             if (callback) callback();
@@ -113,7 +118,7 @@ $(document).ready(function () {
             .html('<i data-lucide="search"></i>');
         lucide.createIcons();
 
-        $.getJSON(`/buscar/?documento=${documento}`)
+        $.getJSON(route("buscar.buscar", { documento }))
             .done((data) => {
                 if (data.error)
                     return Swal.fire(
@@ -167,7 +172,6 @@ $(document).ready(function () {
             });
     });
 
-    // Toggle password
     $("#togglePassword").on("click", function () {
         const input = $("#password");
         const icon = $(this).find("i");
@@ -181,7 +185,24 @@ $(document).ready(function () {
         lucide.createIcons();
     });
 
-    // Validar celular solo 9 dígitos numéricos
+    $("#documento").on("input", function () {
+        this.value = this.value.replace(/\D/g, "");
+    });
+
+    $("#tipo_documento_id").on("change", function () {
+        $("#documento").val("");
+    });
+
+    $("#documento").on("input", function () {
+        const tipo = $("#tipo_documento_id").val();
+        let max = 20;
+
+        if (tipo == 1) max = 8;
+        if (tipo == 3) max = 9;
+
+        this.value = this.value.replace(/\D/g, "").slice(0, max);
+    });
+
     $("#celular").on("input", function () {
         this.value = this.value.replace(/\D/g, "").slice(0, 9);
     });
@@ -201,16 +222,25 @@ $(document).ready(function () {
     // Editar y ver empleado
     function cargarEmpleado(id, viewOnly = false) {
         cargarListasEmpleado(() => {
-            $.get(`/empleados/${id}`, (res) => {
+            $.get(route("empleados.mostrar", id), (res) => {
                 const persona = res.persona ?? {};
                 $("#empleado_id").val(res.id);
-                $("#documento").val(persona.documento ?? "");
                 $("#nombres").val(persona.nombres ?? "");
                 $("#apellidos").val(persona.apellidos ?? "");
                 $("#correo").val(persona.correo ?? "");
                 $("#telefono").val(persona.telefono ?? "");
                 $("#celular").val(persona.celular ?? "");
                 $("#direccion").val(persona.direccion ?? "");
+                $("#fecha_nacimiento").val(persona.fecha_nacimiento ?? "");
+                $("#tipo_documento_id")
+                    .val(persona.tipo_documento_id ?? "")
+                    .trigger("change");
+                $("#documento").val(persona.documento ?? "");
+
+                $("#fecha_ingreso").val(
+                    res.fecha_ingreso ? res.fecha_ingreso.substring(0, 10) : ""
+                );
+
                 cargarUbicacionPorIds(
                     persona.departamento_id ??
                         persona.distrito?.provincia?.departamento_id ??
@@ -221,11 +251,13 @@ $(document).ready(function () {
                     persona.distrito_id ?? null
                 );
 
-                $("#sucursal_id").val(res.sucursal_id ?? "");
-                $("#cargo_id").val(res.cargo_id ?? "");
-                $("#tipo_licencia_id").val(res.tipo_licencia_id ?? "");
-                toggleConductor(res.cargo_id, res.cargo?.descripcion ?? "");
+                $("#sucursal_id").val(res.sucursal_id).trigger("change");
+                $("#cargo_id").val(res.cargo_id).trigger("change");
+                $("#tipo_licencia_id")
+                    .val(res.tipo_licencia_id)
+                    .trigger("change");
 
+                toggleConductor(res.cargo_id, res.cargo?.descripcion ?? "");
                 if (viewOnly) {
                     $("#formEmpleado")
                         .find("input, select, textarea")
@@ -243,7 +275,6 @@ $(document).ready(function () {
                     $("#btnGuardar").removeClass("d-none");
                     $("#btnCerrarModal").addClass("d-none").hide();
                 }
-
                 modal.show();
                 lucide.createIcons();
             });
@@ -291,7 +322,7 @@ $(document).ready(function () {
             return;
         }
 
-        $.post("/empleados/guardar", $(this).serialize())
+        $.post(route("empleados.guardar"), $(this).serialize())
             .done((res) => {
                 if (res.success) {
                     Swal.fire({

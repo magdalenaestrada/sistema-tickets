@@ -27,7 +27,8 @@
                         <div class="col-md-3">
                             <label class="form-label">Documento</label>
                             <div class="input-group">
-                                <input type="text" name="documento" id="documento" class="form-control" required>
+                                <input type="text" name="documento" id="documento" class="form-control" required
+                                    inputmode="numeric" autocomplete="off">
                                 <button type="button" id="btnBuscarDocumento" class="btn btn-outline-primary">
                                     <i class="link-icon" data-lucide="search"></i>
                                 </button>
@@ -139,18 +140,17 @@
                         </div>
 
                         <div class="form-check mb-3">
-                            <input type="checkbox" id="chkUsuario" class="form-check-input">
+                            <input type="checkbox" id="chkUsuario" name="chkUsuario" class="form-check-input">
                             <label for="chkUsuario" class="form-check-label">¿Tendrá usuario?</label>
                         </div>
-
                         <div id="seccionUsuario" hidden>
                             <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-4 mb-3">
                                     <label for="usuario" class="form-label">Usuario</label>
                                     <input type="text" id="usuario" name="usuario" class="form-control"
                                         autocomplete="off">
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-4 mb-3">
                                     <label for="password" class="form-label">Contraseña</label>
                                     <div class="input-group">
                                         <input type="password" id="password" name="password" class="form-control"
@@ -160,12 +160,20 @@
                                         </button>
                                     </div>
                                 </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="rol_id" class="form-label">Rol</label>
+                                    <select id="rol_id" name="rol_id" class="form-select" required>
+                                        <option value="">Seleccione un rol</option>
+                                        @foreach ($roles as $rol)
+                                            <option value="{{ $rol->id }}">{{ $rol->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">
                     <i data-lucide="x"></i> Cerrar

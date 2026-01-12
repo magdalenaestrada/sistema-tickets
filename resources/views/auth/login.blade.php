@@ -1,68 +1,70 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div class="card shadow-lg p-6 sm:p-8 bg-white rounded-lg" style="max-width:420px">
+    <div class="min-vh-100 d-flex align-items-center justify-content-center">
+        <div class="card shadow-lg p-4 bg-white rounded-lg" style="max-width:420px; width:100%">
 
-        {{-- LOGO --}}
-        <div class="text-center mb-4">
-            @if ($empresaGlobal && $empresaGlobal->logo)
-                <img src="{{ asset('storage/' . $empresaGlobal->logo) }}" alt="Logo" style="height:70px">
-            @else
-                <h4 class="fw-bold">Mi Empresa</h4>
+            {{-- LOGO --}}
+            <div class="text-center mb-4">
+                @if ($empresaGlobal && $empresaGlobal->logo)
+                    <img src="{{ asset('storage/' . $empresaGlobal->logo) }}" alt="Logo" style="height:70px">
+                @else
+                    <h4 class="fw-bold">Mi Empresa</h4>
+                @endif
+            </div>
+            {{-- MENSAJE GENERAL DE ERROR --}}
+            @if ($errors->has('login'))
+                <div class="alert alert-danger">
+                    {{ $errors->first('login') }}
+                </div>
             @endif
-        </div>
-        {{-- MENSAJE GENERAL DE ERROR --}}
-        @if ($errors->has('login'))
-            <div class="alert alert-danger">
-                {{ $errors->first('login') }}
-            </div>
-        @endif
 
-        {{-- Session Status --}}
-        @if (session('status'))
-            <div class="alert alert-success mb-4">
-                {{ session('status') }}
-            </div>
-        @endif
+            {{-- Session Status --}}
+            @if (session('status'))
+                <div class="alert alert-success mb-4">
+                    {{ session('status') }}
+                </div>
+            @endif
 
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
+            <form method="POST" action="{{ route('login') }}">
+                @csrf
 
-            <div class="mb-3">
-                <label for="username" class="form-label">Usuario</label>
-                <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
-                    class="form-control @error('username') is-invalid @enderror">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuario</label>
+                    <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
+                        class="form-control @error('username') is-invalid @enderror">
 
-                @error('username')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="mb-4">
-                <label for="password" class="form-label">Contraseña</label>
-
-                <div class="input-group">
-                    <input id="password" type="password" name="password" required
-                        class="form-control @error('password') is-invalid @enderror">
-
-                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1">
-                        <i data-lucide="eye"></i>
-                    </button>
-
-                    @error('password')
-                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @error('username')
+                        <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
-            </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label">Contraseña</label>
+
+                    <div class="input-group">
+                        <input id="password" type="password" name="password" required
+                            class="form-control @error('password') is-invalid @enderror">
+
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1">
+                            <i data-lucide="eye"></i>
+                        </button>
+
+                        @error('password')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
 
 
-            {{-- Botón --}}
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary">
-                    Iniciar sesión
-                </button>
-            </div>
-        </form>
+                {{-- Botón --}}
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        Iniciar sesión
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 @endsection
 <script>
