@@ -1,4 +1,4 @@
- <!-- partial:partials/_navbar.html -->
+<!-- partial:partials/_navbar.html -->
  <nav class="navbar">
      <div class="navbar-content">
 
@@ -22,125 +22,87 @@
              <li class="nav-item dropdown">
                  <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button"
                      data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+
                      <i data-lucide="bell"></i>
-                     <div class="indicator">
-                         <div class="circle"></div>
-                     </div>
+
+                     @if ($notificacionesCumpleaños->count())
+                         <div class="indicator">
+                             <div class="circle"></div>
+                         </div>
+                     @endif
                  </a>
+
                  <div class="dropdown-menu p-0" aria-labelledby="notificationDropdown">
-                     <div class="px-3 py-2 d-flex align-items-center justify-content-between border-bottom">
-                         <p>6 New Notifications</p>
-                         <a href="javascript:;" class="text-secondary">Clear all</a>
+                     <div class="px-3 py-2 border-bottom">
+                         <p class="mb-0 fw-bold">
+                             {{ $notificacionesCumpleaños->count() }} Cumpleaños hoy 🎉
+                         </p>
                      </div>
+
                      <div class="p-1">
-                         <a href="javascript:;" class="dropdown-item d-flex align-items-center py-2">
-                             <div
-                                 class="w-30px h-30px d-flex align-items-center justify-content-center bg-primary rounded-circle me-3">
-                                 <i class="icon-sm text-white" data-lucide="gift"></i>
+                         @forelse($notificacionesCumpleaños as $evento)
+                             <a href="{{ route('eventos.index') }}"
+                                 class="dropdown-item d-flex align-items-center py-2">
+                                 <div class="me-3">
+                                     <i data-lucide="cake"></i>
+                                 </div>
+                                 <div>
+                                     <p class="mb-0">
+                                         Cumpleaños de
+                                         <strong>
+                                             {{ $evento->persona->razon_social ?? $evento->persona->nombres . ' ' . $evento->persona->apellidos }}
+                                         </strong>
+                                     </p>
+                                     <small class="text-muted">Hoy 🎂</small>
+                                 </div>
+                             </a>
+                         @empty
+                             <div class="px-3 py-2 text-center text-muted">
+                                 No hay cumpleaños hoy
                              </div>
-                             <div class="flex-grow-1 me-2">
-                                 <p>New Order Recieved</p>
-                                 <p class="fs-12px text-secondary">30 min ago</p>
-                             </div>
-                         </a>
-                         <a href="javascript:;" class="dropdown-item d-flex align-items-center py-2">
-                             <div
-                                 class="w-30px h-30px d-flex align-items-center justify-content-center bg-primary rounded-circle me-3">
-                                 <i class="icon-sm text-white" data-lucide="alert-circle"></i>
-                             </div>
-                             <div class="flex-grow-1 me-2">
-                                 <p>Server Limit Reached!</p>
-                                 <p class="fs-12px text-secondary">1 hrs ago</p>
-                             </div>
-                         </a>
-                         <a href="javascript:;" class="dropdown-item d-flex align-items-center py-2">
-                             <div
-                                 class="w-30px h-30px d-flex align-items-center justify-content-center bg-primary rounded-circle me-3">
-                                 <img class="w-30px h-30px rounded-circle" src="../assets/images/faces/face6.jpg"
-                                     alt="userr">
-                             </div>
-                             <div class="flex-grow-1 me-2">
-                                 <p>New customer registered</p>
-                                 <p class="fs-12px text-secondary">2 sec ago</p>
-                             </div>
-                         </a>
-                         <a href="javascript:;" class="dropdown-item d-flex align-items-center py-2">
-                             <div
-                                 class="w-30px h-30px d-flex align-items-center justify-content-center bg-primary rounded-circle me-3">
-                                 <i class="icon-sm text-white" data-lucide="layers"></i>
-                             </div>
-                             <div class="flex-grow-1 me-2">
-                                 <p>Apps are ready for update</p>
-                                 <p class="fs-12px text-secondary">5 hrs ago</p>
-                             </div>
-                         </a>
-                         <a href="javascript:;" class="dropdown-item d-flex align-items-center py-2">
-                             <div
-                                 class="w-30px h-30px d-flex align-items-center justify-content-center bg-primary rounded-circle me-3">
-                                 <i class="icon-sm text-white" data-lucide="download"></i>
-                             </div>
-                             <div class="flex-grow-1 me-2">
-                                 <p>Download completed</p>
-                                 <p class="fs-12px text-secondary">6 hrs ago</p>
-                             </div>
-                         </a>
+                         @endforelse
                      </div>
-                     <div class="px-3 py-2 d-flex align-items-center justify-content-center border-top">
-                         <a href="javascript:;">View all</a>
+
+                     <div class="border-top text-center py-2">
+                         <a href="{{ route('eventos.index') }}">Ver eventos</a>
                      </div>
                  </div>
+
              </li>
              <li class="nav-item dropdown">
                  <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button"
                      data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                     <img class="w-30px h-30px ms-1 rounded-circle" src="../assets/images/faces/face1.jpg"
-                         alt="profile">
+                     <i data-lucide="user"></i>
                  </a>
+
                  <div class="dropdown-menu p-0" aria-labelledby="profileDropdown">
-                     <div class="d-flex flex-column align-items-center border-bottom px-5 py-3">
-                         <div class="mb-3">
-                             <img class="w-80px h-80px rounded-circle" src="../assets/images/faces/face1.jpg"
-                                 alt="">
-                         </div>
+                     <div class="d-flex flex-column align-items-center border-bottom px-4 py-3">
                          <div class="text-center">
-                             <p class="fs-16px fw-bolder">Amiah Burton</p>
-                             <p class="fs-12px text-secondary">amiahburton@gmail.com</p>
+                             <p class="fw-bold mb-0">
+                                 {{ auth()->user()->persona->razon_social ??
+                                     auth()->user()->persona->nombres . ' ' . auth()->user()->persona->apellidos }}
+                             </p>
+                             <p class="fs-12px text-secondary mb-0">
+                                 {{ auth()->user()->username }}
+                             </p>
                          </div>
                      </div>
-                     <ul class="list-unstyled p-1">
+
+                     <ul class="list-unstyled p-1 mb-0">
                          <li>
-                             <a href="pages/general/profile.html" class="dropdown-item py-2 text-body ms-0">
-                                 <i class="me-2 icon-md" data-lucide="user"></i>
-                                 <span>Profile</span>
-                             </a>
-                         </li>
-                         <li>
-                             <a href="javascript:;" class="dropdown-item py-2 text-body ms-0">
-                                 <i class="me-2 icon-md" data-lucide="edit"></i>
-                                 <span>Edit Profile</span>
-                             </a>
-                         </li>
-                         <li>
-                             <a href="javascript:;" class="dropdown-item py-2 text-body ms-0">
-                                 <i class="me-2 icon-md" data-lucide="repeat"></i>
-                                 <span>Switch User</span>
-                             </a>
-                         </li>
-                         <li>
-                             <a href="{{ route('logout') }}" class="dropdown-item py-2 text-body ms-0"
+                             <a href="{{ route('logout') }}" class="dropdown-item py-2"
                                  onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                  <i class="me-2 icon-md" data-lucide="log-out"></i>
-                                 <span>Log Out</span>
+                                 Cerrar sesión
                              </a>
 
-                             <form id="logout-form" action="{{ route('logout') }}" method="POST"
-                                 style="display: none;">
+                             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                  @csrf
                              </form>
                          </li>
-
                      </ul>
                  </div>
+
              </li>
          </ul>
 

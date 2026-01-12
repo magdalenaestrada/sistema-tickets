@@ -14,9 +14,9 @@
     </div>
 
     @php
-        $gestionOpen = request()->routeIs('empresas.*', 'reportes.*');
+        $gestionOpen = request()->routeIs('empresas.*', 'reportes.*', 'clientes.*', 'usuarios.*');
 
-        $personalOpen = request()->routeIs('cargos.*', 'empleados.*', 'eventos.*', 'descuentos.*', 'clientes.*');
+        $personalOpen = request()->routeIs('cargos.*', 'empleados.*', 'eventos.*', 'descuentos.*');
 
         $vehiculosOpen = request()->routeIs('vehiculos.*', 'horarios.index');
 
@@ -65,6 +65,16 @@
                                 Reportes
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{ route('clientes.index') }}"
+                                class="nav-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}">Clientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('usuarios.index') }}"
+                                class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}">Usuarios
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </li>
@@ -91,9 +101,7 @@
                         <li class="nav-item"><a href="{{ route('descuentos.index') }}"
                                 class="nav-link {{ request()->routeIs('descuentos.*') ? 'active' : '' }}">Cupones</a>
                         </li>
-                        <li class="nav-item"><a href="{{ route('clientes.index') }}"
-                                class="nav-link {{ request()->routeIs('clientes.*') ? 'active' : '' }}">Clientes</a>
-                        </li>
+
                     </ul>
                 </div>
             </li>

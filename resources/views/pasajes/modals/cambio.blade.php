@@ -107,10 +107,11 @@
                             </div>
 
                             <div class="col-md-12 d-flex align-items-end">
-                                <button id="btnBuscarCambio" class="btn btn-primary w-100">
-                                    <i class="link-icon"></i>
+                                <button id="btnBuscarCambio" type="button" class="btn btn-primary"
+                                    onclick="buscarHorariosCambio()">
                                     Buscar horarios
                                 </button>
+
                             </div>
                         </div>
                     </div>
@@ -126,11 +127,10 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn btn-success" onclick="confirmarCambioHorario()">
+                <button type="button" class="btn btn-success" onclick="confirmarCambioHorario()">
                     Confirmar cambio
                 </button>
             </div>
-
         </div>
     </div>
 </div>

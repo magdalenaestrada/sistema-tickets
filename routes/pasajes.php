@@ -7,11 +7,12 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::get('/vendidos', [PasajeController::class, 'listarVendidos'])->name('vendidos');
     Route::get('/tabla', [PasajeController::class, 'index_busqueda'])->name('index-busqueda');
     Route::post('/guardar', [PasajeController::class, 'guardar'])->name('guardar');
-    Route::get('/horario/{horario}/asientos', [PasajeController::class, 'asientosHorario'])
-        ->name('horario.asientos');
+    Route::get('/filtrar', [PasajeController::class, 'filtrarHorarios'])->name('filtrar');
     Route::get('/vender', [PasajeController::class, 'vender'])->name('vender');
     Route::post('/reservar', [PasajeController::class, 'reservar'])->name('reservar');
     Route::get('/buscar', [PasajeController::class, 'buscarPasaje'])->name('buscar');
+    Route::get('/horario/{horario}/asientos', [PasajeController::class, 'asientosHorario'])
+        ->name('asientos');
     Route::get('/{pasaje}/cambiar-horario', [PasajeController::class, 'cambiarHorario'])->name('cambiar-horario');
     Route::post('/{pasaje}/actualizar-horario', [PasajeController::class, 'actualizarHorario'])->name('actualizar-horario');
     Route::get('/horario/{horario}/asientos-disponibles', [PasajeController::class, 'asientosDisponibles'])->name('asientos-disponibles');
@@ -19,5 +20,4 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::post('/{pasaje}/abordo', [PasajeController::class, 'abordo'])->name('abordar');
     Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('noAbordo');
     Route::get('/{pasaje}/editar', [PasajeController::class, 'editar'])->name('editar');
-    Route::get('/filtrar', [PasajeController::class, 'filtrarHorarios'])->name('filtrar');
 });

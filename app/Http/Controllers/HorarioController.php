@@ -33,22 +33,30 @@ class HorarioController extends Controller
             ->addColumn('fecha_salida', fn($h) => $h->fecha_salida->format('d-m-Y'))
             ->addColumn('destino', fn($h) => $h->punto_destino->nombre_comercial)
             ->addColumn('acciones', function ($h) {
-                return '
-                    <button class="btn btn-secondary btn-xs ver" data-id="' . $h->id . '">
-                        <i class="link-icon" data-lucide="info"></i>
-                    </button>
-                    <button class="btn btn-warning btn-xs editar" data-id="' . $h->id . '">
-                        <i class="link-icon" data-lucide="pen"></i>
-                    </button>
-                    <button class="btn btn-danger btn-xs eliminar" data-id="' . $h->id . '">
-                        <i class="link-icon" data-lucide="trash-2"></i>
-                    </button>
-                    <button class="btn btn-primary btn-xs ver-puntos" data-id="' . $h->id . '">
-    <i class="link-icon" data-lucide="map-pin-house"></i>
-</button>
 
-                ';
+                $btnPuntos = '';
+
+                if ($h->tipo_viaje_id == 2) {
+                    $btnPuntos = '
+            <button class="btn btn-primary btn-xs ver-puntos" data-id="' . $h->id . '">
+                <i class="link-icon" data-lucide="map-pin-house"></i>
+            </button>';
+                }
+
+                return '
+        <button class="btn btn-secondary btn-xs ver" data-id="' . $h->id . '">
+            <i data-lucide="info"></i>
+        </button>
+        <button class="btn btn-warning btn-xs editar" data-id="' . $h->id . '">
+            <i data-lucide="pen"></i>
+        </button>
+        <button class="btn btn-danger btn-xs eliminar" data-id="' . $h->id . '">
+            <i data-lucide="trash-2"></i>
+        </button>
+        ' . $btnPuntos . '
+    ';
             })
+
             ->rawColumns(['acciones'])
             ->make(true);
     }

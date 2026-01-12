@@ -1,9 +1,8 @@
 $(document).ready(function () {
     const modal = new bootstrap.Modal($("#modalEmpleado")[0]);
 
-    // Inicializar DataTable
     const tabla = $("#tablaEmpleados").DataTable({
-        ajax: "/empleados/datatable",
+        ajax: route("empleados.datatable"),
         columns: [
             { data: "documento", title: "Documento" },
             { data: "nombre", title: "Nombre" },
@@ -18,10 +17,10 @@ $(document).ready(function () {
         ],
         responsive: false,
         scrollX: true,
-        searching: true, 
-        paging: false, 
-        info: false, 
-        dom: 'rt',
+        searching: true,
+        paging: false,
+        info: false,
+        dom: "rt",
         lengthChange: false,
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",

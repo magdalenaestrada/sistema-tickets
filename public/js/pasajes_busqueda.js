@@ -19,9 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
             case "V":
                 return '<span class="badge bg-success">Vendido</span>';
             case "F":
-                return '<span class="badge bg-primary">Finalizado</span>';
+                return '<span class="badge bg-success">Abordó</span>';
             case "X":
-                return '<span class="badge bg-danger">Cancelado</span>';
+                return '<span class="badge bg-danger">No abordó</span>';
             default:
                 return '<span class="badge bg-dark">Desconocido</span>';
         }
@@ -59,26 +59,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     <td>${soloFecha(p.horario.fecha_salida)}</td>
                     <td>${p.horario.hora_embarque}</td>
                     <td>${badgeEstado(p.estado)}</td>
-                    <td class="text-nowrap text-center">
-                        <button class="btn btn-secondary btn-xs ver"
-                            data-url="${route("pasajes.show", p.id)}">
-                            <i data-lucide="info"></i>
-                        </button>
-                        <button class="btn btn-success btn-xs abordar"
-                            data-url="${route("pasajes.abordar", p.id)}">
-                            <i data-lucide="check"></i>
-                        </button>
+                ${botonesAcciones(p)}
 
-                        <button class="btn btn-danger btn-xs no-abordo"
-                            data-url="${route("pasajes.noAbordo", p.id)}">
-                            <i data-lucide="x"></i>
-                        </button>
-                          <button class="btn btn-warning btn-xs editar"
-                            data-url="${route("pasajes.editar", p.id)}">
-                            <i data-lucide="pen"></i>
-                        </button>
-
-                    </td>
                 </tr>`;
                     });
                 }
@@ -87,6 +69,45 @@ document.addEventListener("DOMContentLoaded", function () {
                 lucide.createIcons();
             }
         );
+    }
+
+    function botonesAcciones(p) {
+        let html = `<td class="text-nowrap text-center">`;
+
+        html += `
+        <button class="btn btn-secondary btn-xs ver"
+            data-url="${route("pasajes.show", p.id)}">
+            <i data-lucide="info"></i>
+        </button>
+    `;
+
+        if (p.estado === "R") {
+            html += `
+            <button class="btn btn-warning btn-xs editar"
+                data-url="${route("pasajes.editar", p.id)}">
+                <i data-lucide="pen"></i>
+            </button>
+        `;
+        } else if (p.estado === "V") {
+            html += `
+            <button class="btn btn-success btn-xs abordar"
+                data-url="${route("pasajes.abordar", p.id)}">
+                <i data-lucide="check"></i>
+            </button>
+
+            <button class="btn btn-danger btn-xs no-abordo"
+                data-url="${route("pasajes.noAbordo", p.id)}">
+                <i data-lucide="x"></i>
+            </button>
+
+            <button class="btn btn-warning btn-xs editar"
+                data-url="${route("pasajes.editar", p.id)}">
+                <i data-lucide="pen"></i>
+            </button>
+        `;
+        }
+        html += `</td>`;
+        return html;
     }
 
     $("#filtroDNI, #filtroFecha, #filtroOrigen, #filtroDestino").on(

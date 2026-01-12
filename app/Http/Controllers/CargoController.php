@@ -23,9 +23,6 @@ class CargoController extends Controller
                     <button class="btn btn-secondary btn-xs ver" data-id="' . $cargo->id . '">
                         <i class="link-icon" data-lucide="info"></i> 
                     </button>
-                    <button class="btn btn-warning btn-xs editar" data-id="' . $cargo->id . '">
-                        <i class="link-icon" data-lucide="pen"></i> 
-                    </button>
                      <button class="btn btn-danger btn-xs eliminar" data-id="' . $cargo->id . '">
             <i class="link-icon" data-lucide="trash-2"></i> 
         </button>
@@ -63,10 +60,10 @@ class CargoController extends Controller
     public function eliminar(Cargo $cargo)
     {
         try {
-            if ($cargo->empleados()->exists()) {
+            if ($cargo->empleados()->withTrashed()->exists()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se puede eliminar el área porque tiene empleados asociados.'
+                    'message' => 'No se puede eliminar el cargo porque está asignado a uno o más empleados.'
                 ]);
             }
 

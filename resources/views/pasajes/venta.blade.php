@@ -86,12 +86,13 @@
                                                 ¿Pasajero menor de edad?
                                             </label>
                                         </div>
-
-                                        <div class="col-md-6">
+                                        <div class="col-md-6 autorizacion-container"
+                                            id="autorizacion_container_{{ $index }}" style="display:none;">
                                             <label class="form-label">Autorización PDF</label>
                                             <input type="file" accept=".pdf" class="form-control"
                                                 id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
                                         </div>
+
                                     </div>
 
                                 </div>

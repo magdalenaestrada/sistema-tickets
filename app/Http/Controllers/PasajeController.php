@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BilleteraDigital;
+use App\Models\Cliente;
 use App\Models\Pasaje;
 use App\Models\Persona;
 use App\Models\Horario;
@@ -72,8 +73,7 @@ class PasajeController extends Controller
             'persona',
             'horario.punto_origen',
             'horario.punto_destino'
-        ])
-            ->where('estado', 'V');
+        ])->orderBy('created_at', 'desc');
 
         if ($request->dni) {
             $query->whereHas('persona', function ($q) use ($request) {
@@ -100,6 +100,13 @@ class PasajeController extends Controller
         }
 
         return response()->json($query->get());
+    }
+    protected function registrarCliente($personaId)
+    {
+        Cliente::firstOrCreate([
+            'user_id' => Auth::id(),
+            'persona_id' => $personaId,
+        ]);
     }
 
     public function index()
@@ -161,7 +168,6 @@ class PasajeController extends Controller
             $precioPasaje = $horario->costo_pasaje ?? 0;
             $descuento = $request->descuento[$i] ?? 0;
 
-            // Usar el método específico para pasajes
             $ventaData = $this->ventaService->crearVentaPasaje(
                 $horario,
                 $asiento,
@@ -178,7 +184,6 @@ class PasajeController extends Controller
                     'venta_id' => $venta_id,
                 ]);
 
-                // 🔥 AGREGAR ESTO PARA GENERAR PAGO
                 if ($ventaData) {
                     $pagoData = [];
 
@@ -293,6 +298,9 @@ class PasajeController extends Controller
 
                         ]
                     );
+
+                    $this->registrarCliente( $persona->id);
+
 
                     $this->crearPasajeMultiple(
                         $request,
@@ -449,7 +457,6 @@ class PasajeController extends Controller
         ]);
 
         try {
-            // Verificar que el asiento no esté ocupado
             $existe = Pasaje::where('horario_id', $request->horario_id)
                 ->where('asiento_numero', $request->asiento_numero)
                 ->exists();
@@ -463,7 +470,6 @@ class PasajeController extends Controller
 
             $persona = null;
 
-            // Crear persona solo si hay datos
             if ($request->has('persona.documento') && !empty($request->input('persona.documento'))) {
                 $persona = Persona::updateOrCreate(
                     ['documento' => $request->input('persona.documento')],
@@ -478,13 +484,12 @@ class PasajeController extends Controller
                         'fecha_creacion' => now(),
                     ]
                 );
+                $this->registrarCliente($persona->id);
 
-                Log::info("Persona creada/actualizada:", ['id' => $persona->id, 'documento' => $persona->documento]);
             } else {
                 Log::info("Reserva sin datos de persona");
             }
 
-            // Crear el pasaje (reserva)
             $pasaje = Pasaje::create([
                 'usuario_id' => Auth::id(),
                 'horario_id' => $request->horario_id,

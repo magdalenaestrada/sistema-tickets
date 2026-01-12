@@ -235,17 +235,14 @@ $(function () {
 
     refrescarPagos();
 
-    // Buscar documento automáticamente cuando el usuario sale del input
     $("[id^='documento_']").on("blur", function () {
         const input = $(this);
         const documento = input.val().trim();
 
         if (!documento) return;
 
-        // obtener el index desde el id (documento_0, documento_1, etc.)
         const index = input.attr("id").split("_")[1];
 
-        // loader mientras consulta
         input.prop("disabled", true);
         input.addClass("loading-input");
 
@@ -260,20 +257,30 @@ $(function () {
                     return;
                 }
 
+                let nombreCompleto = "";
+
                 if (data.razon_social) {
-                    // Empresa
                     $(`#nombres_${index}`).val(data.razon_social);
                     $(`#apellidos_${index}`).val("");
                     $(`#correo_${index}`).val(data.direccion || "");
+
+                    nombreCompleto = data.razon_social;
                 } else {
-                    // Persona
                     $(`#nombres_${index}`).val(data.nombres || "");
-                    $(`#apellidos_${index}`).val(
-                        `${data.apellido_paterno || ""} ${
-                            data.apellido_materno || ""
-                        }`.trim()
-                    );
+                    const apellidos = `${data.apellido_paterno || ""} ${
+                        data.apellido_materno || ""
+                    }`.trim();
+                    $(`#apellidos_${index}`).val(apellidos);
                     $(`#correo_${index}`).val(data.direccion || "");
+
+                    nombreCompleto = `${
+                        data.nombres || ""
+                    } ${apellidos}`.trim();
+                }
+
+                if (index == 0) {
+                    $("#numero_documento_id").val(documento);
+                    $("#razon_social").val(nombreCompleto);
                 }
             })
             .fail(() => {
@@ -374,5 +381,20 @@ $(function () {
                 Swal.fire("Error", "Error al actualizar el pasaje", "error");
             },
         });
+    });
+
+    $("[id^='pasajero_menor_']").on("change", function () {
+        const index = this.id.split("_")[2];
+        const container = $(`#autorizacion_container_${index}`);
+        const fileInput = $(`#autorizacion_pdf_${index}`);
+
+        if (this.checked) {
+            container.slideDown();
+            fileInput.prop("required", true);
+        } else {
+            container.slideUp();
+            fileInput.prop("required", false);
+            fileInput.val(""); // limpia el archivo
+        }
     });
 });

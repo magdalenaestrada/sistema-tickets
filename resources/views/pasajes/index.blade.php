@@ -25,7 +25,7 @@
 @section('content')
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Gestión de pasajes</h5>
+            <h5 class="mb-0">Venta de pasajes</h5>
         </div>
 
         <div class="card-body">
@@ -35,34 +35,26 @@
                     <input type="date" id="filtro_fecha" class="form-control">
                 </div>
 
-                <div class="col-md-3">
-                    <label>Punto de origen:</label>
-                    <select id="filtro_origen" class="form-control">
-                        <option value="">-- Todos --</option>
-                        @foreach ($puntos_origen as $origen)
-                            <option value="{{ $origen->id }}">{{ $origen->nombre_comercial }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-md-4">
+                    <label>Buscar origen:</label>
+                    <input type="text" id="filtro_origen" class="form-control" placeholder="Ej: Lima">
                 </div>
 
-                <div class="col-md-3">
-                    <label>Punto de destino:</label>
-                    <select id="filtro_destino" class="form-control">
-                        <option value="">-- Todos --</option>
-                        @foreach ($puntos_destino as $destino)
-                            <option value="{{ $destino->id }}">{{ $destino->nombre_comercial }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-md-4">
+                    <label>Buscar destino:</label>
+                    <input type="text" id="filtro_destino" class="form-control" placeholder="Ej: Cusco">
                 </div>
             </div>
-
             <div class="container mt-4">
                 <div class="row">
                     <div class="col-md-8">
                         <div class="row">
                             @foreach ($horarios as $horario)
                                 <div class="col-md-6 mb-3">
-                                    <div class="card horario-card" data-horario-id="{{ $horario->id }}">
+                                    <div class="card horario-card" data-horario-id="{{ $horario->id }}"
+                                        data-origen="{{ strtolower($horario->punto_origen->nombre_comercial) }}"
+                                        data-destino="{{ strtolower($horario->punto_destino->nombre_comercial) }}"
+                                        data-fecha="{{ $horario->fecha_salida->format('Y-m-d') }}">
                                         <div class="card-body">
                                             @php
                                                 $capacidad = $horario->tipo_vehiculo->capacidad;
