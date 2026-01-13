@@ -268,17 +268,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Función para filtrar horarios localmente
     function filtrarHorarios() {
         let fecha = $("#filtro_fecha").val();
         let origen = $("#filtro_origen").val().toLowerCase().trim();
         let destino = $("#filtro_destino").val().toLowerCase().trim();
 
-        // Limpiar cards actuales y mensajes previos
         $(".row .col-md-6.mb-3").remove();
         $(".row .col-md-12").remove();
 
-        // Limpiar el SVG y resetear estado
         svgContainer.innerHTML =
             "<p>Seleccione un horario para ver los asientos.</p>";
         selectedSeats = [];
@@ -287,7 +284,6 @@ document.addEventListener("DOMContentLoaded", function () {
         updateSellButton();
         updateEditButton();
 
-        // Buscar el contenedor correcto (el que está dentro de col-md-8)
         let contenedor = $(".col-md-8 .row").first();
 
         let cardsFiltradas = todasLasCards.filter((card) => {
@@ -308,17 +304,14 @@ document.addEventListener("DOMContentLoaded", function () {
             cardsFiltradas.forEach((card) => {
                 contenedor.append(card.element.cloneNode(true));
             });
-            // Re-aplicar eventos a las cards filtradas
             attachCardEvents();
         }
     }
 
-    // Filtrar al hacer blur (cuando se hace clic fuera del input)
     $("#filtro_fecha, #filtro_origen, #filtro_destino").on("blur", function () {
         filtrarHorarios();
     });
 
-    // Filtrar al presionar Enter
     $("#filtro_origen, #filtro_destino").on("keypress", function (e) {
         if (e.which === 13) {
             filtrarHorarios();
@@ -326,7 +319,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Filtrar automáticamente al cambiar fecha
     $("#filtro_fecha").on("change", function () {
         filtrarHorarios();
     });

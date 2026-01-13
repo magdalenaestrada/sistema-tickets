@@ -10,6 +10,14 @@ use App\Models\Sucursal;
 
 class UbigeoController extends Controller
 {
+
+    public function todo()
+    {
+        return response()->json(
+            Departamento::with('provincias.distritos')->get()
+        );
+    }
+
     public function getDepartamentos()
     {
         return response()->json(

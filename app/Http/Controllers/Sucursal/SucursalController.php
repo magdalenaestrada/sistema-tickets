@@ -101,7 +101,34 @@ class SucursalController extends Controller
 
     public function desactivar(Sucursal $sucursal)
     {
+        // Empleados activos
+        $empleadosActivos = $sucursal->empleados()
+            ->where('estado', 'A')
+            ->exists();
+
+        if ($empleadosActivos) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede desactivar la sucursal porque tiene empleados activos.'
+            ], 422);
+        }
+
+        $usuariosActivos = $sucursal->usuarios()
+            ->where('estado', 'A')
+            ->exists();
+
+        if ($usuariosActivos) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede desactivar la sucursal porque tiene usuarios activos.'
+            ], 422);
+        }
+
         $sucursal->update(['estado' => 'I']);
-        return response()->json(['success' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sucursal desactivada correctamente.'
+        ]);
     }
 }

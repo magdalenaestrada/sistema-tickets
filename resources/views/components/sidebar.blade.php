@@ -15,7 +15,7 @@
 
     @php
         $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*');
-        $maestrosOpen = request()->routeIs('cargos.*', 'tipo-encomienda.*', 'roles.*', 'permisos.*');
+        $maestrosOpen = request()->routeIs('cargos.*', 'tipo-encomienda.*');
 
         $personalOpen = request()->routeIs('eventos.*');
 
@@ -143,14 +143,6 @@
                     <ul class="nav sub-menu">
                         <li class="nav-item"><a href="{{ route('cargos.index') }}"
                                 class="nav-link {{ request()->routeIs('cargos.*') ? 'active' : '' }}">Cargos
-                            </a>
-                        </li>
-                        <li class="nav-item"><a href="{{ route('roles.index') }}"
-                                class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }}">Roles
-                            </a>
-                        </li>
-                        <li class="nav-item"><a href="{{ route('permisos.index') }}"
-                                class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}">Permisos
                             </a>
                         </li>
                         <li class="nav-item">

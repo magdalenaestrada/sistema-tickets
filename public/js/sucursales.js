@@ -3,8 +3,11 @@ $.ajaxSetup({
         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
     },
 });
+let UBIGEO = null;
+$(document).ready(async function () {
+    UBIGEO = await $.get(route("ubigeos.todo"));
+    cargarSelectDepartamentos();
 
-$(document).ready(function () {
     let tabla = $("#tablaSucursales").DataTable({
         ajax: route("sucursales.datatable", EMPRESA_ID),
         columns: [
@@ -29,89 +32,54 @@ $(document).ready(function () {
             lucide.createIcons();
         },
     });
-    function cargarDepartamentos(selected = null, callback = null) {
-        $.get(route("ubigeos.departamentos"), function (departamentos) {
-            let $select = $("#departamento_id");
-            $select.empty().append('<option value="">Seleccione</option>');
 
-            departamentos.forEach((d) =>
-                $select.append(`<option value="${d.id}">${d.nombre}</option>`)
-            );
+    function cargarSelectDepartamentos() {
+        const $dep = $("#departamento_id");
+        $dep.empty().append('<option value="">Seleccione</option>');
 
-            if (selected) {
-                $select.val(String(selected)).trigger("change");
-            }
+        UBIGEO.forEach((dep) => {
+            $dep.append(`<option value="${dep.id}">${dep.nombre}</option>`);
+        });
+    }
+    function cargarSelectProvincias(depId) {
+        const $prov = $("#provincia_id");
+        $prov.empty().append('<option value="">Seleccione</option>');
 
-            if (callback) callback();
+        const dep = UBIGEO.find((d) => d.id == depId);
+        if (!dep) return;
+
+        dep.provincias.forEach((p) => {
+            $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
+        });
+    }
+    function cargarSelectDistritos(depId, provId) {
+        const $dist = $("#distrito_id");
+        $dist.empty().append('<option value="">Seleccione</option>');
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        const prov = dep?.provincias.find((p) => p.id == provId);
+        if (!prov) return;
+
+        prov.distritos.forEach((d) => {
+            $dist.append(`<option value="${d.id}">${d.nombre}</option>`);
         });
     }
 
-    function cargarProvincias(
-        departamento_id,
-        selected = null,
-        callback = null
-    ) {
-        if (!departamento_id) return;
+    $("#departamento_id").on("change", function () {
+        cargarSelectProvincias(this.value);
+        $("#distrito_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+    });
 
-        $.get(
-            route("ubigeos.provincias", departamento_id),
-            function (provincias) {
-                let $select = $("#provincia_id");
-                $select.empty().append('<option value="">Seleccione</option>');
+    $("#provincia_id").on("change", function () {
+        cargarSelectDistritos($("#departamento_id").val(), this.value);
+    });
 
-                provincias.forEach((p) =>
-                    $select.append(
-                        `<option value="${p.id}">${p.nombre}</option>`
-                    )
-                );
-
-                if (selected) {
-                    $select.val(String(selected)).trigger("change");
-                }
-
-                if (callback) callback();
-            }
-        );
-    }
-    function cargarDistritos(provincia_id, selected = null) {
-        if (!provincia_id) return;
-
-        $.get(route("ubigeos.distritos", provincia_id), function (distritos) {
-            let $select = $("#distrito_id");
-            $select.empty().append('<option value="">Seleccione</option>');
-
-            distritos.forEach((d) =>
-                $select.append(`<option value="${d.id}">${d.nombre}</option>`)
-            );
-
-            if (selected) {
-                $select.val(String(selected));
-            }
-        });
-    }
-
-    function vincularEventosUbigeo() {
-        $("#departamento_id").off("change");
-        $("#provincia_id").off("change");
-
-        $("#departamento_id").on("change", function () {
-            const id = $(this).val();
-            $("#provincia_id")
-                .empty()
-                .append('<option value="">Seleccione</option>');
-            $("#distrito_id")
-                .empty()
-                .append('<option value="">Seleccione</option>');
-            cargarProvincias(id);
-        });
-
-        $("#provincia_id").on("change", function () {
-            const id = $(this).val();
-            $("#distrito_id")
-                .empty()
-                .append('<option value="">Seleccione</option>');
-            cargarDistritos(id);
-        });
+    function setUbigeo(depId, provId, distId) {
+        $("#departamento_id").val(depId).trigger("change");
+        $("#provincia_id").val(provId).trigger("change");
+        $("#distrito_id").val(distId);
     }
 
     $("#btnNuevaSucursal").click(() => {
@@ -119,8 +87,14 @@ $(document).ready(function () {
         $("#sucursal_id").val("");
         $("#modalTitulo").text("Registrar Sucursal");
 
-        cargarDepartamentos();
-        vincularEventosUbigeo(); // Vincular eventos para nuevo registro
+        cargarSelectDepartamentos();
+        $("#provincia_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+        $("#distrito_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+
         $("#modalSucursal").modal("show");
     });
 
@@ -193,6 +167,21 @@ $(document).ready(function () {
                             .DataTable()
                             .ajax.reload(null, false);
                     },
+                    error: function (xhr) {
+                        if (xhr.status === 422) {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "No permitido",
+                                text: xhr.responseJSON.message,
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: "Ocurrió un error inesperado",
+                            });
+                        }
+                    },
                 });
             }
         });
@@ -230,46 +219,21 @@ $(document).ready(function () {
         });
     });
 
-    $("#tablaSucursales").on("click", ".editar", function () {
+    $("#tablaSucursales").on("click", ".editar", async function () {
         const id = $(this).data("id");
 
-        $.get(route("sucursales.detalle", id), function (data) {
-            console.log("Datos recibidos:", data);
-            console.log(
-                "DEP:",
-                data.departamento_id,
-                "PROV:",
-                data.provincia_id,
-                "DIST:",
-                data.distrito_id
-            );
+        const data = await $.get(route("sucursales.detalle", id));
 
-            $("#sucursal_id").val(data.id);
-            $('input[name="nombre_comercial"]').val(data.nombre_comercial);
-            $('input[name="direccion"]').val(data.direccion);
-            $('input[name="telefono"]').val(data.telefono);
+        $("#sucursal_id").val(data.id);
+        $('input[name="nombre_comercial"]').val(data.nombre_comercial);
+        $('input[name="direccion"]').val(data.direccion);
+        $('input[name="telefono"]').val(data.telefono);
 
-            $("#modalTitulo").text("Editar Sucursal");
+        $("#modalTitulo").text("Editar Sucursal");
 
-            const departamentoId =
-                data.distrito?.provincia?.departamento_id ?? null;
-            const provinciaId = data.distrito?.provincia_id ?? null;
-            const distritoId = data.distrito_id ?? null;
+        setUbigeo(data.departamento_id, data.provincia_id, data.distrito_id);
 
-            cargarDepartamentos(data.departamento_id, function () {
-                cargarProvincias(
-                    data.departamento_id,
-                    data.provincia_id,
-                    function () {
-                        cargarDistritos(data.provincia_id, data.distrito_id);
-                        vincularEventosUbigeo();
-                        setTimeout(() => {
-                            $("#modalSucursal").modal("show");
-                        }, 70);
-                    }
-                );
-            });
-        });
+        $("#modalSucursal").modal("show");
     });
 
     $("#tablaSucursales").on("click", ".ver", function () {

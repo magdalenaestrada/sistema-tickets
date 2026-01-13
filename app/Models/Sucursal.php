@@ -27,5 +27,13 @@ class Sucursal extends Model
     {
         return $this->belongsTo(Distrito::class);
     }
-}
+    public function empleados()
+    {
+        return $this->hasMany(Empleado::class, 'sucursal_id');
+    }
 
+    public function usuarios()
+    {
+        return $this->hasMany(User::class, 'sucursal_id');
+    }
+}

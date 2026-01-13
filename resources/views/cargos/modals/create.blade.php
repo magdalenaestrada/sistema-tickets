@@ -16,6 +16,15 @@
                             <label class="form-label">Descripción</label>
                             <input type="text" name="descripcion" id="descripcion" class="form-control" required>
                         </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Rol</label>
+                            <select name="rol_id" id="rol_id" class="form-select" required>
+                                <option value="" disabled selected>Seleccione un rol</option>
+                                @foreach ($roles as $rol)
+                                    <option value="{{ $rol->id }}">{{ $rol->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
 

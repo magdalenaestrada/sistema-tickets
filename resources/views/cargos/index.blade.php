@@ -19,6 +19,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Descripción</th>
+                            <th>Rol</th>
                             <th style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>

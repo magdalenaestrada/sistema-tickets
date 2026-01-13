@@ -8,7 +8,6 @@ use App\Models\Empleado;
 use App\Models\Evento;
 use App\Models\Persona;
 use App\Models\Provincia;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
@@ -20,9 +19,8 @@ class EmpleadoController extends Controller
     {
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();
-        $roles = Role::all();
         $distritos = Distrito::select('id', 'nombre')->get();
-        return view('empleados.index', compact('distritos', 'roles', 'departamentos', 'provincias'));
+        return view('empleados.index', compact('distritos',  'departamentos', 'provincias'));
     }
 
     public function datatable()
@@ -137,13 +135,6 @@ class EmpleadoController extends Controller
                         'fecha_creacion' => now(),
                     ]
                 );
-
-                if ($request->rol_id) {
-                    $rol = Role::find($request->rol_id);
-                    if ($rol) {
-                        $user->syncRoles([$rol]);
-                    }
-                }
             }
             DB::commit();
 

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UbigeoController;
 
 Route::middleware(['auth'])->prefix('ubigeos')->group(function () {
+    Route::get('/todo', [UbigeoController::class, 'todo'])
+        ->name('ubigeos.todo');
     Route::get('/departamentos', [UbigeoController::class, 'getDepartamentos'])
         ->name('ubigeos.departamentos');
     Route::get('/provincias/{departamento_id}', [UbigeoController::class, 'getProvincias'])

@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use function PHPUnit\Framework\returnArgument;
 
 class Cargo extends Model
 {
-    protected $table= "cargos";
+    protected $table = "cargos";
     protected $fillable = [
-        "descripcion"
+        "descripcion",
+        "rol_id",
     ];
 
     public function empleados()
@@ -18,5 +21,9 @@ class Cargo extends Model
     public function area()
     {
         return $this->belongsTo(Area::class);
+    }
+    public function rol()
+    {
+        return $this->belongsTo(Role::class);
     }
 }

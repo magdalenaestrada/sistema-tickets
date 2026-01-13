@@ -5,12 +5,12 @@ $.ajaxSetup({
 });
 
 $(function () {
-   
     let tabla = $("#tablaCargos").DataTable({
         ajax: route("cargos.datatable"), // ← cambio a Ziggy
         columns: [
             { title: "ID", data: "id" },
             { title: "Descripcion", data: "descripcion" },
+            { title: "Rol", data: "rol" },
             {
                 title: "Acciones",
                 data: "acciones",
@@ -40,9 +40,10 @@ $(function () {
 
     $("#tablaCargos").on("click", ".editar", function () {
         const id = $(this).data("id");
-        $.get(route("cargos.mostrar", id), function (data) { // ← Ziggy
+        $.get(route("cargos.mostrar", id), function (data) {
             $("#cargo_id").val(id);
             $("#descripcion").val(data.descripcion);
+            $("#rol_id").val(data.rol_id); 
             $("#modalTitulo").text("Editar Cargo");
             $("#btnGuardarCargo").text("Actualizar");
             $("#modalCargo").modal("show");
@@ -52,7 +53,7 @@ $(function () {
     $("#tablaCargos").on("click", ".ver", function () {
         const id = $(this).data("id");
 
-        $.get(route("cargos.mostrar", id), function (data) { // ← Ziggy
+        $.get(route("cargos.mostrar", id), function (data) {
             Swal.fire({
                 title: "Detalles de Cargo",
                 html: `
@@ -84,7 +85,7 @@ $(function () {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: route("cargos.eliminar", id), // ← Ziggy
+                    url: route("cargos.eliminar", id),
                     type: "DELETE",
                     success: function (res) {
                         if (res.success) {
@@ -119,15 +120,15 @@ $(function () {
         });
     });
 
-    // --- Guardar cargo (crear o actualizar) ---
     $("#formCargo").on("submit", function (e) {
         e.preventDefault();
 
         const id = $("#cargo_id").val();
-        const url = id ? route("cargos.actualizar", id) : route("cargos.guardar"); // ← Ziggy
-        const method = id ? "PUT" : "POST"; // ahora PUT si es update
+        const url = id
+            ? route("cargos.actualizar", id)
+            : route("cargos.guardar");
+        const method = id ? "PUT" : "POST";
 
-        // Incluimos el _method si es edición
         let formData = $(this).serializeArray();
 
         $.ajax({

@@ -160,15 +160,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="rol_id" class="form-label">Rol</label>
-                                    <select id="rol_id" name="rol_id" class="form-select" required>
-                                        <option value="">Seleccione un rol</option>
-                                        @foreach ($roles as $rol)
-                                            <option value="{{ $rol->id }}">{{ $rol->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
                             </div>
                         </div>
                     </div>
