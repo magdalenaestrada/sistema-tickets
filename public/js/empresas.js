@@ -1,4 +1,5 @@
 let empresaOriginal = {};
+
 function guardarEstadoOriginal() {
     empresaOriginal = {
         documento: $("#documento").val(),
@@ -15,6 +16,11 @@ $(document).ready(function () {
 });
 
 $(document).ready(function () {
+    let rucBuscado = false;
+
+    $("#btnBuscarRuc").prop("disabled", true);
+    $("#btnGuardar").prop("disabled", true);
+
     const empresaId = $("#empresa_id").val();
 
     const inputs = $(
@@ -36,6 +42,11 @@ $(document).ready(function () {
         btnEditar.addClass("d-none");
         btnGuardar.removeClass("d-none");
         btnCancelar.removeClass("d-none");
+
+        $("#btnBuscarRuc").prop("disabled", false);
+        $("#btnGuardar").prop("disabled", true);
+
+        rucBuscado = false;
     });
 
     btnCancelar.click(function () {
@@ -68,7 +79,14 @@ $(document).ready(function () {
 
     $("#formEmpresa").on("submit", function (e) {
         e.preventDefault();
-
+        if (!rucBuscado) {
+            Swal.fire(
+                "Atención",
+                "Debes buscar el RUC antes de guardar.",
+                "warning"
+            );
+            return;
+        }
         let id = $("#empresa_id").val();
         let url = id
             ? route("empresas.actualizar", id)
@@ -112,7 +130,6 @@ $(document).ready(function () {
         });
     });
 
-    // FUNCIONES
     function disableInputs() {
         inputs.prop("disabled", true);
     }
@@ -121,36 +138,37 @@ $(document).ready(function () {
         inputs.prop("disabled", false);
     }
 
-    $("#btnBuscarRuc").on("click", function () {
-        const documento = $("#documento").val();
+    $("#documento").on("input", function () {
+        rucBuscado = false;
+        $("#btnGuardar").prop("disabled", true);
+    });
 
-        if (!documento) {
+    $("#btnBuscarRuc").on("click", function () {
+        const documento = $("#documento").val().trim();
+        const btn = $("#btnBuscarRuc");
+
+        if (!/^\d{11}$/.test(documento)) {
             Swal.fire(
-                "Atención",
-                "Por favor ingrese un número de documento o RUC.",
+                "RUC inválido",
+                "Solo puedes ingresar RUC válidos de 11 dígitos.",
                 "warning"
             );
             return;
         }
 
-        $("#btnBuscarRuc")
-            .prop("disabled", true)
-            .html('<i class="link-icon" data-lucide="search"></i>');
+        btn.prop("disabled", true).html(
+            '<i class="link-icon" data-lucide="loader"></i>'
+        );
         lucide.createIcons();
 
         $.ajax({
-            url: route("empresas.buscar") + `?documento=${documento}`, // ← Ziggy
+            url: route("buscar.buscar") + `?documento=${documento}`,
             type: "GET",
             dataType: "json",
-            success: function (data) {
-                console.log("Respuesta API:", data);
 
+            success: function (data) {
                 if (data.error) {
-                    Swal.fire(
-                        "Error",
-                        "No se encontró información: " + data.error,
-                        "error"
-                    );
+                    Swal.fire("Error", data.error, "error");
                     return;
                 }
 
@@ -162,26 +180,33 @@ $(document).ready(function () {
                     $("#razon_social").val(
                         `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`
                     );
+                }
+                
+                if (data.razon_social || data.nombres) {
+                    rucBuscado = true;
+                    $("#btnGuardar").prop("disabled", false);
                 } else {
                     Swal.fire(
                         "Atención",
-                        "No se encontraron datos para este documento.",
+                        "No se encontraron datos para este RUC.",
                         "info"
                     );
                 }
             },
-            error: function (xhr) {
-                console.error("Error al consultar:", xhr);
+
+            error: function () {
                 Swal.fire(
                     "Error",
-                    "Error al consultar la API. Ver consola.",
+                    "Ingrese un numero de documento válido.",
                     "error"
                 );
             },
+
             complete: function () {
-                $("#btnBuscarRuc")
-                    .prop("disabled", false)
-                    .html('<i class="link-icon" data-lucide="search"></i>');
+                // SIEMPRE se ejecuta
+                btn.prop("disabled", false).html(
+                    '<i class="link-icon" data-lucide="search"></i>'
+                );
                 lucide.createIcons();
             },
         });

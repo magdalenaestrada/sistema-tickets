@@ -144,7 +144,7 @@ $(document).ready(function () {
                 }
             })
             .fail(() =>
-                Swal.fire("Error", "Error al consultar la API.", "error")
+                Swal.fire("Error", "Ingrese un numero de documento válido.", "error")
             )
             .always(() => {
                 $("#btnBuscarDocumento")

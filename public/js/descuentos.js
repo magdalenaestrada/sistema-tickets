@@ -137,7 +137,7 @@ $(document).ready(function () {
                 }
             })
             .fail(function () {
-                Swal.fire("Error", "Error al consultar la API.", "error");
+                Swal.fire("Error", "Ingrese un numero de documento válido.", "error");
             });
     });
     function actualizarCamposSegunTipo() {
