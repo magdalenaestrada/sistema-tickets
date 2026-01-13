@@ -37,7 +37,16 @@ $(document).ready(function () {
     });
 
     $("#filtroDocumento").on("keyup change", function () {
-        tabla.column(0).search(this.value).draw();
+        const val = this.value;
+
+        if (val) {
+            tabla
+                .column(0)
+                .search("^" + val, true, false)
+                .draw();
+        } else {
+            tabla.column(0).search("").draw();
+        }
     });
 
     $("#filtroNombres").on("keyup change", function () {
@@ -87,10 +96,34 @@ $(document).ready(function () {
                 "codigo"
             );
             fillSelect("#tipo_licencia_id", res.tipos_licencia, "Seleccione");
+            $("#tipo_documento_id").val(1).trigger("change");
 
             if (callback) callback();
         }).fail(() => alert("Error al cargar las listas."));
     }
+
+    $("#documento").on("input", function () {
+        const tipo = $("#tipo_documento_id").val();
+        let max = 20;
+
+        if (tipo == 1) max = 8;
+        if (tipo == 2) max = 11;
+        if (tipo == 3) max = 9;
+
+        this.value = this.value.replace(/\D/g, "").slice(0, max);
+    });
+
+    $("#tipo_documento_id").on("change", function () {
+        $("#documento").val("");
+    });
+
+    $("#documento, #telefono, #celular").on("input", function () {
+        this.value = this.value.replace(/[^0-9]/g, "");
+    });
+
+    $("#nombres, #apellidos").on("input", function () {
+        this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
+    });
 
     $("#btnBuscarDocumento").on("click", function () {
         const documento = $("#documento").val().trim();
@@ -106,7 +139,7 @@ $(document).ready(function () {
             .html('<i data-lucide="search"></i>');
         lucide.createIcons();
 
-        $.getJSON(route("clientes.buscar", { documento }))
+        $.getJSON(route("buscar.buscar", { documento }))
             .done((data) => {
                 if (data.error)
                     return Swal.fire(
@@ -132,7 +165,11 @@ $(document).ready(function () {
                 }
             })
             .fail(() =>
-                Swal.fire("Error", "Ingrese un numero de documento válido.", "error")
+                Swal.fire(
+                    "Error",
+                    "Ingrese un numero de documento válido.",
+                    "error"
+                )
             )
             .always(() => {
                 $("#btnBuscarDocumento")
@@ -151,6 +188,7 @@ $(document).ready(function () {
         $("#formCliente")[0].reset();
         $("#empleado_id, #usuario, #password").val("");
         $("#seccionUsuario").hide();
+        $("#tipo_documento_id").val(1).trigger("change");
         $("#chkUsuario").prop("checked", false);
         $(".conductor").attr("hidden", true).hide();
         $("#cargo_id, #sucursal_id").val(null).trigger("change");

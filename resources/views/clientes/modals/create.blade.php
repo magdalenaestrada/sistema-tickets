@@ -28,7 +28,8 @@
                         <div class="col-md-3">
                             <label class="form-label">Documento</label>
                             <div class="input-group">
-                                <input type="text" name="documento" id="documento" class="form-control" required>
+                                <input type="text" name="documento" id="documento" class="form-control" required
+                                    inputmode="numeric" pattern="\d+" title="Solo números">
                                 <button type="button" id="btnBuscarDocumento" class="btn btn-outline-primary">
                                     <i class="link-icon" data-lucide="search"></i>
                                 </button>
@@ -36,11 +37,13 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Nombres</label>
-                            <input type="text" name="nombres" id="nombres" class="form-control" required>
+                            <input type="text" name="nombres" id="nombres" class="form-control" required
+                                pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Apellidos</label>
-                            <input type="text" name="apellidos" id="apellidos" class="form-control" required>
+                            <input type="text" name="apellidos" id="apellidos" class="form-control" required
+                                pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras">
                         </div>
 
                         <div class="col-md-3">
@@ -54,13 +57,15 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Teléfono</label>
-                            <input type="text" name="telefono" id="telefono" class="form-control">
+                            <input type="text" name="telefono" id="telefono" class="form-control"
+                                inputmode="numeric" pattern="\d+" title="Solo números">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Celular</label>
-                            <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
-                                maxlength="9" title="Ingrese 9 dígitos numéricos">
+                            <input type="text" name="celular" id="celular" class="form-control" inputmode="numeric"
+                                pattern="\d{9}" maxlength="9" title="Ingrese 9 dígitos numéricos">
                         </div>
+
                         <div class="col-md-12">
                             <label class="form-label">Dirección</label>
                             <input type="text" name="direccion" id="direccion" class="form-control">
