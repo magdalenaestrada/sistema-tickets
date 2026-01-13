@@ -71,8 +71,10 @@ class SucursalController extends Controller
     }
     public function show($id)
     {
-        $sucursal = Sucursal::with('distrito.provincia.departamento')
-            ->findOrFail($id);
+        $sucursal = Sucursal::with(
+            'empresa',
+            'distrito.provincia.departamento'
+        )->findOrFail($id);
 
         return response()->json([
             'id' => $sucursal->id,
@@ -80,11 +82,28 @@ class SucursalController extends Controller
             'direccion' => $sucursal->direccion,
             'telefono' => $sucursal->telefono,
 
+            // ✅ IDs (los necesitas)
             'distrito_id' => $sucursal->distrito_id,
-            'provincia_id' => optional($sucursal->distrito)->provincia_id,
-            'departamento_id' => optional(
-                optional($sucursal->distrito)->provincia
-            )->departamento_id,
+            'provincia_id' => $sucursal->distrito?->provincia_id,
+            'departamento_id' => $sucursal->distrito?->provincia?->departamento_id,
+
+            // ✅ Objetos para mostrar
+            'empresa' => $sucursal->empresa,
+
+            'distrito' => $sucursal->distrito ? [
+                'id' => $sucursal->distrito->id,
+                'nombre' => $sucursal->distrito->nombre,
+            ] : null,
+
+            'provincia' => $sucursal->distrito?->provincia ? [
+                'id' => $sucursal->distrito->provincia->id,
+                'nombre' => $sucursal->distrito->provincia->nombre,
+            ] : null,
+
+            'departamento' => $sucursal->distrito?->provincia?->departamento ? [
+                'id' => $sucursal->distrito->provincia->departamento->id,
+                'nombre' => $sucursal->distrito->provincia->departamento->nombre,
+            ] : null,
         ]);
     }
 

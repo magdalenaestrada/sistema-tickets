@@ -31,6 +31,7 @@ $(document).ready(async function () {
         drawCallback: function () {
             lucide.createIcons();
         },
+        dom:'rtip'
     });
 
     function cargarSelectDepartamentos() {
@@ -239,16 +240,20 @@ $(document).ready(async function () {
     $("#tablaSucursales").on("click", ".ver", function () {
         const id = $(this).data("id");
         $.get(route("sucursales.detalle", id), function (data) {
+            console.log(data);
+
             Swal.fire({
                 title: "Detalles de Sucursal",
                 html: `
                 <div style="text-align: left;">
-                    <b>Empresa:</b> ${data.empresa?.razon_social || "-"}<br>
-                    <b>Distrito:</b> ${data.distrito?.nombre || "-"}<br>
-                    <b>Nombre Sucursal:</b> ${data.nombre_comercial || "-"}<br>
-                    <b>Dirección:</b> ${data.direccion || "-"}<br>
-                    <b>Teléfono:</b> ${data.telefono || "-"}
-                </div>
+    <b>Empresa:</b> ${data.empresa?.razon_social || "-"}<br>
+   <b>Departamento:</b> ${data.departamento?.nombre || "-"}<br>
+<b>Provincia:</b> ${data.provincia?.nombre || "-"}<br>
+<b>Distrito:</b> ${data.distrito?.nombre || "-"}<br>
+    <b>Nombre Sucursal:</b> ${data.nombre_comercial || "-"}<br>
+    <b>Dirección:</b> ${data.direccion || "-"}<br>
+    <b>Teléfono:</b> ${data.telefono || "-"}
+</div>
             `,
                 icon: "info",
                 confirmButtonText: "Cerrar",

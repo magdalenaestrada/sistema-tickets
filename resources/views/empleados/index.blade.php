@@ -14,13 +14,16 @@
 
         <div class="card-body">
             <div class="row mb-2">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <input type="text" id="filtroDni" class="form-control" placeholder="Buscar DNI">
                 </div>
-                <div class="col-md-4">
+                 <div class="col-md-4">
+                    <input type="text" id="filtroNombre" class="form-control" placeholder="Buscar Nombre">
+                </div>
+                <div class="col-md-3">
                     <input type="text" id="filtroSucursal" class="form-control" placeholder="Buscar Sucursal">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <input type="text" id="filtroCargo" class="form-control" placeholder="Buscar Cargo">
                 </div>
             </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cargo;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Empleado;
@@ -12,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class EmpleadoController extends Controller
 {
@@ -54,14 +56,27 @@ class EmpleadoController extends Controller
         DB::beginTransaction();
 
         try {
+            $persona = Persona::where('documento', $request->documento)->first();
             $request->validate([
-                'documento' => 'required',
+                'documento' => [
+                    'required',
+                    Rule::unique('personas', 'documento')->ignore($persona->id ?? null)
+                ],
                 'nombres' => 'required',
                 'apellidos' => 'required',
             ]);
+            if ($persona) {
+                $empleadoExistente = Empleado::where('persona_id', $persona->id)
+                    ->where('id', '!=', $request->empleado_id ?? 0) // Ignora el empleado actual en edición
+                    ->first();
 
-            $persona = Persona::where('documento', $request->documento)->first();
-
+                if ($empleadoExistente) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Ya existe un empleado registrado con el documento ' . $request->documento,
+                    ], 422);
+                }
+            }
             if ($persona) {
                 $persona->update([
                     'tipo_documento_id' => $request->tipo_documento_id,
@@ -122,6 +137,14 @@ class EmpleadoController extends Controller
             );
 
             if ($request->chkUsuario) {
+                $userExistente = User::where('persona_id', $persona->id)->first();
+                $request->validate([
+                    'usuario' => [
+                        'required',
+                        Rule::unique('users', 'username')->ignore($userExistente->id ?? null)
+                    ],
+                    'password' => 'required',
+                ]);
                 $user = User::updateOrCreate(
                     ['persona_id' => $persona->id],
                     [
@@ -135,7 +158,15 @@ class EmpleadoController extends Controller
                         'fecha_creacion' => now(),
                     ]
                 );
+
+                $cargo = Cargo::with('rol')->find($request->cargo_id);
+
+                if ($cargo && $cargo->rol) {
+                    $user->syncRoles([$cargo->rol->name]);
+                }
             }
+
+
             DB::commit();
 
             return response()->json([

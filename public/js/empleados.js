@@ -34,6 +34,10 @@ $(document).ready(function () {
         tabla.column(0).search(this.value).draw();
     });
 
+    $("#filtroNombre").on("keyup change", function () {
+        tabla.column(1).search(this.value).draw();
+    });
+
     $("#filtroSucursal").on("keyup change", function () {
         tabla.column(2).search(this.value).draw();
     });
@@ -47,7 +51,7 @@ $(document).ready(function () {
     });
 
     function limpiarFiltros() {
-        $("#filtroDni, #filtroSucursal, #filtroCargo").val("");
+        $("#filtroDni, #filtroSucursal, #filtroCargo, #filtroNombre").val("");
         tabla.columns().search("").draw();
     }
 
@@ -61,7 +65,6 @@ $(document).ready(function () {
         }
     }
 
-    // Cargar listas de selects
     function cargarListasEmpleado(callback = null) {
         $.get(route("listas.all"), function (res) {
             const fillSelect = (
@@ -96,6 +99,7 @@ $(document).ready(function () {
                 "Seleccione",
                 "codigo"
             );
+            $("#tipo_documento_id").val(1).trigger("change");
 
             fillSelect("#tipo_licencia_id", res.tipos_licencia, "Seleccione");
 
@@ -103,7 +107,6 @@ $(document).ready(function () {
         }).fail(() => alert("Error al cargar las listas."));
     }
 
-    // Buscar documento
     $("#btnBuscarDocumento").on("click", function () {
         const documento = $("#documento").val().trim();
         if (!documento)
@@ -144,7 +147,11 @@ $(document).ready(function () {
                 }
             })
             .fail(() =>
-                Swal.fire("Error", "Ingrese un numero de documento válido.", "error")
+                Swal.fire(
+                    "Error",
+                    "Ingrese un numero de documento válido.",
+                    "error"
+                )
             )
             .always(() => {
                 $("#btnBuscarDocumento")
@@ -154,14 +161,12 @@ $(document).ready(function () {
             });
     });
 
-    // Mostrar/ocultar conductor según cargo
     $("#cargo_id").on("change", function () {
         const cargoVal = $(this).val();
         const cargoDesc = $("#cargo_id option:selected").text();
         toggleConductor(cargoVal, cargoDesc);
     });
 
-    // Mostrar/ocultar sección usuario
     $("#chkUsuario").on("change", function () {
         if ($(this).is(":checked"))
             $("#seccionUsuario").removeAttr("hidden").slideDown(200);
@@ -332,16 +337,35 @@ $(document).ready(function () {
                         timer: 2000,
                         showConfirmButton: false,
                     });
+
                     $("#modalEmpleado").modal("hide");
                     tabla.ajax.reload(null, false);
-                } else Swal.fire("Atención", res.message, "warning");
+                    $(document).trigger("empleado:guardado");
+                }
             })
-            .fail(() =>
-                Swal.fire("Error", "No se pudo guardar el empleado.", "error")
-            );
+            .fail((xhr) => {
+                let mensaje = "Error al guardar el empleado";
+
+                if (xhr.status === 422 && xhr.responseJSON?.message) {
+                    mensaje = xhr.responseJSON.message;
+                } else if (xhr.status === 500 && xhr.responseJSON?.message) {
+                    mensaje = xhr.responseJSON.message;
+                } else if (xhr.responseJSON?.errors) {
+                    mensaje = Object.values(xhr.responseJSON.errors)
+                        .flat()
+                        .join("<br>");
+                }
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    html: mensaje,
+                    confirmButtonText: "Entendido",
+                    confirmButtonColor: "#d33",
+                });
+            });
     });
 
-    // Reset modal
     $("#modalEmpleado").on("hidden.bs.modal", () => {
         $("#formEmpleado")
             .find("input, select, textarea")

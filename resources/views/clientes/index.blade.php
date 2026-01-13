@@ -15,13 +15,11 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-3">
-                    <label>Buscar por N. Documento</label>
-                    <input type="text" id="filtroDocumento" class="form-control" placeholder="Ingresar N. Documento">
+                    <input type="text" id="filtroDocumento" class="form-control" placeholder="Buscar N. Documento">
                 </div>
 
                 <div class="col-md-4">
-                    <label>Buscar por nombres</label>
-                    <input type="text" id="filtroNombres" class="form-control" placeholder="Ingresar nombres">
+                    <input type="text" id="filtroNombres" class="form-control" placeholder="Buscar nombres">
                 </div>
             </div>
 

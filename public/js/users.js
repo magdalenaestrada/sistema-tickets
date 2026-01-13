@@ -39,6 +39,34 @@ $(function () {
         });
     });
 
+    $(document).on("click change", "#chkUsuario", function (e) {
+        e.preventDefault();
+        $(this).prop("checked", true);
+        return false;
+    });
+
+    $("#modalEmpleado").on("shown.bs.modal", function () {
+        $("#chkUsuario").prop("checked", true);
+        $("usuario").prop("required", true);
+    });
+
+    $(function () {
+        $("#seccionUsuario").removeAttr("hidden").show();
+        const observer = new MutationObserver(() => {
+            if (
+                $("#seccionUsuario").is("[hidden]") ||
+                $("#seccionUsuario").is(":hidden")
+            ) {
+                $("#seccionUsuario").removeAttr("hidden").show();
+            }
+        });
+
+        observer.observe(document.getElementById("seccionUsuario"), {
+            attributes: true,
+            attributeFilter: ["hidden", "style"],
+        });
+    });
+
     $("#formUsuario").submit(function (e) {
         e.preventDefault();
 
@@ -53,5 +81,11 @@ $(function () {
                 tabla.ajax.reload(null, false);
             },
         });
+    });
+
+    $(document).on("empleado:guardado", function () {
+        if ($.fn.DataTable.isDataTable("#tablaUsuarios")) {
+            $("#tablaUsuarios").DataTable().ajax.reload(null, false);
+        }
     });
 });

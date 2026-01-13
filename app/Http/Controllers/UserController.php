@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Departamento;
+use App\Models\Distrito;
+use App\Models\Provincia;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,7 +14,10 @@ class UserController extends Controller
 {
     public function index()
     {
-        return view('users.index');
+        $departamentos = Departamento::select('id', 'nombre')->get();
+        $provincias = Provincia::select('id', 'nombre')->get();
+        $distritos = Distrito::select('id', 'nombre')->get();
+        return view('users.index', compact('distritos',  'departamentos', 'provincias'));
     }
 
     public function datatable(Request $request)

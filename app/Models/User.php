@@ -69,13 +69,4 @@ class User extends Authenticatable
         return $this->hasOne(Caja::class, 'usuario_id');
     }
 
-    public function roles()
-    {
-        return $this->belongsToMany(
-            Role::class,
-            'user_has_roles',
-            'user_id',
-            'role_id'
-        );
-    }
 }

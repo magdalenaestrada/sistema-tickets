@@ -7,35 +7,6 @@
         </div>
         <div class="card-body">
 
-            <div class="row mb-3">
-                <div class="col-md-2">
-                    <label>DNI Emisor</label>
-                    <input type="text" id="filtroDNI" class="form-control" placeholder="DNI del emisor">
-                </div>
-
-                <div class="col-md-2">
-                    <label>Origen</label>
-                    <select id="filtroOrigen" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach ($sucursales as $s)
-                            <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <label>Destino</label>
-                    <select id="filtroDestino" class="form-select">
-                        <option value="">Todos</option>
-                        @foreach ($sucursales as $s)
-                            <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-            </div>
-
-            <!-- Tabla -->
             <table class="table table-bordered table-hover w-100" id="tablaEncomiendas">
                 <thead>
                     <tr>
