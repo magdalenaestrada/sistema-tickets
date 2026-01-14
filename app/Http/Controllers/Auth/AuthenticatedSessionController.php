@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,9 +32,17 @@ class AuthenticatedSessionController extends Controller
             'password' => 'required|string',
         ]);
 
+        $user = User::where('username', $request->username)->first();
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'login' => 'El usuario no existe, por favor verifique sus credenciales.',
+            ]);
+        }
+
         if (!Auth::attempt($request->only('username', 'password'))) {
             throw ValidationException::withMessages([
-                'login' => 'Usuario o contraseña incorrectos',
+                'login' => 'La contraseña es incorrecta.',
             ]);
         }
 
