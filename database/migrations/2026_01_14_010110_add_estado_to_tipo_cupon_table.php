@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tipo_cupones', function (Blueprint $table) {
-            $table->id();
-            $table->string('descripcion');
-            $table->timestamps();
+        Schema::table('tipo_cupones', function (Blueprint $table) {
+            $table->char('estado')->default('A');
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tipo_cupones');
+        Schema::table('tipo_cupones', function (Blueprint $table) {
+            //
+        });
     }
 };

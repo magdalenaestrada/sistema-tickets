@@ -27,6 +27,7 @@ $(function () {
         drawCallback: function () {
             lucide.createIcons();
         },
+        dom:'rtip'
     });
 
     $("#btnNuevaCargo").click(function () {

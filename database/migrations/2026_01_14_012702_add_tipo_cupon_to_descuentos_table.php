@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tipo_cupones', function (Blueprint $table) {
-            $table->id();
-            $table->string('descripcion');
-            $table->timestamps();
+        Schema::table('descuentos', function (Blueprint $table) {
+            $table->unsignedBigInteger('tipo_cupon_id')->nullable();
+            $table->foreign('tipo_cupon_id')->references('id')->on('tipo_cupones')->onDelete('set null');
         });
     }
 
@@ -23,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tipo_cupones');
+        Schema::table('descuentos', function (Blueprint $table) {
+            //
+        });
     }
 };

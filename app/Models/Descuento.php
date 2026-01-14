@@ -18,6 +18,8 @@ class Descuento extends Model
         'fecha_maxima',
         'monto_efectivo',
         'porcentaje',
+        'tipo_cupon_id',
+        'activo'
     ];
 
     public function persona()
@@ -25,10 +27,15 @@ class Descuento extends Model
         return $this->belongsTo(Persona::class);
     }
 
-    // Chequeo si el cupón está activo
+    public function tipo_cupon()
+    {
+        return $this->belongsTo(TipoCupon::class, 'tipo_cupon_id');
+    }
+
     public function isActivo(): bool
     {
         return $this->activo &&
+            $this->tipo_cupon?->estado &&
             (is_null($this->fecha_maxima) || $this->fecha_maxima >= now());
     }
 }

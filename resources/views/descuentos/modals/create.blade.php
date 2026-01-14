@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitulo">Registrar Descuento</h5>
+                <h5 class="modal-title" id="modalTitulo">Registrar Cupón</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
@@ -27,8 +27,17 @@
                             </div>
                             <div class="col-md-2">
                                 <label for="documento" class="form-label">Documento</label>
-                                <input type="text" name="documento" id="documento" class="form-control">
+
+                                <div class="input-group">
+                                    <input type="text" name="documento" id="documento" class="form-control"
+                                        placeholder="N° documento">
+                                    <button class="btn btn-primary" type="button" id="btnBuscarPersona"
+                                        title="Buscar persona">
+                                        <i class="link-icon" data-lucide="search"></i>
+                                    </button>
+                                </div>
                             </div>
+
                             <div class="col-md-4">
                                 <label for="nombres" class="form-label">Nombres</label>
                                 <input type="text" name="nombres" id="nombres" class="form-control">
@@ -46,12 +55,24 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="tipo_cupon_id" class="form-label">Tipo cupón</label>
+                                <select class="form-select" name="tipo_cupon_id" id="tipo_cupon_id" required>
+                                    <option value="">Selecciona un tipo</option>
+                                    @foreach ($tipo_cupones as $tipo_cupon)
+                                        <option value="{{ $tipo_cupon->id }}">
+                                            {{ $tipo_cupon->descripcion }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div class="col-md-2">
                                 <label for="codigo" class="form-label">Código</label>
                                 <input type="text" name="codigo" id="codigo" class="form-control" required>
                             </div>
                             <div class="col-md-2">
-                                <label for="monto_efectivo" class="form-label">Monto Efectivo (S/)</label>
+                                <label for="monto_efectivo" class="form-label">Monto Descuento (S/)</label>
                                 <input type="number" step="0.01" name="monto_efectivo" id="monto_efectivo"
                                     class="form-control">
                             </div>
@@ -60,12 +81,13 @@
                                 <input type="number" step="0.01" name="porcentaje" id="porcentaje"
                                     class="form-control" min="0" max="100">
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-1">
                                 <label for="cantidad_usos" class="form-label">Usos</label>
-                                <input type="number" name="cantidad_usos" id="cantidad_usos" class="form-control">
+                                <input type="number" name="cantidad_usos" id="cantidad_usos" class="form-control"
+                                    min="0" step="1" inputmode="numeric"
+                                    onkeydown="return event.key !== '.' && event.key !== ','">
                             </div>
-
-                            <div class="col-md-4">
+                            <div class="col-md-2">
                                 <label for="fecha_maxima" class="form-label">Fecha Máxima</label>
                                 <input type="date" name="fecha_maxima" id="fecha_maxima" class="form-control">
                             </div>

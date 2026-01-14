@@ -1,3 +1,9 @@
+$.ajaxSetup({
+    headers: {
+        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+    },
+});
+
 $(document).ready(function () {
     let tabla = $("#tablaDescuentos").DataTable({
         processing: true,
@@ -6,6 +12,7 @@ $(document).ready(function () {
         dom: "rtip",
         columns: [
             { data: "id" },
+            { data: "tipo_cupon" },
             { data: "codigo" },
             { data: "persona" },
             { data: "cantidad_usos" },
@@ -20,6 +27,64 @@ $(document).ready(function () {
             { data: "activo" },
             { data: "acciones", orderable: false, searchable: false },
         ],
+        drawCallback: function () {
+            lucide.createIcons();
+        },
+    });
+
+    $("#tablaDescuentos").on("click", ".desactivar", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Desactivar descuento?",
+            text: "Este descuento no podrá usarse mientras esté inactivo.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Sí, desactivar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post(route("descuentos.desactivar", id), function (res) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Desactivado",
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false,
+                    });
+
+                    tabla.ajax.reload(null, false);
+                });
+            }
+        });
+    });
+    $("#tablaDescuentos").on("click", ".activar", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Activar descuento?",
+            text: "El descuento volverá a estar disponible.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#28a745",
+            confirmButtonText: "Sí, activar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post(route("descuentos.activar", id), function (res) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Activado",
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false,
+                    });
+
+                    tabla.ajax.reload(null, false);
+                });
+            }
+        });
     });
 
     $("#btnNuevoDescuento").click(function () {
@@ -29,12 +94,24 @@ $(document).ready(function () {
         $("#modalDescuento").modal("show");
     });
 
-    $("#filtroCodigo").on("keyup change", function () {
+    $("#filtroTipoCupon").on("keyup change", function () {
         tabla.column(1).search(this.value).draw();
+    });
+    $("#filtroCodigo").on("keyup change", function () {
+        let valor = this.value;
+
+        if (valor) {
+            tabla
+                .column(2)
+                .search("^" + valor, true, false) // regex = true, smart = false
+                .draw();
+        } else {
+            tabla.column(2).search("").draw();
+        }
     });
 
     $("#filtroPersona").on("keyup change", function () {
-        tabla.column(2).search(this.value).draw();
+        tabla.column(3).search(this.value).draw();
     });
 
     $("#tablaDescuentos").on("click", ".editar", function () {
@@ -109,13 +186,18 @@ $(document).ready(function () {
         });
     });
 
-    $("#documento").on("blur", function () {
+    $("#btnBuscarPersona").on("click", function () {
         const tipoDocumento = $("#tipo_documento_id").val();
-        const documento = $(this).val().trim();
+        const documento = $("#documento").val().trim();
 
         if (!tipoDocumento || !documento) return;
 
-        $.getJSON(`/buscar/?tipo=${tipoDocumento}&documento=${documento}`)
+        $.getJSON(
+            route("buscar.buscar", {
+                tipo: tipoDocumento,
+                documento: documento,
+            })
+        )
             .done(function (data) {
                 if (data.error) {
                     Swal.fire("Error", data.error, "error");
@@ -137,9 +219,20 @@ $(document).ready(function () {
                 }
             })
             .fail(function () {
-                Swal.fire("Error", "Ingrese un numero de documento válido.", "error");
+                Swal.fire(
+                    "Error",
+                    "Ingrese un numero de documento válido.",
+                    "error"
+                );
             });
     });
+
+    $("#documento").on("keypress", function (e) {
+        if (e.which === 13) {
+            $("#btnBuscarPersona").click();
+        }
+    });
+
     function actualizarCamposSegunTipo() {
         const tipo = $("#tipo_documento_id").val();
 
@@ -158,9 +251,7 @@ $(document).ready(function () {
         }
     }
 
-    // Evento cuando se cambia el tipo
     $("#tipo_documento_id").on("change", actualizarCamposSegunTipo);
 
-    // Ejecutar al abrir modal también
     actualizarCamposSegunTipo();
 });

@@ -10,4 +10,8 @@ Route::middleware(['auth'])->prefix('descuentos')->name('descuentos.')->group(fu
     Route::get('/{descuento}', [DescuentoController::class, 'mostrar'])->name('mostrar');
     Route::post('/', [DescuentoController::class, 'guardar'])->name('guardar');
     Route::delete('/{descuento}', [DescuentoController::class, 'eliminar'])->name('eliminar');
+    Route::post('/{descuento}/activar', [DescuentoController::class, 'activar'])
+        ->name('activar');
+    Route::post('/{descuento}/desactivar', [DescuentoController::class, 'desactivar'])
+        ->name('desactivar');
 });
