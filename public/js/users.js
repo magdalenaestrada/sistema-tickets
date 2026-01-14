@@ -50,6 +50,11 @@ $(function () {
         $("usuario").prop("required", true);
     });
 
+    $("#filtroNombres").on("input", function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    });
+
+
     $(function () {
         $("#seccionUsuario").removeAttr("hidden").show();
         const observer = new MutationObserver(() => {

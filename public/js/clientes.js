@@ -102,6 +102,12 @@ $(document).ready(function () {
         }).fail(() => alert("Error al cargar las listas."));
     }
 
+    $("#filtroEmpleado").on("input", function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    });
+
+    $("#filtroDocumento").attr("maxlength", 11);
+
     $("#documento").on("input", function () {
         const tipo = $("#tipo_documento_id").val();
         let max = 20;

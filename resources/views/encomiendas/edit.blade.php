@@ -3,11 +3,13 @@
 @section('content')
     <form id="formEncomienda">
         @csrf
+        @method('PUT')
+
+        <input type="hidden" id="encomienda_id" value="{{ $encomienda->id }}">
+
         <div class="row">
-            <!-- COLUMNA IZQUIERDA (70%) -->
             <div class="col-md-9">
 
-                <!-- DATOS DEL EMISOR -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h6>Datos del Emisor</h6>
@@ -26,34 +28,33 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
-                                <input type="text" class="form-control solo-numeros" id="emisor_documento"
-                                    name="emisor_documento" required>
+                                <input type="text" class="form-control" id="emisor_documento" name="emisor_documento"
+                                    inputmode="numeric" pattern="\d+" title="Solo números" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres</label>
-                                <input type="text" class="form-control solo-letras" id="emisor_nombres"
-                                    name="emisor_nombres" required>
+                                <input type="text" class="form-control" id="emisor_nombres" name="emisor_nombres"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos</label>
-                                <input type="text" class="form-control solo-letras" id="emisor_apellidos"
-                                    name="emisor_apellidos" required>
+                                <input type="text" class="form-control" id="emisor_apellidos" name="emisor_apellidos"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
                             </div>
                         </div>
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control solo-numeros" id="emisor_celular"
-                                    name="emisor_celular" required>
+                                <input type="text" class="form-control" id="emisor_celular" name="emisor_celular"
+                                    inputmode="numeric" pattern="\d+" title="Solo números" required>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control solo-numeros" id="emisor_telefono"
-                                    name="emisor_telefono">
+                                <input type="text" class="form-control" id="emisor_telefono" name="emisor_telefono"  inputmode="numeric" pattern="\d+" title="Solo números">
                             </div>
 
                             <div class="col-md-4">
@@ -89,34 +90,34 @@
 
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
-                                <input type="text" class="form-control solo-numeros" id="receptor_documento"
-                                    name="receptor_documento" required>
+                                <input type="text" class="form-control" id="receptor_documento" name="receptor_documento"
+                                     inputmode="numeric" pattern="\d+" title="Solo números" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres</label>
-                                <input type="text" class="form-control  solo-letras" id="receptor_nombres"
-                                    name="receptor_nombres" required>
+                                <input type="text" class="form-control" id="receptor_nombres" name="receptor_nombres"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos</label>
-                                <input type="text" class="form-control solo-letras" id="receptor_apellidos"
-                                    name="receptor_apellidos" required>
+                                <input type="text" class="form-control" id="receptor_apellidos" name="receptor_apellidos"
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
                             </div>
                         </div>
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control solo-numeros" id="receptor_celular"
-                                    name="receptor_celular" required>
+                                <input type="text" class="form-control" id="receptor_celular" name="receptor_celular"
+                                    inputmode="numeric" pattern="\d+" title="Solo números" required>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control solo-numeros" id="receptor_telefono"
-                                    name="receptor_telefono">
+                                <input type="text" class="form-control" id="receptor_telefono"
+                                   inputmode="numeric" pattern="\d+" title="Solo números"  name="receptor_telefono">
                             </div>
 
                             <div class="col-md-6">
@@ -263,13 +264,12 @@
                         <div class="mb-3">
                             <label for="numero_documento_id" class="form-label">Número documento</label>
                             <input type="number" id="numero_documento_id" name="numero_documento_id"
-                                class="form-control solo-numeros">
+                                class="form-control">
                         </div>
 
                         <div class="mb-3">
                             <label for="razon_social" class="form-label">Razón social</label>
-                            <input type="text" id="razon_social" name="razon_social"
-                                class="form-control">
+                            <input type="text" id="razon_social" name="razon_social" class="form-control">
                         </div>
                     </div>
                 </div>

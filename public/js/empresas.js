@@ -208,7 +208,6 @@ $(document).ready(function () {
 
                 if (data.razon_social) {
                     $("#razon_social").val(data.razon_social);
-                    $("#nombre_comercial").val(data.nombre_comercial || "");
                     $("#direccion").val(data.direccion || "");
                 } else if (data.nombres) {
                     $("#razon_social").val(

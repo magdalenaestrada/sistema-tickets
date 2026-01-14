@@ -6,6 +6,7 @@ use App\Models\Cargo;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Empleado;
+use App\Models\Encomienda;
 use App\Models\Evento;
 use App\Models\Persona;
 use App\Models\Provincia;
@@ -185,9 +186,15 @@ class EmpleadoController extends Controller
 
     public function mostrar($id)
     {
-        $empleado = Empleado::with(['persona', 'cargo', 'sucursal'])->findOrFail($id);
+        $empleado = Empleado::with([
+            'persona.distrito.provincia.departamento',
+            'cargo',
+            'sucursal'
+        ])->findOrFail($id);
+
         return response()->json($empleado);
     }
+
 
     public function eliminar($id)
     {

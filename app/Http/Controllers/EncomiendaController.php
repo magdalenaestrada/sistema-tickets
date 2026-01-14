@@ -28,21 +28,22 @@ class EncomiendaController extends Controller
     public function index_no_asignadas()
     {
         $sucursales = Sucursal::where('estado', 'A')
-    ->select('id', 'nombre_comercial')
-    ->orderBy('nombre_comercial')
-    ->get();;
+            ->select('id', 'nombre_comercial')
+            ->orderBy('nombre_comercial')
+            ->get();;
         $asignaciones = AsignarHorario::with('horario')->get();
+        $user = Auth::user();
         $tipos_documentos = TipoDocumentoPersona::all();
 
-        return view('encomiendas.index', compact('sucursales', 'tipos_documentos', 'asignaciones'));
+        return view('encomiendas.index', compact('sucursales', 'user', 'tipos_documentos', 'asignaciones'));
     }
 
     public function index_asignadas()
     {
         $sucursales = Sucursal::where('estado', 'A')
-    ->select('id', 'nombre_comercial')
-    ->orderBy('nombre_comercial')
-    ->get();;
+            ->select('id', 'nombre_comercial')
+            ->orderBy('nombre_comercial')
+            ->get();;
         $asignaciones = AsignarHorario::with('horario')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
 
@@ -53,19 +54,16 @@ class EncomiendaController extends Controller
     {
         Carbon::now();
         $user = Auth::user();
-        $departamentos = Departamento::select('id', 'nombre')->get();
-        $provincias = Provincia::select('id', 'nombre')->get();
-        $distritos = Distrito::select('id', 'nombre')->get();
         $metodos_pago = MetodoPago::all();
         $sucursales = Sucursal::where('estado', 'A')
-    ->select('id', 'nombre_comercial')
-    ->orderBy('nombre_comercial')
-    ->get();;
+            ->select('id', 'nombre_comercial')
+            ->orderBy('nombre_comercial')
+            ->get();;
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
-        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales', 'departamentos', 'provincias', 'distritos'));
+        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales'));
     }
     public function datatable_no_asignadas()
     {
@@ -157,6 +155,94 @@ class EncomiendaController extends Controller
             ->rawColumns(['checkbox', 'estado', 'acciones'])
             ->make(true);
     }
+
+    public function editar($id)
+    {
+        $metodos_pago = MetodoPago::all();
+
+        $sucursales = Sucursal::where('estado', 'A')
+            ->select('id', 'nombre_comercial')
+            ->orderBy('nombre_comercial')
+            ->get();;
+        $user = Auth::user();
+        $tipos_documentos = TipoDocumentoPersona::all();
+        $tipos_documentos_facturas = TipoDocumentoFactura::all();
+        $tipo_encomiendas = TipoEncomienda::all();
+        $billeteras_digitales = BilleteraDigital::all();
+        $encomienda = Encomienda::with([
+            'emisor.distrito.provincia.departamento',
+            'receptor.distrito.provincia.departamento',
+            'detalles.tipo_encomienda',
+            'venta.pagos',
+            'venta.pagos.billetera',
+            'venta.pagos.metodoPago',
+            'sucursal_origen',
+            'sucursal_destino'
+        ])->findOrFail($id);
+
+        return view('encomiendas.edit', compact('metodos_pago', 'encomienda', 'sucursales', 'user', 'tipos_documentos', 'tipo_encomiendas', 'tipos_documentos_facturas', 'billeteras_digitales'));
+    }
+
+    public function actualizar(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $encomienda = Encomienda::findOrFail($id);
+
+            $encomienda->update([
+                'origen' => $request->origen,
+                'destino' => $request->destino,
+                'total' => $request->total,
+                'estado' => $request->estado ?? 'A',
+            ]);
+
+            $encomienda->emisor->update([
+                'documento' => $request->emisor['documento'],
+                'nombres' => $request->emisor['nombres'],
+                'apellidos' => $request->emisor['apellidos'],
+                'direccion' => $request->emisor['direccion'],
+            ]);
+
+            $encomienda->receptor->update([
+                'documento' => $request->receptor['documento'],
+                'nombres' => $request->receptor['nombres'],
+                'apellidos' => $request->receptor['apellidos'],
+                'direccion' => $request->receptor['direccion'],
+            ]);
+
+            $encomienda->detalles()->delete();
+
+            foreach ($request->detalles as $d) {
+                $encomienda->detalles()->create([
+                    'tipo_encomienda_id' => $d['tipo_encomienda_id'],
+                    'peso' => $d['peso'],
+                    'costo' => $d['costo'],
+                    'descripcion' => $d['descripcion'],
+                ]);
+            }
+
+            $encomienda->pagos()->delete();
+            foreach ($request->pagos as $p) {
+                $encomienda->pagos()->create($p);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Encomienda actualizada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
         $request->validate([

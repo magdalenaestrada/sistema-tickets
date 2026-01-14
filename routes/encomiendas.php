@@ -12,4 +12,6 @@ Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(
     Route::post('/anular/{id}', [EncomiendaController::class, 'anular'])->name('anular');
     Route::get('/crear-encomienda', [EncomiendaController::class, 'formulario'])->name('crear-encomienda');
     Route::get('/ticket/{id}', [EncomiendaController::class, 'ticket'])->name('ticket');
+    Route::get('/editar/{id}', [EncomiendaController::class, 'editar'])->name('editar');
+    Route::put('/actualizar/{id}', [EncomiendaController::class, 'actualizar'])->name('actualizar');
 });

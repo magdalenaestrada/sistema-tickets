@@ -1,6 +1,76 @@
+let UBIGEO = null;
+
+function initUbigeosReceptor() {
+    const $dep = $("#departamento_id");
+    const $prov = $("#provincia_id");
+    const $dist = $("#distrito_id");
+    const $ubigeo = $("#receptor_ubigeo");
+
+    $dep.empty().append('<option value="">Seleccione</option>');
+
+    UBIGEO.forEach((d) => {
+        $dep.append(`<option value="${d.id}">${d.nombre}</option>`);
+    });
+
+    $dep.on("change", function () {
+        const depId = this.value;
+
+        $prov.empty().append('<option value="">Seleccione</option>');
+        $dist.empty().append('<option value="">Seleccione</option>');
+        $ubigeo.val("");
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        if (!dep) return;
+
+        dep.provincias.forEach((p) => {
+            $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
+        });
+    });
+
+    $prov.on("change", function () {
+        const depId = $dep.val();
+        const provId = this.value;
+
+        $dist.empty().append('<option value="">Seleccione</option>');
+        $ubigeo.val("");
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        const prov = dep?.provincias.find((p) => p.id == provId);
+        if (!prov) return;
+
+        prov.distritos.forEach((d) => {
+            $dist.append(
+                `<option value="${d.id}" data-ubigeo="${d.ubigeo}">
+                    ${d.nombre}
+                </option>`
+            );
+        });
+    });
+
+    $dist.on("change", function () {
+        const ubigeo = $("#distrito_id option:selected").data("ubigeo");
+        $ubigeo.val(ubigeo || "");
+    });
+}
+
 $(function () {
     filtrarOrigenDestino();
     actualizarResumen();
+
+    $("#formEditarEncomienda").submit(function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: route("encomiendas.actualizar", $("#encomienda_id").val()),
+            method: "POST",
+            data: $(this).serialize(),
+            success: function (res) {
+                if (res.success) {
+                    Swal.fire("Actualizado", res.message, "success");
+                }
+            },
+        });
+    });
 
     function filtrarOrigenDestino() {
         const origen = $("#origen").val();
@@ -651,6 +721,14 @@ $(function () {
         });
     });
 
+    $(document).on("input", ".solo-letras", function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    });
+
+    $(document).on("input", ".solo-numeros", function () {
+        this.value = this.value.replace(/\D/g, "");
+    });
+
     $("#filtroDNI").on("keyup", function () {
         tabla.column(3).search(this.value).draw();
     });
@@ -678,7 +756,7 @@ $(function () {
 
     $(document).on("click", ".editar", function () {
         let id = $(this).data("id");
-        window.location.href = route("encomiendas.edit", id);
+        window.location.href = route("encomiendas.editar", id);
     });
 
     $(document).on("click", ".anular", function () {
@@ -697,4 +775,9 @@ $(function () {
             alert("Error al anular la encomienda");
         });
     });
+});
+
+$(document).ready(async function () {
+    UBIGEO = await $.get(route("ubigeos.todo"));
+    initUbigeosReceptor();
 });

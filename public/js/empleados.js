@@ -1,4 +1,8 @@
-$(document).ready(function () {
+let UBIGEO = null;
+
+$(document).ready(async function () {
+    UBIGEO = await $.get(route("ubigeos.todo"));
+    initUbigeosEmpleado();
     const modal = new bootstrap.Modal($("#modalEmpleado")[0]);
 
     const tabla = $("#tablaEmpleados").DataTable({
@@ -27,8 +31,6 @@ $(document).ready(function () {
         },
         drawCallback: () => lucide.createIcons(),
     });
-
-    initUbigeos("#departamento_id", "#provincia_id", "#distrito_id");
 
     $("#filtroDni").on("keyup change", function () {
         tabla.column(0).search(this.value).draw();
@@ -64,6 +66,22 @@ $(document).ready(function () {
             $("#tipo_licencia_id, #licencia_conducir").val("");
         }
     }
+
+    $("#telefono").on("input", function () {
+        this.value = this.value.replace(/\D/g, "");
+    });
+
+    $("#celular").on("input", function () {
+        this.value = this.value.replace(/\D/g, "");
+    });
+
+    $("#apellidos").on("input", function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    });
+
+    $("#nombres").on("input", function () {
+        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+    });
 
     function cargarListasEmpleado(callback = null) {
         $.get(route("listas.all"), function (res) {
@@ -246,15 +264,13 @@ $(document).ready(function () {
                     res.fecha_ingreso ? res.fecha_ingreso.substring(0, 10) : ""
                 );
 
-                cargarUbicacionPorIds(
-                    persona.departamento_id ??
-                        persona.distrito?.provincia?.departamento_id ??
-                        null,
-                    persona.provincia_id ??
-                        persona.distrito?.provincia_id ??
-                        null,
-                    persona.distrito_id ?? null
-                );
+                if (persona.distrito) {
+                    cargarUbicacionPorIds(
+                        persona.distrito.provincia.departamento.id,
+                        persona.distrito.provincia.id,
+                        persona.distrito.id
+                    );
+                }
 
                 $("#sucursal_id").val(res.sucursal_id).trigger("change");
                 $("#cargo_id").val(res.cargo_id).trigger("change");
@@ -380,17 +396,48 @@ $(document).ready(function () {
             '<i data-lucide="user"></i> Registrar / Editar Empleado'
         );
     });
-});
 
-// Funciones de Ubigeos
-function initUbigeos(depSelectId, provSelectId, distSelectId) {
-    /* tu lógica actual */
-}
-function cargarUbicacionPorIds(
-    departamentoId,
-    provinciaId,
-    distritoId,
-    sucursalId
-) {
-    /* tu lógica actual */
-}
+    function initUbigeosEmpleado() {
+        const $dep = $("#departamento_id");
+        const $prov = $("#provincia_id");
+        const $dist = $("#distrito_id");
+
+        $dep.empty().append('<option value="">Seleccione</option>');
+        UBIGEO.forEach((dep) => {
+            $dep.append(`<option value="${dep.id}">${dep.nombre}</option>`);
+        });
+
+        $dep.on("change", function () {
+            const depId = this.value;
+            $prov.empty().append('<option value="">Seleccione</option>');
+            $dist.empty().append('<option value="">Seleccione</option>');
+
+            const dep = UBIGEO.find((d) => d.id == depId);
+            if (!dep) return;
+
+            dep.provincias.forEach((p) => {
+                $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
+            });
+        });
+
+        $prov.on("change", function () {
+            const depId = $dep.val();
+            const provId = this.value;
+            $dist.empty().append('<option value="">Seleccione</option>');
+
+            const dep = UBIGEO.find((d) => d.id == depId);
+            const prov = dep?.provincias.find((p) => p.id == provId);
+            if (!prov) return;
+
+            prov.distritos.forEach((d) => {
+                $dist.append(`<option value="${d.id}">${d.nombre}</option>`);
+            });
+        });
+    }
+
+    function cargarUbicacionPorIds(depId, provId, distId) {
+        $("#departamento_id").val(depId).trigger("change");
+        $("#provincia_id").val(provId).trigger("change");
+        $("#distrito_id").val(distId);
+    }
+});
