@@ -19,7 +19,6 @@ $(document).ready(function () {
     let rucBuscado = false;
 
     $("#btnBuscarRuc").prop("disabled", true);
-    $("#btnGuardar").prop("disabled", true);
 
     const empresaId = $("#empresa_id").val();
 
@@ -44,9 +43,6 @@ $(document).ready(function () {
         btnCancelar.removeClass("d-none");
 
         $("#btnBuscarRuc").prop("disabled", false);
-        $("#btnGuardar").prop("disabled", true);
-
-        rucBuscado = false;
     });
 
     btnCancelar.click(function () {
@@ -77,22 +73,13 @@ $(document).ready(function () {
         });
     });
 
-    $("#formEmpresa").on("submit", function (e) {
-        e.preventDefault();
-        if (!rucBuscado) {
-            Swal.fire(
-                "Atención",
-                "Debes buscar el RUC antes de guardar.",
-                "warning"
-            );
-            return;
-        }
+    function guardarEmpresa() {
         let id = $("#empresa_id").val();
         let url = id
             ? route("empresas.actualizar", id)
             : route("empresas.guardar");
 
-        let formData = new FormData(this);
+        let formData = new FormData($("#formEmpresa")[0]);
 
         $.ajax({
             url: url,
@@ -119,13 +106,65 @@ $(document).ready(function () {
                 }
             },
 
-            error: function (xhr) {
-                console.error(xhr);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: "No se pudo guardar la empresa.",
-                });
+            error: function () {
+                Swal.fire("Error", "No se pudo guardar la empresa.", "error");
+            },
+        });
+    }
+
+    $("#formEmpresa").on("submit", function (e) {
+        e.preventDefault();
+
+        const documento = $("#documento").val().trim();
+
+        if (!/^\d{11}$/.test(documento)) {
+            Swal.fire(
+                "RUC inválido",
+                "Solo puedes ingresar RUC válidos de 11 dígitos.",
+                "warning"
+            );
+            return;
+        }
+
+        Swal.fire({
+            title: "Validando RUC...",
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        $.ajax({
+            url: route("buscar.buscar") + `?documento=${documento}`,
+            type: "GET",
+            dataType: "json",
+
+            success: (data) => {
+                if (data.error || (!data.razon_social && !data.nombres)) {
+                    Swal.fire(
+                        "Error",
+                        "El RUC no es válido o no se encontraron datos.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (data.razon_social) {
+                    $("#razon_social").val(data.razon_social);
+                    $("#direccion").val(data.direccion || "");
+                } else {
+                    $("#razon_social").val(
+                        `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`
+                    );
+                }
+
+                guardarEmpresa();
+            },
+
+            error: () => {
+                Swal.fire(
+                    "Error",
+                    "El RUC no es válido o no se encontraron datos.",
+                    "error"
+                );
             },
         });
     });
@@ -137,11 +176,6 @@ $(document).ready(function () {
     function enableInputs() {
         inputs.prop("disabled", false);
     }
-
-    $("#documento").on("input", function () {
-        rucBuscado = false;
-        $("#btnGuardar").prop("disabled", true);
-    });
 
     $("#btnBuscarRuc").on("click", function () {
         const documento = $("#documento").val().trim();
@@ -181,7 +215,7 @@ $(document).ready(function () {
                         `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`
                     );
                 }
-                
+
                 if (data.razon_social || data.nombres) {
                     rucBuscado = true;
                     $("#btnGuardar").prop("disabled", false);
