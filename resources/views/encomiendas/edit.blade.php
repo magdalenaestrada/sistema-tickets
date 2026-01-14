@@ -29,19 +29,22 @@
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
                                 <input type="text" class="form-control" id="emisor_documento" name="emisor_documento"
-                                    inputmode="numeric" pattern="\d+" title="Solo números" required>
+                                    inputmode="numeric" pattern="\d+" title="Solo números"
+                                    value="{{ $encomienda->emisor->documento ?? '' }}" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres</label>
                                 <input type="text" class="form-control" id="emisor_nombres" name="emisor_nombres"
-                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" value="{{ $encomienda->emisor->nombres ?? '' }}"
+                                    title="Solo letras" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos</label>
                                 <input type="text" class="form-control" id="emisor_apellidos" name="emisor_apellidos"
-                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras"
+                                    value="{{ $encomienda->emisor->apellidos ?? '' }}" required>
                             </div>
                         </div>
 
@@ -49,17 +52,21 @@
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
                                 <input type="text" class="form-control" id="emisor_celular" name="emisor_celular"
-                                    inputmode="numeric" pattern="\d+" title="Solo números" required>
+                                    inputmode="numeric" pattern="\d+" title="Solo números"
+                                    value="{{ $encomienda->emisor->celular ?? '' }}" required>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control" id="emisor_telefono" name="emisor_telefono"  inputmode="numeric" pattern="\d+" title="Solo números">
+                                <input type="text" class="form-control" id="emisor_telefono" name="emisor_telefono"
+                                    inputmode="numeric" pattern="\d+" title="Solo números"
+                                    value="{{ $encomienda->emisor->telefono ?? '' }}">
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Correo electrónico</label>
-                                <input type="text" class="form-control" id="emisor_direccion" name="emisor_direccion">
+                                <input type="text" class="form-control" id="emisor_direccion"
+                                    value="{{ $encomienda->emisor->direccion ?? '' }}" name="emisor_direccion">
                             </div>
 
                             <div class="col-md-2">
@@ -91,19 +98,22 @@
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
                                 <input type="text" class="form-control" id="receptor_documento" name="receptor_documento"
-                                     inputmode="numeric" pattern="\d+" title="Solo números" required>
+                                    inputmode="numeric" pattern="\d+" title="Solo números"
+                                    value="{{ $encomienda->receptor->documento ?? '' }}" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres</label>
                                 <input type="text" class="form-control" id="receptor_nombres" name="receptor_nombres"
-                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
+                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" value="{{ $encomienda->receptor->nombres ?? '' }}"
+                                    title="Solo letras" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos</label>
-                                <input type="text" class="form-control" id="receptor_apellidos" name="receptor_apellidos"
-                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras" required>
+                                <input type="text" class="form-control" id="receptor_apellidos"
+                                    name="receptor_apellidos" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
+                                    value="{{ $encomienda->receptor->apellidos ?? '' }}" title="Solo letras" required>
                             </div>
                         </div>
 
@@ -111,50 +121,57 @@
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
                                 <input type="text" class="form-control" id="receptor_celular" name="receptor_celular"
-                                    inputmode="numeric" pattern="\d+" title="Solo números" required>
+                                    inputmode="numeric" pattern="\d+" title="Solo números"
+                                    value="{{ $encomienda->receptor->celular ?? '' }}" required>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control" id="receptor_telefono"
-                                   inputmode="numeric" pattern="\d+" title="Solo números"  name="receptor_telefono">
+                                <input type="text" class="form-control" id="receptor_telefono" inputmode="numeric"
+                                    pattern="\d+" title="Solo números"
+                                    value="{{ $encomienda->receptor->telefono ?? '' }}" name="receptor_telefono">
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label">Correo electrónico</label>
                                 <input type="text" class="form-control" id="receptor_direccion"
-                                    name="receptor_direccion">
+                                    name="receptor_direccion" value="{{ $encomienda->receptor->direccion ?? '' }}">
                             </div>
                         </div>
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">DEPARTAMENTO</label>
-                                <select name="receptor_departamento_id" id="departamento_id" class="form-select"
-                                    required>
-                                    <option value="">Seleccione</option>
+                                <select id="departamento_id" class="form-select">
+                                    <option value="{{ $encomienda->receptor->distrito->provincia->departamento->id }}">
+                                        {{ $encomienda->receptor->distrito->provincia->departamento->nombre }}
+                                    </option>
                                 </select>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">PROVINCIA</label>
-                                <select name="receptor_provincia_id" id="provincia_id" class="form-select" required>
-                                    <option value="">Seleccione</option>
-
+                                <select id="provincia_id" class="form-select">
+                                    <option value="{{ $encomienda->receptor->distrito->provincia->id }}">
+                                        {{ $encomienda->receptor->distrito->provincia->nombre }}
+                                    </option>
                                 </select>
+
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">DISTRITO</label>
-                                <select name="receptor_distrito_id" id="distrito_id" class="form-select" required>
-                                    <option value="">Seleccione</option>
+                                <select id="distrito_id" class="form-select">
+                                    <option value="{{ $encomienda->receptor->distrito->id }}">
+                                        {{ $encomienda->receptor->distrito->nombre }}
+                                    </option>
                                 </select>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Ubigeo</label>
-                                <input type="text" class="form-control" id="receptor_ubigeo" name="receptor_ubigeo"
-                                    readonly>
+                                <input type="text" class="form-control" id="receptor_ubigeo"
+                                    value="{{ $encomienda->receptor->ubigeo ?? '' }}" name="receptor_ubigeo" readonly>
                             </div>
                         </div>
 
@@ -173,8 +190,7 @@
                                 <select id="origen" class="form-select" name="origen">
                                     <option value="" disabled>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
-                                        <option value="{{ $s->id }}"
-                                            @if ($s->id == $user->sucursal_id) selected @endif>
+                                        <option value="{{ $s->id }}" @selected($s->id == $encomienda->origen)>
                                             {{ $s->nombre_comercial }}
                                         </option>
                                     @endforeach
@@ -187,7 +203,9 @@
                                 <select id="destino" class="form-select" name="destino" required>
                                     <option value="" disabled selected>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
-                                        <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
+                                        <option value="{{ $s->id }}" @selected($s->id == $encomienda->destino)>
+                                            {{ $s->nombre_comercial }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -216,7 +234,43 @@
                                     <th></th>
                                 </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody>
+                                @foreach ($encomienda->detalles as $index => $detalle)
+                                    <tr>
+                                        <td>
+                                            <select name="detalles[{{ $index }}][tipo_encomienda_id]"
+                                                class="form-select tipo_encomienda">
+                                                @foreach ($tipo_encomiendas as $tipo)
+                                                    <option value="{{ $tipo->id }}" @selected($tipo->id == $detalle->tipo_encomienda_id)>
+                                                        {{ $tipo->descripcion }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+
+                                        <td>
+                                            <input type="text" name="detalles[{{ $index }}][descripcion]"
+                                                class="form-control" value="{{ $detalle->descripcion }}">
+                                        </td>
+
+                                        <td>
+                                            <input type="number" name="detalles[{{ $index }}][peso]"
+                                                class="form-control peso" value="{{ $detalle->peso }}">
+                                        </td>
+
+                                        <td>
+                                            <input type="number" name="detalles[{{ $index }}][costo]"
+                                                class="form-control costo" value="{{ $detalle->costo }}">
+                                        </td>
+
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-danger btn-sm btnEliminarDetalle">
+                                                Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
                         </table>
 
                     </div>
@@ -302,7 +356,9 @@
                         <div class="row mb-2">
                             <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
                             <div class="col-6">
-                                <input type="number" id="pago_efectivo" name="pago_efectivo" class="form-control">
+                                <input type="number" id="pago_efectivo" name="pago_efectivo"
+                                    value="{{ optional($encomienda->venta->pagos->where('metodo_pago_id', 1)->first())->monto }}"
+                                    class="form-control">
                             </div>
                         </div>
 
@@ -322,7 +378,9 @@
                         <div class="row mb-2">
                             <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
                             <div class="col-6">
-                                <input type="number" id="pago_billetera" name="pago_billetera" class="form-control">
+                                <input type="number" id="pago_billetera"
+                                    value="{{ optional($encomienda->venta->pagos->where('billetera_id', '!=', null)->first())->monto }}"
+                                    name="pago_billetera" class="form-control">
                             </div>
                         </div>
 

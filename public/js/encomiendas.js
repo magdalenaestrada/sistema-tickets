@@ -56,6 +56,9 @@ function initUbigeosReceptor() {
 $(function () {
     filtrarOrigenDestino();
     actualizarResumen();
+    recalcularTotal();
+
+    $(document).on("input", ".peso, .costo", recalcularTotal);
 
     $("#formEditarEncomienda").submit(function (e) {
         e.preventDefault();
@@ -471,6 +474,7 @@ $(function () {
         tr.find(".costo").val(costo.toFixed(2));
 
         recalcularTotal();
+        actualizarResumen();
 
         $(document).ready(function () {
             $("#metodo_pago_id").trigger("change");
