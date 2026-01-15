@@ -6,18 +6,26 @@ function initUbigeosReceptor() {
     const $dist = $("#distrito_id");
     const $ubigeo = $("#receptor_ubigeo");
 
-    $dep.empty().append('<option value="">Seleccione</option>');
+    const depInicial = $dep.val();
+    const provInicial = $prov.val();
+    const distInicial = $dist.val();
 
-    UBIGEO.forEach((d) => {
-        $dep.append(`<option value="${d.id}">${d.nombre}</option>`);
-    });
+    if (!depInicial) {
+        $dep.html('<option value="">Seleccione</option>');
+
+        UBIGEO.forEach((d) => {
+            $dep.append(`<option value="${d.id}">${d.nombre}</option>`);
+        });
+    }
 
     $dep.on("change", function () {
         const depId = this.value;
 
-        $prov.empty().append('<option value="">Seleccione</option>');
-        $dist.empty().append('<option value="">Seleccione</option>');
+        $prov.html('<option value="">Seleccione</option>');
+        $dist.html('<option value="">Seleccione</option>');
         $ubigeo.val("");
+
+        if (!depId) return;
 
         const dep = UBIGEO.find((d) => d.id == depId);
         if (!dep) return;
@@ -31,8 +39,10 @@ function initUbigeosReceptor() {
         const depId = $dep.val();
         const provId = this.value;
 
-        $dist.empty().append('<option value="">Seleccione</option>');
+        $dist.html('<option value="">Seleccione</option>');
         $ubigeo.val("");
+
+        if (!depId || !provId) return;
 
         const dep = UBIGEO.find((d) => d.id == depId);
         const prov = dep?.provincias.find((p) => p.id == provId);
@@ -48,11 +58,24 @@ function initUbigeosReceptor() {
     });
 
     $dist.on("change", function () {
-        const ubigeo = $("#distrito_id option:selected").data("ubigeo");
+        const ubigeo = $dist.find("option:selected").data("ubigeo");
         $ubigeo.val(ubigeo || "");
     });
 
-    $("#distrito_id").trigger("change");;
+    if (depInicial && provInicial) {
+        const dep = UBIGEO.find((d) => d.id == depInicial);
+        if (!dep) return;
+
+        $prov.html('<option value="">Seleccione</option>');
+        dep.provincias.forEach((p) => {
+            $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
+        });
+        $prov.val(provInicial).trigger("change");
+
+        if (distInicial) {
+            $dist.val(distInicial).trigger("change");
+        }
+    }
 }
 
 $(function () {
@@ -61,21 +84,6 @@ $(function () {
     recalcularTotal();
 
     $(document).on("input", ".peso, .costo", recalcularTotal);
-
-    $("#formEditarEncomienda").submit(function (e) {
-        e.preventDefault();
-
-        $.ajax({
-            url: route("encomiendas.actualizar", $("#encomienda_id").val()),
-            method: "POST",
-            data: $(this).serialize(),
-            success: function (res) {
-                if (res.success) {
-                    Swal.fire("Actualizado", res.message, "success");
-                }
-            },
-        });
-    });
 
     function filtrarOrigenDestino() {
         const origen = $("#origen").val();
@@ -160,6 +168,13 @@ $(function () {
                 });
         });
     }
+
+    let encomiendaId = $("#encomienda_id").val();
+    let url = encomiendaId
+        ? route("encomiendas.actualizar", encomiendaId)
+        : route("encomiendas.guardar");
+
+    let method = encomiendaId ? "PUT" : "POST";
 
     $("#formEncomienda").submit(function (e) {
         e.preventDefault();
@@ -261,26 +276,28 @@ $(function () {
         };
 
         $.ajax({
-            url: route("encomiendas.guardar"),
-            method: "POST",
-            data,
-            success: function (data) {
-                if (data.success) {
+            url: url,
+            method: method,
+            data: data,
+            success: function (res) {
+                if (res.success) {
                     Swal.fire({
                         icon: "success",
-                        title: "Encomienda creada",
+                        title: encomiendaId
+                            ? "Encomienda actualizada"
+                            : "Encomienda creada",
                         timer: 1200,
                         showConfirmButton: false,
                     });
 
                     setTimeout(() => {
-                        window.location.href = data.redirect;
+                        window.location.href = res.redirect;
                     }, 1200);
                 } else {
                     Swal.fire({
                         icon: "error",
                         title: "Error",
-                        text: data.message,
+                        text: res.message,
                     });
                 }
             },
@@ -291,7 +308,9 @@ $(function () {
 
     $.get(route("tipo-encomienda.listar-todos"), function (res) {
         tiposEncomienda = res;
-        agregarFilaDetalle();
+        if (!window.IS_EDIT) {
+            agregarFilaDetalle();
+        }
     });
 
     $("#btnAgregarDetalle").click(() => agregarFilaDetalle());
@@ -568,10 +587,6 @@ $(function () {
     $("#receptor_documento").on(
         "blur",
         debounce(() => buscarPersona("receptor"), 300)
-    );
-    $("#numero_documento_id").on(
-        "blur",
-        debounce(() => buscarPersona("emisor", "#numero_documento_id"), 300)
     );
 
     $("#tipo_documento_id").on("change", updateRazonSocial);

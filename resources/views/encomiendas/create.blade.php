@@ -295,14 +295,14 @@
                         <div class="row mb-2 grupo_costo_total" hidden>
                             <label for="costo_total" class="col-6 col-form-label">Costo total</label>
                             <div class="col-6">
-                                <input type="number" id="costo_total" name="costo_total" class="form-control" readonly>
+                                <input type="number" step="0.01" id="costo_total" name="costo_total" class="form-control" readonly>
                             </div>
                         </div>
 
                         <div class="row mb-2">
                             <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
                             <div class="col-6">
-                                <input type="number" id="pago_efectivo" name="pago_efectivo" class="form-control">
+                                <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo" class="form-control">
                             </div>
                         </div>
 
@@ -322,7 +322,7 @@
                         <div class="row mb-2">
                             <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
                             <div class="col-6">
-                                <input type="number" id="pago_billetera" name="pago_billetera" class="form-control">
+                                <input type="number" step="0.01" id="pago_billetera" name="pago_billetera" class="form-control">
                             </div>
                         </div>
 

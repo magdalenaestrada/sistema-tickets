@@ -184,6 +184,7 @@ class EncomiendaController extends Controller
 
     public function actualizar(Request $request, $id)
     {
+        dd($request->all());
         DB::beginTransaction();
 
         try {
@@ -192,8 +193,8 @@ class EncomiendaController extends Controller
             $encomienda->update([
                 'origen' => $request->origen,
                 'destino' => $request->destino,
+                'distrito_id' => $request->distrito_id,
                 'total' => $request->total,
-                'estado' => $request->estado ?? 'A',
             ]);
 
             $encomienda->emisor->update([
@@ -221,9 +222,14 @@ class EncomiendaController extends Controller
                 ]);
             }
 
-            $encomienda->pagos()->delete();
+            $encomienda->venta->pagos()->delete();
+
             foreach ($request->pagos as $p) {
-                $encomienda->pagos()->create($p);
+                $encomienda->venta->pagos()->create([
+                    'metodo_pago_id' => $p['metodo_pago_id'],
+                    'billetera_id'   => $p['billetera_id'] ?? null,
+                    'total'          => (float) $p['total'],
+                ]);
             }
 
             DB::commit();
@@ -240,6 +246,8 @@ class EncomiendaController extends Controller
             ], 500);
         }
     }
+
+
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
         $request->validate([

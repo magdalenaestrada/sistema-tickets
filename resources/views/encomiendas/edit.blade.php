@@ -318,8 +318,8 @@
 
                         <div class="mb-3">
                             <label for="numero_documento_id" class="form-label">Número documento</label>
-                            <input type="number" id="numero_documento_id" name="numero_documento_id"
-                                class="form-control">
+                            <input type="number" value="{{ $encomienda->venta->persona->documento ?? '' }}"
+                                id="numero_documento_id" name="numero_documento_id" class="form-control">
                         </div>
 
                         <div class="mb-3">
@@ -329,37 +329,54 @@
                     </div>
                 </div>
 
-                <!-- Métodos de Pago -->
+                @php
+                    $pagos = $encomienda->venta->pagos;
+
+                    $tieneEfectivo = $pagos->where('metodo_pago_id', 1)->isNotEmpty();
+                    $tieneDigital = $pagos->whereNotNull('billetera_id')->isNotEmpty();
+
+                    if ($tieneEfectivo && $tieneDigital) {
+                        $metodoSeleccionado = 3;
+                    } elseif ($tieneDigital) {
+                        $metodoSeleccionado = 2;
+                    } else {
+                        $metodoSeleccionado = 1;
+                    }
+                @endphp
                 <div class="card mb-3">
                     <div class="card-body">
-
                         <div class="row mb-2">
                             <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
                             <div class="col-6">
                                 <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
-                                    @foreach ($metodos_pago as $metodo_pago)
-                                        <option value="{{ $metodo_pago->id }}">
-                                            {{ $metodo_pago->descripcion }}
-                                        </option>
-                                    @endforeach
+                                    <option value="1" {{ $metodoSeleccionado == 1 ? 'selected' : '' }}>
+                                        Efectivo
+                                    </option>
+                                    <option value="2" {{ $metodoSeleccionado == 2 ? 'selected' : '' }}>
+                                        Digital
+                                    </option>
+                                    <option value="3" {{ $metodoSeleccionado == 3 ? 'selected' : '' }}>
+                                        Mixto
+                                    </option>
                                 </select>
-
                             </div>
                         </div>
 
                         <div class="row mb-2 grupo_costo_total" hidden>
                             <label for="costo_total" class="col-6 col-form-label">Costo total</label>
                             <div class="col-6">
-                                <input type="number" id="costo_total" name="costo_total" class="form-control" readonly>
+                                <input type="number" id="costo_total" step="0.01" name="costo_total"
+                                    class="form-control" readonly>
                             </div>
                         </div>
 
                         <div class="row mb-2">
                             <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
                             <div class="col-6">
-                                <input type="number" id="pago_efectivo" name="pago_efectivo"
-                                    value="{{ optional($encomienda->venta->pagos->where('metodo_pago_id', 1)->first())->monto }}"
+                                <input type="number" name="pago_efectivo" id="pago_efectivo" step="0.01"
+                                    value="{{ optional($pagos->where('metodo_pago_id', 1)->first())->total }}"
                                     class="form-control">
+
                             </div>
                         </div>
 
@@ -367,9 +384,10 @@
                             <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
                             <div class="col-6">
                                 <select name="billetera_id" id="billetera_id" class="form-select">
-                                    @foreach ($billeteras_digitales as $billetera_digital)
-                                        <option value="{{ $billetera_digital->id }}">
-                                            {{ $billetera_digital->descripcion }}
+                                    @foreach ($billeteras_digitales as $b)
+                                        <option value="{{ $b->id }}"
+                                            {{ optional($pagos->where('billetera_id', $b->id)->first()) ? 'selected' : '' }}>
+                                            {{ $b->descripcion }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -379,15 +397,15 @@
                         <div class="row mb-2">
                             <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
                             <div class="col-6">
-                                <input type="number" id="pago_billetera"
-                                    value="{{ optional($encomienda->venta->pagos->where('billetera_id', '!=', null)->first())->monto }}"
-                                    name="pago_billetera" class="form-control">
+                                <input type="number" name="pago_billetera" id="pago_billetera" step="0.01"
+                                    value="{{ optional($pagos->whereNotNull('billetera_id')->first())->total }}"
+                                    class="form-control">
+
                             </div>
                         </div>
 
                     </div>
                 </div>
-
             </div>
         </div>
         <div class="row mt-3">
