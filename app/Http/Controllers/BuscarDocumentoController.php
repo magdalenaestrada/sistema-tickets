@@ -32,7 +32,7 @@ class BuscarDocumentoController extends Controller
             $datosAPI = $this->consultarAPI($numero);
 
             if ($datosAPI) {
-    
+
                 return response()->json($datosAPI);
             }
 
@@ -45,9 +45,6 @@ class BuscarDocumentoController extends Controller
         }
     }
 
-    /**
-     * Normalizar datos de persona desde la base de datos
-     */
     private function normalizarPersonaBD(Persona $persona): array
     {
         $esDNI = strlen($persona->documento) === 8;
@@ -76,15 +73,12 @@ class BuscarDocumentoController extends Controller
         }
     }
 
-    /**
-     * Consultar API externa
-     */
+
     private function consultarAPI(string $numero): ?array
     {
-        $token = env('APIS_TOKEN');
-        $baseUrl = 'https://api.decolecta.com/v1/';
+        $token   = config('token.decolecta.token');
+        $baseUrl = config('token.decolecta.url');
 
-        // Determinar endpoint según tipo de documento
         if (strlen($numero) === 8) {
             $endpoint = "reniec/dni?numero={$numero}";
         } else {
@@ -102,7 +96,6 @@ class BuscarDocumentoController extends Controller
 
         $data = $response->json();
 
-        // Normalizar respuesta de la API
         if (strlen($numero) === 8) {
             return [
                 'tipo' => 'DNI',
@@ -129,9 +122,7 @@ class BuscarDocumentoController extends Controller
         }
     }
 
-    /**
-     * Extraer apellido paterno (primera palabra)
-     */
+
     private function extraerApellidoPaterno(?string $apellidos): string
     {
         if (!$apellidos) return '';
@@ -139,9 +130,6 @@ class BuscarDocumentoController extends Controller
         return $partes[0] ?? '';
     }
 
-    /**
-     * Extraer apellido materno (segunda palabra en adelante)
-     */
     private function extraerApellidoMaterno(?string $apellidos): string
     {
         if (!$apellidos) return '';
@@ -159,8 +147,8 @@ class BuscarDocumentoController extends Controller
             $esDNI = $datos['tipo'] === 'DNI';
 
             Persona::create([
-                'tipo_documento_id' => $esDNI ? 1 : 2, 
-                'distrito_id' => 1, 
+                'tipo_documento_id' => $esDNI ? 1 : 2,
+                'distrito_id' => 1,
                 'documento' => $datos['documento'],
                 'nombres' => $esDNI ? $datos['nombres'] : ($datos['razon_social'] ?? ''),
                 'apellidos' => $esDNI ? trim(($datos['apellido_paterno'] ?? '') . ' ' . ($datos['apellido_materno'] ?? '')) : null,

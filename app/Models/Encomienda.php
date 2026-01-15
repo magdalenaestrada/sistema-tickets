@@ -47,6 +47,12 @@ class Encomienda extends Model
         return $this->hasMany(EncomiendaDetalle::class, 'encomienda_id');
     }
 
+    public function distrito()
+    {
+        return $this->belongsTo(Distrito::class, 'distrito_id');
+    }
+
+
     protected static function booted()
     {
         static::deleting(function ($encomienda) {

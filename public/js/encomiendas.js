@@ -51,6 +51,8 @@ function initUbigeosReceptor() {
         const ubigeo = $("#distrito_id option:selected").data("ubigeo");
         $ubigeo.val(ubigeo || "");
     });
+
+    $("#distrito_id").trigger("change");;
 }
 
 $(function () {
@@ -246,6 +248,7 @@ $(function () {
                 direccion: $("#receptor_direccion").val(),
             },
             origen: $("#origen").val(),
+            distrito_id: $("#distrito_id").val(),
             destino: $("#destino").val(),
             tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
             total: total,

@@ -155,7 +155,6 @@ class EncomiendaController extends Controller
             ->rawColumns(['checkbox', 'estado', 'acciones'])
             ->make(true);
     }
-
     public function editar($id)
     {
         $metodos_pago = MetodoPago::all();
@@ -241,8 +240,6 @@ class EncomiendaController extends Controller
             ], 500);
         }
     }
-
-
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
         $request->validate([

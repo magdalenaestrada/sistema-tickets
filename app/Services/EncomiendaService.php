@@ -29,7 +29,7 @@ class EncomiendaService
                 'usuario_id' => $user_id,
                 'emisor_persona_id' => $emisorId,
                 'receptor_persona_id' => $receptorId,
-                'distrito_id' => $request->distrito_id ?? 1,
+                'distrito_id' => $request->distrito_id,
                 'total' => $request->total,
                 'estado' => 'A',
                 'fecha_creacion' => now(),

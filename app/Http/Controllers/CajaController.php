@@ -15,25 +15,18 @@ class CajaController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->sucursal_id) {
+        if ($user->rol == 'Super Administrador') {
             $cajas = Caja::with('sucursal', 'usuario')
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
             return view('caja.index', compact('cajas'));
+        } else {
+            $cajas = Caja::with('sucursal', 'usuario')
+                ->where('sucursal_id', $user->sucursal_id)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+            return view('caja.index', compact('cajas'));
         }
-
-        $caja = Caja::where('sucursal_id', $user->sucursal_id)
-            ->where('estado', 'A')
-            ->latest()
-            ->first();
-
-        if (!$caja) {
-            return redirect()
-                ->route('caja.index')
-                ->with('warning', 'No hay una caja activa para tu sucursal.');
-        }
-
-        return redirect()->route('caja.show', $caja);
     }
     public function store(Request $request)
     {

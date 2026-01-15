@@ -4,7 +4,6 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between">
             <h5 class="mb-0">Asignar Encomiendas</h5>
-            <button class="btn btn-primary" id="btnNueva">Nueva Encomienda</button>
         </div>
         <div class="card-body">
 

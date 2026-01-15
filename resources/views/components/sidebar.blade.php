@@ -75,12 +75,17 @@
                     <ul class="nav sub-menu">
 
                         <li class="nav-item">
-                            <a href="{{ route('encomiendas.index-no-asignadas') }}"
-                                class="nav-link {{ request()->routeIs('encomiendas.index-no-asignadas') ? 'active' : '' }}">
+                            <a href="{{ route('encomiendas.crear-encomienda') }}"
+                                class="nav-link {{ request()->routeIs('encomiendas.crear-encomienda') ? 'active' : '' }}">
                                 Crear encomienda
                             </a>
                         </li>
-
+                        <li class="nav-item">
+                            <a href="{{ route('encomiendas.index-no-asignadas') }}"
+                                class="nav-link {{ request()->routeIs('encomiendas.index-no-asignadas') ? 'active' : '' }}">
+                                Asignar encomienda
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a href="{{ route('encomiendas.index-asignadas') }}"
                                 class="nav-link {{ request()->routeIs('encomiendas.index-asignadas') ? 'active' : '' }}">
@@ -146,7 +151,8 @@
                             </a>
                         </li>
                         <li class="nav-item"><a href="{{ route('tipo-cupones.index') }}"
-                                class="nav-link {{ request()->routeIs('tipo-cupones.*') ? 'active' : '' }}">Tipo de cupones
+                                class="nav-link {{ request()->routeIs('tipo-cupones.*') ? 'active' : '' }}">Tipo de
+                                cupones
                             </a>
                         </li>
                         <li class="nav-item">

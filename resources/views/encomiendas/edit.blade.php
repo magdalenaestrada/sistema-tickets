@@ -143,8 +143,8 @@
                             <div class="col-md-3">
                                 <label class="form-label">DEPARTAMENTO</label>
                                 <select id="departamento_id" class="form-select">
-                                    <option value="{{ $encomienda->receptor->distrito->provincia->departamento->id }}">
-                                        {{ $encomienda->receptor->distrito->provincia->departamento->nombre }}
+                                    <option value="{{ $encomienda->distrito->provincia->departamento->id }}">
+                                        {{ $encomienda->distrito->provincia->departamento->nombre }}
                                     </option>
                                 </select>
                             </div>
@@ -152,8 +152,8 @@
                             <div class="col-md-3">
                                 <label class="form-label">PROVINCIA</label>
                                 <select id="provincia_id" class="form-select">
-                                    <option value="{{ $encomienda->receptor->distrito->provincia->id }}">
-                                        {{ $encomienda->receptor->distrito->provincia->nombre }}
+                                    <option value="{{ $encomienda->distrito->provincia->id }}">
+                                        {{ $encomienda->distrito->provincia->nombre }}
                                     </option>
                                 </select>
 
@@ -162,8 +162,9 @@
                             <div class="col-md-3">
                                 <label class="form-label">DISTRITO</label>
                                 <select id="distrito_id" class="form-select">
-                                    <option value="{{ $encomienda->receptor->distrito->id }}">
-                                        {{ $encomienda->receptor->distrito->nombre }}
+                                    <option value="{{ $encomienda->distrito->id }}"
+                                        data-ubigeo="{{ $encomienda->distrito->ubigeo }}">
+                                        {{ $encomienda->distrito->nombre }}
                                     </option>
                                 </select>
                             </div>
@@ -171,7 +172,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">Ubigeo</label>
                                 <input type="text" class="form-control" id="receptor_ubigeo"
-                                    value="{{ $encomienda->receptor->ubigeo ?? '' }}" name="receptor_ubigeo" readonly>
+                                    value="{{ $encomienda->distrito->ubigeo ?? '' }}" name="receptor_ubigeo" readonly>
                             </div>
                         </div>
 
@@ -401,4 +402,7 @@
 
 @push('scripts')
     <script src="{{ asset('js/encomiendas.js') }}"></script>
+    <script>
+        window.IS_EDIT = {{ request()->routeIs('encomiendas.editar') ? 'true' : 'false' }};
+    </script>
 @endpush
