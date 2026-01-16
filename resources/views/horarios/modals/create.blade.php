@@ -29,15 +29,17 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4"> <label class="form-label">Costo pasaje</label> <input type="number"
-                                step="0.01" name="costo_pasaje" id="costo_pasaje" class="form-control" required>
+                        <div class="col-md-4 contenedor_costo_pasaje">
+                            <label class="form-label">Costo pasaje</label>
+                            <input type="number" step="0.01" name="costo_pasaje" id="costo_pasaje"
+                                class="form-control" required>
                         </div>
                         <div class="col-md-4"> <label class="form-label">Hora embarque</label> <input type="time"
                                 name="hora_embarque" id="hora_embarque" class="form-control" required> </div>
                         <div class="col-md-4"> <label class="form-label">Fecha salida</label> <input type="date"
                                 name="fecha_salida" id="fecha_salida" class="form-control" required> </div>
                         <div class="col-md-4"> <label class="form-label">Repetir hasta</label> <input type="date"
-                                name="repetir_hasta" id="repetir_hasta" class="form-control" required> </div>
+                                name="repetir_hasta" id="repetir_hasta" class="form-control"> </div>
                     </div>
                     <div class="row g-3">
 
@@ -51,7 +53,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-6 contenedor_destino">
                             <label for="punto_destino_id" class="form-label">Punto de destino</label>
                             <select name="punto_destino_id" id="punto_destino_id" class="form-select" required>
                                 <option value="">Seleccione</option>

@@ -14,7 +14,15 @@ class TipoViajeSeeder extends Seeder
     public function run(): void
     {
         TipoViaje::create([
-            "descripcion" => "Directo",
+            [
+                "descripcion" => "Directo",
+
+            ],
+
+            [
+                "descripcion" => "Con Tramos",
+
+            ]
         ]);
     }
 }

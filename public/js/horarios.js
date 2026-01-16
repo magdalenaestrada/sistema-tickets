@@ -31,6 +31,7 @@ $(document).ready(function () {
         drawCallback: function () {
             lucide.createIcons();
         },
+        dom:"rtip"
     });
 
     $("#btnNuevoHorario").click(function () {
@@ -51,7 +52,9 @@ $(document).ready(function () {
         });
 
         let id = $("#horario_id").val();
-        let url = id ? route("horarios.actualizar", id) : $(this).attr("action");
+        let url = id
+            ? route("horarios.actualizar", id)
+            : $(this).attr("action");
         let method = id ? "PUT" : "POST";
         if (id) formData.push({ name: "_method", value: "PUT" });
 
@@ -185,6 +188,22 @@ $(document).ready(function () {
         });
     });
 
+    $("#tipo_viaje_id").change(function () {
+        if ($("#tipo_viaje_id").val() === "2") {
+            $(".contenedor_costo_pasaje").prop("hidden", true);
+            $("#costo_pasaje").prop("required", false);
+            $("#costo_pasaje").val("");
+            $(".contenedor_destino").prop("hidden", true);
+            $("#punto_destino_id").prop("required", false);
+            $("#punto_destino_id").val("");
+        } else {
+            $(".contenedor_costo_pasaje").prop("hidden", false);
+            $("#costo_pasaje").prop("required", true);
+            $(".contenedor_destino").prop("hidden", false);
+            $("#punto_destino_id").prop("required", true);
+        }
+    });
+
     $("#punto_origen_id").change(function () {
         let origen = $(this).val();
         $("#punto_destino_id option").each(function () {
@@ -215,53 +234,62 @@ $(document).ready(function () {
             $("#tablaPuntos tbody").empty();
             $("#tablaTramos tbody").empty();
 
-            $.get(route("horarios.mostrar", horarioId) + "/puntos", function (puntos) {
-                puntos.sort((a, b) => b.orden - a.orden);
+            $.get(
+                route("horarios.mostrar", horarioId) + "/puntos",
+                function (puntos) {
+                    puntos.sort((a, b) => b.orden - a.orden);
 
-                // Puntos
-                puntos.forEach((p) => {
-                    $("#tablaPuntos tbody").append(`
+                    // Puntos
+                    puntos.forEach((p) => {
+                        $("#tablaPuntos tbody").append(`
         <tr>
             <td>${p.origen ? p.origen.nombre_comercial : ""}</td>
             <td>${p.destino ? p.destino.nombre_comercial : ""}</td>
             <td>${parseFloat(p.costo_acumulado).toFixed(2)}</td>
             <td>
-                <button class="btn btn-warning btn-xs editarPunto" data-id="${p.id}">Editar</button>
-                <button class="btn btn-danger btn-xs eliminarPunto" data-id="${p.id}">Eliminar</button>
+                <button class="btn btn-warning btn-xs editarPunto" data-id="${
+                    p.id
+                }">Editar</button>
+                <button class="btn btn-danger btn-xs eliminarPunto" data-id="${
+                    p.id
+                }">Eliminar</button>
             </td>
         </tr>
     `);
-                });
+                    });
 
-                for (let i = 0; i < puntos.length; i++) {
-                    let origen =
-                        i === 0
-                            ? puntos[i].origen.nombre_comercial
-                            : puntos[i - 1].destino.nombre_comercial;
-                    let destino = puntos[i].destino.nombre_comercial;
-                    let costoTramo =
-                        i === 0
-                            ? puntos[i].costo_acumulado
-                            : puntos[i].costo_acumulado -
-                              puntos[i - 1].costo_acumulado;
+                    for (let i = 0; i < puntos.length; i++) {
+                        let origen =
+                            i === 0
+                                ? puntos[i].origen.nombre_comercial
+                                : puntos[i - 1].destino.nombre_comercial;
+                        let destino = puntos[i].destino.nombre_comercial;
+                        let costoTramo =
+                            i === 0
+                                ? puntos[i].costo_acumulado
+                                : puntos[i].costo_acumulado -
+                                  puntos[i - 1].costo_acumulado;
 
-                    $("#tablaTramos tbody").append(`
+                        $("#tablaTramos tbody").append(`
         <tr>
             <td>${origen}</td>
             <td>${destino}</td>
             <td>${costoTramo.toFixed(2)}</td>
         </tr>
     `);
-                }
+                    }
 
-                // Excluir origen del select
-                const origenNombre =
-                    puntos.length > 0 ? puntos[0].origen.nombre_comercial : "";
-                $("#destino_id option").each(function () {
-                    if ($(this).text() === origenNombre) $(this).hide();
-                    else $(this).show();
-                });
-            });
+                    // Excluir origen del select
+                    const origenNombre =
+                        puntos.length > 0
+                            ? puntos[0].origen.nombre_comercial
+                            : "";
+                    $("#destino_id option").each(function () {
+                        if ($(this).text() === origenNombre) $(this).hide();
+                        else $(this).show();
+                    });
+                }
+            );
         }
 
         // Guardar o editar punto
@@ -269,7 +297,9 @@ $(document).ready(function () {
             e.preventDefault();
             const formData = $(this).serialize();
             let url = puntoEditActivo
-                ? route("horarios.mostrar", horarioIdActivo) + "/puntos/" + puntoEditActivo
+                ? route("horarios.mostrar", horarioIdActivo) +
+                  "/puntos/" +
+                  puntoEditActivo
                 : route("horarios.mostrar", horarioIdActivo) + "/puntos";
             let method = puntoEditActivo ? "PUT" : "POST";
 
@@ -303,7 +333,9 @@ $(document).ready(function () {
         $("#tablaPuntos").on("click", ".editarPunto", function () {
             puntoEditActivo = $(this).data("id");
             $.get(
-                route("horarios.mostrar", horarioIdActivo) + "/puntos/" + puntoEditActivo,
+                route("horarios.mostrar", horarioIdActivo) +
+                    "/puntos/" +
+                    puntoEditActivo,
                 function (p) {
                     $("#destino_id").val(p.destino_id);
                     $("#costo_acumulado").val(p.costo_acumulado);
@@ -324,7 +356,10 @@ $(document).ready(function () {
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: route("horarios.mostrar", horarioIdActivo) + "/puntos/" + puntoId,
+                        url:
+                            route("horarios.mostrar", horarioIdActivo) +
+                            "/puntos/" +
+                            puntoId,
                         type: "DELETE",
                         headers: {
                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(

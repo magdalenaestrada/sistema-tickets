@@ -3,10 +3,10 @@
 @section('content')
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Gestión de Horarios</h5>
+            <h5 class="mb-0">Gestión de Salidas</h5>
             <div class="d-flex gap-2"> <button class="btn btn-primary" id="btnNuevoHorario"> <i class="link-icon"
                         data-lucide="plus"></i>
-                    Añadir Horario </button> </div>
+                    Añadir Salida </button> </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
