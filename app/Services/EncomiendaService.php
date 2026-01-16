@@ -62,4 +62,53 @@ class EncomiendaService
             return $encomienda;
         });
     }
+    public function actualizarEncomienda(
+        $request,
+        Encomienda $encomienda,
+        int $emisorId,
+        int $receptorId
+    ) {
+        return DB::transaction(function () use ($request, $encomienda, $emisorId, $receptorId) {
+
+            $encomienda->update([
+                'origen' => $request->origen,
+                'destino' => $request->destino,
+                'emisor_persona_id' => $emisorId,
+                'receptor_persona_id' => $receptorId,
+                'distrito_id' => $request->distrito_id,
+                'total' => $request->total,
+            ]);
+
+            EncomiendaDetalle::where('encomienda_id', $encomienda->id)->delete();
+
+            foreach ($request->detalles as $detalle) {
+                EncomiendaDetalle::create([
+                    'encomienda_id' => $encomienda->id,
+                    'tipo_encomienda_id' => $detalle['tipo_encomienda_id'],
+                    'descripcion' => $detalle['descripcion'],
+                    'peso' => $detalle['peso'],
+                    'costo' => $detalle['costo'],
+                ]);
+            }
+
+            $ventaData = $this->ventaService->reemplazarVenta(
+                $encomienda->venta,
+                $request,
+                Encomienda::class,
+                $encomienda->id
+            );
+
+            $encomienda->venta_id = $ventaData['venta']->id;
+            $encomienda->save();
+
+            $this->pagoService->registrarPagos(
+                $ventaData['venta']->id,
+                $request->pagos ?? [],
+                $ventaData['servicio_model'],
+                $ventaData['servicio_id']
+            );
+
+            return $encomienda;
+        });
+    }
 }

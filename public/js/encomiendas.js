@@ -263,6 +263,8 @@ $(function () {
                 direccion: $("#receptor_direccion").val(),
             },
             origen: $("#origen").val(),
+            numero_documento_id: $("#numero_documento_id").val(),
+            razon_social: $("#razon_social").val(),
             distrito_id: $("#distrito_id").val(),
             destino: $("#destino").val(),
             tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
@@ -422,6 +424,18 @@ $(function () {
         $("#peso_total").val(totalPeso.toFixed(2));
         $("#cantidad_bultos").val(totalBultos);
     }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (window.IS_EDIT) {
+            const departamentoId = $("#departamento_id").val();
+            const provinciaId = $("#provincia_id").val();
+            const distritoId = $("#distrito_id").val();
+
+            if (departamentoId) {
+                cargarProvincias(departamentoId, provinciaId, distritoId);
+            }
+        }
+    });
 
     $(document).on("input", ".peso, .costo", function () {
         recalcularTotal();

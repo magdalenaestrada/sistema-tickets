@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Pasaje;
+use App\Models\Persona;
 use App\Models\Venta;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,11 +20,21 @@ class VentaService
 
         DB::beginTransaction();
         try {
+            $personaVenta = Persona::updateOrCreate(
+                ['documento' => $request->numero_documento_id],
+                [
+                    'tipo_documento_id' => $request->tipo_documento_factura_id,
+                    'nombres' => $request->razon_social,
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
+
+                ]
+            );
             $venta = Venta::create([
                 'tipo_servicio_id'  => $request['tipo_servicio_id'],
                 'sucursal_id'       => $user->sucursal_id,
                 'usuario_id'        => $user->id,
-                'persona_id'        => $user->persona_id,
+                'persona_id' => $personaVenta->id,
                 'tipo_documento_factura_id' => $request['tipo_documento_factura_id'],
                 'serie'             => $request['serie'],
                 'numero'            => $request['numero'],
@@ -134,5 +145,23 @@ class VentaService
             'serie'  => $serie,
             'numero' => $numero,
         ];
+    }
+
+    public function anularVenta(Venta $venta): void
+    {
+        $venta->update(['estado' => 'A']);
+        $venta->pagos()->update(['estado' => 'AN']);
+    }
+    public function reemplazarVenta(
+        ?Venta $ventaAnterior,
+        $data,
+        $servicio_model,
+        $servicio_id
+    ): array {
+        if ($ventaAnterior) {
+            $this->anularVenta($ventaAnterior);
+        }
+
+        return $this->crearVenta($data, $servicio_model, $servicio_id);
     }
 }

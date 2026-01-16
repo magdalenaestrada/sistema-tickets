@@ -240,7 +240,7 @@
                                     <tr>
                                         <td>
                                             <select name="detalles[{{ $index }}][tipo_encomienda_id]"
-                                                class="form-select tipo_encomienda">
+                                                class="form-select tipo">
                                                 @foreach ($tipo_encomiendas as $tipo)
                                                     <option value="{{ $tipo->id }}" @selected($tipo->id == $detalle->tipo_encomienda_id)>
                                                         {{ $tipo->descripcion }}
@@ -251,7 +251,7 @@
 
                                         <td>
                                             <input type="text" name="detalles[{{ $index }}][descripcion]"
-                                                class="form-control" value="{{ $detalle->descripcion }}">
+                                                class="form-control desc" value="{{ $detalle->descripcion }}">
                                         </td>
 
                                         <td>
@@ -324,7 +324,8 @@
 
                         <div class="mb-3">
                             <label for="razon_social" class="form-label">Razón social</label>
-                            <input type="text" id="razon_social" name="razon_social" class="form-control">
+                            <input type="text" value="{{ $encomienda->venta->persona->nombres ?? '' }}"
+                                id="razon_social" name="razon_social" class="form-control">
                         </div>
                     </div>
                 </div>

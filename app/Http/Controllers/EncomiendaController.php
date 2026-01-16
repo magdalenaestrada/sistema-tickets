@@ -182,67 +182,74 @@ class EncomiendaController extends Controller
         return view('encomiendas.edit', compact('metodos_pago', 'encomienda', 'sucursales', 'user', 'tipos_documentos', 'tipo_encomiendas', 'tipos_documentos_facturas', 'billeteras_digitales'));
     }
 
-    public function actualizar(Request $request, $id)
-    {
-        dd($request->all());
-        DB::beginTransaction();
+    public function actualizar(
+        Request $request,
+        Encomienda $encomienda,
+        EncomiendaService $encomiendaService
+    ) {
+        $request->validate([
+            'emisor.documento' => 'required|string|max:20',
+            'emisor.nombres' => 'required|string|max:200',
+            'receptor.documento' => 'required|string|max:20',
+            'receptor.nombres' => 'required|string|max:200',
+            'total' => 'required|numeric|min:0',
+            'detalles' => 'required|array|min:1',
+        ]);
 
         try {
-            $encomienda = Encomienda::findOrFail($id);
+            $emisor = Persona::updateOrCreate(
+                ['documento' => $request->input('emisor.documento')],
+                [
+                    'tipo_documento_id' => $request->input('emisor.tipo_documento_id'),
+                    'distrito_id' => $request->input('emisor.distrito_id', 1),
+                    'nombres' => $request->input('emisor.nombres'),
+                    'apellidos' => $request->input('emisor.apellidos'),
+                    'telefono' => $request->input('emisor.telefono'),
+                    'celular' => $request->input('emisor.celular'),
+                    'correo' => $request->input('emisor.correo'),
+                    'direccion' => $request->input('emisor.direccion'),
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
 
-            $encomienda->update([
-                'origen' => $request->origen,
-                'destino' => $request->destino,
-                'distrito_id' => $request->distrito_id,
-                'total' => $request->total,
-            ]);
+                ]
+            );
 
-            $encomienda->emisor->update([
-                'documento' => $request->emisor['documento'],
-                'nombres' => $request->emisor['nombres'],
-                'apellidos' => $request->emisor['apellidos'],
-                'direccion' => $request->emisor['direccion'],
-            ]);
+            $receptor = Persona::updateOrCreate(
+                ['documento' => $request->input('receptor.documento')],
+                [
+                    'tipo_documento_id' => $request->input('receptor.tipo_documento_id', 1),
+                    'distrito_id' => $request->input('receptor.distrito_id', 1),
+                    'nombres' => $request->input('receptor.nombres'),
+                    'apellidos' => $request->input('receptor.apellidos'),
+                    'telefono' => $request->input('receptor.telefono'),
+                    'celular' => $request->input('receptor.celular'),
+                    'correo' => $request->input('receptor.correo'),
+                    'direccion' => $request->input('receptor.direccion'),
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
 
-            $encomienda->receptor->update([
-                'documento' => $request->receptor['documento'],
-                'nombres' => $request->receptor['nombres'],
-                'apellidos' => $request->receptor['apellidos'],
-                'direccion' => $request->receptor['direccion'],
-            ]);
+                ]
+            );
 
-            $encomienda->detalles()->delete();
-
-            foreach ($request->detalles as $d) {
-                $encomienda->detalles()->create([
-                    'tipo_encomienda_id' => $d['tipo_encomienda_id'],
-                    'peso' => $d['peso'],
-                    'costo' => $d['costo'],
-                    'descripcion' => $d['descripcion'],
-                ]);
-            }
-
-            $encomienda->venta->pagos()->delete();
-
-            foreach ($request->pagos as $p) {
-                $encomienda->venta->pagos()->create([
-                    'metodo_pago_id' => $p['metodo_pago_id'],
-                    'billetera_id'   => $p['billetera_id'] ?? null,
-                    'total'          => (float) $p['total'],
-                ]);
-            }
-
-            DB::commit();
+            $encomiendaService->actualizarEncomienda(
+                $request,
+                $encomienda,
+                $emisor->id,
+                $receptor->id
+            );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Encomienda actualizada correctamente'
+                'redirect' => route('encomiendas.index-no-asignadas'),
+                'ticket_id' => $encomienda->id
             ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
+        } catch (\Throwable $th) {
+            \Log::error($th);
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $th->getMessage(),
+                'line' => $th->getLine(),
+                'file' => $th->getFile(),
             ], 500);
         }
     }
