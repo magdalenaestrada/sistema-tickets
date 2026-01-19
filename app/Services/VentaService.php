@@ -159,9 +159,10 @@ class VentaService
         $servicio_id
     ): array {
         if ($ventaAnterior) {
-            $this->anularVenta($ventaAnterior);
+            $this->anularVenta($ventaAnterior); 
         }
 
         return $this->crearVenta($data, $servicio_model, $servicio_id);
     }
 }
+       

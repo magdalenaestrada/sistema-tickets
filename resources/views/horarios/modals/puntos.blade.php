@@ -9,9 +9,15 @@
             <div class="modal-body">
                 <form id="formPunto">
                     @csrf
+                    <input type="hidden" id="horario_id">
+
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Punto</label>
+                        <div class="col-md-4">
+                            <label class="form-label">Origen</label>
+                            <input type="text" id="origen_nombre" class="form-control" disabled>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Punto (Del ultimo al más reciente)</label>
                             <select class="form-select" name="destino_id" id="destino_id" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($sucursales as $sucursal)
@@ -19,8 +25,8 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Costo desde origen</label>
+                        <div class="col-md-3">
+                            <label class="form-label">Costo desde origen (S/)</label>
                             <input type="number" step="0.01" name="costo_acumulado" id="costo_acumulado"
                                 class="form-control" min="0" required>
                         </div>
@@ -38,18 +44,6 @@
                             <th>Punto</th>
                             <th>Costo desde origen</th>
                             <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-                <!-- Tabla de tramos -->
-                <table class="table table-bordered mt-3" id="tablaTramos">
-                    <thead>
-                        <tr>
-                            <th>Origen</th>
-                            <th>Destino</th>
-                            <th>Costo Tramo</th>
                         </tr>
                     </thead>
                     <tbody></tbody>

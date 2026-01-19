@@ -32,6 +32,7 @@ class EncomiendaService
                 'distrito_id' => $request->distrito_id,
                 'total' => $request->total,
                 'estado' => 'A',
+                'pago_instantaneo' => $request->boolean('pago_instantaneo'),
                 'fecha_creacion' => now(),
             ]);
 
@@ -44,21 +45,23 @@ class EncomiendaService
                     'costo' => $detalle['costo'],
                 ]);
             }
-            $ventaData = $this->ventaService->crearVenta(
-                $request,
-                Encomienda::class,
-                $encomienda->id
-            );
-            $encomienda->venta_id = $ventaData['venta']->id;
-            $encomienda->save();
 
-            $this->pagoService->registrarPagos(
-                $ventaData['venta']->id,
-                $request->pagos ?? [],
-                $ventaData['servicio_model'],
-                $ventaData['servicio_id']
-            );
+            if ($request->boolean('pago_instantaneo')) {
+                $ventaData = $this->ventaService->crearVenta(
+                    $request,
+                    Encomienda::class,
+                    $encomienda->id
+                );
+                $encomienda->venta_id = $ventaData['venta']->id;
+                $encomienda->save();
 
+                $this->pagoService->registrarPagos(
+                    $ventaData['venta']->id,
+                    $request->pagos ?? [],
+                    $ventaData['servicio_model'],
+                    $ventaData['servicio_id']
+                );
+            }
             return $encomienda;
         });
     }
@@ -76,6 +79,7 @@ class EncomiendaService
                 'emisor_persona_id' => $emisorId,
                 'receptor_persona_id' => $receptorId,
                 'distrito_id' => $request->distrito_id,
+                'pago_instantaneo' => $request->boolean('pago_instantaneo'),
                 'total' => $request->total,
             ]);
 
@@ -90,23 +94,36 @@ class EncomiendaService
                     'costo' => $detalle['costo'],
                 ]);
             }
+            $antesTeniaPago = $encomienda->venta_id !== null;
+            $registrarPago  = $request->boolean('pago_instantaneo');
 
-            $ventaData = $this->ventaService->reemplazarVenta(
-                $encomienda->venta,
-                $request,
-                Encomienda::class,
-                $encomienda->id
-            );
+            if ($registrarPago) {
 
-            $encomienda->venta_id = $ventaData['venta']->id;
-            $encomienda->save();
+                if ($antesTeniaPago) {
+                    $ventaData = $this->ventaService->reemplazarVenta(
+                        $encomienda->venta,
+                        $request,
+                        Encomienda::class,
+                        $encomienda->id
+                    );
+                } else {
+                    $ventaData = $this->ventaService->crearVenta(
+                        $request,
+                        Encomienda::class,
+                        $encomienda->id
+                    );
+                }
 
-            $this->pagoService->registrarPagos(
-                $ventaData['venta']->id,
-                $request->pagos ?? [],
-                $ventaData['servicio_model'],
-                $ventaData['servicio_id']
-            );
+                $encomienda->venta_id = $ventaData['venta']->id;
+                $encomienda->save();
+
+                $this->pagoService->registrarPagos(
+                    $ventaData['venta']->id,
+                    $request->pagos ?? [],
+                    $ventaData['servicio_model'],
+                    $ventaData['servicio_id']
+                );
+            }
 
             return $encomienda;
         });

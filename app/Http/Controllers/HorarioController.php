@@ -18,8 +18,9 @@ class HorarioController extends Controller
         $tiposViaje = TipoViaje::all();
         $tipo_vehiculos   = TipoVehiculo::all();
         $sucursales  = Sucursal::where('estado', 'A')->get();
+        $horarios = Horario::with(['tipo_viaje', 'punto_origen', 'punto_destino', 'tipo_vehiculo'])->select('horarios.*');
 
-        return view('horarios.index', compact('tiposViaje', 'tipo_vehiculos', 'sucursales'));
+        return view('horarios.index', compact('tiposViaje', 'tipo_vehiculos', 'sucursales', 'horarios'));
     }
 
     public function datatable()
@@ -38,7 +39,11 @@ class HorarioController extends Controller
 
                 if ($h->tipo_viaje_id == 2) {
                     $btnPuntos = '
-            <button class="btn btn-primary btn-xs ver-puntos" data-id="' . $h->id . '">
+           <button 
+    class="btn btn-primary btn-xs ver-puntos"
+    data-id="' . $h->id . '"
+    data-origen="' . e($h->punto_origen->nombre_comercial) . '"
+>
                 <i class="link-icon" data-lucide="map-pin-house"></i>
             </button>';
                 }
@@ -74,9 +79,9 @@ class HorarioController extends Controller
             'repetir_hasta' => 'nullable|date',
         ]);
 
-        $fechaInicio = \Carbon\Carbon::parse($request->fecha_salida);
+        $fechaInicio = Carbon::parse($request->fecha_salida);
         $fechaFin = $request->repetir_hasta
-            ? \Carbon\Carbon::parse($request->repetir_hasta)
+            ? Carbon::parse($request->repetir_hasta)
             : $fechaInicio->copy()->addMonths(6);
 
         $diasSeleccionados = [
@@ -198,7 +203,7 @@ class HorarioController extends Controller
                 'domingo' => 7,
             ];
 
-            $fechaBase = \Carbon\Carbon::parse($h->fecha_salida);
+            $fechaBase = Carbon::parse($h->fecha_salida);
             $tieneRepeticion = false;
 
             for ($semana = 0; $semana < 4; $semana++) {

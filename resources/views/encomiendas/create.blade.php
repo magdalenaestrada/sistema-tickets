@@ -268,64 +268,72 @@
 
                         <div class="mb-3">
                             <label for="razon_social" class="form-label">Razón social</label>
-                            <input type="text" id="razon_social" name="razon_social"
-                                class="form-control">
+                            <input type="text" id="razon_social" name="razon_social" class="form-control">
                         </div>
                     </div>
                 </div>
 
-                <!-- Métodos de Pago -->
                 <div class="card mb-3">
                     <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="pago_instantaneo"
+                                name="pago_instantaneo" value="1">
+                            <label class="form-check-label" for="pago_instantaneo">
+                                Registrar pago
+                            </label>
+                        </div>
+                        <div id="container_pago">
+                            <div class="row mb-2">
+                                <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
+                                <div class="col-6">
+                                    <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
+                                        @foreach ($metodos_pago as $metodo_pago)
+                                            <option value="{{ $metodo_pago->id }}">
+                                                {{ $metodo_pago->descripcion }}
+                                            </option>
+                                        @endforeach
+                                    </select>
 
-                        <div class="row mb-2">
-                            <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
-                            <div class="col-6">
-                                <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
-                                    @foreach ($metodos_pago as $metodo_pago)
-                                        <option value="{{ $metodo_pago->id }}">
-                                            {{ $metodo_pago->descripcion }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                </div>
+                            </div>
 
+                            <div class="row mb-2 grupo_costo_total" hidden>
+                                <label for="costo_total" class="col-6 col-form-label">Costo total</label>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="costo_total" name="costo_total"
+                                        class="form-control" readonly>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
+                                        class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
+                                <div class="col-6">
+                                    <select name="billetera_id" id="billetera_id" class="form-select">
+                                        @foreach ($billeteras_digitales as $billetera_digital)
+                                            <option value="{{ $billetera_digital->id }}">
+                                                {{ $billetera_digital->descripcion }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
+                                        class="form-control">
+                                </div>
                             </div>
                         </div>
-
-                        <div class="row mb-2 grupo_costo_total" hidden>
-                            <label for="costo_total" class="col-6 col-form-label">Costo total</label>
-                            <div class="col-6">
-                                <input type="number" step="0.01" id="costo_total" name="costo_total" class="form-control" readonly>
-                            </div>
-                        </div>
-
-                        <div class="row mb-2">
-                            <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
-                            <div class="col-6">
-                                <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="row mb-2">
-                            <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
-                            <div class="col-6">
-                                <select name="billetera_id" id="billetera_id" class="form-select">
-                                    @foreach ($billeteras_digitales as $billetera_digital)
-                                        <option value="{{ $billetera_digital->id }}">
-                                            {{ $billetera_digital->descripcion }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-2">
-                            <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
-                            <div class="col-6">
-                                <input type="number" step="0.01" id="pago_billetera" name="pago_billetera" class="form-control">
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 

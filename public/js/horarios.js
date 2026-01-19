@@ -31,7 +31,7 @@ $(document).ready(function () {
         drawCallback: function () {
             lucide.createIcons();
         },
-        dom:"rtip"
+        dom: "rtip",
     });
 
     $("#btnNuevoHorario").click(function () {
@@ -69,13 +69,13 @@ $(document).ready(function () {
                     Swal.fire(
                         "Éxito",
                         "Horario guardado correctamente",
-                        "success"
+                        "success",
                     );
                 } else {
                     Swal.fire(
                         "Error",
                         res.message || "Ocurrió un error",
-                        "error"
+                        "error",
                     );
                 }
             },
@@ -172,7 +172,7 @@ $(document).ready(function () {
                     type: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                            "content"
+                            "content",
                         ),
                     },
                     success: function (res) {
@@ -186,22 +186,6 @@ $(document).ready(function () {
                 });
             }
         });
-    });
-
-    $("#tipo_viaje_id").change(function () {
-        if ($("#tipo_viaje_id").val() === "2") {
-            $(".contenedor_costo_pasaje").prop("hidden", true);
-            $("#costo_pasaje").prop("required", false);
-            $("#costo_pasaje").val("");
-            $(".contenedor_destino").prop("hidden", true);
-            $("#punto_destino_id").prop("required", false);
-            $("#punto_destino_id").val("");
-        } else {
-            $(".contenedor_costo_pasaje").prop("hidden", false);
-            $("#costo_pasaje").prop("required", true);
-            $(".contenedor_destino").prop("hidden", false);
-            $("#punto_destino_id").prop("required", true);
-        }
     });
 
     $("#punto_origen_id").change(function () {
@@ -225,74 +209,49 @@ $(document).ready(function () {
         $("#tablaHorarios").on("click", ".ver-puntos", function () {
             horarioIdActivo = $(this).data("id");
             puntoEditActivo = null;
+
             $("#formPunto")[0].reset();
+            $("#origen_nombre").val($(this).data("origen"));
+
             cargarPuntos(horarioIdActivo);
             modalPuntos.show();
         });
 
         function cargarPuntos(horarioId) {
-            $("#tablaPuntos tbody").empty();
-            $("#tablaTramos tbody").empty();
-
             $.get(
                 route("horarios.mostrar", horarioId) + "/puntos",
                 function (puntos) {
-                    puntos.sort((a, b) => b.orden - a.orden);
+                    const tbody = $("#tablaPuntos tbody");
+                    tbody.empty();
 
-                    // Puntos
-                    puntos.forEach((p) => {
-                        $("#tablaPuntos tbody").append(`
-        <tr>
-            <td>${p.origen ? p.origen.nombre_comercial : ""}</td>
-            <td>${p.destino ? p.destino.nombre_comercial : ""}</td>
-            <td>${parseFloat(p.costo_acumulado).toFixed(2)}</td>
-            <td>
-                <button class="btn btn-warning btn-xs editarPunto" data-id="${
-                    p.id
-                }">Editar</button>
-                <button class="btn btn-danger btn-xs eliminarPunto" data-id="${
-                    p.id
-                }">Eliminar</button>
-            </td>
-        </tr>
-    `);
+                    if (puntos.length === 0) return;
+
+                    puntos.forEach((punto, index) => {
+                        const origen =
+                            index === 0
+                                ? `<td rowspan="${puntos.length}" class="fw-bold text-center align-middle">
+                        ${punto.origen.nombre_comercial}
+                   </td>`
+                                : "";
+
+                        tbody.append(`
+                <tr>
+                    ${origen}
+                    <td>${punto.destino.nombre_comercial}</td>
+                    <td>S/ ${parseFloat(punto.costo_acumulado).toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm eliminar-punto"
+                                data-id="${punto.id}">
+                            Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `);
                     });
-
-                    for (let i = 0; i < puntos.length; i++) {
-                        let origen =
-                            i === 0
-                                ? puntos[i].origen.nombre_comercial
-                                : puntos[i - 1].destino.nombre_comercial;
-                        let destino = puntos[i].destino.nombre_comercial;
-                        let costoTramo =
-                            i === 0
-                                ? puntos[i].costo_acumulado
-                                : puntos[i].costo_acumulado -
-                                  puntos[i - 1].costo_acumulado;
-
-                        $("#tablaTramos tbody").append(`
-        <tr>
-            <td>${origen}</td>
-            <td>${destino}</td>
-            <td>${costoTramo.toFixed(2)}</td>
-        </tr>
-    `);
-                    }
-
-                    // Excluir origen del select
-                    const origenNombre =
-                        puntos.length > 0
-                            ? puntos[0].origen.nombre_comercial
-                            : "";
-                    $("#destino_id option").each(function () {
-                        if ($(this).text() === origenNombre) $(this).hide();
-                        else $(this).show();
-                    });
-                }
+                },
             );
         }
 
-        // Guardar o editar punto
         $("#formPunto").submit(function (e) {
             e.preventDefault();
             const formData = $(this).serialize();
@@ -315,7 +274,7 @@ $(document).ready(function () {
                         Swal.fire(
                             "Éxito",
                             "Punto guardado correctamente",
-                            "success"
+                            "success",
                         );
                     }
                 },
@@ -339,7 +298,7 @@ $(document).ready(function () {
                 function (p) {
                     $("#destino_id").val(p.destino_id);
                     $("#costo_acumulado").val(p.costo_acumulado);
-                }
+                },
             );
         });
 
@@ -363,7 +322,7 @@ $(document).ready(function () {
                         type: "DELETE",
                         headers: {
                             "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                                "content"
+                                "content",
                             ),
                         },
                         success: function (res) {
@@ -372,7 +331,7 @@ $(document).ready(function () {
                                 Swal.fire(
                                     "Eliminado",
                                     "Punto eliminado correctamente",
-                                    "success"
+                                    "success",
                                 );
                             }
                         },

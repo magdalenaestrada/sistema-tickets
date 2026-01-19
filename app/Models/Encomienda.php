@@ -25,11 +25,14 @@ class Encomienda extends Model
         'fecha_procesado',
         'origen',
         'destino',
+        'pago_instantaneo'
     ];
 
     protected $casts = [
         'fecha_creacion' => 'datetime',
         'fecha_procesado' => 'datetime',
+        'pago_instantaneo' => 'boolean',
+
     ];
 
     public function emisor()

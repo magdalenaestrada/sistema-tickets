@@ -52,7 +52,7 @@ function initUbigeosReceptor() {
             $dist.append(
                 `<option value="${d.id}" data-ubigeo="${d.ubigeo}">
                     ${d.nombre}
-                </option>`
+                </option>`,
             );
         });
     });
@@ -163,7 +163,7 @@ $(function () {
                         return;
                     }
                     window.location.href = route(
-                        "encomiendas.crear-encomienda"
+                        "encomiendas.crear-encomienda",
                     );
                 });
         });
@@ -265,6 +265,7 @@ $(function () {
             origen: $("#origen").val(),
             numero_documento_id: $("#numero_documento_id").val(),
             razon_social: $("#razon_social").val(),
+            pago_instantaneo: $("#pago_instantaneo").is(":checked") ? 1 : 0,
             distrito_id: $("#distrito_id").val(),
             destino: $("#destino").val(),
             tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
@@ -321,33 +322,33 @@ $(function () {
         let fila = $("<tr>");
         let tipoSelect = $('<select class="form-select tipo"></select>');
         tipoSelect.append(
-            '<option value="" disabled selected>Selecciona un tipo</option>'
+            '<option value="" disabled selected>Selecciona un tipo</option>',
         );
 
         tiposEncomienda.forEach((t) => {
             tipoSelect.append(
-                `<option value="${t.id}" data-precio="${t.precio_base}" data-peso-limite="${t.peso_limite}" data-costo-extra="${t.costo_kilo_extra}">${t.descripcion}</option>`
+                `<option value="${t.id}" data-precio="${t.precio_base}" data-peso-limite="${t.peso_limite}" data-costo-extra="${t.costo_kilo_extra}">${t.descripcion}</option>`,
             );
         });
 
         fila.append($("<td>").append(tipoSelect));
         fila.append(
-            $("<td>").append('<input type="text" class="form-control desc">')
+            $("<td>").append('<input type="text" class="form-control desc">'),
         );
         fila.append(
             $("<td>").append(
-                '<input type="number" class="form-control peso" step="0.01">'
-            )
+                '<input type="number" class="form-control peso" step="0.01">',
+            ),
         );
         fila.append(
             $("<td>").append(
-                '<input type="number" class="form-control costo" step="0.01">'
-            )
+                '<input type="number" class="form-control costo" step="0.01">',
+            ),
         );
         fila.append(
             $("<td>").append(
-                '<button type="button" class="btn btn-danger btn-sm btnQuitar">Eliminar</button>'
-            )
+                '<button type="button" class="btn btn-danger btn-sm btnQuitar">Eliminar</button>',
+            ),
         );
 
         $("#tablaDetalles tbody").append(fila);
@@ -366,7 +367,7 @@ $(function () {
             if (res.tipo === "DNI") {
                 $("#emisor_nombres").val(res.nombres);
                 $("#emisor_apellidos").val(
-                    res.apellido_paterno + " " + res.apellido_materno
+                    res.apellido_paterno + " " + res.apellido_materno,
                 );
             }
 
@@ -378,7 +379,7 @@ $(function () {
 
             $("#numero_documento_id").val($("#emisor_documento").val());
             $("#razon_social").val(
-                $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val()
+                $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val(),
             );
         }).fail(function (err) {
             alert(err.responseJSON?.error || "Error al buscar documento");
@@ -526,7 +527,7 @@ $(function () {
     $(document).on(
         "input change",
         ".peso, #origen, #destino",
-        actualizarResumen
+        actualizarResumen,
     );
     $(document).on("change", ".tipo", actualizarResumen);
 
@@ -539,7 +540,7 @@ $(function () {
             $("#numero_serie").val("");
         } else {
             $("#razon_social").val(
-                $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val()
+                $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val(),
             );
         }
     });
@@ -567,7 +568,7 @@ $(function () {
             if (res.tipo === "DNI") {
                 $(`#${tipo}_nombres`).val(res.nombres);
                 $(`#${tipo}_apellidos`).val(
-                    res.apellido_paterno + " " + res.apellido_materno
+                    res.apellido_paterno + " " + res.apellido_materno,
                 );
             } else if (res.tipo === "RUC") {
                 $(`#${tipo}_nombres`).val(res.razon_social);
@@ -589,18 +590,18 @@ $(function () {
         let tipo = $("#tipo_documento_id").val();
         if (tipo == "1") {
             $("#razon_social").val(
-                $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val()
+                $("#emisor_nombres").val() + " " + $("#emisor_apellidos").val(),
             );
         }
     }
 
     $("#emisor_documento").on(
         "blur",
-        debounce(() => buscarPersona("emisor"), 300)
+        debounce(() => buscarPersona("emisor"), 300),
     );
     $("#receptor_documento").on(
         "blur",
-        debounce(() => buscarPersona("receptor"), 300)
+        debounce(() => buscarPersona("receptor"), 300),
     );
 
     $("#tipo_documento_id").on("change", updateRazonSocial);
@@ -621,7 +622,7 @@ $(function () {
                             " " +
                             res.apellido_paterno +
                             " " +
-                            res.apellido_materno
+                            res.apellido_materno,
                 );
             }
         }).fail(function (err) {
@@ -640,6 +641,40 @@ $(function () {
 
         $("#costo_total").val(total.toFixed(2));
     }
+
+    const tieneVenta = $("#tiene_venta").val() === "1";
+    const $checkbox = $("#pago_instantaneo");
+    const $container = $("#container_pago");
+
+    function ocultarPago() {
+        $container.prop("hidden", true);
+        $container.find("input, select").prop("disabled", true).val("");
+    }
+
+    function mostrarPago() {
+        $container.prop("hidden", false);
+        $container.find("input, select").prop("disabled", false);
+    }
+
+    if (tieneVenta) {
+        $checkbox.prop({
+            checked: true,
+            disabled: true,
+        });
+        mostrarPago();
+    } else {
+        $checkbox.prop("checked", false);
+        ocultarPago();
+    }
+
+    $checkbox.on("change", function () {
+        if (this.checked) {
+            mostrarPago();
+        } else {
+            ocultarPago();
+        }
+    });
+
     function refrescarPagos() {
         let metodo = parseInt($("#metodo_pago_id").val());
         let total = parseFloat($("#costo_total").val()) || 0;
@@ -703,7 +738,7 @@ $(function () {
     function actualizarContador() {
         let count = $(".check-encomienda:checked").length;
         $("#contadorSeleccionados").text(
-            count + " seleccionada" + (count !== 1 ? "s" : "")
+            count + " seleccionada" + (count !== 1 ? "s" : ""),
         );
     }
 
@@ -727,7 +762,7 @@ $(function () {
 
         if (
             !confirm(
-                `¿Asignar ${encomiendas.length} encomienda(s) a esta asignación?`
+                `¿Asignar ${encomiendas.length} encomienda(s) a esta asignación?`,
             )
         ) {
             return;
@@ -751,7 +786,7 @@ $(function () {
             },
             error: function (err) {
                 alert(
-                    err.responseJSON?.message || "Error al asignar encomiendas"
+                    err.responseJSON?.message || "Error al asignar encomiendas",
                 );
             },
         });
@@ -806,7 +841,7 @@ $(function () {
                 if (res.success) {
                     tabla.ajax.reload();
                 }
-            }
+            },
         ).fail(function () {
             alert("Error al anular la encomienda");
         });

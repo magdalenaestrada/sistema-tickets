@@ -331,90 +331,104 @@
                 </div>
 
                 @php
-                    $pagos = $encomienda->venta->pagos;
+                    $pagos = collect();
+                    $metodoSeleccionado = null;
 
-                    $tieneEfectivo = $pagos->where('metodo_pago_id', 1)->isNotEmpty();
-                    $tieneDigital = $pagos->whereNotNull('billetera_id')->isNotEmpty();
+                    if ($encomienda->venta) {
+                        $pagos = $encomienda->venta->pagos;
 
-                    if ($tieneEfectivo && $tieneDigital) {
-                        $metodoSeleccionado = 3;
-                    } elseif ($tieneDigital) {
-                        $metodoSeleccionado = 2;
-                    } else {
-                        $metodoSeleccionado = 1;
+                        $tieneEfectivo = $pagos->where('metodo_pago_id', 1)->isNotEmpty();
+                        $tieneDigital = $pagos->whereNotNull('billetera_id')->isNotEmpty();
+
+                        if ($tieneEfectivo && $tieneDigital) {
+                            $metodoSeleccionado = 3;
+                        } elseif ($tieneDigital) {
+                            $metodoSeleccionado = 2;
+                        } elseif ($tieneEfectivo) {
+                            $metodoSeleccionado = 1;
+                        }
                     }
                 @endphp
+
                 <div class="card mb-3">
                     <div class="card-body">
-                        <div class="row mb-2">
-                            <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
-                            <div class="col-6">
-                                <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
-                                    <option value="1" {{ $metodoSeleccionado == 1 ? 'selected' : '' }}>
-                                        Efectivo
-                                    </option>
-                                    <option value="2" {{ $metodoSeleccionado == 2 ? 'selected' : '' }}>
-                                        Digital
-                                    </option>
-                                    <option value="3" {{ $metodoSeleccionado == 3 ? 'selected' : '' }}>
-                                        Mixto
-                                    </option>
-                                </select>
-                            </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="pago_instantaneo"
+                                name="pago_instantaneo" value="1">
+                            <label class="form-check-label">Registrar pago</label>
                         </div>
+                        <input type="hidden" id="tiene_venta" value="{{ $encomienda->venta ? 1 : 0 }}">
 
-                        <div class="row mb-2 grupo_costo_total" hidden>
-                            <label for="costo_total" class="col-6 col-form-label">Costo total</label>
-                            <div class="col-6">
-                                <input type="number" id="costo_total" step="0.01" name="costo_total"
-                                    class="form-control" readonly>
-                            </div>
-                        </div>
-
-                        <div class="row mb-2">
-                            <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
-                            <div class="col-6">
-                                <input type="number" name="pago_efectivo" id="pago_efectivo" step="0.01"
-                                    value="{{ optional($pagos->where('metodo_pago_id', 1)->first())->total }}"
-                                    class="form-control">
-
-                            </div>
-                        </div>
-
-                        <div class="row mb-2">
-                            <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
-                            <div class="col-6">
-                                <select name="billetera_id" id="billetera_id" class="form-select">
-                                    @foreach ($billeteras_digitales as $b)
-                                        <option value="{{ $b->id }}"
-                                            {{ optional($pagos->where('billetera_id', $b->id)->first()) ? 'selected' : '' }}>
-                                            {{ $b->descripcion }}
+                        <div id="container_pago" hidden>
+                            <div class="row mb-2">
+                                <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
+                                <div class="col-6">
+                                    <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
+                                        <option value="1" {{ $metodoSeleccionado == 1 ? 'selected' : '' }}>
+                                            Efectivo
                                         </option>
-                                    @endforeach
-                                </select>
+                                        <option value="2" {{ $metodoSeleccionado == 2 ? 'selected' : '' }}>
+                                            Digital
+                                        </option>
+                                        <option value="3" {{ $metodoSeleccionado == 3 ? 'selected' : '' }}>
+                                            Mixto
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="row mb-2">
-                            <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
-                            <div class="col-6">
-                                <input type="number" name="pago_billetera" id="pago_billetera" step="0.01"
-                                    value="{{ optional($pagos->whereNotNull('billetera_id')->first())->total }}"
-                                    class="form-control">
-
+                            <div class="row mb-2 grupo_costo_total" hidden>
+                                <label for="costo_total" class="col-6 col-form-label">Costo total</label>
+                                <div class="col-6">
+                                    <input type="number" id="costo_total" step="0.01" name="costo_total"
+                                        class="form-control" readonly>
+                                </div>
                             </div>
-                        </div>
 
+                            <div class="row mb-2">
+                                <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
+                                <div class="col-6">
+                                    <input type="number" name="pago_efectivo" id="pago_efectivo" step="0.01"
+                                        value="{{ optional($pagos->where('metodo_pago_id', 1)->first())->total }}"
+                                        class="form-control">
+
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
+                                <div class="col-6">
+                                    <select name="billetera_id" id="billetera_id" class="form-select">
+                                        @foreach ($billeteras_digitales as $b)
+                                            <option value="{{ $b->id }}"
+                                                {{ optional($pagos->where('billetera_id', $b->id)->first()) ? 'selected' : '' }}>
+                                                {{ $b->descripcion }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-2">
+                                <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
+                                <div class="col-6">
+                                    <input type="number" name="pago_billetera" id="pago_billetera" step="0.01"
+                                        value="{{ optional($pagos->whereNotNull('billetera_id')->first())->total }}"
+                                        class="form-control">
+
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="row mt-3">
-            <div class="col-12 text-end">
-                <a href="{{ url('/encomiendas') }}" class="btn btn-secondary">Volver</a>
-                <button type="submit" class="btn btn-primary">Guardar Encomienda</button>
+            <div class="row mt-3">
+                <div class="col-12 text-end">
+                    <a href="{{ url('/encomiendas') }}" class="btn btn-secondary">Volver</a>
+                    <button type="submit" class="btn btn-primary">Guardar Encomienda</button>
+                </div>
             </div>
-        </div>
 
     </form>
 @endsection
