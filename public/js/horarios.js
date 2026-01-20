@@ -201,143 +201,226 @@ $(document).ready(function () {
             $("#punto_destino_id").val("");
     });
 
-    $(document).ready(function () {
-        const modalPuntos = new bootstrap.Modal($("#modalPuntos")[0]);
-        let horarioIdActivo = null;
-        let puntoEditActivo = null;
+    // MODAL DE PUNTOS Y TRAMOS
+    const modalPuntos = new bootstrap.Modal($("#modalPuntos")[0]);
+    let horarioIdActivo = null;
+    let origenIdActivo = null;
+    let puntoEditActivo = null;
+    let puntosData = []; // Guardar los datos de los puntos
 
-        $("#tablaHorarios").on("click", ".ver-puntos", function () {
-            horarioIdActivo = $(this).data("id");
-            puntoEditActivo = null;
+    $("#tablaHorarios").on("click", ".ver-puntos", function () {
+        horarioIdActivo = $(this).data("id");
+        origenIdActivo = $(this).data("origen-id");
+        puntoEditActivo = null;
 
-            $("#formPunto")[0].reset();
-            $("#origen_nombre").val($(this).data("origen"));
+        $("#formPunto")[0].reset();
+        $("#origen_nombre").val($(this).data("origen"));
 
-            cargarPuntos(horarioIdActivo);
-            modalPuntos.show();
+        cargarPuntos(horarioIdActivo);
+        modalPuntos.show();
+    });
+
+    function cargarPuntos(horarioId) {
+        $.get(
+            route("horarios.mostrar", horarioId) + "/puntos",
+            function (puntos) {
+                puntosData = puntos; // Guardar los datos completos
+                const tbody = $("#tablaPuntos tbody");
+                tbody.empty();
+
+                if (puntos.length === 0) return;
+
+                // INVERTIR EL ORDEN: mostrar del último al primero
+                const puntosInvertidos = [...puntos].reverse();
+
+                puntosInvertidos.forEach((punto, index) => {
+                    const origen =
+                        index === 0
+                            ? `<td rowspan="${puntos.length}" class="fw-bold text-center align-middle">
+                    ${punto.origen.nombre_comercial}
+               </td>`
+                            : "";
+
+                    tbody.append(`
+            <tr>
+                ${origen}
+                <td>${punto.destino.nombre_comercial}</td>
+                <td>S/ ${parseFloat(punto.costo_acumulado).toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm eliminarPunto"
+                            data-id="${punto.id}">
+                        Eliminar
+                    </button>
+                </td>
+            </tr>
+        `);
+                });
+
+                lucide.createIcons();
+            },
+        );
+    }
+
+    // Función para contar cuántas veces aparece un destino POR ID
+    function contarDestinoEnTabla(destinoId) {
+        let count = 0;
+        puntosData.forEach(punto => {
+            if (punto.destino_id == destinoId) {
+                count++;
+            }
         });
+        return count;
+    }
 
-        function cargarPuntos(horarioId) {
-            $.get(
-                route("horarios.mostrar", horarioId) + "/puntos",
-                function (puntos) {
-                    const tbody = $("#tablaPuntos tbody");
-                    tbody.empty();
+    // Función para obtener el PRIMER costo agregado (el más lejano, que es el mayor)
+    function obtenerPrimerCosto() {
+        if (puntosData.length === 0) return null;
+        // El primer punto tiene el costo más alto (más lejano)
+        return parseFloat(puntosData[0].costo_acumulado);
+    }
 
-                    if (puntos.length === 0) return;
+    $("#formPunto").submit(function (e) {
+        e.preventDefault();
 
-                    puntos.forEach((punto, index) => {
-                        const origen =
-                            index === 0
-                                ? `<td rowspan="${puntos.length}" class="fw-bold text-center align-middle">
-                        ${punto.origen.nombre_comercial}
-                   </td>`
-                                : "";
+        const destinoId = $("#destino_id").val();
+        const costoNuevo = parseFloat($("#costo_acumulado").val());
 
-                        tbody.append(`
-                <tr>
-                    ${origen}
-                    <td>${punto.destino.nombre_comercial}</td>
-                    <td>S/ ${parseFloat(punto.costo_acumulado).toFixed(2)}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm eliminar-punto"
-                                data-id="${punto.id}">
-                            Eliminar
-                        </button>
-                    </td>
-                </tr>
-            `);
-                    });
-                },
-            );
+        // VALIDACIÓN 1: Origen no puede ser igual al destino
+        if (destinoId == origenIdActivo) {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "El destino no puede ser igual al origen",
+            });
+            return;
         }
 
-        $("#formPunto").submit(function (e) {
-            e.preventDefault();
-            const formData = $(this).serialize();
-            let url = puntoEditActivo
-                ? route("horarios.mostrar", horarioIdActivo) +
-                  "/puntos/" +
-                  puntoEditActivo
-                : route("horarios.mostrar", horarioIdActivo) + "/puntos";
-            let method = puntoEditActivo ? "PUT" : "POST";
+        // VALIDACIÓN 2: No permitir agregar un punto más de 2 veces
+        if (!puntoEditActivo) {
+            const cantidadExistente = contarDestinoEnTabla(destinoId);
+            if (cantidadExistente >= 2) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Este destino ya ha sido agregado 2 veces. No puede agregarse más.",
+                });
+                return;
+            }
+        }
 
-            $.ajax({
-                url: url,
-                type: method,
-                data: formData,
-                success: function (res) {
-                    if (res.success) {
-                        cargarPuntos(horarioIdActivo);
-                        $("#formPunto")[0].reset();
-                        puntoEditActivo = null;
-                        Swal.fire(
-                            "Éxito",
-                            "Punto guardado correctamente",
-                            "success",
-                        );
-                    }
-                },
-                error: function (xhr) {
-                    let errors = xhr.responseJSON?.errors;
-                    let msg = errors
-                        ? Object.values(errors).flat().join("<br>")
-                        : "Error al procesar la solicitud";
-                    Swal.fire("Error", msg, "error");
-                },
-            });
-        });
-
-        // Editar punto
-        $("#tablaPuntos").on("click", ".editarPunto", function () {
-            puntoEditActivo = $(this).data("id");
-            $.get(
-                route("horarios.mostrar", horarioIdActivo) +
-                    "/puntos/" +
-                    puntoEditActivo,
-                function (p) {
-                    $("#destino_id").val(p.destino_id);
-                    $("#costo_acumulado").val(p.costo_acumulado);
-                },
-            );
-        });
-
-        // Eliminar punto
-        $("#tablaPuntos").on("click", ".eliminarPunto", function () {
-            const puntoId = $(this).data("id");
+        // VALIDACIÓN 3: El costo debe ser menor o igual al primer punto (el más lejano)
+        const primerCosto = obtenerPrimerCosto();
+        if (primerCosto !== null && costoNuevo > primerCosto) {
             Swal.fire({
-                title: "¿Eliminar punto?",
-                text: "No se podrá revertir",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: "Sí, eliminar",
-                cancelButtonText: "Cancelar",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url:
-                            route("horarios.mostrar", horarioIdActivo) +
-                            "/puntos/" +
-                            puntoId,
-                        type: "DELETE",
-                        headers: {
-                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                                "content",
-                            ),
-                        },
-                        success: function (res) {
-                            if (res.success) {
-                                cargarPuntos(horarioIdActivo);
-                                Swal.fire(
-                                    "Eliminado",
-                                    "Punto eliminado correctamente",
-                                    "success",
-                                );
-                            }
-                        },
+                icon: "error",
+                title: "Error",
+                text: `El costo debe ser menor o igual a S/ ${primerCosto.toFixed(2)} (último punto más lejano)`,
+            });
+            return;
+        }
+
+        const formData = $(this).serialize();
+        let url = puntoEditActivo
+            ? route("horarios.mostrar", horarioIdActivo) +
+              "/puntos/" +
+              puntoEditActivo
+            : route("horarios.mostrar", horarioIdActivo) + "/puntos";
+        let method = puntoEditActivo ? "PUT" : "POST";
+
+        $.ajax({
+            url: url,
+            type: method,
+            data: formData,
+            headers: {
+                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            },
+            success: function (res) {
+                if (res.success) {
+                    cargarPuntos(horarioIdActivo);
+                    $("#formPunto")[0].reset();
+                    puntoEditActivo = null;
+                    Swal.fire({
+                        icon: "success",
+                        title: "Éxito",
+                        text: "Punto guardado correctamente",
                     });
                 }
-            });
+            },
+            error: function (xhr) {
+                let errors = xhr.responseJSON?.errors;
+                let msg = errors
+                    ? Object.values(errors).flat().join("<br>")
+                    : "Error al procesar la solicitud";
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    html: msg,
+                });
+            },
+        });
+    });
+
+    $("#tablaPuntos").on("click", ".editarPunto", function () {
+        puntoEditActivo = $(this).data("id");
+        $.get(
+            route("horarios.mostrar", horarioIdActivo) +
+                "/puntos/" +
+                puntoEditActivo,
+            function (p) {
+                $("#destino_id").val(p.destino_id);
+                $("#costo_acumulado").val(p.costo_acumulado);
+            },
+        );
+    });
+
+    // BOTÓN ELIMINAR CORREGIDO
+    $("#tablaPuntos").on("click", ".eliminarPunto", function () {
+        const puntoId = $(this).data("id");
+        Swal.fire({
+            title: "¿Eliminar punto?",
+            text: "No se podrá revertir",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url:
+                        route("horarios.mostrar", horarioIdActivo) +
+                        "/puntos/" +
+                        puntoId,
+                    type: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                            "content",
+                        ),
+                    },
+                    success: function (res) {
+                        if (res.success) {
+                            cargarPuntos(horarioIdActivo);
+                            Swal.fire({
+                                icon: "success",
+                                title: "Eliminado",
+                                text: "Punto eliminado correctamente",
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: res.message || "Error al eliminar",
+                            });
+                        }
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: "No se pudo eliminar el punto",
+                        });
+                    },
+                });
+            }
         });
     });
 });

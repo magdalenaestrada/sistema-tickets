@@ -39,13 +39,10 @@ class HorarioController extends Controller
 
                 if ($h->tipo_viaje_id == 2) {
                     $btnPuntos = '
-           <button 
-    class="btn btn-primary btn-xs ver-puntos"
-    data-id="' . $h->id . '"
-    data-origen="' . e($h->punto_origen->nombre_comercial) . '"
->
-                <i class="link-icon" data-lucide="map-pin-house"></i>
-            </button>';
+           <button  class="btn btn-primary btn-xs ver-puntos" data-id="' . $h->id . '" 
+        data-origen="' . $h->punto_origen->nombre_comercial . '"
+        data-origen-id="' . $h->punto_origen_id . '">
+  <i class="link-icon" data-lucide="map-pin-house"></i></button>';
                 }
 
                 return '
