@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 selectedReservedPasajeId = null;
                 updateSellButton();
                 updateEditButton();
+                console.log("horarioId:", horarioId);
 
                 fetch(route("pasajes.asientos", { horario: horarioId }))
                     .then((res) => res.json())
@@ -56,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 "ocupado",
                                 "reservado",
                                 "libre",
-                                "selected-seat"
+                                "selected-seat",
                             );
 
                             g.classList.add(estado);
@@ -134,9 +135,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function obtenerPasajeReservado(horarioId, numeroAsiento) {
         try {
-            // Si el asiento reservado ya está seleccionado, deseleccionarlo
             const seatElement = document.querySelector(
-                `#seat-${numeroAsiento}`
+                `#seat-${numeroAsiento}`,
             );
             if (
                 seatElement &&
@@ -149,14 +149,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
+            console.log("horarioId:", horarioId);
+
             const response = await fetch(
-                route("pasajes.asientos", { horario: horarioId })
+                route("pasajes.asientos", { horario: horarioId }),
             );
             const data = await response.json();
 
             const pasajeResponse = await fetch(
                 route("pasajes.buscar") +
-                    `?horario_id=${horarioId}&asiento=${numeroAsiento}`
+                    `?horario_id=${horarioId}&asiento=${numeroAsiento}`,
             );
             const pasajeData = await pasajeResponse.json();
 
@@ -225,8 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const res = await fetch(route("caja.verificar"));
             const data = await res.json();
 
-            // Verificar si la caja está activa (estado = "A")
-            if (data.estado !== "A") {
+            if (!data.abierta) {
                 Swal.fire({
                     icon: "warning",
                     title: "Caja no abierta",
@@ -235,7 +236,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 return;
             }
-
             const seats = selectedSeats.sort((a, b) => a - b).join(",");
             window.location.href = route("pasajes.vender", {
                 asientos: seats,

@@ -15,6 +15,7 @@ use App\Models\TipoVehiculo;
 use App\Models\TipoViaje;
 use App\Services\VentaService;
 use App\Services\PagoService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -45,13 +46,15 @@ class PasajeController extends Controller
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $metodos_pago = MetodoPago::all();
         $billeteras_digitales = BilleteraDigital::all();
+        $hoy = Carbon::now('America/Lima')->format("Y-m-d");
         return view('pasajes.venta', compact(
             'asientos',
             'horario',
             'tipos_documentos',
             'billeteras_digitales',
             'tipos_documentos_facturas',
-            'metodos_pago'
+            'metodos_pago',
+            'hoy'
         ));
     }
 
@@ -63,6 +66,7 @@ class PasajeController extends Controller
             'horario.punto_destino',
             'venta'
         ])->get();
+
         $sucursales = Sucursal::where('estado', 'A')->get();
         return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
     }
@@ -113,12 +117,12 @@ class PasajeController extends Controller
     {
         $puntos_origen = Sucursal::where('estado', 'A')->get();
         $puntos_destino = Sucursal::where('estado', 'A')->get();
-
+        $hoy = Carbon::now('America/Lima')->format("Y-m-d");
         $horarios = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino'])
             ->withCount('pasajes')
             ->get();
 
-        return view('pasajes.index', compact('horarios', 'puntos_origen', 'puntos_destino'));
+        return view('pasajes.index', compact('hoy', 'horarios', 'puntos_origen', 'puntos_destino'));
     }
 
     protected function validarTerminarVenta($request, $i)
@@ -299,7 +303,7 @@ class PasajeController extends Controller
                         ]
                     );
 
-                    $this->registrarCliente( $persona->id);
+                    $this->registrarCliente($persona->id);
 
 
                     $this->crearPasajeMultiple(
@@ -485,7 +489,6 @@ class PasajeController extends Controller
                     ]
                 );
                 $this->registrarCliente($persona->id);
-
             } else {
                 Log::info("Reserva sin datos de persona");
             }
@@ -532,20 +535,21 @@ class PasajeController extends Controller
 
     public function editar(Pasaje $pasaje)
     {
-
         $puntos_origen = Sucursal::where('estado', 'A')->get();
         $puntos_destino = Sucursal::where('estado', 'A')->get();
         $tipos_viaje = TipoViaje::all();
         $tipos_vehiculos = TipoVehiculo::all();
-        $puntos_origen = Sucursal::where('estado', 'A')->get();
-        $puntos_destino = Sucursal::where('estado', 'A')->get();
 
         $pasaje->load([
             'persona',
             'horario.punto_origen',
             'horario.punto_destino',
             'horario.tipo_vehiculo',
-            'venta.pagos'
+            'horario.fechas',
+            'venta.pagos.billetera',
+            'venta.pagos.metodoPago',
+            'venta.persona', // AGREGADO: Cargar la persona de la venta
+            'venta.tipoDocumentoFactura' // AGREGADO: Cargar tipo documento
         ]);
 
         $tipos_documentos = TipoDocumentoPersona::all();
@@ -553,7 +557,6 @@ class PasajeController extends Controller
         $metodos_pago = MetodoPago::all();
         $billeteras_digitales = BilleteraDigital::all();
 
-        // Para editar, solo hay 1 asiento
         $asientos = [$pasaje->asiento_numero];
         $horario = $pasaje->horario;
 

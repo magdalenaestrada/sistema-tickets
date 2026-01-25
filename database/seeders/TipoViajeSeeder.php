@@ -13,7 +13,7 @@ class TipoViajeSeeder extends Seeder
      */
     public function run(): void
     {
-        TipoViaje::create([
+        TipoViaje::insert([
             [
                 "descripcion" => "Directo",
 

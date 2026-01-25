@@ -1,6 +1,6 @@
 $(document).ready(function () {
     const modalAsignacion = new bootstrap.Modal(
-        document.getElementById("modalAsignacion")
+        document.getElementById("modalAsignacion"),
     );
     const tabla = $("#tablaAsignaciones");
 
@@ -79,7 +79,7 @@ $(document).ready(function () {
                 Swal.fire(
                     "Error",
                     err.responseJSON?.message || "Ocurrió un error",
-                    "error"
+                    "error",
                 );
             },
         });
@@ -179,15 +179,15 @@ $(document).ready(function () {
                     const text =
                         `${h.tipo_vehiculo.descripcion} ` +
                         `${h.tipo_viaje.descripcion} | ` +
-                        `${h.fecha_salida_formateada} | ` +
-                        `${h.hora_embarque} | ` +
+                        `${h.fecha_salida} | ` + // antes era fecha_salida_formateada
+                        `${h.hora_salida} | ` + // antes hora_embarque
                         `${h.punto_origen.nombre_comercial} → ` +
-                        `${h.punto_destino.nombre_comercial} `;
+                        `${h.punto_destino.nombre_comercial}`;
 
                     select.append(
-                        `<option value="${h.id}" data-tipo="${h.tipo_vehiculo_id}">
-        ${text}
-    </option>`
+                        `<option value="${h.id}" data-tipo="${h.tipo_vehiculo.id}">
+                    ${text}
+                </option>`,
                     );
                 });
             })

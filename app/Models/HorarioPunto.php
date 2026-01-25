@@ -9,13 +9,11 @@ class HorarioPunto extends Model
 {
     use HasFactory;
 
-    protected $table = "horarios_puntos";
+    protected $table = "horario_puntos";
     protected $fillable = [
         'horario_id',
-        'origen_id',
-        'destino_id',
-        'costo_acumulado',
-        'orden'
+        'sucursal_id',
+        'orden',
     ];
 
     public function horario()
@@ -23,13 +21,8 @@ class HorarioPunto extends Model
         return $this->belongsTo(Horario::class);
     }
 
-    public function origen()
+    public function sucursal()
     {
-        return $this->belongsTo(Sucursal::class, 'origen_id');
-    }
-
-    public function destino()
-    {
-        return $this->belongsTo(Sucursal::class, 'destino_id');
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 }

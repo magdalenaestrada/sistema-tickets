@@ -10,6 +10,7 @@ use App\Models\Sucursal;
 use App\Models\TipoVehiculo;
 use App\Models\TipoViaje;
 use App\Models\Vehiculo;
+use Carbon\Carbon;
 
 class AsignarHorarioController extends Controller
 {
@@ -21,7 +22,8 @@ class AsignarHorarioController extends Controller
         $horarios = Horario::all();
         $empleados = Empleado::where('cargo_id', 3)->get();
         $vehiculos = Vehiculo::all();
-        return view('asignaciones.index', compact('horarios', 'empleados', 'vehiculos', 'tipo_vehiculos', 'tipo_viajes', 'sucursales'));
+        $hoy = Carbon::now("America/Lima")->format("Y-m-d");
+        return view('asignaciones.index', compact('hoy','horarios', 'empleados', 'vehiculos', 'tipo_vehiculos', 'tipo_viajes', 'sucursales'));
     }
 
     public function list()

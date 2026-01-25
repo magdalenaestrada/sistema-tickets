@@ -9,8 +9,8 @@ $(document).ready(function () {
             { data: "origen" },
             { data: "destino" },
             { data: "tipo_vehiculo" },
-            { data: "costo_pasaje" },
-            { data: "hora_embarque" },
+            { data: "costo_base" },
+            { data: "hora_salida" },
             { data: "fecha_salida" },
             {
                 data: null,
@@ -36,12 +36,20 @@ $(document).ready(function () {
 
     $("#btnNuevoHorario").click(function () {
         formHorario[0].reset();
-        $("#horario_id").val("");
-        $("#modalTitulo").text("Registrar Horario");
-        $("#formHorario input, #formHorario select").prop("disabled", false);
+        limpiarPuntos();
+        toggleContenedorPuntos();
         modalHorario.show();
     });
+    const fechaSalida = document.getElementById("fecha_salida");
+    const repetirHasta = document.getElementById("repetir_hasta");
 
+    fechaSalida.addEventListener("change", function () {
+        repetirHasta.min = this.value;
+
+        if (repetirHasta.value && repetirHasta.value < this.value) {
+            repetirHasta.value = "";
+        }
+    });
     formHorario.submit(function (e) {
         e.preventDefault();
 
@@ -106,8 +114,8 @@ $(document).ready(function () {
             $("#punto_destino_id")
                 .val(data.punto_destino_id)
                 .prop("disabled", false);
-            $("#costo_pasaje").val(data.costo_pasaje).prop("disabled", false);
-            $("#hora_embarque").val(data.hora_embarque).prop("disabled", false);
+            $("#costo_pasaje").val(data.costo_base).prop("disabled", false);
+            $("#hora_salida").val(data.hora_salida).prop("disabled", false);
             $("#fecha_salida").val(data.fecha_salida).prop("disabled", false);
             $("#lunes").prop("checked", data.lunes).prop("disabled", false);
             $("#martes").prop("checked", data.martes).prop("disabled", false);
@@ -120,6 +128,56 @@ $(document).ready(function () {
             $("#domingo").prop("checked", data.domingo).prop("disabled", false);
 
             $("#modalTitulo").text("Editar Horario");
+
+            toggleContenedorPuntos();
+
+            limpiarPuntos();
+
+            if (data.tramos && data.tramos.length > 0) {
+                const origenText = $("#punto_origen_id option:selected").text();
+                const origenId = data.punto_origen_id;
+
+                data.tramos.forEach((t) => {
+                    const destinoText =
+                        t.destino?.sucursal?.nombre_comercial || "Destino";
+                    const horaLlegada = t.hora_llegada; 
+
+                    puntosData.push({
+                        origen_id: origenId,
+                        destino_id: t.punto_destino_id,
+                        destino_text: destinoText,
+                        costo: parseFloat(t.costo_tramo),
+                        duracion: parseInt(t.duracion_minutos),
+                        index: puntoIndex,
+                    });
+
+                    $("#tablaPuntos tbody").append(`
+<tr data-index="${puntoIndex}">
+    <td>${origenText}</td>
+    <td>${destinoText}</td>
+    <td>S/ ${parseFloat(t.costo_tramo).toFixed(2)}</td>
+    <td>${t.duracion_minutos} min</td>
+    <td>${horaLlegada}</td>
+    <td>
+        <button type="button" class="btn btn-danger btn-sm eliminarPunto">
+            Eliminar
+        </button>
+    </td>
+</tr>
+`);
+
+                    $("#inputsPuntos").append(`
+<input type="hidden" name="puntos[${puntoIndex}][sucursal_id]" value="${t.punto_destino_id}">
+<input type="hidden" name="puntos[${puntoIndex}][costo]" value="${t.costo_tramo}">
+<input type="hidden" name="puntos[${puntoIndex}][duracion]" value="${t.duracion_minutos}">
+`);
+
+                    puntoIndex++;
+                });
+
+                actualizarCostoFinal();
+            }
+
             modalHorario.show();
         });
     });
@@ -139,7 +197,7 @@ $(document).ready(function () {
                 .val(data.punto_destino_id)
                 .prop("disabled", true);
             $("#costo_pasaje").val(data.costo_pasaje).prop("disabled", true);
-            $("#hora_embarque").val(data.hora_embarque).prop("disabled", true);
+            $("#hora_salida").val(data.hora_salida).prop("disabled", true);
             $("#fecha_salida").val(data.fecha_salida).prop("disabled", true);
             $("#lunes").prop("checked", data.lunes).prop("disabled", true);
             $("#martes").prop("checked", data.martes).prop("disabled", true);
@@ -154,7 +212,33 @@ $(document).ready(function () {
             $("#modalTitulo").text("Ver Horario");
             modalHorario.show();
         });
+        toggleContenedorPuntos();
     });
+
+    function toggleContenedorPuntos() {
+        const tipoViaje = $("#tipo_viaje_id").val();
+        if (tipoViaje == 2) {
+            $("#contenedorPuntos").removeClass("d-none");
+
+            $(".contenedor_destino").addClass("d-none");
+            $(".contenedor_costo_pasaje").addClass("d-none");
+
+            $("#punto_destino_id").prop("required", false).val("");
+            $("#costo_pasaje").prop("required", false);
+        } else {
+            $("#contenedorPuntos").addClass("d-none");
+
+            $(".contenedor_destino").removeClass("d-none");
+            $(".contenedor_costo_pasaje").removeClass("d-none");
+
+            $("#punto_destino_id").prop("required", true);
+            $("#costo_pasaje").prop("required", true);
+
+            limpiarPuntos();
+        }
+    }
+
+    $("#tipo_viaje_id").change(toggleContenedorPuntos);
 
     $("#tablaHorarios").on("click", ".eliminar", function () {
         let id = $(this).data("id");
@@ -201,226 +285,106 @@ $(document).ready(function () {
             $("#punto_destino_id").val("");
     });
 
-    // MODAL DE PUNTOS Y TRAMOS
-    const modalPuntos = new bootstrap.Modal($("#modalPuntos")[0]);
-    let horarioIdActivo = null;
-    let origenIdActivo = null;
-    let puntoEditActivo = null;
-    let puntosData = []; // Guardar los datos de los puntos
+    let puntosData = [];
+    let puntoIndex = 0;
 
-    $("#tablaHorarios").on("click", ".ver-puntos", function () {
-        horarioIdActivo = $(this).data("id");
-        origenIdActivo = $(this).data("origen-id");
-        puntoEditActivo = null;
+    $("#btnAgregarPunto").click(function () {
+        const origenId = $("#punto_origen_id").val();
+        const origenText = $("#punto_origen_id option:selected").text();
+        const destinoId = $("#punto_destino").val();
+        const destinoText = $("#punto_destino option:selected").text();
+        const costo = $("#costo_tramo").val();
+        const duracion = $("#duracion_tramo").val();
 
-        $("#formPunto")[0].reset();
-        $("#origen_nombre").val($(this).data("origen"));
-
-        cargarPuntos(horarioIdActivo);
-        modalPuntos.show();
-    });
-
-    function cargarPuntos(horarioId) {
-        $.get(
-            route("horarios.mostrar", horarioId) + "/puntos",
-            function (puntos) {
-                puntosData = puntos; // Guardar los datos completos
-                const tbody = $("#tablaPuntos tbody");
-                tbody.empty();
-
-                if (puntos.length === 0) return;
-
-                // INVERTIR EL ORDEN: mostrar del último al primero
-                const puntosInvertidos = [...puntos].reverse();
-
-                puntosInvertidos.forEach((punto, index) => {
-                    const origen =
-                        index === 0
-                            ? `<td rowspan="${puntos.length}" class="fw-bold text-center align-middle">
-                    ${punto.origen.nombre_comercial}
-               </td>`
-                            : "";
-
-                    tbody.append(`
-            <tr>
-                ${origen}
-                <td>${punto.destino.nombre_comercial}</td>
-                <td>S/ ${parseFloat(punto.costo_acumulado).toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-danger btn-sm eliminarPunto"
-                            data-id="${punto.id}">
-                        Eliminar
-                    </button>
-                </td>
-            </tr>
-        `);
-                });
-
-                lucide.createIcons();
-            },
-        );
-    }
-
-    // Función para contar cuántas veces aparece un destino POR ID
-    function contarDestinoEnTabla(destinoId) {
-        let count = 0;
-        puntosData.forEach(punto => {
-            if (punto.destino_id == destinoId) {
-                count++;
-            }
-        });
-        return count;
-    }
-
-    // Función para obtener el PRIMER costo agregado (el más lejano, que es el mayor)
-    function obtenerPrimerCosto() {
-        if (puntosData.length === 0) return null;
-        // El primer punto tiene el costo más alto (más lejano)
-        return parseFloat(puntosData[0].costo_acumulado);
-    }
-
-    $("#formPunto").submit(function (e) {
-        e.preventDefault();
-
-        const destinoId = $("#destino_id").val();
-        const costoNuevo = parseFloat($("#costo_acumulado").val());
-
-        // VALIDACIÓN 1: Origen no puede ser igual al destino
-        if (destinoId == origenIdActivo) {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "El destino no puede ser igual al origen",
-            });
+        if (!destinoId || !costo || !duracion) {
+            Swal.fire("Error", "Complete todos los campos del tramo", "error");
             return;
         }
 
-        // VALIDACIÓN 2: No permitir agregar un punto más de 2 veces
-        if (!puntoEditActivo) {
-            const cantidadExistente = contarDestinoEnTabla(destinoId);
-            if (cantidadExistente >= 2) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: "Este destino ya ha sido agregado 2 veces. No puede agregarse más.",
-                });
+        if (destinoId === origenId) {
+            Swal.fire(
+                "Error",
+                "El destino no puede ser igual al origen",
+                "error",
+            );
+            return;
+        }
+
+        if (puntosData.some((p) => p.destino_id == destinoId)) {
+            Swal.fire("Error", "Este destino ya fue agregado", "error");
+            return;
+        }
+
+        if (puntosData.length > 0) {
+            const ultimoCosto = puntosData[puntosData.length - 1].costo;
+
+            if (parseFloat(costo) < ultimoCosto) {
+                Swal.fire(
+                    "Error",
+                    "El costo de este tramo no puede ser menor al anterior",
+                    "error",
+                );
                 return;
             }
         }
 
-        // VALIDACIÓN 3: El costo debe ser menor o igual al primer punto (el más lejano)
-        const primerCosto = obtenerPrimerCosto();
-        if (primerCosto !== null && costoNuevo > primerCosto) {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: `El costo debe ser menor o igual a S/ ${primerCosto.toFixed(2)} (último punto más lejano)`,
-            });
+        const origenHorario = $("#punto_origen_id").val(); // origen principal del horario
+
+        puntosData.push({
+            origen_id: origenHorario,
+            destino_id: destinoId,
+            costo: parseFloat(costo),
+            duracion: parseInt(duracion),
+            index: puntoIndex,
+        });
+
+        $("#tablaPuntos tbody").append(`
+<tr data-index="${puntoIndex}">
+    <td>${origenText}</td>
+    <td>${destinoText}</td>
+    <td>S/ ${parseFloat(costo).toFixed(2)}</td>
+    <td>
+        <button type="button" class="btn btn-danger btn-sm eliminarPunto">
+            Eliminar
+        </button>
+    </td>
+</tr>
+`);
+
+        $("#inputsPuntos").append(`
+<input type="hidden" name="puntos[${puntoIndex}][sucursal_id]" value="${destinoId}">
+<input type="hidden" name="puntos[${puntoIndex}][costo]" value="${costo}">
+<input type="hidden" name="puntos[${puntoIndex}][duracion]" value="${duracion}">
+`);
+
+        puntoIndex++;
+        $("#punto_destino").val("");
+        $("#costo_tramo").val("");
+        $("#duracion_tramo").val("");
+
+        actualizarCostoFinal();
+    });
+
+    function limpiarPuntos() {
+        puntosData = [];
+        puntoIndex = 0;
+        $("#tablaPuntos tbody").empty();
+        $("#inputsPuntos").empty();
+    }
+
+    $("#punto_origen_id").change(function () {
+        const texto = $("#punto_origen_id option:selected").text();
+        $("#origen_nombre").val(texto);
+
+        limpiarPuntos();
+    });
+
+    function actualizarCostoFinal() {
+        if (puntosData.length === 0) {
+            $("#costo_pasaje").val("");
             return;
         }
-
-        const formData = $(this).serialize();
-        let url = puntoEditActivo
-            ? route("horarios.mostrar", horarioIdActivo) +
-              "/puntos/" +
-              puntoEditActivo
-            : route("horarios.mostrar", horarioIdActivo) + "/puntos";
-        let method = puntoEditActivo ? "PUT" : "POST";
-
-        $.ajax({
-            url: url,
-            type: method,
-            data: formData,
-            headers: {
-                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-            },
-            success: function (res) {
-                if (res.success) {
-                    cargarPuntos(horarioIdActivo);
-                    $("#formPunto")[0].reset();
-                    puntoEditActivo = null;
-                    Swal.fire({
-                        icon: "success",
-                        title: "Éxito",
-                        text: "Punto guardado correctamente",
-                    });
-                }
-            },
-            error: function (xhr) {
-                let errors = xhr.responseJSON?.errors;
-                let msg = errors
-                    ? Object.values(errors).flat().join("<br>")
-                    : "Error al procesar la solicitud";
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    html: msg,
-                });
-            },
-        });
-    });
-
-    $("#tablaPuntos").on("click", ".editarPunto", function () {
-        puntoEditActivo = $(this).data("id");
-        $.get(
-            route("horarios.mostrar", horarioIdActivo) +
-                "/puntos/" +
-                puntoEditActivo,
-            function (p) {
-                $("#destino_id").val(p.destino_id);
-                $("#costo_acumulado").val(p.costo_acumulado);
-            },
-        );
-    });
-
-    // BOTÓN ELIMINAR CORREGIDO
-    $("#tablaPuntos").on("click", ".eliminarPunto", function () {
-        const puntoId = $(this).data("id");
-        Swal.fire({
-            title: "¿Eliminar punto?",
-            text: "No se podrá revertir",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url:
-                        route("horarios.mostrar", horarioIdActivo) +
-                        "/puntos/" +
-                        puntoId,
-                    type: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                            "content",
-                        ),
-                    },
-                    success: function (res) {
-                        if (res.success) {
-                            cargarPuntos(horarioIdActivo);
-                            Swal.fire({
-                                icon: "success",
-                                title: "Eliminado",
-                                text: "Punto eliminado correctamente",
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: "error",
-                                title: "Error",
-                                text: res.message || "Error al eliminar",
-                            });
-                        }
-                    },
-                    error: function (xhr) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: "No se pudo eliminar el punto",
-                        });
-                    },
-                });
-            }
-        });
-    });
+        const ultimo = puntosData[puntosData.length - 1];
+        $("#costo_pasaje").val(ultimo.costo.toFixed(2));
+    }
 });

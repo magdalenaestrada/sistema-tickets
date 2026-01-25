@@ -10,11 +10,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
+                    <h6 class="text-center">FILTROS</h6>
+                    <div class="row mt-2">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Punto de Origen</label>
                             <select id="filtro_origen" class="form-select">
-                                <option value="">Todos</option>
+                                <option value="">Elegir una opción</option>
                                 @foreach ($sucursales as $sucursal)
                                     <option value="{{ $sucursal->id }}">
                                         {{ $sucursal->nombre_comercial }}</option>
@@ -26,7 +27,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Punto de Destino</label>
                             <select id="filtro_destino" class="form-select">
-                                <option value="">Todos</option>
+                                <option value="">Elegir una opción</option>
                                 @foreach ($sucursales as $sucursal)
                                     <option value="{{ $sucursal->id }}">
                                         {{ $sucursal->nombre_comercial }}</option>
@@ -38,7 +39,7 @@
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Tipo de Viaje</label>
                             <select id="filtro_tipo_viaje" class="form-select">
-                                <option value="">Todos</option>
+                                <option value="">Elegir una opción</option>
                                 @foreach ($tipo_viajes as $tipo_viaje)
                                     <option value="{{ $tipo_viaje->id }}">
                                         {{ $tipo_viaje->descripcion }}</option>
@@ -51,7 +52,7 @@
                             <label class="form-label">Tipo Vehículo</label>
                             <select id="filtro_tipo_vehiculo" class="form-select">
 
-                                <option value="">Todos</option>
+                                <option value="">Elegir una opción</option>
                                 @foreach ($tipo_vehiculos as $tipo_vehiculo)
                                     <option value="{{ $tipo_vehiculo->id }}">
                                         {{ $tipo_vehiculo->descripcion }}</option>
@@ -61,10 +62,13 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Fecha de salida</label>
-                            <input type="date" id="filtro_fecha" class="form-control">
+                            <input type="date" id="filtro_fecha" min="{{ $hoy }}" class="form-control">
                         </div>
-
-                        <div class="mb-3">
+                    </div>
+                    <hr>
+                    <div class="row mt-3">
+                        <h6 class="text-center">SELECCIONAR UN HORARIO Y CONDUCTOR</h6>
+                        <div class="mb-3 mt-2">
                             <label for="horario_id" class="form-label">Horario</label>
                             <select name="horario_id" id="horario_id" class="form-select" required>
                                 <option value="">Seleccione un horario</option>

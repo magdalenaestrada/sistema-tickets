@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\HorarioPunto;
-use App\Models\HorarioTramo;
 use App\Models\Horario;
 use Illuminate\Http\Request;
 
@@ -76,14 +75,6 @@ class HorarioPuntoController extends Controller
             $destino = $puntos[$i];
 
             $origen_id = $i === 0 ? $horario->punto_origen_id : $puntos[$i - 1]->destino_id;
-
-            HorarioTramo::create([
-                'horario_id' => $horario->id,
-                'punto_origen_id' => $origen_id,
-                'punto_destino_id' => $destino->destino_id,
-                'costo' => $destino->costo_acumulado - ($i === 0 ? 0 : $puntos[$i - 1]->costo_acumulado),
-                'orden' => $i + 1,
-            ]);
         }
     }
     public function show(Horario $horario, HorarioPunto $punto)

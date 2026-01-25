@@ -49,19 +49,20 @@
                 </a>
             </li>
 
-            <li class="nav-item {{ request()->is('pasajes*') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->is('pasajes*') && !request()->is('pasajes/tabla*') ? 'active' : '' }}">
                 <a href="{{ route('pasajes.index') }}" class="nav-link">
                     <i class="link-icon" data-lucide="receipt-text"></i>
                     <span class="link-title">Vender pasajes</span>
                 </a>
             </li>
 
-            <li class="nav-item {{ request()->is('pasajes.index-busqueda') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->is('pasajes/tabla*') ? 'active' : '' }}">
                 <a href="{{ route('pasajes.index-busqueda') }}" class="nav-link">
                     <i class="link-icon" data-lucide="user-search"></i>
                     <span class="link-title">Buscar pasajes</span>
                 </a>
             </li>
+
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="collapse" href="#encomiendas"
                     aria-expanded="{{ $encomiendasOpen ? 'true' : 'false' }}">

@@ -122,9 +122,10 @@
                                 </p>
                                 <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}
                                 </p>
-                                <p class="mb-1"><strong>Fecha:</strong> {{ $horario->fecha_salida->format('d-m-Y') }}
+                                <p class="mb-1"><strong>Fecha:</strong>
+                                    {{ optional($horario->fechas->first())->fecha_salida ? $horario->fechas->first()->fecha_salida->format('Y-m-d') : '' }}
                                 </p>
-                                <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_embarque }}</p>
+                                <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_salida }}</p>
                             </div>
                         </div>
 
@@ -137,9 +138,9 @@
                                     <label class="form-label">Tipo de documento</label>
                                     <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
                                         class="form-select">
-                                        @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
+                                        @foreach ($tipos_documentos_facturas as $tipo_documento_factura)
                                             <option value="{{ $tipo_documento_factura->id }}"
-                                                @if (optional($pasaje->venta)?->tipo_documento_factura_id == $tipo_documento_factura->id) selected @endif>
+                                                @if (isset($pasaje->venta) && $pasaje->venta->tipo_documento_factura_id == $tipo_documento_factura->id) selected @endif>
                                                 {{ $tipo_documento_factura->descripcion }}
                                             </option>
                                         @endforeach
@@ -149,13 +150,13 @@
                                 <div class="mb-3">
                                     <label class="form-label">Número documento</label>
                                     <input type="text" id="numero_documento_id" name="numero_documento_id"
-                                        class="form-control" value="{{ $pasaje->venta->documento ?? '' }}">
+                                        class="form-control" value="{{ $pasaje->venta->persona->documento ?? '' }}">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Razón social</label>
                                     <input type="text" id="razon_social" name="razon_social" class="form-control"
-                                        value="{{ $pasaje->venta->razon_social ?? '' }}">
+                                        value="{{ $pasaje->venta->persona ? $pasaje->venta->persona->razon_social ?? $pasaje->venta->persona->nombres . ' ' . $pasaje->venta->persona->apellidos : '' }}">
                                 </div>
                             </div>
                         </div>
@@ -167,13 +168,51 @@
                             <div class="card-body">
 
                                 @php
-                                    $precioBoleto = $horario->costo_pasaje ?? 0;
-                                    $pagos = collect(optional($pasaje->venta)?->pagos);
+                                    $precioBoleto = $horario->costo_base ?? 0;
+                                    $costoTotal = 0;
+                                    $pagoEfectivo = 0;
+                                    $pagoBilletera = 0;
+                                    $billeteraId = null;
+                                    $metodoPagoId = null;
 
-                                    $pagoDigital = $pagos->where('tipo', 'digital')->sum('monto') ?: $precioBoleto;
-                                    $pagoEfectivo = $pagos->where('tipo', 'efectivo')->sum('monto') ?: 0;
-                                    $pagoBilletera = $pagos->where('tipo', 'billetera')->first();
-                                    $costoTotal = optional($pasaje->venta)->total ?: $precioBoleto;
+                                    if (isset($pasaje->venta)) {
+                                        // Obtener el total de la venta
+                                        $costoTotal = $pasaje->venta->total;
+
+                                        // Obtener los pagos
+                                        $pagos = $pasaje->venta->pagos;
+
+                                        if ($pagos->isNotEmpty()) {
+                                            // Obtener el método de pago del primer registro
+                                            $metodoPagoId = $pagos->first()->metodo_pago_id;
+
+                                            // Sumar pagos por método
+                                            foreach ($pagos as $pago) {
+                                                if ($pago->metodo_pago_id == 1) {
+                                                    // Efectivo
+                                                    $pagoEfectivo += $pago->total;
+                                                } elseif ($pago->metodo_pago_id == 2) {
+                                                    // Digital
+                                                    $pagoBilletera += $pago->total;
+                                                    if ($pago->billetera_id) {
+                                                        $billeteraId = $pago->billetera_id;
+                                                    }
+                                                } elseif ($pago->metodo_pago_id == 3) {
+                                                    // Mixto
+                                                    // En método mixto, separar por si tiene billetera_id
+                                                    if ($pago->billetera_id) {
+                                                        $pagoBilletera += $pago->total;
+                                                        $billeteraId = $pago->billetera_id;
+                                                    } else {
+                                                        $pagoEfectivo += $pago->total;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // Modo creación
+                                        $costoTotal = $precioBoleto * count($asientos);
+                                    }
                                 @endphp
 
                                 <div class="mb-3">
@@ -181,7 +220,7 @@
                                     <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
                                         @foreach ($metodos_pago as $metodo_pago)
                                             <option value="{{ $metodo_pago->id }}"
-                                                @if (isset($pasaje) && $pasaje->venta?->pagos?->first()?->metodo_pago_id == $metodo_pago->id) selected @endif>
+                                                @if ($metodoPagoId == $metodo_pago->id) selected @endif>
                                                 {{ $metodo_pago->descripcion }}
                                             </option>
                                         @endforeach
@@ -191,13 +230,14 @@
                                 <div class="mb-3 grupo_costo_total" hidden>
                                     <label class="form-label">Costo total</label>
                                     <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control" readonly value="{{ $costoTotal }}">
+                                        class="form-control" readonly
+                                        value="{{ number_format($costoTotal, 2, '.', '') }}">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Pago efectivo</label>
                                     <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
-                                        class="form-control" value="{{ $pagoEfectivo }}">
+                                        class="form-control" value="{{ number_format($pagoEfectivo, 2, '.', '') }}">
                                 </div>
 
                                 <div class="mb-3">
@@ -206,27 +246,35 @@
                                         <option value="">Seleccionar...</option>
                                         @foreach ($billeteras_digitales as $billetera)
                                             <option value="{{ $billetera->id }}"
-                                                @if ($pagoBilletera && $pagoBilletera->billetera_id == $billetera->id) selected @endif>
+                                                @if ($billeteraId == $billetera->id) selected @endif>
                                                 {{ $billetera->descripcion }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
+
                                 <div class="mb-3">
                                     <label class="form-label">Pago digital</label>
                                     <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
-                                        class="form-control" value="{{ $pagoDigital }}">
+                                        class="form-control" value="{{ number_format($pagoBilletera, 2, '.', '') }}">
                                 </div>
                             </div>
+
                             <div class="card mb-3">
                                 <div class="card-body text-center">
-                                    <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
-                                        <i class="bi bi-bookmark"></i> Reservar
-                                    </button>
+                                    @if (isset($pasaje))
+                                        <button type="button" class="btn btn-success w-100" id="btnActualizarPasaje">
+                                            <i class="bi bi-check-circle"></i> Actualizar pasaje
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
+                                            <i class="bi bi-bookmark"></i> Reservar
+                                        </button>
 
-                                    <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
-                                        <i class="bi bi-cash-coin"></i> Terminar venta
-                                    </button>
+                                        <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
+                                            <i class="bi bi-cash-coin"></i> Terminar venta
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </div>

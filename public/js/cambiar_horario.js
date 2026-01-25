@@ -22,6 +22,16 @@ $(function () {
     let horarioNuevoId = null;
     let pasajeCambioIndex = null;
 
+    // NUEVO: Detectar si estamos en modo edición
+    const modoEdicion = $('input[name="pasaje_id"]').length > 0;
+
+    // NUEVO: Guardar valores iniciales para modo edición
+    const valoresIniciales = {
+        pagoEfectivo: parseFloat(pagoEfectivoInput.val()) || 0,
+        pagoBilletera: parseFloat(pagoBilleteraInput.val()) || 0,
+        costoTotal: parseFloat(costoTotalInput.val()) || 0,
+    };
+
     window.abrirCambioHorario = function (index, asiento, horarioId) {
         pasajeCambioIndex = index;
         asientoNuevo = null;
@@ -87,7 +97,7 @@ $(function () {
                 $("#listaHorariosCambio").html(html);
 
                 agregarEventListenersHorarios();
-            }
+            },
         ).fail(function () {
             Swal.fire("Error", "No se pudieron buscar horarios", "error");
         });
@@ -95,7 +105,7 @@ $(function () {
 
     function agregarEventListenersHorarios() {
         const horarioCards = document.querySelectorAll(
-            "#listaHorariosCambio .horario-card"
+            "#listaHorariosCambio .horario-card",
         );
 
         horarioCards.forEach((card) => {
@@ -117,7 +127,7 @@ $(function () {
             });
 
         const tarjetaActiva = document.querySelector(
-            `[data-horario-id="${horarioId}"]`
+            `[data-horario-id="${horarioId}"]`,
         );
         if (tarjetaActiva) {
             tarjetaActiva.classList.add("active");
@@ -125,7 +135,7 @@ $(function () {
 
         $("[id^='svg-card-']").addClass("d-none");
 
-        $.get(route("pasajes.horario.asientos", horarioId), function (res) {
+        $.get(route("pasajes.asientos", horarioId), function (res) {
             const contenedor = $(`#svg-bus-${horarioId}`);
             contenedor.html(res.svg);
 
@@ -147,7 +157,7 @@ $(function () {
                     "ocupado",
                     "reservado",
                     "libre",
-                    "selected-seat"
+                    "selected-seat",
                 );
 
                 g.classList.add(estado);
@@ -233,9 +243,6 @@ $(function () {
             });
             return;
         }
-        console.log(pasajeCambioIndex);
-        console.log(document.querySelectorAll('input[name="asientos[]"]'));
-        console.log(document.querySelectorAll('input[name="horario_id[]"]'));
 
         document.querySelectorAll('input[name="asientos[]"]')[
             pasajeCambioIndex
@@ -299,16 +306,12 @@ $(function () {
             seat.addEventListener("mouseenter", mouseEnterHandler);
             seat.addEventListener("mouseleave", mouseLeaveHandler);
         });
-
-        console.log(
-            `Event listeners agregados a ${seats.length} asientos (sin clonar)`
-        );
     }
 
     function actualizarCostoTotal() {
         precioTotal = selectedSeatNumbers.reduce(
             (sum, num) => sum + parseFloat(seatPrices[num] || 0),
-            0
+            0,
         );
         costoTotalInput.val(precioTotal.toFixed(2));
         refrescarPagos();
@@ -328,11 +331,27 @@ $(function () {
 
         if (metodo === 1) {
             pagoEfectivoInput.closest(".mb-3").show();
-            pagoEfectivoInput.val(total.toFixed(2)).prop("readonly", true);
+
+            // MODIFICADO: En modo edición, preservar el valor inicial
+            if (modoEdicion && valoresIniciales.pagoEfectivo > 0) {
+                pagoEfectivoInput.val(valoresIniciales.pagoEfectivo.toFixed(2));
+            } else {
+                pagoEfectivoInput.val(total.toFixed(2));
+            }
+            pagoEfectivoInput.prop("readonly", true);
         } else if (metodo === 2) {
             pagoBilleteraInput.closest(".mb-3").show();
             billeteraSelect.closest(".mb-3").show();
-            pagoBilleteraInput.val(total.toFixed(2)).prop("readonly", true);
+
+            // MODIFICADO: En modo edición, preservar el valor inicial
+            if (modoEdicion && valoresIniciales.pagoBilletera > 0) {
+                pagoBilleteraInput.val(
+                    valoresIniciales.pagoBilletera.toFixed(2),
+                );
+            } else {
+                pagoBilleteraInput.val(total.toFixed(2));
+            }
+            pagoBilleteraInput.prop("readonly", true);
         } else if (metodo === 3) {
             pagoEfectivoInput.closest(".mb-3").show();
             pagoBilleteraInput.closest(".mb-3").show();
@@ -342,7 +361,17 @@ $(function () {
             let pagoE = parseFloat(pagoEfectivoInput.val()) || 0;
             let pagoB = parseFloat(pagoBilleteraInput.val()) || 0;
 
-            if (pagoE === 0 && pagoB === 0) {
+            // MODIFICADO: Si estamos en edición y hay valores guardados, usarlos
+            if (
+                modoEdicion &&
+                (valoresIniciales.pagoEfectivo > 0 ||
+                    valoresIniciales.pagoBilletera > 0)
+            ) {
+                pagoEfectivoInput.val(valoresIniciales.pagoEfectivo.toFixed(2));
+                pagoBilleteraInput.val(
+                    valoresIniciales.pagoBilletera.toFixed(2),
+                );
+            } else if (pagoE === 0 && pagoB === 0) {
                 let mitad = total / 2;
                 pagoEfectivoInput.val(mitad.toFixed(2));
                 pagoBilleteraInput.val((total - mitad).toFixed(2));
@@ -412,13 +441,10 @@ $(function () {
     }
 
     if (horarioId) {
-        $.getJSON(
-            route("pasajes.horario.asientos", horarioId),
-            function (data) {
-                seatPrices = data.precios || {};
-                actualizarCostoTotal();
-            }
-        );
+        $.getJSON(route("pasajes.asientos", horarioId), function (data) {
+            seatPrices = data.precios || {};
+            actualizarCostoTotal();
+        });
     }
 
     $("#btnReservar").on("click", function (e) {
@@ -464,7 +490,7 @@ $(function () {
                     Swal.fire(
                         "Error",
                         `Error en asiento ${asientoNum}`,
-                        "error"
+                        "error",
                     );
                 });
 
@@ -475,7 +501,7 @@ $(function () {
             Swal.fire(
                 "Resultado",
                 `Reservas: ${reservasExitosas} exitosas, ${reservasFallidas} fallidas`,
-                "info"
+                "info",
             );
         });
     });
@@ -502,12 +528,12 @@ $(function () {
             success: function (res) {
                 if (res.success) {
                     selectedSeatNumbers.forEach((num) =>
-                        marcarAsientoOcupado(num)
+                        marcarAsientoOcupado(num),
                     );
                     Swal.fire(
                         "Éxito",
                         "Venta realizada correctamente",
-                        "success"
+                        "success",
                     ).then(() => {
                         window.location.href = res.redirect;
                     });
@@ -519,19 +545,17 @@ $(function () {
         });
     });
 
+    // MODIFICADO: Solo llamar a refrescarPagos() después de guardar los valores iniciales
     refrescarPagos();
 
-    // Buscar documento automáticamente cuando el usuario sale del input
     $("[id^='documento_']").on("blur", function () {
         const input = $(this);
         const documento = input.val().trim();
 
         if (!documento) return;
 
-        // obtener el index desde el id (documento_0, documento_1, etc.)
         const index = input.attr("id").split("_")[1];
 
-        // loader mientras consulta
         input.prop("disabled", true);
         input.addClass("loading-input");
 
@@ -541,23 +565,21 @@ $(function () {
                     Swal.fire(
                         "No encontrado",
                         "No se encontró información: " + data.error,
-                        "warning"
+                        "warning",
                     );
                     return;
                 }
 
                 if (data.razon_social) {
-                    // Empresa
                     $(`#nombres_${index}`).val(data.razon_social);
                     $(`#apellidos_${index}`).val("");
                     $(`#correo_${index}`).val(data.direccion || "");
                 } else {
-                    // Persona
                     $(`#nombres_${index}`).val(data.nombres || "");
                     $(`#apellidos_${index}`).val(
                         `${data.apellido_paterno || ""} ${
                             data.apellido_materno || ""
-                        }`.trim()
+                        }`.trim(),
                     );
                     $(`#correo_${index}`).val(data.direccion || "");
                 }
@@ -601,7 +623,7 @@ $(function () {
 
                 const nuevoPrecio = Math.max(
                     0,
-                    precioOriginal - descuentoAplicado
+                    precioOriginal - descuentoAplicado,
                 );
 
                 seatPrices[asientoNumero] = nuevoPrecio;
@@ -611,14 +633,14 @@ $(function () {
                 Swal.fire(
                     "Descuento aplicado",
                     `Descuento aplicado al asiento ${asientoNumero}`,
-                    "success"
+                    "success",
                 );
             })
             .fail(() => {
                 Swal.fire(
                     "Error",
                     "No se pudo conectar con el servidor",
-                    "error"
+                    "error",
                 );
             })
             .always(() => {

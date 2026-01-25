@@ -16,6 +16,7 @@ class Pasaje extends Model
         'usuario_id',
         'persona_id',
         'horario_id',
+        'tramo_id',
         'asiento_numero',
         'pasajero_menor',
         'autorizacion_pdf',
@@ -50,6 +51,11 @@ class Pasaje extends Model
     {
         return $this->belongsTo(Horario::class);
     }
+    public function tramo()
+    {
+        return $this->belongsTo(HorarioTramo::class, 'tramo_id');
+    }
+
     public function scopePorHorario($query, $horarioId)
     {
         return $query->where('horario_id', $horarioId);

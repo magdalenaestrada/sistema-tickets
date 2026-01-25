@@ -32,7 +32,7 @@
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label>Fecha:</label>
-                    <input type="date" id="filtro_fecha" class="form-control">
+                    <input type="date" id="filtro_fecha" min={{ $hoy }} class="form-control">
                 </div>
 
                 <div class="col-md-4">
@@ -54,7 +54,7 @@
                                     <div class="card horario-card" data-horario-id="{{ $horario->id }}"
                                         data-origen="{{ strtolower($horario->punto_origen->nombre_comercial) }}"
                                         data-destino="{{ strtolower($horario->punto_destino->nombre_comercial) }}"
-                                        data-fecha="{{ $horario->fecha_salida->format('Y-m-d') }}">
+                                        data-fecha="{{ optional($horario->fechas->first())->fecha_salida ? $horario->fechas->first()->fecha_salida->format('Y-m-d') : '' }}">
                                         <div class="card-body">
                                             @php
                                                 $capacidad = $horario->tipo_vehiculo->capacidad;
@@ -70,8 +70,8 @@
                                             <p class="card-text">
                                                 {{ $horario->punto_origen->nombre_comercial }} →
                                                 {{ $horario->punto_destino->nombre_comercial }} <br>
-                                                {{ $horario->fecha_salida->format('d-m-Y') }} -
-                                                {{ $horario->hora_embarque }}
+                                                {{ optional($horario->fechas->first())->fecha_salida ? $horario->fechas->first()->fecha_salida->format('Y-m-d') : '' }}
+                                                - {{ $horario->tipo_viaje->descripcion }}
                                             </p>
                                         </div>
                                     </div>
@@ -86,7 +86,17 @@
                         <button id="edit-button" class="btn btn-warning mb-2" style="display:none;">
                             Editar pasaje
                         </button>
-
+                        <div class="mb-3 text-center">
+                            <span
+                                style="display:inline-block; width:15px; height:15px; background:red; margin-left:10px;"></span>
+                            Vendido
+                            <span
+                                style="display:inline-block; width:15px; height:15px; background:orange; margin-left:10px;"></span>
+                            Reservado
+                            <span
+                                style="display:inline-block; width:15px; height:15px; background:#c0cdda; margin-left:10px;"></span>
+                            Libre
+                        </div>
                         <div id="svg-container" style="max-width: 350px; overflow: auto;">
                             <p>Seleccione un horario para ver los asientos.</p>
                         </div>

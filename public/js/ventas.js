@@ -19,11 +19,18 @@ $(function () {
     let seatPrices = {};
     let precioTotal = 0;
 
+    // NUEVO: Obtener el precio base desde el input o desde el DOM
+    const precioBase = parseFloat(costoTotalInput.val()) || 0;
+
     function actualizarCostoTotal() {
-        precioTotal = selectedSeatNumbers.reduce(
-            (sum, num) => sum + parseFloat(seatPrices[num] || 0),
-            0
-        );
+        precioTotal = selectedSeatNumbers.reduce((sum, num) => {
+            // Usar el precio específico del asiento o el precio base como fallback
+            const precio = parseFloat(seatPrices[num]) || precioBase;
+            console.log(`Asiento ${num}: precio = ${precio}`); // DEBUG
+            return sum + precio;
+        }, 0);
+
+        console.log(`Total calculado: ${precioTotal}`); // DEBUG
         costoTotalInput.val(precioTotal.toFixed(2));
         refrescarPagos();
     }
@@ -125,14 +132,33 @@ $(function () {
             seat.querySelector(".seat-body").setAttribute("fill", "orange");
     }
 
+    // MODIFICADO: Inicializar precios antes de la petición AJAX
+    selectedSeatNumbers.forEach((num) => {
+        seatPrices[num] = precioBase;
+    });
+
+    // Calcular el total inicial
+    actualizarCostoTotal();
+
     if (horarioId) {
-        $.getJSON(
-            route("pasajes.horario.asientos", horarioId),
-            function (data) {
-                seatPrices = data.precios || {};
-                actualizarCostoTotal();
+        $.getJSON(route("pasajes.asientos", horarioId), function (data) {
+            console.log("Respuesta del servidor:", data); // DEBUG
+
+            // Actualizar solo los precios que vengan del servidor
+            if (data.precios && typeof data.precios === "object") {
+                Object.keys(data.precios).forEach((asientoNum) => {
+                    seatPrices[asientoNum] = parseFloat(
+                        data.precios[asientoNum],
+                    );
+                });
             }
-        );
+
+            console.log("Precios finales:", seatPrices); // DEBUG
+            actualizarCostoTotal();
+        }).fail(function (error) {
+            console.error("Error al cargar precios:", error);
+            // Mantener los precios base si falla la petición
+        });
     }
 
     $("#btnReservar").on("click", function (e) {
@@ -178,7 +204,7 @@ $(function () {
                     Swal.fire(
                         "Error",
                         `Error en asiento ${asientoNum}`,
-                        "error"
+                        "error",
                     );
                 });
 
@@ -189,7 +215,7 @@ $(function () {
             Swal.fire(
                 "Resultado",
                 `Reservas: ${reservasExitosas} exitosas, ${reservasFallidas} fallidas`,
-                "info"
+                "info",
             );
         });
     });
@@ -216,12 +242,12 @@ $(function () {
             success: function (res) {
                 if (res.success) {
                     selectedSeatNumbers.forEach((num) =>
-                        marcarAsientoOcupado(num)
+                        marcarAsientoOcupado(num),
                     );
                     Swal.fire(
                         "Éxito",
                         "Venta realizada correctamente",
-                        "success"
+                        "success",
                     ).then(() => {
                         window.location.href = res.redirect;
                     });
@@ -252,7 +278,7 @@ $(function () {
                     Swal.fire(
                         "No encontrado",
                         "No se encontró información: " + data.error,
-                        "warning"
+                        "warning",
                     );
                     return;
                 }
@@ -322,7 +348,7 @@ $(function () {
 
                 const nuevoPrecio = Math.max(
                     0,
-                    precioOriginal - descuentoAplicado
+                    precioOriginal - descuentoAplicado,
                 );
 
                 seatPrices[asientoNumero] = nuevoPrecio;
@@ -332,14 +358,14 @@ $(function () {
                 Swal.fire(
                     "Descuento aplicado",
                     `Descuento aplicado al asiento ${asientoNumero}`,
-                    "success"
+                    "success",
                 );
             })
             .fail(() => {
                 Swal.fire(
                     "Error",
                     "No se pudo conectar con el servidor",
-                    "error"
+                    "error",
                 );
             })
             .always(() => {
@@ -394,7 +420,7 @@ $(function () {
         } else {
             container.slideUp();
             fileInput.prop("required", false);
-            fileInput.val(""); // limpia el archivo
+            fileInput.val("");
         }
     });
 });

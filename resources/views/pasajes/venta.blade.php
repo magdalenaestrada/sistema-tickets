@@ -105,17 +105,18 @@
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
-                                <p class="mb-1"><strong>Precio C/U:</strong> {{ $horario->costo_pasaje }}
+                                <p class="mb-1"><strong>Precio C/U:</strong> {{ $horario->costo_base }}</p>
                                 <p class="mb-1"><strong>Origen:</strong> {{ $horario->punto_origen->nombre_comercial }}
                                 </p>
                                 <p class="mb-1"><strong>Destino:</strong> {{ $horario->punto_destino->nombre_comercial }}
                                 </p>
                                 <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}</p>
-                                <p class="mb-1"><strong>Fecha:</strong> {{ $horario->fecha_salida->format('d-m-Y') }}</p>
-                                <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_embarque }}</p>
+                                <p class="mb-1"><strong>Fecha:</strong>
+                                    {{ optional($horario->fechas->first())->fecha_salida?->format('Y-m-d') }}
+                                </p>
+                                <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_salida }}</p>
                             </div>
                         </div>
-
                         {{-- FACTURACIÓN SIN EDICIÓN --}}
                         <div class="card mb-3">
                             <div class="card-header">
@@ -169,7 +170,7 @@
                                 <div class="mb-3 grupo_costo_total" hidden>
                                     <label class="form-label">Costo total</label>
                                     <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control" readonly value="{{ $horario->costo_pasaje }}">
+                                        class="form-control" readonly value="{{ $horario->costo_base }}">
                                 </div>
 
                                 <div class="mb-3">
