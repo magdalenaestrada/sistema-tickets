@@ -49,8 +49,10 @@ $(function () {
             route("horarios.filtrar"),
             {
                 fecha: $("#filtroFechaCambio").val(),
-                origen_id: $("#filtroOrigenCambio").val(),
-                destino_id: $("#filtroDestinoCambio").val(),
+                origen: $("#filtroOrigenCambio").val(),
+                destino: $("#filtroDestinoCambio").val(),
+                tipo_viaje: $("#filtroTipoViajeCambio").val(),
+                tipo_vehiculo: $("#filtroTipoVehiculoCambio").val(),
             },
             function (res) {
                 let html = "";
@@ -69,34 +71,21 @@ $(function () {
 
                     html += `
 <div class="col-md-6 mb-4">
-    <!-- TARJETA HORARIO -->
     <div class="card horario-card mb-2" data-horario-id="${h.id}">
         <div class="card-body">
             <h6 class="mb-1">
-                ${h.tipo_vehiculo.descripcion} –
-                ${disponibles} asientos disponibles
+                ${h.tipo_vehiculo.descripcion} – ${disponibles} asientos disponibles
             </h6>
             <small>
-                ${h.punto_origen.nombre_comercial}
-                →
-                ${h.punto_destino.nombre_comercial}<br>
-                ${h.fecha_salida} - ${h.hora_embarque}
+                ${h.punto_origen.nombre_comercial} → ${h.punto_destino.nombre_comercial}<br>
+                ${h.fecha_salida} - ${h.hora_salida || ""}
             </small>
-        </div>
-    </div>
-
-    <!-- TARJETA SVG (oculta inicialmente) -->
-    <div class="card d-none" id="svg-card-${h.id}">
-        <div class="card-body p-2">
-            <div id="svg-bus-${h.id}" class="svg-bus-container"></div>
         </div>
     </div>
 </div>`;
                 });
 
                 $("#listaHorariosCambio").html(html);
-
-                agregarEventListenersHorarios();
             },
         ).fail(function () {
             Swal.fire("Error", "No se pudieron buscar horarios", "error");

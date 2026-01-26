@@ -42,20 +42,13 @@ class DashboardController extends Controller
 
         $montoActual = $caja ? $caja->monto_actual : 0;
 
-        $horariosHoy = Horario::where('punto_origen_id', $sucursalId)
-            ->where(function ($query) use ($hoy, $columnaDia) {
-                $query->whereDate('fecha_salida', $hoy)
-                    ->orWhere($columnaDia, 1);
-            })
-            ->with(['punto_origen', 'punto_destino', 'tipo_vehiculo', 'tipo_viaje'])
-            ->get();
+        $hoy = now()->toDateString();
 
-        return view('dashboard', compact(
-            'ventasHoy',
-            'encomiendasHoy',
-            'montoActual',
-            'horariosHoy',
-            'usuario'
-        ));
+        $horariosHoy = Horario::where('punto_origen_id', $sucursalId)
+            ->whereHas('fechas', function ($query) use ($hoy) {
+                $query->whereDate('fecha_salida', $hoy);
+            })
+            ->with(['punto_origen', 'punto_destino', 'tipo_vehiculo', 'tipo_viaje', 'fechas'])
+            ->get();
     }
 }
