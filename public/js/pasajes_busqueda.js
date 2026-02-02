@@ -56,8 +56,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         }</td>
                     <td>${p.horario.punto_origen.nombre_comercial}</td>
                     <td>${p.horario.punto_destino.nombre_comercial}</td>
-                    <td>${soloFecha(p.horario.fecha_salida)}</td>
-                    <td>${p.horario.hora_embarque}</td>
                     <td>${badgeEstado(p.estado)}</td>
                 ${botonesAcciones(p)}
 

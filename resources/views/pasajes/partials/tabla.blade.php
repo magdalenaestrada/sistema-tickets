@@ -6,8 +6,6 @@
                 <th>Pasajero</th>
                 <th>Origen</th>
                 <th>Destino</th>
-                 <th>Fecha</th>
-                <th>Hora</th>
                 <th>Estado</th>
                 <th class="text-center" style="width: 120px;">Acciones</th>
             </tr>

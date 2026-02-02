@@ -2,7 +2,6 @@
 
 @section('content')
     <div class="container">
-        <!-- Bienvenida -->
         <div class="row mb-4">
             <div class="col-12">
                 <h4>Hola, {{ $usuario->persona->nombres ?? $usuario->name }}</h4>
@@ -10,7 +9,6 @@
             </div>
         </div>
 
-        <!-- Tarjetas métricas -->
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card text-white bg-warning mb-3">
@@ -22,7 +20,6 @@
             </div>
         </div>
 
-        <!-- Tabla de horarios disponibles hoy -->
         <div class="row">
             <div class="col-12">
                 <div class="card">

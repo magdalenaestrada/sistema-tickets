@@ -21,6 +21,17 @@ $(function () {
         },
     });
 
+    document
+        .getElementById("filtroEmpleado")
+        .addEventListener("input", function () {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+        });
+
+    document
+        .getElementById("filtroUsuario")
+        .addEventListener("input", function () {
+            this.value = this.value.replace(/[^a-zA-Z0-9]/g, "");
+        });
     $("#filtroEmpleado, #filtroUsuario").on("keyup", function () {
         tabla.ajax.reload();
     });
@@ -53,7 +64,6 @@ $(function () {
     $("#filtroNombres").on("input", function () {
         this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
     });
-
 
     $(function () {
         $("#seccionUsuario").removeAttr("hidden").show();

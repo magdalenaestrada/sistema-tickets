@@ -50,5 +50,12 @@ class DashboardController extends Controller
             })
             ->with(['punto_origen', 'punto_destino', 'tipo_vehiculo', 'tipo_viaje', 'fechas'])
             ->get();
+        return view('dashboard', [
+            'ventasHoy' => $ventasHoy,
+            'encomiendasHoy' => $encomiendasHoy,
+            'montoActual' => $montoActual,
+            'horariosHoy' => $horariosHoy,
+            'usuario' => $usuario,
+        ]);
     }
 }
