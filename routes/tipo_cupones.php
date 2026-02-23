@@ -3,7 +3,7 @@
 use App\Http\Controllers\TipoCuponController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth'])->prefix('tipo-cupones')->name('tipo-cupones.')->group(function () {
+Route::middleware(['auth', 'can:gestionar tipo cupones'])->prefix('tipo-cupones')->name('tipo-cupones.')->group(function () {
     Route::get('/', [TipoCuponController::class, 'index'])->name('index');
     Route::get('/datatable', [TipoCuponController::class, 'datatable'])->name('datatable');
     Route::get('/{tipo_cupon}', [TipoCuponController::class, 'mostrar'])->name('mostrar');

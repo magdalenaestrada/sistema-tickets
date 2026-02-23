@@ -11,19 +11,22 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-       
-        DB::table('users')->insert([
-            'persona_id'       => 1,
-            'sucursal_id'       => 1,
-            'documento'        => '71043591',
-            'numero_licencia'  => null,
-            'username'         => '71043591',
-            'email_verified_at' => now(),
-            'password'         => Hash::make('71043591'),
-            'estado'           => 'A',
-            'fecha_creacion'   => now(),
-            'created_at'       => now(),
-            'updated_at'       => now(),
-        ]);
+        $user = User::firstOrCreate(
+            ['documento' => '71043591'],
+            [
+                'persona_id'        => 1,
+                'sucursal_id'       => 1,
+                'numero_licencia'   => null,
+                'username'          => '71043591',
+                'email_verified_at' => now(),
+                'password'          => Hash::make('71043591'),
+                'estado'            => 'A',
+                'fecha_creacion'    => now(),
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]
+        );
+
+        $user->assignRole('Administrador');
     }
 }

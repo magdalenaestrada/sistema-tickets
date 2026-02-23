@@ -288,3 +288,4 @@
 @push('scripts')
     <script src="{{ asset('js/cambiar_horario.js') }}"></script>
 @endpush
+  

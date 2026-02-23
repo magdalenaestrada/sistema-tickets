@@ -43,6 +43,14 @@ class TipoDocumentoSeeder extends Seeder
                 'codigo_sunat' => '0',
                 'estado' => 1,
             ],
+
+             [
+                'codigo' => 'SIN',
+                'descripcion' => 'Sin documento',
+                'codigo_sunat' => '9',
+                'estado' => 1,
+            ],
+
         ]);
     }
 }

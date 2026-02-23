@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedReservedPasajeId = null;
     let todasLasCards = []; // Guardar todas las cards originales
 
-    // Guardar todas las cards al inicio
     horarioCards.forEach((card) => {
         todasLasCards.push({
             element: card.parentElement.cloneNode(true),
@@ -17,15 +16,20 @@ document.addEventListener("DOMContentLoaded", function () {
             origen: card.dataset.origen,
             destino: card.dataset.destino,
             horarioId: card.dataset.horarioId,
+            tipoViajeId: card.dataset.tipoViajeId, // ← agregar
         });
     });
 
     function attachCardEvents() {
         document.querySelectorAll(".horario-card").forEach((card) => {
             card.addEventListener("click", function () {
+                console.log("tipoViajeId:", this.dataset.tipoViajeId);
+                console.log("horarioId:", this.dataset.horarioId);
                 const horarioId = this.dataset.horarioId;
+                const tipoViajeId = this.dataset.tipoViajeId; // ← necesitas agregar esto al HTML
                 currentHorarioId = horarioId;
                 window.selectedHorario = horarioId;
+
                 document
                     .querySelectorAll(".horario-card")
                     .forEach((c) => c.classList.remove("active"));
@@ -34,73 +38,155 @@ document.addEventListener("DOMContentLoaded", function () {
                 selectedReservedPasajeId = null;
                 updateSellButton();
                 updateEditButton();
-                console.log("horarioId:", horarioId);
 
-                fetch(route("pasajes.asientos", { horario: horarioId }))
-                    .then((res) => res.json())
-                    .then((data) => {
-                        svgContainer.innerHTML = data.svg;
+                if (parseInt(tipoViajeId) === 2) {
+                    const origenId =
+                        document.getElementById("sel_origen_tramo")?.value;
+                    const destinoId =
+                        document.getElementById("sel_destino_tramo")?.value;
 
-                        const svgEl = svgContainer.querySelector("svg");
-                        if (!svgEl) {
-                            console.error("SVG no encontrado");
-                            return;
-                        }
+                    if (!origenId || !destinoId) {
+                        svgContainer.innerHTML = `
+                <div class="alert alert-info">
+                    Selecciona el tramo (origen y destino) para ver disponibilidad.
+                </div>
+            `;
+                        document.getElementById(
+                            "tramo_selector",
+                        ).style.display = "block";
+                        document.getElementById(
+                            "tramo_selector",
+                        ).dataset.horarioId = horarioId;
 
-                        Object.keys(data.asientos).forEach((numero) => {
-                            const estado = data.asientos[numero];
-                            const g = svgEl.querySelector(`#seat-${numero}`);
-
-                            if (!g) return;
-
-                            g.classList.remove(
-                                "ocupado",
-                                "reservado",
-                                "libre",
-                                "selected-seat",
-                            );
-
-                            g.classList.add(estado);
-
-                            g.dataset.estado = estado;
-                            g.dataset.numero = numero;
-
-                            if (estado === "libre") {
-                                g.style.cursor = "pointer";
-                                g.style.opacity = "1";
-
-                                g.onclick = function (e) {
-                                    e.stopPropagation();
-                                    toggleSeatSelection(g, numero, "libre");
-                                };
-                            } else if (estado === "reservado") {
-                                g.style.cursor = "pointer";
-                                g.style.opacity = "1";
-
-                                g.onclick = function (e) {
-                                    e.stopPropagation();
-                                    obtenerPasajeReservado(horarioId, numero);
-                                };
-                            } else {
-                                g.style.cursor = "not-allowed";
-                                g.style.opacity = "0.6";
-
-                                g.onclick = function (e) {
-                                    e.stopPropagation();
-                                    alert("Este asiento está vendido");
-                                };
-                            }
-                        });
-                    })
-                    .catch((err) => {
-                        console.error("Error:", err);
-                    });
+                        cargarAsientosConTramo(horarioId);
+                    }
+                } else {
+                    document.getElementById("tramo_selector").style.display =
+                        "none";
+                    cargarAsientos(horarioId, null, null);
+                }
             });
         });
     }
 
-    // Aplicar eventos iniciales
     attachCardEvents();
+
+    function cargarAsientos(horarioId, origenId, destinoId) {
+        let url = route("pasajes.asientos", { horario: horarioId });
+        if (origenId && destinoId) {
+            url += `?origen_id=${origenId}&destino_id=${destinoId}`;
+        }
+
+        console.log("Cargando asientos URL:", url); // ← ver qué URL se genera
+
+        fetch(url)
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.error) {
+                    svgContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    return;
+                }
+                renderizarAsientos(data, horarioId);
+            })
+
+            .catch((err) => console.error("Error:", err));
+    }
+
+    function cargarAsientosConTramo(horarioId, origenId, destinoId) {
+        console.log("URL:", route("horario.puntos.index", horarioId));
+        fetch(route("horario.puntos.index", horarioId))
+            .then((res) => res.json())
+            .then((puntos) => {
+                console.log(puntos);
+                const selOrigen = document.getElementById("sel_origen_tramo");
+                const selDestino = document.getElementById("sel_destino_tramo");
+
+                selOrigen.innerHTML = '<option value="">Origen</option>';
+                selDestino.innerHTML = '<option value="">Destino</option>';
+
+                puntos.forEach((p) => {
+                    selOrigen.innerHTML += `<option value="${p.sucursal_id}">${p.sucursal.nombre_comercial}</option>`;
+                    selDestino.innerHTML += `<option value="${p.sucursal_id}">${p.sucursal.nombre_comercial}</option>`;
+                });
+
+                document.getElementById("tramo_selector").style.display =
+                    "block";
+                document.getElementById("tramo_selector").dataset.horarioId =
+                    horarioId;
+            });
+    }
+
+    function renderizarAsientos(data, horarioId) {
+        svgContainer.innerHTML = data.svg;
+
+        const svgEl = svgContainer.querySelector("svg");
+        if (!svgEl) return;
+
+        Object.keys(data.asientos).forEach((numero) => {
+            const estado = data.asientos[numero];
+            const g = svgEl.querySelector(`#seat-${numero}`);
+            if (!g) return;
+
+            g.classList.remove(
+                "ocupado",
+                "reservado",
+                "libre",
+                "selected-seat",
+            );
+            g.classList.add(estado);
+            g.dataset.estado = estado;
+            g.dataset.numero = numero;
+
+            if (estado === "libre") {
+                g.style.cursor = "pointer";
+                g.style.opacity = "1";
+                g.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSeatSelection(g, numero, "libre");
+                };
+            } else if (estado === "reservado") {
+                g.style.cursor = "pointer";
+                g.style.opacity = "1";
+                g.onclick = (e) => {
+                    e.stopPropagation();
+                    obtenerPasajeReservado(horarioId, numero);
+                };
+            } else {
+                g.style.cursor = "not-allowed";
+                g.style.opacity = "0.6";
+                g.onclick = (e) => {
+                    e.stopPropagation();
+                    alert("Este asiento está vendido");
+                };
+            }
+        });
+    }
+
+    document
+        .getElementById("btn_cargar_tramo")
+        ?.addEventListener("click", function () {
+            const horarioId =
+                document.getElementById("tramo_selector").dataset.horarioId;
+            const origenId = document.getElementById("sel_origen_tramo").value;
+            const destinoId =
+                document.getElementById("sel_destino_tramo").value;
+
+            console.log("horarioId:", horarioId);
+            console.log("origenId:", origenId);
+            console.log("destinoId:", destinoId);
+
+            if (!origenId || !destinoId) {
+                alert("Selecciona origen y destino del tramo");
+                return;
+            }
+
+            if (origenId === destinoId) {
+                alert("Origen y destino no pueden ser iguales");
+                return;
+            }
+
+            cargarAsientos(horarioId, origenId, destinoId);
+        });
 
     function toggleSeatSelection(seatElement, numero, tipo) {
         const seatNum = parseInt(numero);

@@ -99,45 +99,38 @@ class HorarioController extends Controller
                 ]);
 
                 $orden = 1;
-                $puntosMap = [];
+                $puntoIds = [];
 
                 $puntoOrigen = HorarioPunto::create([
                     'horario_id' => $horario->id,
                     'sucursal_id' => $request->punto_origen_id,
                     'orden' => $orden++,
                 ]);
-                $puntosMap[] = $puntoOrigen;
-
-                foreach ($puntosArray as $p) {
-                    $puntosMap[] = HorarioPunto::create([
-                        'horario_id' => $horario->id,
-                        'sucursal_id' => $p['sucursal_id'],
-                        'orden' => $orden++,
-                    ]);
-                }
-
-                $puntosMap[] = HorarioPunto::create([
-                    'horario_id' => $horario->id,
-                    'sucursal_id' => $ultimoPunto['sucursal_id'],
-                    'orden' => $orden++,
-                ]);
-
-                $puntoOrigenHorario = $request->punto_origen_id;
-                $horaActual = Carbon::parse($horario->hora_salida); // Hora de salida del horario
+                $puntoIds[$request->punto_origen_id] = $puntoOrigen->id;
 
                 for ($i = 0; $i < count($puntosArray); $i++) {
-                    $origen_id = $i === 0 ? $puntoOrigenHorario : $puntosArray[$i - 1]['sucursal_id'];
-                    $destino_id = $puntosArray[$i]['sucursal_id'];
+                    $punto = HorarioPunto::create([
+                        'horario_id' => $horario->id,
+                        'sucursal_id' => $puntosArray[$i]['sucursal_id'],
+                        'orden' => $orden++,
+                    ]);
+                    $puntoIds[$puntosArray[$i]['sucursal_id']] = $punto->id;
+                }
+
+                $horaActual = Carbon::parse($horario->hora_salida);
+                for ($i = 0; $i < count($puntosArray); $i++) {
+                    $origenSucursalId = $i === 0 ? $request->punto_origen_id : $puntosArray[$i - 1]['sucursal_id'];
+                    $destinoSucursalId = $puntosArray[$i]['sucursal_id'];
                     $duracion = (int) $puntosArray[$i]['duracion'];
                     $horaActual->addMinutes($duracion);
 
                     HorarioTramo::create([
-                        'horario_id' => $horario->id,
-                        'punto_origen_id' => $origen_id,
-                        'punto_destino_id' => $destino_id,
+                        'horario_id'       => $horario->id,
+                        'punto_origen_id'  => $puntoIds[$origenSucursalId],
+                        'punto_destino_id' => $puntoIds[$destinoSucursalId],
                         'duracion_minutos' => $duracion,
-                        'costo_tramo' => $puntosArray[$i]['costo'],
-                        'hora_llegada' => $horaActual->format('H:i'),
+                        'costo_tramo'      => $puntosArray[$i]['costo'],
+                        'hora_llegada'     => $horaActual->format('H:i'),
                     ]);
                 }
             }
@@ -169,8 +162,8 @@ class HorarioController extends Controller
             'punto_destino',
             'fechas',
             'puntos',
+            'tramos.origen.sucursal',
             'tramos.destino.sucursal',
-            'tramos.origen.sucursal'
         ])->findOrFail($id);
 
         $horario->fecha_salida = optional($horario->fechas->first())->fecha_salida;
@@ -193,8 +186,14 @@ class HorarioController extends Controller
             'fecha_salida' => 'required|date',
         ]);
 
-        $horario->update($request->all());
-
+        $horario->update([
+            'tipo_viaje_id'    => $request->tipo_viaje_id,
+            'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+            'punto_origen_id'  => $request->punto_origen_id,
+            'punto_destino_id' => $request->punto_destino_id,
+            'hora_salida'      => $request->hora_salida,
+            'costo_base'       => $request->costo_pasaje,
+        ]);
         return response()->json(['success' => true]);
     }
 

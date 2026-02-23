@@ -1,19 +1,4 @@
 $(function () {
-    document.getElementById("btnNuevo").addEventListener("click", function () {
-        document.querySelector("#modalForm input[name='descripcion']").value =
-            "";
-        document.querySelector("#modalForm input[name='precio_base']").value =
-            "";
-        document.querySelector("#modalForm input[name='peso_limite']").value =
-            "";
-        document.querySelector(
-            "#modalForm input[name='costo_kilo_extra']"
-        ).value = "";
-
-        var myModal = new bootstrap.Modal(document.getElementById("modalForm"));
-        myModal.show();
-    });
-
     let tabla = $("#tablaTipos").DataTable({
         processing: true,
         serverSide: true,
@@ -22,21 +7,22 @@ $(function () {
             { data: "id" },
             { data: "descripcion" },
             { data: "precio_base" },
-            { data: "peso_limite" },
-            { data: "costo_kilo_extra" },
             { data: "acciones", orderable: false, searchable: false },
         ],
+        dom: "rtip",
         drawCallback: function () {
             lucide.createIcons();
         },
     });
 
     $("#btnNuevo").on("click", function () {
-        // Cargar formulario de creación por AJAX
-        $.get(route("tipo-encomienda.create"), function (html) {
-            $("#modalContent").html(html);
-            $("#modalForm").modal("show");
-        });
+        let form = $("#formTipoEncomienda");
+
+        form[0].reset();
+        form.attr("action", route("tipo-encomienda.store"));
+        form.find("input[name='_method']").remove();
+
+        $("#modalForm").modal("show");
     });
 
     var modalEl = document.getElementById("modalForm");
@@ -55,14 +41,9 @@ $(function () {
                 data.descripcion;
             modalEl.querySelector("input[name='precio_base']").value =
                 data.precio_base;
-            modalEl.querySelector("input[name='peso_limite']").value =
-                data.peso_limite ?? "";
-            modalEl.querySelector("input[name='costo_kilo_extra']").value =
-                data.costo_kilo_extra ?? "";
-
             modalEl.querySelector("form").action = route(
                 "tipo-encomienda.update",
-                id
+                id,
             );
             modalEl.querySelector("form").method = "POST";
 
@@ -105,7 +86,7 @@ $(function () {
                         Swal.fire(
                             "Eliminado!",
                             "El tipo de encomienda ha sido eliminado.",
-                            "success"
+                            "success",
                         );
                         // Recargar DataTable
                         $("#tablaTipos").DataTable().ajax.reload(null, false);
@@ -114,7 +95,7 @@ $(function () {
                         Swal.fire(
                             "Error!",
                             "Ocurrió un error al eliminar.",
-                            "error"
+                            "error",
                         );
                     },
                 });
@@ -124,26 +105,45 @@ $(function () {
 
     $(document).on("submit", "#formTipoEncomienda", function (e) {
         e.preventDefault();
+
         let form = $(this);
 
         $.ajax({
             url: form.attr("action"),
             type: form.attr("method"),
             data: form.serialize(),
+
             success: function (res) {
                 $("#modalForm").modal("hide");
                 $("#tablaTipos").DataTable().ajax.reload(null, false);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Éxito",
+                    text: res.message,
+                });
             },
-            error: function (err) {
-                console.log(err);
-                alert("Error al guardar.");
+
+            error: function (xhr) {
+                if (xhr.status === 422) {
+                    let errors = xhr.responseJSON.errors;
+
+                    if (errors.descripcion) {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Atención",
+                            text: "Ya existe un tipo de encomienda con esta descripción.",
+                        });
+                    }
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Ocurrió un error inesperado.",
+                    });
+                }
             },
         });
     });
     var modalEl = document.getElementById("modalForm");
-    modalEl.addEventListener("hidden.bs.modal", function () {
-        modalEl.querySelector("form").reset(); // resetea campos
-        modalEl.querySelector("form").action = ""; // opcional, limpia la action
-        modalEl.querySelector("form").method = "POST"; // opcional, pone POST por defecto
-    });
 });

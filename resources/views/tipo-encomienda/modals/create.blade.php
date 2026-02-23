@@ -17,17 +17,9 @@
                         <label class="form-label">Precio Base</label>
                         <input type="number" step="0.01" name="precio_base" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Peso Límit</label>
-                        <input type="number" step="0.01" name="peso_limite" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Costo por Kg Extra</label>
-                        <input type="number" step="0.01" name="costo_kilo_extra" class="form-control">
-                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     <button type="submit" class="btn btn-success">Guardar</button>
                 </div>
             </form>

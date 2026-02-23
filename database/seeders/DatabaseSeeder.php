@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             DepartamentosSeeder::class,
             ProvinciasSeeder::class,
             DistritosSeeder::class,
-            RolesSeeder::class,
+            RoleSeeder::class,
             AreasSeeder::class,
             CargosSeeder::class,
             TiposLicenciaSeeder::class,

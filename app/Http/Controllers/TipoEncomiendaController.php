@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TipoEncomienda;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
 
 class TipoEncomiendaController extends Controller
@@ -33,8 +34,12 @@ class TipoEncomiendaController extends Controller
     }
     public function store(Request $request)
     {
+        $request->merge([
+            'descripcion' => strtoupper(trim($request->descripcion))
+        ]);
+
         $request->validate([
-            'descripcion' => 'required',
+            'descripcion' => 'required|unique:tipo_encomienda,descripcion',
             'precio_base' => 'required|numeric',
             'peso_limite' => 'nullable|numeric',
             'costo_kilo_extra' => 'nullable|numeric',
@@ -42,8 +47,10 @@ class TipoEncomiendaController extends Controller
 
         TipoEncomienda::create($request->all());
 
-        return redirect()->route('tipo-encomienda.index')
-            ->with('success', 'Tipo de encomienda registrado correctamente');
+        return response()->json([
+            'success' => true,
+            'message' => 'Tipo de encomienda registrado correctamente'
+        ]);
     }
 
     public function edit($id)
@@ -54,8 +61,15 @@ class TipoEncomiendaController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->merge([
+            'descripcion' => strtoupper(trim($request->descripcion))
+        ]);
+
         $request->validate([
-            'descripcion' => 'required',
+            'descripcion' => [
+                'required',
+                Rule::unique('tipo_encomienda', 'descripcion')->ignore($id),
+            ],
             'precio_base' => 'required|numeric',
             'peso_limite' => 'nullable|numeric',
             'costo_kilo_extra' => 'nullable|numeric',
@@ -64,8 +78,10 @@ class TipoEncomiendaController extends Controller
         $tipo = TipoEncomienda::findOrFail($id);
         $tipo->update($request->all());
 
-        return redirect()->route('tipo-encomienda.index')
-            ->with('success', 'Tipo de encomienda actualizado correctamente');
+        return response()->json([
+            'success' => true,
+            'message' => 'Tipo de encomienda actualizado correctamente'
+        ]);
     }
 
     public function destroy($id)

@@ -82,5 +82,14 @@ class Encomienda extends Model
         return $this->belongsTo(Venta::class, 'venta_id');
     }
 
+    public function getTotalPagadoAttribute()
+    {
+        if (!$this->venta) {
+            return 0;
+        }
+
+        return $this->venta->pagos->sum('total');
+    }
+
     use SoftDeletes;
 }

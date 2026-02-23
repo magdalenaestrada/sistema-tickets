@@ -90,7 +90,7 @@
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
                                 <input type="text" class="form-control solo-numeros" id="receptor_documento"
-                                    name="receptor_documento" required>
+                                    name="receptor_documento">
                             </div>
 
                             <div class="col-md-4">

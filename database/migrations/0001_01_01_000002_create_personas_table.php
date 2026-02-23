@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId("tipo_documento_id")->constrained("tipo_documento_personas");
             $table->foreignId("distrito_id")->nullable()->constrained("distritos");
-            $table->string("documento", 20)->unique()->index();
+            $table->string("documento", 20)->nullable()->index();
             $table->string("nombres", 200)->index();
             $table->string("apellidos", 200)->nullable()->index();
             $table->string('razon_social', 200)->nullable()->index();
@@ -26,6 +26,7 @@ return new class extends Migration {
             $table->enum("estado", ["A", "I"])->default("A")->index();
             $table->dateTime("fecha_creacion");
             $table->dateTime("fecha_inactivacion")->nullable();
+            $table->unique(['tipo_documento_id', 'documento']);
             $table->timestamps();
             $table->softDeletes();
         });

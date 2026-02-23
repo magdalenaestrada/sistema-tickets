@@ -3,7 +3,7 @@
 use App\Http\Controllers\CargoController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth'])->prefix('cargos')->name('cargos.')->group(function () {
+Route::middleware(['auth', 'can:gestionar cargos'])->prefix('cargos')->name('cargos.')->group(function () {
     Route::get('/', [CargoController::class, 'index'])->name('index');
     Route::get('/datatable', [CargoController::class, 'datatable'])->name('datatable');
     Route::get('/{cargo}', [CargoController::class, 'mostrar'])->name('mostrar'); // 👈 nuevo

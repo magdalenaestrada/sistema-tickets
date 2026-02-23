@@ -17,8 +17,6 @@
                         <th>ID</th>
                         <th>Descripción</th>
                         <th>Precio Base</th>
-                        <th>Peso Límite</th>
-                        <th>Costo Kg Extra</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>

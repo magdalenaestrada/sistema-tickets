@@ -22,19 +22,6 @@
                         <input type="number" step="0.01" name="precio_base" value="{{ $tipo->precio_base }}"
                             class="form-control" required>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Peso Límite (opcional)</label>
-                        <input type="number" step="0.01" name="peso_limite" value="{{ $tipo->peso_limite }}"
-                            class="form-control">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Costo por Kg Extra (opcional)</label>
-                        <input type="number" step="0.01" name="costo_kilo_extra"
-                            value="{{ $tipo->costo_kilo_extra }}" class="form-control">
-                    </div>
-
                 </div>
 
 

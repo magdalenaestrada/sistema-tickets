@@ -117,6 +117,8 @@ class EncomiendaService
                 $encomienda->venta_id = $ventaData['venta']->id;
                 $encomienda->save();
 
+                $ventaData['venta']->pagos()->delete();
+
                 $this->pagoService->registrarPagos(
                     $ventaData['venta']->id,
                     $request->pagos ?? [],
@@ -125,6 +127,15 @@ class EncomiendaService
                 );
             }
 
+            if (!$registrarPago && $antesTeniaPago) {
+
+                $encomienda->venta->pagos()->delete();
+                $encomienda->venta->detalles()->delete();
+                $encomienda->venta()->delete();
+
+                $encomienda->venta_id = null;
+                $encomienda->save();
+            }
             return $encomienda;
         });
     }

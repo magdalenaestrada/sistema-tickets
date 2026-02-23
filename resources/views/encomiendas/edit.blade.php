@@ -99,7 +99,7 @@
                                 <label class="form-label">Documento</label>
                                 <input type="text" class="form-control" id="receptor_documento" name="receptor_documento"
                                     inputmode="numeric" pattern="\d+" title="Solo números"
-                                    value="{{ $encomienda->receptor->documento ?? '' }}" required>
+                                    value="{{ $encomienda->receptor->documento ?? '' }}">
                             </div>
 
                             <div class="col-md-4">
@@ -318,13 +318,15 @@
 
                         <div class="mb-3">
                             <label for="numero_documento_id" class="form-label">Número documento</label>
-                            <input type="number" value="{{ $encomienda->venta->persona->documento ?? '' }}"
+                            <input type="number"
+                                value="{{ $encomienda->venta->persona->documento ?? $encomienda->emisor->documento }}"
                                 id="numero_documento_id" name="numero_documento_id" class="form-control">
                         </div>
 
                         <div class="mb-3">
                             <label for="razon_social" class="form-label">Razón social</label>
-                            <input type="text" value="{{ $encomienda->venta->persona->nombres ?? '' }}"
+                            <input type="text"
+                                value="{{ $encomienda->venta->persona->nombres ?? $encomienda->emisor->nombres }}"
                                 id="razon_social" name="razon_social" class="form-control">
                         </div>
                     </div>
@@ -354,12 +356,13 @@
                     <div class="card-body">
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" id="pago_instantaneo"
-                                name="pago_instantaneo" value="1">
+                                name="pago_instantaneo" value="1"
+                                {{ $encomienda->pago_instantaneo ? 'checked' : '' }}>
                             <label class="form-check-label">Registrar pago</label>
                         </div>
                         <input type="hidden" id="tiene_venta" value="{{ $encomienda->venta ? 1 : 0 }}">
 
-                        <div id="container_pago" hidden>
+                        <div id="container_pago" {{ $encomienda->pago_instantaneo ? '' : 'hidden' }}>
                             <div class="row mb-2">
                                 <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
                                 <div class="col-6">
@@ -389,8 +392,8 @@
                                 <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
                                 <div class="col-6">
                                     <input type="number" name="pago_efectivo" id="pago_efectivo" step="0.01"
-                                        value="{{ optional($pagos->where('metodo_pago_id', 1)->first())->total }}"
-                                        class="form-control">
+                                        class="form-control"
+                                        value="{{ optional($pagos->where('metodo_pago_id', 1)->first())->total }}">
 
                                 </div>
                             </div>
@@ -401,7 +404,7 @@
                                     <select name="billetera_id" id="billetera_id" class="form-select">
                                         @foreach ($billeteras_digitales as $b)
                                             <option value="{{ $b->id }}"
-                                                {{ optional($pagos->where('billetera_id', $b->id)->first()) ? 'selected' : '' }}>
+                                                {{ $pagos->where('billetera_id', $b->id)->isNotEmpty() ? 'selected' : '' }}>
                                                 {{ $b->descripcion }}
                                             </option>
                                         @endforeach

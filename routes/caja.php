@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CajaController;
 
-Route::middleware(['auth'])->prefix('caja')->group(function () {
+Route::middleware(['auth', 'can:gestionar caja'])->prefix('caja')->group(function () {
     Route::get('/', [CajaController::class, 'index'])->name('caja.index');
     Route::get('/create', [CajaController::class, 'create'])->name('caja.create');
     Route::post('/', [CajaController::class, 'store'])->name('caja.store');

@@ -17,6 +17,7 @@ class EmpresaController extends Controller
 {
     public function index()
     {
+
         $empresa = Empresa::first();
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();

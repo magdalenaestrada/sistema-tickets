@@ -116,8 +116,8 @@ $(function () {
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
             { data: "id" },
-            { data: "emisor" },
             { data: "dni_emisor" },
+            { data: "emisor" },
             { data: "receptor" },
             { data: "origen" },
             { data: "destino" },
@@ -220,26 +220,41 @@ $(function () {
 
         let pagos = [];
         let metodo = parseInt($("#metodo_pago_id").val());
-        let total = parseFloat($("#costo_total").val()) || 0;
 
-        if (metodo === 1) {
-            pagos.push({ metodo_pago_id: 1, total: total });
-        } else if (metodo === 2) {
-            pagos.push({
-                metodo_pago_id: 2,
-                billetera_id: $("#billetera_id").val(),
-                total: total,
-            });
-        } else if (metodo === 3) {
-            pagos.push({
-                metodo_pago_id: 1,
-                total: parseFloat($("#pago_efectivo").val()) || 0,
-            });
-            pagos.push({
-                metodo_pago_id: 2,
-                billetera_id: $("#billetera_id").val(),
-                total: parseFloat($("#pago_billetera").val()) || 0,
-            });
+        if ($("#pago_instantaneo").is(":checked")) {
+            let metodo = parseInt($("#metodo_pago_id").val());
+            let total = parseFloat($("#costo_total").val()) || 0;
+
+            if (metodo === 1) {
+                pagos.push({
+                    metodo_pago_id: 1,
+                    total: parseFloat($("#costo_total").val()) || 0,
+                });
+            } else if (metodo === 2) {
+                pagos.push({
+                    metodo_pago_id: 2,
+                    billetera_id: $("#billetera_id").val(),
+                    total: parseFloat($("#costo_total").val()) || 0,
+                });
+            } else if (metodo === 3) {
+                let efectivo = parseFloat($("#pago_efectivo").val()) || 0;
+                let billetera = parseFloat($("#pago_billetera").val()) || 0;
+
+                if (efectivo > 0) {
+                    pagos.push({
+                        metodo_pago_id: 1,
+                        total: efectivo,
+                    });
+                }
+
+                if (billetera > 0) {
+                    pagos.push({
+                        metodo_pago_id: 2,
+                        billetera_id: $("#billetera_id").val(),
+                        total: billetera,
+                    });
+                }
+            }
         }
 
         let data = {
@@ -269,7 +284,7 @@ $(function () {
             distrito_id: $("#distrito_id").val(),
             destino: $("#destino").val(),
             tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
-            total: total,
+            total: parseFloat($("#costo_total").val()) || 0,
             detalles: detalles,
             tipo_servicio_id: 2,
             sucursal_id: null,
@@ -313,6 +328,9 @@ $(function () {
         tiposEncomienda = res;
         if (!window.IS_EDIT) {
             agregarFilaDetalle();
+        } else {
+            recalcularTotal();
+            refrescarPagos();
         }
     });
 
@@ -431,6 +449,7 @@ $(function () {
             const departamentoId = $("#departamento_id").val();
             const provinciaId = $("#provincia_id").val();
             const distritoId = $("#distrito_id").val();
+            recalcularTotal();
 
             if (departamentoId) {
                 cargarProvincias(departamentoId, provinciaId, distritoId);
@@ -513,9 +532,7 @@ $(function () {
         recalcularTotal();
         actualizarResumen();
 
-        $(document).ready(function () {
-            $("#metodo_pago_id").trigger("change");
-        });
+        $("#metodo_pago_id").trigger("change");
     }
 
     $(document).on("click", ".btnQuitar", function () {
@@ -585,6 +602,17 @@ $(function () {
             alert(err.responseJSON?.error || "Error al buscar documento");
         });
     }
+
+    function sinDocumento() {
+        let receptor_tipo = $("#receptor_tipo_documento_id").val();
+
+        if (receptor_tipo == "6") {
+            $("#receptor_documento").prop("disabled", true).val("");
+        } else {
+            $("#receptor_documento").prop("disabled", false);
+        }
+    }
+    $("#receptor_tipo_documento_id").on("change", sinDocumento);
 
     function updateRazonSocial() {
         let tipo = $("#tipo_documento_id").val();
@@ -678,36 +706,52 @@ $(function () {
     function refrescarPagos() {
         let metodo = parseInt($("#metodo_pago_id").val());
         let total = parseFloat($("#costo_total").val()) || 0;
+        const sinVenta = $("#tiene_venta").val() !== "1";
 
         $("#pago_efectivo").closest(".row").hide();
         $("#billetera_id").closest(".row").hide();
         $("#pago_billetera").closest(".row").hide();
-
         $("#pago_efectivo").prop("readonly", false);
         $("#pago_billetera").prop("readonly", false);
 
         if (metodo === 1) {
             $("#pago_efectivo").closest(".row").show();
             $("#pago_efectivo").val(total.toFixed(2));
+            $("#pago_billetera").val("0");
             $("#pago_efectivo").prop("readonly", true);
-            $(".grupo_costo_total").attr("hidden", true);
+
+            if (sinVenta) {
+                $(".grupo_costo_total").removeAttr("hidden");
+            } else {
+                $(".grupo_costo_total").attr("hidden", true);
+            }
         } else if (metodo === 2) {
             $("#billetera_id").closest(".row").show();
             $("#pago_billetera").closest(".row").show();
             $("#pago_billetera").val(total.toFixed(2));
+            $("#pago_efectivo").val("0");
             $("#pago_billetera").prop("readonly", true);
-            $(".grupo_costo_total").attr("hidden", true);
+
+            if (sinVenta) {
+                $(".grupo_costo_total").removeAttr("hidden");
+            } else {
+                $(".grupo_costo_total").attr("hidden", true);
+            }
         } else if (metodo === 3) {
             $("#pago_efectivo").closest(".row").show();
             $("#billetera_id").closest(".row").show();
             $("#pago_billetera").closest(".row").show();
             $(".grupo_costo_total").removeAttr("hidden");
 
-            let pagoE = parseFloat($("#pago_efectivo").val()) || 0;
-            if (pagoE > total) pagoE = total;
-
-            $("#pago_efectivo").val(pagoE.toFixed(2));
-            $("#pago_billetera").val((total - pagoE).toFixed(2));
+            if (!window.IS_EDIT) {
+                $("#pago_efectivo").val(total.toFixed(2));
+                $("#pago_billetera").val("0.00");
+            } else {
+                let pagoE = parseFloat($("#pago_efectivo").val()) || 0;
+                if (pagoE > total) pagoE = total;
+                $("#pago_efectivo").val(pagoE.toFixed(2));
+                $("#pago_billetera").val((total - pagoE).toFixed(2));
+            }
         }
     }
 

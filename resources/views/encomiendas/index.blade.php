@@ -61,8 +61,8 @@
                             <input type="checkbox" id="checkAll">
                         </th>
                         <th>ID</th>
-                        <th>Emisor</th>
                         <th>DNI Emisor</th>
+                        <th>Emisor</th>
                         <th>Receptor</th>
                         <th>Origen</th>
                         <th>Destino</th>

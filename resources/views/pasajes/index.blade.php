@@ -52,6 +52,7 @@
                             @foreach ($horarios as $horario)
                                 <div class="col-md-6 mb-3">
                                     <div class="card horario-card" data-horario-id="{{ $horario->id }}"
+                                        data-tipo-viaje-id="{{ $horario->tipo_viaje_id }}"
                                         data-origen="{{ strtolower($horario->punto_origen->nombre_comercial) }}"
                                         data-destino="{{ strtolower($horario->punto_destino->nombre_comercial) }}"
                                         data-fecha="{{ optional($horario->fechas->first())->fecha_salida ? $horario->fechas->first()->fecha_salida->format('Y-m-d') : '' }}">
@@ -80,12 +81,7 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <button id="sell-button" class="btn btn-primary mb-2" style="display:none;">
-                            Vender pasaje
-                        </button>
-                        <button id="edit-button" class="btn btn-warning mb-2" style="display:none;">
-                            Editar pasaje
-                        </button>
+                       
                         <div class="mb-3 text-center">
                             <span
                                 style="display:inline-block; width:15px; height:15px; background:red; margin-left:10px;"></span>
@@ -97,6 +93,25 @@
                                 style="display:inline-block; width:15px; height:15px; background:#c0cdda; margin-left:10px;"></span>
                             Libre
                         </div>
+ <button id="sell-button" class="btn btn-primary mb-2" style="display:none;">
+                            Vender pasaje
+                        </button>
+                        <button id="edit-button" class="btn btn-warning mb-2" style="display:none;">
+                            Editar pasaje
+                        </button>
+                        <div id="tramo_selector" style="display:none;" class="mb-3 p-3 border rounded bg-light">
+                            <p class="fw-bold mb-2">Selecciona tu tramo:</p>
+                            <div class="mb-2">
+                                <label>Origen del tramo:</label>
+                                <select id="sel_origen_tramo" class="form-select form-select-sm"></select>
+                            </div>
+                            <div class="mb-2">
+                                <label>Destino del tramo:</label>
+                                <select id="sel_destino_tramo" class="form-select form-select-sm"></select>
+                            </div>
+                            <button class="btn btn-primary btn-sm w-100" id="btn_cargar_tramo">Ver asientos</button>
+                        </div>
+
                         <div id="svg-container" style="max-width: 350px; overflow: auto;">
                             <p>Seleccione un horario para ver los asientos.</p>
                         </div>

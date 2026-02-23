@@ -79,7 +79,7 @@
         </div>
 
         <div class="bold">
-            RUC: {{ $empresa->documento }}
+            RUC: {{ $empresa->documento  }}
         </div>
 
         <div>{{ $empresa->direccion }}</div>
@@ -112,7 +112,7 @@
 
     <p class="bold">DATOS DEL RECEPTOR</p>
     <p>{{ $encomienda->receptor->nombres }} {{ $encomienda->receptor->apellidos }}</p>
-    <p>Doc: {{ $encomienda->receptor->documento }}</p>
+    <p>Doc: {{ $encomienda->receptor->documento ?? '-'}}</p>
 
     <div class="line"></div>
 

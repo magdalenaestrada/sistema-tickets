@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\HorarioPunto;
 use App\Models\Horario;
+use App\Models\HorarioTramo;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HorarioPuntoController extends Controller
@@ -11,7 +13,7 @@ class HorarioPuntoController extends Controller
     public function index(Horario $horario)
     {
         $puntos = $horario->puntos()
-            ->with(['origen:id,nombre_comercial', 'destino:id,nombre_comercial'])
+            ->with(['sucursal:id,nombre_comercial'])
             ->orderBy('orden')
             ->get();
 
@@ -21,60 +23,98 @@ class HorarioPuntoController extends Controller
     public function store(Request $request, Horario $horario)
     {
         $request->validate([
-            'destino_id' => 'required|exists:sucursales,id',
-            'costo_acumulado' => 'required|numeric|min:0',
+            'sucursal_id' => 'required|exists:sucursales,id',
+            'duracion_minutos' => 'required|integer|min:1',
+            'costo_tramo' => 'required|numeric|min:0',
         ]);
 
         $ultimoOrden = $horario->puntos()->max('orden') ?? 0;
 
-        $punto = $horario->puntos()->create([
-            'origen_id' => $horario->punto_origen_id,
-            'destino_id' => $request->destino_id,
-            'orden' => $ultimoOrden + 1,
-            'costo_acumulado' => $request->costo_acumulado,
+        $punto = HorarioPunto::create([
+            'horario_id'  => $horario->id,
+            'sucursal_id' => $request->sucursal_id,
+            'orden'       => $ultimoOrden + 1,
         ]);
 
-        $this->actualizarTramos($horario);
+        $puntoAnterior = $horario->puntos()
+            ->where('orden', $ultimoOrden)
+            ->first();
+
+        if ($puntoAnterior) {
+            $horaActual = Carbon::parse($horario->hora_salida);
+
+            $duracionAcumulada = $horario->tramos()->sum('duracion_minutos');
+            $horaActual->addMinutes($duracionAcumulada + $request->duracion_minutos);
+
+            HorarioTramo::create([
+                'horario_id'       => $horario->id,
+                'punto_origen_id'  => $puntoAnterior->id,
+                'punto_destino_id' => $punto->id,
+                'duracion_minutos' => $request->duracion_minutos,
+                'costo_tramo'      => $request->costo_tramo,
+                'hora_llegada'     => $horaActual->format('H:i'),
+            ]);
+        }
 
         return response()->json(['success' => true, 'punto' => $punto]);
     }
-
 
     public function update(Request $request, Horario $horario, HorarioPunto $punto)
     {
         $request->validate([
-            'destino_id' => 'required|exists:sucursales,id',
-            'costo_acumulado' => 'required|numeric|min:0',
+            'sucursal_id'      => 'required|exists:sucursales,id',
+            'duracion_minutos' => 'required|integer|min:1',
+            'costo_tramo'      => 'required|numeric|min:0',
         ]);
 
-        $punto->update([
-            'destino_id' => $request->destino_id,
-            'costo_acumulado' => $request->costo_acumulado,
-        ]);
+        $punto->update(['sucursal_id' => $request->sucursal_id]);
 
-        $this->actualizarTramos($horario);
+        $tramo = HorarioTramo::where('horario_id', $horario->id)
+            ->where('punto_destino_id', $punto->id)
+            ->first();
 
-        return response()->json(['success' => true, 'punto' => $punto]);
-    }
+        if ($tramo) {
+            $tramo->update([
+                'duracion_minutos' => $request->duracion_minutos,
+                'costo_tramo'      => $request->costo_tramo,
+            ]);
 
-    public function destroy(Horario $horario, HorarioPunto $punto)
-    {
-        $punto->delete();
-        $this->actualizarTramos($horario);
+            $this->recalcularHorasLlegada($horario);
+        }
 
         return response()->json(['success' => true]);
     }
 
-    private function actualizarTramos(Horario $horario)
+    public function destroy(Horario $horario, HorarioPunto $punto)
     {
-        $horario->tramos()->delete();
+        HorarioTramo::where('horario_id', $horario->id)
+            ->where(function ($q) use ($punto) {
+                $q->where('punto_origen_id', $punto->id)
+                    ->orWhere('punto_destino_id', $punto->id);
+            })->delete();
 
-        $puntos = $horario->puntos()->orderBy('orden')->get();
+        $punto->delete();
 
-        for ($i = 0; $i < $puntos->count(); $i++) {
-            $destino = $puntos[$i];
+        $horario->puntos()->orderBy('orden')->each(function ($p, $index) {
+            $p->update(['orden' => $index + 1]);
+        });
 
-            $origen_id = $i === 0 ? $horario->punto_origen_id : $puntos[$i - 1]->destino_id;
+        $this->recalcularHorasLlegada($horario);
+
+        return response()->json(['success' => true]);
+    }
+    private function recalcularHorasLlegada(Horario $horario)
+    {
+        $tramos = HorarioTramo::where('horario_id', $horario->id)
+            ->with('origen')
+            ->get()
+            ->sortBy(fn($t) => $t->origen->orden); // ← ordenar en PHP está bien
+
+        $horaActual = Carbon::parse($horario->hora_salida);
+
+        foreach ($tramos as $tramo) {
+            $horaActual->addMinutes($tramo->duracion_minutos);
+            $tramo->update(['hora_llegada' => $horaActual->format('H:i')]);
         }
     }
     public function show(Horario $horario, HorarioPunto $punto)

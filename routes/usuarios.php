@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\UserController;
 
-Route::prefix('usuarios')
+Route::middleware(['auth', 'can:gestionar usuarios'])->prefix('usuarios')
     ->name('usuarios.')
     ->group(function () {
 
