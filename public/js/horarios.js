@@ -134,13 +134,13 @@ $(document).ready(function () {
             limpiarPuntos();
 
             if (data.tramos && data.tramos.length > 0) {
-                const origenText = $("#punto_origen_id option:selected").text();
-                const origenId = data.punto_origen_id;
+                let origenId = data.punto_origen_id;
+                let origenText = $("#punto_origen_id option:selected").text();
 
                 data.tramos.forEach((t) => {
                     const destinoText =
                         t.destino?.sucursal?.nombre_comercial || "Destino";
-                    const horaLlegada = t.hora_llegada; 
+                    const horaLlegada = t.hora_llegada;
 
                     puntosData.push({
                         origen_id: origenId,
@@ -173,6 +173,8 @@ $(document).ready(function () {
 `);
 
                     puntoIndex++;
+                    origenId = t.punto_destino_id;
+                    origenText = destinoText;
                 });
 
                 actualizarCostoFinal();
@@ -289,8 +291,20 @@ $(document).ready(function () {
     let puntoIndex = 0;
 
     $("#btnAgregarPunto").click(function () {
-        const origenId = $("#punto_origen_id").val();
-        const origenText = $("#punto_origen_id option:selected").text();
+        let origenId;
+        let origenText;
+
+        if (puntosData.length === 0) {
+            origenId = $("#punto_origen_id").val();
+            origenText = $("#punto_origen_id option:selected").text();
+        } else {
+            const ultimo = puntosData[puntosData.length - 1];
+            origenId = ultimo.destino_id;
+            origenText = $(
+                "#punto_destino option[value='" + origenId + "']",
+            ).text();
+        }
+
         const destinoId = $("#punto_destino").val();
         const destinoText = $("#punto_destino option:selected").text();
         const costo = $("#costo_tramo").val();
@@ -315,23 +329,10 @@ $(document).ready(function () {
             return;
         }
 
-        if (puntosData.length > 0) {
-            const ultimoCosto = puntosData[puntosData.length - 1].costo;
-
-            if (parseFloat(costo) < ultimoCosto) {
-                Swal.fire(
-                    "Error",
-                    "El costo de este tramo no puede ser menor al anterior",
-                    "error",
-                );
-                return;
-            }
-        }
-
         const origenHorario = $("#punto_origen_id").val(); // origen principal del horario
 
         puntosData.push({
-            origen_id: origenHorario,
+            origen_id: origenId,
             destino_id: destinoId,
             costo: parseFloat(costo),
             duracion: parseInt(duracion),
