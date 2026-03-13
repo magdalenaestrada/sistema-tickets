@@ -21,10 +21,6 @@ class AuthenticatedSessionController extends Controller
     {
         return view('auth.login');
     }
-
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -36,7 +32,7 @@ class AuthenticatedSessionController extends Controller
 
         if (!$user) {
             throw ValidationException::withMessages([
-                'login' => 'El usuario no existe, por favor verifique sus credenciales.',
+                'login' => 'El usuario no existe o está deshabilitado, por favor contacte con el administrador',
             ]);
         }
 

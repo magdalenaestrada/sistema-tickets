@@ -20,13 +20,14 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="col-md-2 mb-3">
-                            <label for="tipo_documento_id" class="form-label">Tipo Documento</label>
+                            <label for="tipo_documento_id" class="form-label">Tipo Documento <span
+                                    style="color: red">*</span></label>
                             <select name="tipo_documento_id" id="tipo_documento_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Documento</label>
+                            <label class="form-label">Documento <span style="color: red">*</span></label>
                             <div class="input-group">
                                 <input type="text" name="documento" id="documento" class="form-control" required
                                     inputmode="numeric" pattern="\d+" title="Solo números">
@@ -35,18 +36,21 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Nombres</label>
+                        <div class="col-md-4 persona">
+                            <label class="form-label">Nombres <span style="color: red">*</span></label>
                             <input type="text" name="nombres" id="nombres" class="form-control" required
                                 pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Apellidos</label>
+                        <div class="col-md-3 persona">
+                            <label class="form-label">Apellidos <span style="color: red">*</span></label>
                             <input type="text" name="apellidos" id="apellidos" class="form-control" required
                                 pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras">
                         </div>
-
-                        <div class="col-md-3">
+                        <div class="col-md-7 empresa">
+                            <label class="form-label">Razón Social <span style="color:red">*</span></label>
+                            <input type="text" name="razon_social" id="razon_social" class="form-control">
+                        </div>
+                        <div class="col-md-3 persona">
                             <label class="form-label">Fecha de nacimiento</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento"
                                 max="{{ $hoy }}" class="form-control">

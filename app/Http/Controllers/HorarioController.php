@@ -206,29 +206,72 @@ class HorarioController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al eliminar: ' . $e->getMessage()]);
         }
     }
+
     public function calendario()
     {
-        return view('horarios.calendario');
+        $sucursales = Sucursal::where('estado', 'A')->orderBy('nombre_comercial')->get();
+        $tiposViaje = TipoViaje::all();
+
+        $fechas = HorarioFecha::with([
+            'horario.tipo_viaje',
+            'horario.punto_destino',
+            'horario.punto_origen',
+            'horario.tipo_vehiculo'
+        ])
+            ->whereDate('fecha_salida', '>=', now()->startOfYear())
+            ->whereDate('fecha_salida', '<=', now()->endOfYear())
+            ->get();
+
+        $eventos = $fechas->map(fn($f) => [
+            'title' => optional($f->horario->punto_origen)->nombre_comercial . ' -> ' . optional($f->horario->punto_destino)->nombre_comercial ?? 'Sin destino',
+            'start' => Carbon::parse($f->fecha_salida)->format('Y-m-d') . 'T' . $f->horario->hora_salida,
+            'color' => $f->horario->tipo_viaje_id == 1 ? '#007bff' : '#ff006f', // Directo=azul, Tramos=naranja
+            'extendedProps' => [
+                'id'          => $f->horario->id,
+                'origen' => $f->horario->punto_origen->nombre_comercial ?? 'Sin origen',
+                'destino' => $f->horario->punto_destino->nombre_comercial ?? 'Sin destino',
+                'hora'        => $f->horario->hora_salida,
+                'tipo_viaje'  => $f->horario->tipo_viaje->descripcion ?? '',
+                'tipo_viaje_id' => $f->horario->tipo_viaje_id,
+                'vehiculo'    => $f->horario->tipo_vehiculo->descripcion ?? '',
+                'costo'       => $f->horario->costo_base,
+            ]
+        ]);
+
+        return view('horarios.calendario', compact('eventos', 'sucursales', 'tiposViaje'));
     }
-    public function getEventos()
+
+    public function getEventos(Request $request)
     {
-        $horarios = Horario::with(['fechas', 'tipo_viaje', 'punto_destino', 'tipo_vehiculo'])->get();
+        $inicio = $request->start;
+        $fin = $request->end;
+
+        $fechas = HorarioFecha::with([
+            'horario.tipo_viaje',
+            'horario.punto_destino',
+            'horario.tipo_vehiculo'
+        ])
+            ->whereBetween('fecha_salida', [$inicio, $fin])
+            ->get();
+
         $eventos = [];
 
-        foreach ($horarios as $horario) {
-            foreach ($horario->fechas as $fecha) {
-                $eventos[] = [
-                    'title' => optional($horario->punto_destino)->nombre_comercial ?? 'Sin destino',
-                    'start' => $fecha->fecha_salida . 'T' . $horario->hora_salida,
-                    'extendedProps' => [
-                        'id' => $horario->id,
-                        'tipo_viaje' => $horario->tipo_viaje->descripcion,
-                        'tipo_vehiculo' => $horario->tipo_vehiculo->descripcion ?? '',
-                        'costo' => $horario->costo_base,
-                    ],
-                ];
-            }
+        foreach ($fechas as $fecha) {
+
+            $horario = $fecha->horario;
+
+            $eventos[] = [
+                'title' => optional($horario->punto_destino)->nombre_comercial ?? 'Sin destino',
+                'start' => $fecha->fecha_salida . 'T' . $horario->hora_salida,
+                'extendedProps' => [
+                    'id' => $horario->id,
+                    'tipo_viaje' => $horario->tipo_viaje->descripcion ?? '',
+                    'tipo_vehiculo' => $horario->tipo_vehiculo->descripcion ?? '',
+                    'costo' => $horario->costo_base,
+                ],
+            ];
         }
+
         return response()->json($eventos);
     }
 

@@ -26,7 +26,7 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Nombre / Razón social</label>
+                                <label class="form-label">Nombre</label>
                                 <input type="text" id="persona_nombre" class="form-control" disabled>
                             </div>
                         </div>

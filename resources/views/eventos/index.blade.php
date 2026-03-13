@@ -85,4 +85,4 @@
             }, 50);
         });
     </script>
-@endpush
+@endpush  

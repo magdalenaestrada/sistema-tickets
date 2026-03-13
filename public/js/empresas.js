@@ -23,7 +23,7 @@ $(document).ready(function () {
     const empresaId = $("#empresa_id").val();
 
     const inputs = $(
-        "#formEmpresa input[type='text'], #formEmpresa input[type='password'], #formEmpresa input[type='file']"
+        "#formEmpresa input[type='text'], #formEmpresa input[type='password'], #formEmpresa input[type='file']",
     );
 
     const btnGuardar = $("#btnGuardar");
@@ -60,10 +60,10 @@ $(document).ready(function () {
                 $("#nombre_comercial").val(empresaOriginal.nombre_comercial);
                 $("#direccion").val(empresaOriginal.direccion);
                 $("#usuario_facturacion").val(
-                    empresaOriginal.usuario_facturacion
+                    empresaOriginal.usuario_facturacion,
                 );
                 $("#contrasena_facturacion").val(
-                    empresaOriginal.contrasena_facturacion
+                    empresaOriginal.contrasena_facturacion,
                 );
                 disableInputs();
                 $("#btnCancelar").addClass("d-none");
@@ -121,52 +121,12 @@ $(document).ready(function () {
             Swal.fire(
                 "RUC inválido",
                 "Solo puedes ingresar RUC válidos de 11 dígitos.",
-                "warning"
+                "warning",
             );
             return;
         }
 
-        Swal.fire({
-            title: "Validando RUC...",
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading(),
-        });
-
-        $.ajax({
-            url: route("buscar.buscar") + `?documento=${documento}`,
-            type: "GET",
-            dataType: "json",
-
-            success: (data) => {
-                if (data.error || (!data.razon_social && !data.nombres)) {
-                    Swal.fire(
-                        "Error",
-                        "El RUC no es válido o no se encontraron datos.",
-                        "error"
-                    );
-                    return;
-                }
-
-                if (data.razon_social) {
-                    $("#razon_social").val(data.razon_social);
-                    $("#direccion").val(data.direccion || "");
-                } else {
-                    $("#razon_social").val(
-                        `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`
-                    );
-                }
-
-                guardarEmpresa();
-            },
-
-            error: () => {
-                Swal.fire(
-                    "Error",
-                    "El RUC no es válido o no se encontraron datos.",
-                    "error"
-                );
-            },
-        });
+        guardarEmpresa();
     });
 
     function disableInputs() {
@@ -185,13 +145,13 @@ $(document).ready(function () {
             Swal.fire(
                 "RUC inválido",
                 "Solo puedes ingresar RUC válidos de 11 dígitos.",
-                "warning"
+                "warning",
             );
             return;
         }
 
         btn.prop("disabled", true).html(
-            '<i class="link-icon" data-lucide="loader"></i>'
+            '<i class="link-icon" data-lucide="loader"></i>',
         );
         lucide.createIcons();
 
@@ -211,7 +171,7 @@ $(document).ready(function () {
                     $("#direccion").val(data.direccion || "");
                 } else if (data.nombres) {
                     $("#razon_social").val(
-                        `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`
+                        `${data.nombres} ${data.apellido_paterno} ${data.apellido_materno}`,
                     );
                 }
 
@@ -222,7 +182,7 @@ $(document).ready(function () {
                     Swal.fire(
                         "Atención",
                         "No se encontraron datos para este RUC.",
-                        "info"
+                        "info",
                     );
                 }
             },
@@ -231,14 +191,14 @@ $(document).ready(function () {
                 Swal.fire(
                     "Error",
                     "Ingrese un numero de documento válido.",
-                    "error"
+                    "error",
                 );
             },
 
             complete: function () {
                 // SIEMPRE se ejecuta
                 btn.prop("disabled", false).html(
-                    '<i class="link-icon" data-lucide="search"></i>'
+                    '<i class="link-icon" data-lucide="search"></i>',
                 );
                 lucide.createIcons();
             },

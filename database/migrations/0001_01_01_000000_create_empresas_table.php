@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('documento')->unique();
             $table->string('razon_social');
-            $table->string('nombre_comercial');
+            $table->string('nombre_comercial')->nullable();
             $table->string('direccion');
             $table->string('usuario_facturacion')->nullable();
             $table->string('contrasena_facturacion')->nullable();

@@ -1,4 +1,9 @@
-$(document).ready(function () {
+let UBIGEO = null;
+
+$(document).ready(async function () {
+    UBIGEO = await $.get(route("ubigeos.todo"));
+    cargarSelectDepartamentos();
+
     const modal = new bootstrap.Modal($("#modalCliente")[0]);
 
     const tabla = $("#tablaClientes").DataTable({
@@ -36,6 +41,33 @@ $(document).ready(function () {
         drawCallback: () => lucide.createIcons(),
     });
 
+    function toggleTipoDocumento() {
+        const tipo = $("#tipo_documento_id").val();
+
+        if (tipo == 2) {
+            $(".persona").hide();
+            $("#nombres").prop("required", false);
+            $("#apellidos").prop("required", false);
+            $("#fecha_nacimiento").prop("required", false);
+
+            $("#nombres").val("");
+            $("#apellidos").val("");
+            $("#fecha_nacimiento").val("");
+
+            $("#razon_social").prop("required", true);
+            $("#razon_social").prop("hidden", false);
+        } else {
+            $(".persona").show();
+            $("#nombres").prop("required", true);
+            $("#apellidos").prop("required", true);
+            $("#razon_social").prop("required", false);
+            $("#razon_social").val("");
+            $("#razon_social").prop("hidden", true);
+        }
+    }
+
+    $("#tipo_documento_id").on("change", toggleTipoDocumento);
+
     $("#filtroDocumento").on("keyup change", function () {
         const val = this.value;
 
@@ -49,11 +81,25 @@ $(document).ready(function () {
         }
     });
 
-    $("#filtroNombres").on("keyup change", function () {
-        tabla.column(1).search(this.value).draw();
-    });
+    document
+        .getElementById("filtroDocumento")
+        .addEventListener("input", function () {
+            this.value = this.value.replace(/\D/g, "").slice(0, 11);
+        });
 
-    initUbigeos("#departamento_id", "#provincia_id", "#distrito_id");
+    document
+        .getElementById("filtroDocumento")
+        .addEventListener("keypress", function (e) {
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+    document
+        .getElementById("filtroNombres")
+        .addEventListener("input", function () {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+        });
 
     function toggleConductor(cargoVal, cargoDesc = "") {
         const $conductor = $(".conductor");
@@ -65,20 +111,40 @@ $(document).ready(function () {
         }
     }
 
+    $(document).on("click", ".editar", function () {
+        const id = $(this).data("id");
+
+        $.get(route("clientes.edit", id), function (data) {
+            $("#cliente_id").val(data.id);
+
+            $("#documento").val(data.persona.documento);
+            $("#nombres").val(data.persona.nombres);
+            $("#apellidos").val(data.persona.apellidos);
+            $("#razon_social").val(data.persona.razon_social);
+            $("#telefono").val(data.persona.telefono);
+            $("#celular").val(data.persona.celular);
+            $("#correo").val(data.persona.correo);
+            $("#direccion").val(data.persona.direccion);
+            $("#fecha_nacimiento").val(data.persona.fecha_nacimiento);
+
+            $("#modalCliente").modal("show");
+        });
+    });
+
     function cargarListasCliente(callback = null) {
         $.get(route("listas.all"), function (res) {
             const fillSelect = (
                 selector,
                 items,
                 placeholder,
-                key = "descripcion"
+                key = "descripcion",
             ) => {
                 const select = $(selector);
                 select
                     .empty()
                     .append(`<option value="">${placeholder}</option>`);
                 items.forEach((i) =>
-                    select.append(`<option value="${i.id}">${i[key]}</option>`)
+                    select.append(`<option value="${i.id}">${i[key]}</option>`),
                 );
             };
 
@@ -87,13 +153,13 @@ $(document).ready(function () {
                 "#sucursal_id",
                 res.sucursales,
                 "Seleccione una sucursal",
-                "nombre_comercial"
+                "nombre_comercial",
             );
             fillSelect(
                 "#tipo_documento_id",
                 res.tipos_documento,
                 "Seleccione",
-                "codigo"
+                "codigo",
             );
             fillSelect("#tipo_licencia_id", res.tipos_licencia, "Seleccione");
             $("#tipo_documento_id").val(1).trigger("change");
@@ -124,7 +190,7 @@ $(document).ready(function () {
     });
 
     $("#documento, #telefono, #celular").on("input", function () {
-        this.value = this.value.replace(/[^0-9]/g, "");
+        this.value = this.value.replace(/[^0-11]/g, "");
     });
 
     $("#nombres, #apellidos").on("input", function () {
@@ -137,7 +203,7 @@ $(document).ready(function () {
             return Swal.fire(
                 "Atención",
                 "Por favor ingrese un número de documento",
-                "warning"
+                "warning",
             );
 
         $("#btnBuscarDocumento")
@@ -151,14 +217,12 @@ $(document).ready(function () {
                     return Swal.fire(
                         "Error",
                         "No se encontró información: " + data.error,
-                        "error"
+                        "error",
                     );
 
                 if (data.razon_social) {
-                    $('input[name="nombres"]').val(data.razon_social);
-                    $('input[name="apellidos"]').val("");
-                    $('input[name="nombre_comercial"]').val(
-                        data.nombre_comercial || ""
+                    $('input[name="razon_social"]').val(
+                        data.razon_social || "",
                     );
                     $('input[name="direccion"]').val(data.direccion || "");
                 } else {
@@ -166,7 +230,7 @@ $(document).ready(function () {
                     $('input[name="apellidos"]').val(
                         `${data.apellido_paterno || ""} ${
                             data.apellido_materno || ""
-                        }`.trim()
+                        }`.trim(),
                     );
                 }
             })
@@ -174,8 +238,8 @@ $(document).ready(function () {
                 Swal.fire(
                     "Error",
                     "Ingrese un numero de documento válido.",
-                    "error"
-                )
+                    "error",
+                ),
             )
             .always(() => {
                 $("#btnBuscarDocumento")
@@ -199,38 +263,46 @@ $(document).ready(function () {
         $(".conductor").attr("hidden", true).hide();
         $("#cargo_id, #sucursal_id").val(null).trigger("change");
 
+        cargarSelectDepartamentos();
+        $("#provincia_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+        $("#distrito_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+
         cargarListasCliente(() => modal.show());
+
+        toggleTipoDocumento();
     });
 
     function cargarCliente(url, viewOnly = false) {
         cargarListasCliente(() => {
             $.get(url, (res) => {
                 const p = res.persona ?? {};
-                p.fecha_nacimiento;
-                p.distrito_id;
-                p.tipo_documento_id;
-                console.log("Persona:", p);
 
                 $("#empleado_id").val(res.id);
-                $("#documento").val(p.documento ?? "");
-                $("#nombres").val(p.nombres ?? "");
-                $("#apellidos").val(p.apellidos ?? "");
                 $("#correo").val(p.correo ?? "");
                 $("#telefono").val(p.telefono ?? "");
                 $("#celular").val(p.celular ?? "");
                 $("#direccion").val(p.direccion ?? "");
+                $("#razon_social").val(p.razon_social ?? "");
+                $("#nombres").val(p.nombres ?? "");
+                $("#apellidos").val(p.apellidos ?? "");
+
                 if (p.fecha_nacimiento) {
                     $("#fecha_nacimiento").val(
-                        p.fecha_nacimiento.substring(0, 10)
+                        p.fecha_nacimiento.substring(0, 10),
                     );
                 }
+
                 $("#tipo_documento_id")
                     .val(p.tipo_documento_id ?? "")
                     .trigger("change");
 
-                if (p.distrito_id) {
-                    cargarUbigeoDesdeDistrito(p.distrito_id);
-                }
+                $("#documento").val(p.documento ?? "");
+
+                setUbigeo(p.departamento_id, p.provincia_id, p.distrito_id);
 
                 modal.show();
                 lucide.createIcons();
@@ -238,18 +310,53 @@ $(document).ready(function () {
         });
     }
 
-    function cargarUbigeoDesdeDistrito(distrito_id) {
-        axios.get(route("ubigeos.byDistrito", distrito_id)).then(({ data }) => {
-            $("#departamento_id").val(data.departamento_id).trigger("change");
+    function cargarSelectDepartamentos() {
+        const $dep = $("#departamento_id");
+        $dep.empty().append('<option value="">Seleccione</option>');
 
-            setTimeout(() => {
-                $("#provincia_id").val(data.provincia_id).trigger("change");
-            }, 300);
-
-            setTimeout(() => {
-                $("#distrito_id").val(data.distrito_id).trigger("change");
-            }, 600);
+        UBIGEO.forEach((dep) => {
+            $dep.append(`<option value="${dep.id}">${dep.nombre}</option>`);
         });
+    }
+    function cargarSelectProvincias(depId) {
+        const $prov = $("#provincia_id");
+        $prov.empty().append('<option value="">Seleccione</option>');
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        if (!dep) return;
+
+        dep.provincias.forEach((p) => {
+            $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
+        });
+    }
+    function cargarSelectDistritos(depId, provId) {
+        const $dist = $("#distrito_id");
+        $dist.empty().append('<option value="">Seleccione</option>');
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        const prov = dep?.provincias.find((p) => p.id == provId);
+        if (!prov) return;
+
+        prov.distritos.forEach((d) => {
+            $dist.append(`<option value="${d.id}">${d.nombre}</option>`);
+        });
+    }
+
+    $("#departamento_id").on("change", function () {
+        cargarSelectProvincias(this.value);
+        $("#distrito_id")
+            .empty()
+            .append('<option value="">Seleccione</option>');
+    });
+
+    $("#provincia_id").on("change", function () {
+        cargarSelectDistritos($("#departamento_id").val(), this.value);
+    });
+
+    function setUbigeo(depId, provId, distId) {
+        $("#departamento_id").val(depId).trigger("change");
+        $("#provincia_id").val(provId).trigger("change");
+        $("#distrito_id").val(distId);
     }
 
     $(document).on("click", ".editar", function () {
@@ -293,7 +400,7 @@ $(document).ready(function () {
                         Swal.fire(
                             "Error",
                             "No se pudo eliminar el cliente",
-                            "error"
+                            "error",
                         );
                     },
                 });
@@ -301,13 +408,18 @@ $(document).ready(function () {
         });
     });
 
+
     $("#formCliente").on("submit", function (e) {
         e.preventDefault();
-
+        const id = $("#cliente_id").val();
+        let url = id ? route("clientes.update", id) : route("clientes.store");
+        let method = id ? "PUT" : "POST";
+        let formData = $(this).serialize();
+        if (id) formData += "&_method=PUT";
         $.ajax({
-            url: route("clientes.store"),
+            url: url,
             type: "POST",
-            data: $(this).serialize(),
+            data: formData,
             success: function () {
                 Swal.fire({
                     icon: "success",
@@ -347,20 +459,7 @@ $(document).ready(function () {
         $("#seccionUsuario").hide().attr("hidden", true);
         $(".conductor").attr("hidden", true).hide();
         $("#modalCliente .modal-title").html(
-            '<i data-lucide="user"></i> Registrar / Editar Cliente'
+            '<i data-lucide="user"></i> Registrar / Editar Cliente',
         );
     });
 });
-
-// Funciones de Ubigeos
-function initUbigeos(depSelectId, provSelectId, distSelectId) {
-    /* tu lógica actual */
-}
-function cargarUbicacionPorIds(
-    departamentoId,
-    provinciaId,
-    distritoId,
-    sucursalId
-) {
-    /* tu lógica actual */
-}

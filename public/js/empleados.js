@@ -89,14 +89,14 @@ $(document).ready(async function () {
                 selector,
                 items,
                 placeholder,
-                key = "descripcion"
+                key = "descripcion",
             ) => {
                 const select = $(selector);
                 select
                     .empty()
                     .append(`<option value="">${placeholder}</option>`);
                 items.forEach((i) =>
-                    select.append(`<option value="${i.id}">${i[key]}</option>`)
+                    select.append(`<option value="${i.id}">${i[key]}</option>`),
                 );
             };
 
@@ -105,17 +105,17 @@ $(document).ready(async function () {
                 "#sucursal_id",
                 res.sucursales,
                 "Seleccione una sucursal",
-                "nombre_comercial"
+                "nombre_comercial",
             );
             const tiposPermitidos = res.tipos_documento.filter(
-                (t) => t.id != 2
+                (t) => t.id != 2,
             );
 
             fillSelect(
                 "#tipo_documento_id",
                 tiposPermitidos,
                 "Seleccione",
-                "codigo"
+                "codigo",
             );
             $("#tipo_documento_id").val(1).trigger("change");
 
@@ -131,7 +131,7 @@ $(document).ready(async function () {
             return Swal.fire(
                 "Atención",
                 "Por favor ingrese un número de documento",
-                "warning"
+                "warning",
             );
 
         $("#btnBuscarDocumento")
@@ -145,14 +145,14 @@ $(document).ready(async function () {
                     return Swal.fire(
                         "Error",
                         "No se encontró información: " + data.error,
-                        "error"
+                        "error",
                     );
 
                 if (data.razon_social) {
                     $('input[name="nombres"]').val(data.razon_social);
                     $('input[name="apellidos"]').val("");
                     $('input[name="nombre_comercial"]').val(
-                        data.nombre_comercial || ""
+                        data.nombre_comercial || "",
                     );
                     $('input[name="direccion"]').val(data.direccion || "");
                 } else {
@@ -160,7 +160,7 @@ $(document).ready(async function () {
                     $('input[name="apellidos"]').val(
                         `${data.apellido_paterno || ""} ${
                             data.apellido_materno || ""
-                        }`.trim()
+                        }`.trim(),
                     );
                 }
             })
@@ -168,8 +168,8 @@ $(document).ready(async function () {
                 Swal.fire(
                     "Error",
                     "Ingrese un numero de documento válido.",
-                    "error"
-                )
+                    "error",
+                ),
             )
             .always(() => {
                 $("#btnBuscarDocumento")
@@ -261,14 +261,14 @@ $(document).ready(async function () {
                 $("#documento").val(persona.documento ?? "");
 
                 $("#fecha_ingreso").val(
-                    res.fecha_ingreso ? res.fecha_ingreso.substring(0, 10) : ""
+                    res.fecha_ingreso ? res.fecha_ingreso.substring(0, 10) : "",
                 );
 
                 if (persona.distrito) {
                     cargarUbicacionPorIds(
                         persona.distrito.provincia.departamento.id,
                         persona.distrito.provincia.id,
-                        persona.distrito.id
+                        persona.distrito.id,
                     );
                 }
 
@@ -287,7 +287,7 @@ $(document).ready(async function () {
                     $("#btnGuardar").addClass("d-none");
                     $("#btnCerrarModal").removeClass("d-none").show();
                     $("#modalEmpleado .modal-title").html(
-                        '<i data-lucide="info"></i> Ver Empleado'
+                        '<i data-lucide="info"></i> Ver Empleado',
                     );
                 } else {
                     $("#formEmpleado")
@@ -332,7 +332,6 @@ $(document).ready(async function () {
     $("#formEmpleado").on("submit", function (e) {
         e.preventDefault();
         const fechaNacimiento = $("#fecha_nacimiento").val();
-
         if (!esMayorDeEdad(fechaNacimiento)) {
             Swal.fire({
                 icon: "warning",
@@ -393,7 +392,7 @@ $(document).ready(async function () {
         $("#seccionUsuario").hide().attr("hidden", true);
         $(".conductor").attr("hidden", true).hide();
         $("#modalEmpleado .modal-title").html(
-            '<i data-lucide="user"></i> Registrar / Editar Empleado'
+            '<i data-lucide="user"></i> Registrar / Editar Empleado',
         );
     });
 

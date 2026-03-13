@@ -25,7 +25,8 @@
                         <label class="form-label">RUC / Documento</label>
                         <div class="input-group">
                             <input type="text" name="documento" id="documento" class="form-control" required
-                                maxlength="11" inputmode="numeric" pattern="[0-9]{11}"  value="{{ $empresa->documento ?? '' }}"
+                                maxlength="11" inputmode="numeric" pattern="[0-9]{11}"
+                                value="{{ $empresa->documento ?? '' }}"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11)">
                             <button class="btn btn-outline-primary" type="button" id="btnBuscarRuc">
                                 <i class="link-icon" data-lucide="search"></i> </button>
@@ -41,7 +42,7 @@
                     <div class="col-md-5">
                         <label class="form-label">Nombre Comercial</label>
                         <input type="text" class="form-control" id="nombre_comercial" name="nombre_comercial"
-                            value="{{ $empresa->nombre_comercial ?? '' }}" required>
+                            value="{{ $empresa->nombre_comercial ?? '' }}">
                     </div>
 
                     <div class="col-md-8">

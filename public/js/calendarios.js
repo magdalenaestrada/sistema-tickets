@@ -21,8 +21,7 @@ $(document).ready(function () {
             right: "",
         },
 
-        // ⬇️ Ziggy aquí
-        events: route("horarios.calendario.eventos"),
+        events: eventosHorarios,
 
         eventDisplay: "block",
         eventClick: function (info) {

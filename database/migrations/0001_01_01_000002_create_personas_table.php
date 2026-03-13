@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->foreignId("tipo_documento_id")->constrained("tipo_documento_personas");
             $table->foreignId("distrito_id")->nullable()->constrained("distritos");
             $table->string("documento", 20)->nullable()->index();
-            $table->string("nombres", 200)->index();
+            $table->string("nombres", 200)->nullable();
             $table->string("apellidos", 200)->nullable()->index();
             $table->string('razon_social', 200)->nullable()->index();
             $table->string("telefono", 20)->nullable()->index();

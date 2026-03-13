@@ -30,11 +30,20 @@ class ClientesController extends Controller
 
         return datatables()->of($query)
             ->addColumn('documento', fn($c) => $c->persona->documento)
-            ->addColumn('nombre', fn($c) => $c->persona->nombres . ' ' . $c->persona->apellidos)
-            ->addColumn('telefono', fn($c) => $c->persona->telefono ?? '-')
+            ->addColumn(
+                'nombre',
+                fn($c) =>
+                $c->persona->razon_social
+                    ?? trim($c->persona->nombres . ' ' . $c->persona->apellidos)
+            )->addColumn('telefono', fn($c) => $c->persona->telefono ?? '-')
             ->addColumn('celular', fn($c) => $c->persona->celular)
             ->addColumn('correo', fn($c) => $c->persona->correo)
             ->addColumn('acciones', fn($c) => '
+
+            <button class="btn btn-primary btn-xs editar" data-id="' . $c->id . '">
+    <i data-lucide="edit"></i>
+</button>
+
             <button class="btn btn-danger btn-xs eliminar" data-id="' . $c->id . '">
                 <i class="link-icon" data-lucide="trash-2"></i>
             </button>
@@ -47,8 +56,6 @@ class ClientesController extends Controller
     {
         $request->validate([
             'documento' => 'required|string|max:20',
-            'nombres' => 'required|string|max:200',
-            'apellidos' => 'nullable|string|max:200',
             'correo' => 'nullable|email|max:150',
         ]);
 
@@ -58,6 +65,7 @@ class ClientesController extends Controller
                 'tipo_documento_id' => $request->input('tipo_documento_id', 1),
                 'distrito_id' => $request->input('distrito_id', 1),
                 'nombres' => $request->input('nombres'),
+                'razon_social' => $request->input('razon_social'),
                 'apellidos' => $request->input('apellidos'),
                 'telefono' => $request->input('telefono'),
                 'celular' => $request->input('celular'),
@@ -77,16 +85,23 @@ class ClientesController extends Controller
 
     public function edit(Cliente $cliente)
     {
-        $cliente->load('persona');
+        $cliente->load('persona.distrito.provincia.departamento');
+
+        $persona = $cliente->persona;
+        if ($persona && $persona->distrito) {
+            $persona->provincia_id   = $persona->distrito->provincia_id;
+            $persona->departamento_id = $persona->distrito->provincia->departamento_id;
+        }
+
         return response()->json($cliente);
     }
 
     public function update(Request $request, Cliente $cliente)
     {
+        $user = Auth::id();
+
         $request->validate([
             'documento' => 'required|string|max:20',
-            'nombres' => 'required|string|max:200',
-            'apellidos' => 'nullable|string|max:200',
             'correo' => 'nullable|email|max:150',
         ]);
 
@@ -98,6 +113,7 @@ class ClientesController extends Controller
                 'nombres' => $request->input('nombres'),
                 'apellidos' => $request->input('apellidos'),
                 'telefono' => $request->input('telefono'),
+                'razon_social' => $request->input('razon_social'),
                 'celular' => $request->input('celular'),
                 'fecha_nacimiento' => $request->input('fecha_nacimiento'),
                 'correo' => $request->input('correo'),
@@ -106,7 +122,7 @@ class ClientesController extends Controller
             ]
         );
 
-        $cliente->update(['user_id' => $request->input('user_id')]);
+        $cliente->update(['user_id' => $user]);
 
         return redirect()->back()->with('success', 'Cliente actualizado correctamente.');
     }

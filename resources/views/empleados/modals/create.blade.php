@@ -19,13 +19,13 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="col-md-2 mb-3">
-                            <label for="tipo_documento_id" class="form-label">Tipo Documento</label>
+                            <label for="tipo_documento_id" class="form-label">Tipo Documento  <span style="color: red">*</span></label>
                             <select name="tipo_documento_id" id="tipo_documento_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Documento</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Documento <span style="color: red">*</span></label>
                             <div class="input-group">
                                 <input type="text" name="documento" id="documento" class="form-control" required
                                     inputmode="numeric" autocomplete="off">
@@ -34,36 +34,36 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Nombres</label>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Nombres <span style="color: red">*</span></label>
                             <input type="text" name="nombres" id="nombres" class="form-control" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Apellidos</label>
+                            <label class="form-label">Apellidos <span style="color: red">*</span></label>
                             <input type="text" name="apellidos" id="apellidos" class="form-control" required>
                         </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">Fecha de nacimiento</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Fecha de nacimiento <span style="color: red">*</span></label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento"
                                 max="{{ $hoy }}" class="form-control" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">Correo</label>
                             <input type="email" name="correo" id="correo" class="form-control">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">Teléfono</label>
                             <input type="text" name="telefono" id="telefono" class="form-control">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Celular</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Celular <span style="color: red">*</span></label>
                             <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
                                 maxlength="9" title="Ingrese 9 dígitos numéricos" required>
                         </div>
 
 
-                        <div class="col-md-12">
+                        <div class="col-md-12 mb-3">
                             <label class="form-label">Dirección</label>
                             <input type="text" name="direccion" id="direccion" class="form-control">
                         </div>
@@ -105,19 +105,19 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="col-md-4 mb-3">
-                            <label for="sucursal_id" class="form-label">Sucursal</label>
+                            <label for="sucursal_id" class="form-label">Sucursal <span style="color: red">*</span></label>
                             <select name="sucursal_id" id="sucursal_id" class="form-select" required>
                                 <option value="">Seleccione una sucursal</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="cargo_id" class="form-label">Cargo</label>
+                            <label for="cargo_id" class="form-label">Cargo <span style="color: red">*</span></label>
                             <select name="cargo_id" id="cargo_id" class="form-select" required>
                                 <option value="">Seleccione un cargo</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Fecha de ingreso</label>
+                            <label class="form-label">Fecha de ingreso <span style="color: red">*</span></label>
                             <input type="date" name="fecha_ingreso" id="fecha_ingreso" class="form-control"
                                 required>
                         </div>
