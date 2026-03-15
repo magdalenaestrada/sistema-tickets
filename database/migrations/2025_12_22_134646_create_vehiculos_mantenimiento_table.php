@@ -12,6 +12,8 @@ return new class extends Migration
             $table->id();
             $table->date("fecha_inicio");
             $table->time("hora_inicio");
+            $table->string("descripcion")->nullable();
+            $table->foreignId("razon_id");
             $table->date("fecha_fin")->nullable();
             $table->time("hora_fin")->nullable();
             $table->foreignId("vehiculo_id")->constrained("vehiculos")->references("id");

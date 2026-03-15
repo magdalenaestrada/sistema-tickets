@@ -81,7 +81,7 @@ $(document).ready(function () {
                 tipoSelect.append(
                     `<option value="${tipo.id}" ${
                         tipo.id == selectedId ? "selected" : ""
-                    }>${tipo.descripcion}</option>`
+                    }>${tipo.descripcion}</option>`,
                 );
             });
         } catch (err) {
@@ -137,11 +137,28 @@ $(document).ready(function () {
 
         const id = $("#vehiculo_id").val();
         const formData = $(this).serialize();
+        const fechaInicio = $("input[name='fecha_inicio']").val();
+        const horaInicio = $("input[name='hora_inicio']").val();
+        const fechaFin = $("input[name='fecha_fin']").val();
+        const horaFin = $("input[name='hora_fin']").val();
 
+        if (fechaInicio && horaInicio && fechaFin && horaFin) {
+            const inicio = new Date(fechaInicio + "T" + horaInicio);
+            const fin = new Date(fechaFin + "T" + horaFin);
+
+            if (fin <= inicio) {
+                Swal.fire(
+                    "Fecha inválida",
+                    "La fecha y hora de fin deben ser mayores que la de inicio.",
+                    "warning",
+                );
+                return;
+            }
+        }
         try {
             const res = await $.post(
                 route("vehiculos.mantenimiento", id),
-                formData
+                formData,
             );
 
             Swal.fire("Éxito", res.message, "success");
@@ -177,6 +194,9 @@ $(document).ready(function () {
         if (estado === "A") {
             $("#tituloMantenimiento").text("Enviar a mantenimiento");
             $("#inicioMantenimiento").removeClass("d-none");
+            $("#razon_id").prop("required", true);
+            $("#fecha_inicio").prop("required", true);
+            $("#hora_inicio").prop("required", true);
             $("#finMantenimiento").addClass("d-none");
 
             $("input[name='fecha_inicio']").val("");
@@ -185,13 +205,29 @@ $(document).ready(function () {
             $("#tituloMantenimiento").text("Finalizar mantenimiento");
             $("#inicioMantenimiento").addClass("d-none");
             $("#finMantenimiento").removeClass("d-none");
-
+            $("#razon_id").prop("required", false);
+            $("#fecha_inicio").prop("required", false);
+            $("#hora_inicio").prop("required", false);
             $("input[name='fecha_fin']").val("");
             $("input[name='hora_fin']").val("");
         }
+        const hoy = new Date().toISOString().split("T")[0];
 
+        if (estado === "A") {
+            $("#fecha_inicio").attr("min", hoy);
+            $("#fecha_fin").removeAttr("min");
+        } else {
+            $("#fecha_fin").attr("min", hoy);
+        }
         modalMantenimiento.show();
     });
+
+    $("input[name='fecha_inicio']").on("change", function () {
+        let fechaInicio = $(this).val();
+
+        $("input[name='fecha_fin']").attr("min", fechaInicio);
+    });
+
     $("#tablaVehiculos").on("click", ".eliminar", function () {
         const id = $(this).data("id");
         Swal.fire({
@@ -209,7 +245,7 @@ $(document).ready(function () {
                         type: "DELETE",
                         data: {
                             _token: $('meta[name="csrf-token"]').attr(
-                                "content"
+                                "content",
                             ),
                         },
                     });

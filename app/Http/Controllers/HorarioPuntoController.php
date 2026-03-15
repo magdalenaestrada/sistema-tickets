@@ -120,7 +120,6 @@ class HorarioPuntoController extends Controller
                     ];
                 });
             });
-
         return response()->json($puntos);
     }
 

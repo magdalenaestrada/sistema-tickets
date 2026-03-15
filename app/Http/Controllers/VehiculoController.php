@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RazonMantenimiento;
 use App\Models\Vehiculo;
 use App\Models\VehiculoMantenimiento;
 use Carbon\Carbon;
+use Database\Seeders\RazonesMantenimientoSeeder;
 use Illuminate\Http\Request;
 use Str;
 use Yajra\DataTables\Facades\DataTables;
@@ -13,7 +15,9 @@ class VehiculoController extends Controller
 {
     public function index()
     {
-        return view('vehiculos.index');
+        $razones = RazonMantenimiento::all();
+        $hoy = Carbon::now("America/Lima")->format("Y-m-d");
+        return view('vehiculos.index', compact("razones", "hoy"));
     }
 
     public function datatable(Request $request)
@@ -83,6 +87,8 @@ class VehiculoController extends Controller
             VehiculoMantenimiento::create([
                 'vehiculo_id' => $vehiculo->id,
                 'fecha_inicio' => $request->fecha_inicio,
+                'descripcion' => $request->descripcion,
+                'razon_id' => $request->razon_id,
                 'hora_inicio' => $request->hora_inicio,
             ]);
 

@@ -10,13 +10,20 @@ class VehiculoMantenimiento extends Model
     protected $fillable = [
         "fecha_inicio",
         "hora_inicio",
+        "razon_id",
         "fecha_fin",
         "hora_fin",
         "vehiculo_id",
+        "descripcion",
     ];
 
     public function vehiculo()
     {
         return $this->belongsTo(Vehiculo::class, "vehiculo_id");
+    }
+
+    public function razon()
+    {
+        return $this->belongsTo(RazonMantenimiento::class, "razon_id");
     }
 }
