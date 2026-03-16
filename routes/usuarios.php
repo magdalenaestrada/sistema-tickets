@@ -17,4 +17,10 @@ Route::middleware(['auth', 'can:gestionar usuarios'])->prefix('usuarios')
 
         Route::put('/{user}', [UserController::class, 'actualizar'])
             ->name('actualizar');
+
+        Route::put('/{user}/activar', [UserController::class, 'activar'])
+            ->name('activar');
+
+        Route::put('/{user}/desactivar', [UserController::class, 'desactivar'])
+            ->name('desactivar');
     });

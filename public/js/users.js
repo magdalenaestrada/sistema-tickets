@@ -14,6 +14,7 @@ $(function () {
             { data: "id" },
             { data: "empleado" },
             { data: "username" },
+            { data: "estado" },
             { data: "acciones", orderable: false, searchable: false },
         ],
         drawCallback: function () {
@@ -102,5 +103,67 @@ $(function () {
         if ($.fn.DataTable.isDataTable("#tablaUsuarios")) {
             $("#tablaUsuarios").DataTable().ajax.reload(null, false);
         }
+    });
+
+    $(document).on("click", ".desactivar", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            icon: "warning",
+            title: "¿Desactivar usuario?",
+            text: "¿Está seguro que quiere desactivar este usuario?",
+            showCancelButton: true,
+            confirmButtonText: "Sí, desactivar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("usuarios.desactivar", id),
+                    type: "PUT",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function () {
+                        tabla.ajax.reload(null, false);
+                        Swal.fire(
+                            "Éxito",
+                            "Usuario desactivado correctamente",
+                            "success",
+                        );
+                    },
+                });
+            }
+        });
+    });
+
+    $(document).on("click", ".activar", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            icon: "warning",
+            title: "¿Activar usuario?",
+            text: "¿Está seguro que quiere volver a activar este usuario?",
+            showCancelButton: true,
+            confirmButtonText: "Sí, activar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("usuarios.activar", id),
+                    type: "PUT",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function () {
+                        tabla.ajax.reload(null, false);
+                        Swal.fire(
+                            "Éxito",
+                            "Usuario activado correctamente",
+                            "success",
+                        );
+                    },
+                });
+            }
+        });
     });
 });

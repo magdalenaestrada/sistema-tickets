@@ -6,6 +6,7 @@ use App\Models\Horario;
 use App\Models\HorarioFecha;
 use App\Models\HorarioPunto;
 use App\Models\HorarioTramo;
+use App\Models\Pasaje;
 use App\Models\Sucursal;
 use App\Models\TipoVehiculo;
 use App\Models\TipoViaje;
@@ -25,6 +26,8 @@ class HorarioController extends Controller
         $hoy = Carbon::now("America/Lima")->format('Y-m-d');
         return view('horarios.index', compact('hoy', 'tiposViaje', 'tipo_vehiculos', 'sucursales', 'horarios'));
     }
+
+   
 
     public function datatable()
     {
@@ -153,6 +156,33 @@ class HorarioController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function buscar(Request $request)
+    {
+        $fecha = $request->fecha;
+        $origen = $request->origen;
+        $destino = $request->destino;
+
+        $horarios = Horario::whereHas('puntos', function ($q) use ($origen) {
+            $q->where('sucursal_id', $origen);
+        })
+            ->whereHas('puntos', function ($q) use ($destino) {
+                $q->where('sucursal_id', $destino);
+            })
+            ->with(['puntos', 'vehiculo'])
+            ->get()
+            ->filter(function ($horario) use ($origen, $destino) {
+
+                $puntos = $horario->puntos->sortBy('orden');
+
+                $pOrigen = $puntos->firstWhere('sucursal_id', $origen);
+                $pDestino = $puntos->firstWhere('sucursal_id', $destino);
+
+                return $pOrigen && $pDestino && $pOrigen->orden < $pDestino->orden;
+            })
+            ->values();
+
+        return response()->json($horarios);
+    }
 
     public function mostrar($id)
     {

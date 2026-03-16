@@ -7,6 +7,7 @@ use App\Models\Distrito;
 use App\Models\Provincia;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -42,15 +43,42 @@ class UserController extends Controller
                 return $u->persona->razon_social
                     ?? trim($u->persona->nombres . ' ' . $u->persona->apellidos);
             })
-            ->addColumn('acciones', function ($u) {
-                return '
-                <button class="btn btn-warning btn-xs editar"
-                    data-id="' . $u->id . '">
-                    <i data-lucide="edit"></i>
-                </button>
-            ';
+            ->addColumn('estado', function ($u) {
+                if ($u->estado == "A") {
+                    return '<span class="badge rounded-pill bg-success"> Activo </span>';
+                } else {
+                    return '<span class="badge  rounded-pill bg-danger"> Inactivo </span>';
+                }
+            })->addColumn('acciones', function ($u) {
+
+                $acciones = '
+        <button class="btn btn-warning btn-xs editar"
+            data-id="' . $u->id . '">
+            <i data-lucide="edit"></i>
+        </button>
+    ';
+
+                if ($u->estado === 'A') {
+
+                    $acciones .= '
+            <button class="btn btn-danger btn-xs desactivar"
+                data-id="' . $u->id . '">
+                <i data-lucide="eye-off"></i>
+            </button>
+        ';
+                } else {
+
+                    $acciones .= '
+            <button class="btn btn-success btn-xs activar"
+                data-id="' . $u->id . '">
+                <i data-lucide="eye"></i>
+            </button>
+        ';
+                }
+
+                return $acciones;
             })
-            ->rawColumns(['acciones'])
+            ->rawColumns(['acciones', 'estado'])
             ->make(true);
     }
 
@@ -89,5 +117,39 @@ class UserController extends Controller
         $user->update($data);
 
         return response()->json(['success' => true]);
+    }
+
+    public function activar($user)
+    {
+        $actual = Auth::id();
+        if ($actual != $user) {
+            $user = User::findOrFail($user);
+            $user->update([
+                "estado" => "A",
+            ]);
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'No puedes desactivar tu propio usuario'
+            ]);
+        }
+    }
+
+    public function desactivar($user)
+    {
+        $actual = Auth::id();
+        if ($actual != $user) {
+            $user = User::findOrFail($user);
+            $user->update([
+                "estado" => "I",
+            ]);
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'No puedes desactivar tu propio usuario'
+            ]);
+        }
     }
 }

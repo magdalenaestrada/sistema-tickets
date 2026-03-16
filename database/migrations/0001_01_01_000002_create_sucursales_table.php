@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->string("nombre_comercial")->nullable();
             $table->string("direccion");
             $table->string("telefono");
+            $table->unique(['empresa_id', 'distrito_id', 'nombre_comercial']);
             $table->timestamps();
         });
     }

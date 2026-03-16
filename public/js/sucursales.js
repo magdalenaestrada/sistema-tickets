@@ -31,7 +31,7 @@ $(document).ready(async function () {
         drawCallback: function () {
             lucide.createIcons();
         },
-        dom:'rtip'
+        dom: "rtip",
     });
 
     function cargarSelectDepartamentos() {
@@ -210,32 +210,34 @@ $(document).ready(async function () {
                 Swal.fire(
                     "Éxito",
                     "Sucursal guardada correctamente",
-                    "success"
+                    "success",
                 );
             },
-            error: (xhr) => {
-                console.error(xhr.responseText);
-                Swal.fire("Error", "No se pudo guardar", "error");
+            error: function (xhr) {
+                if (xhr.status === 422) {
+                    let errores = xhr.responseJSON.errors;
+                    let mensaje = "";
+
+                    Object.values(errores).forEach(function (error) {
+                        mensaje += error[0] + "<br>";
+                    });
+
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Validación",
+                        html: mensaje,
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Ocurrió un error inesperado",
+                    });
+                }
             },
         });
     });
 
-    $("#tablaSucursales").on("click", ".editar", async function () {
-        const id = $(this).data("id");
-
-        const data = await $.get(route("sucursales.detalle", id));
-
-        $("#sucursal_id").val(data.id);
-        $('input[name="nombre_comercial"]').val(data.nombre_comercial);
-        $('input[name="direccion"]').val(data.direccion);
-        $('input[name="telefono"]').val(data.telefono);
-
-        $("#modalTitulo").text("Editar Sucursal");
-
-        setUbigeo(data.departamento_id, data.provincia_id, data.distrito_id);
-
-        $("#modalSucursal").modal("show");
-    });
 
     $("#tablaSucursales").on("click", ".ver", function () {
         const id = $(this).data("id");

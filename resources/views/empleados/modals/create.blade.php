@@ -156,7 +156,7 @@
                                         <input type="password" id="password" name="password" class="form-control"
                                             autocomplete="new-password">
                                         <button type="button" id="togglePassword" class="btn btn-outline-secondary">
-                                            <i data-lucide="info"></i>
+                                            <i data-lucide="eye"></i>
                                         </button>
                                     </div>
                                 </div>

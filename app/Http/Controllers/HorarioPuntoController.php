@@ -106,21 +106,22 @@ class HorarioPuntoController extends Controller
 
     public function lote(Request $request)
     {
-        $horarios = $request->input('horarios');
-
-        $puntos = HorarioPunto::with('sucursal')
-            ->whereIn('horario_id', $horarios)
+        $horarios = HorarioPunto::with('sucursal')
+            ->whereIn('horario_id', $request->horarios)
+            ->orderBy('orden')
             ->get()
             ->groupBy('horario_id')
-            ->map(function ($items) {
-                return $items->map(function ($p) {
+            ->map(function ($puntos) {
+                return $puntos->map(function ($p) {
                     return [
                         'id' => $p->sucursal_id,
-                        'nombre' => strtolower($p->sucursal->nombre_comercial)
+                        'nombre' => $p->sucursal->nombre,
+                        'orden' => $p->orden,
                     ];
                 });
             });
-        return response()->json($puntos);
+
+        return response()->json($horarios);
     }
 
     private function recalcularHorasLlegada(Horario $horario)

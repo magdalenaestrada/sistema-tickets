@@ -49,6 +49,9 @@ class PasajeController extends Controller
         $metodos_pago = MetodoPago::all();
         $billeteras_digitales = BilleteraDigital::all();
         $hoy = Carbon::now('America/Lima')->format("Y-m-d");
+        $sucursales = Sucursal::where("estado", "A")
+            ->orderBy('nombre_comercial')->get();
+
         return view('pasajes.venta', compact(
             'asientos',
             'horario',
@@ -56,7 +59,8 @@ class PasajeController extends Controller
             'billeteras_digitales',
             'tipos_documentos_facturas',
             'metodos_pago',
-            'hoy'
+            'hoy',
+            'sucursales'
         ));
     }
 
@@ -69,7 +73,9 @@ class PasajeController extends Controller
             'venta'
         ])->get();
 
-        $sucursales = Sucursal::where('estado', 'A')->get();
+        $sucursales = Sucursal::where("estado", "A")
+            ->orderBy('nombre_comercial')->get();
+
         return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
     }
 
@@ -93,15 +99,18 @@ class PasajeController extends Controller
             });
         }
 
-        if ($request->origen) {
-            $query->whereHas('horario', function ($q) use ($request) {
-                $q->where('punto_origen_id', $request->origen);
-            });
-        }
+        if ($request->origen && $request->destino) {
 
-        if ($request->destino) {
-            $query->whereHas('horario', function ($q) use ($request) {
-                $q->where('punto_destino_id', $request->destino);
+            $query->whereHas('tramos', function ($q) use ($request) {
+                $q->whereHas(
+                    'origen',
+                    fn($q2) =>
+                    $q2->where('sucursal_id', $request->origen)
+                )->whereHas(
+                    'destino',
+                    fn($q2) =>
+                    $q2->where('sucursal_id', $request->destino)
+                );
             });
         }
 
@@ -123,8 +132,9 @@ class PasajeController extends Controller
         $horarios = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino', 'tipo_viaje', 'fechas'])
             ->withCount('pasajes')
             ->get();
-
-        return view('pasajes.index', compact('hoy', 'horarios', 'puntos_origen', 'puntos_destino'));
+        $sucursales = Sucursal::where("estado", "A")
+            ->orderBy('nombre_comercial')->get();
+        return view('pasajes.index', compact('hoy', 'sucursales', 'horarios', 'puntos_origen', 'puntos_destino'));
     }
 
     protected function validarTerminarVenta($request, $i)
@@ -243,10 +253,23 @@ class PasajeController extends Controller
         }
 
         if ($horario->tipo_viaje_id == 2) {
+
             $tramos = HorarioTramo::where('horario_id', $horario_id)
-                ->whereHas('origen', fn($q) => $q->where('orden', '>=', $origenOrden))
-                ->whereHas('destino', fn($q) => $q->where('orden', '<=', $destinoOrden))
-                ->get();
+                ->whereHas(
+                    'origen',
+                    fn($q) =>
+                    $q->where('orden', '>=', $origenOrden)
+                )
+                ->whereHas(
+                    'destino',
+                    fn($q) =>
+                    $q->where('orden', '<=', $destinoOrden)
+                )
+                ->get()
+                ->filter(function ($tramo) use ($origenOrden, $destinoOrden) {
+                    return $tramo->origen->orden < $destinoOrden
+                        && $tramo->destino->orden > $origenOrden;
+                });
 
             $primerPasaje = null;
             foreach ($tramos as $tramo) {
@@ -467,21 +490,27 @@ class PasajeController extends Controller
                 ->where('sucursal_id', $request->destino_id)
                 ->value('orden');
 
-            if (!$origenOrden || !$destinoOrden) {
-                return response()->json(['error' => 'Tramo no encontrado'], 422);
+            if (!$origenOrden || !$destinoOrden || $origenOrden >= $destinoOrden) {
+                return response()->json(['error' => 'Tramo no válido'], 422);
             }
-            $costoTramo = HorarioTramo::where('horario_id', $horario->id)
-                ->whereHas('origen', fn($q) => $q->where('orden', '>=', $origenOrden))
-                ->whereHas('destino', fn($q) => $q->where('orden', '<=', $destinoOrden))
-                ->sum('costo_tramo');
+
+            $tramos = HorarioTramo::with(['origen', 'destino'])
+                ->where('horario_id', $horario->id)
+                ->get()
+                ->filter(
+                    fn($t) =>
+                    $t->origen->orden >= $origenOrden &&
+                        $t->destino->orden <= $destinoOrden
+                );
+
+            $costoTramo = $tramos->sum('costo_tramo');
 
             for ($i = 1; $i <= $capacidad; $i++) {
-                $ocupado = $this->asientoOcupadoEnTramo(
-                    $horario->id,
-                    $i,
-                    $origenOrden,
-                    $destinoOrden
-                );
+                $ocupado = Pasaje::whereIn('tramo_id', $tramos->pluck('id'))
+                    ->where('asiento_numero', $i)
+                    ->whereIn('estado', ['V', 'R'])
+                    ->exists();
+
                 $asientos[$i] = $ocupado ? 'ocupado' : 'libre';
                 $precios[$i] = $costoTramo;
             }
@@ -727,12 +756,14 @@ class PasajeController extends Controller
             $query->whereDate('fecha_salida', $request->fecha);
         }
 
-        if ($request->origen) {
-            $query->where('punto_origen_id', $request->origen);
-        }
+        if ($request->origen && $request->destino) {
 
-        if ($request->destino) {
-            $query->where('punto_destino_id', $request->destino);
+            $query->whereHas('puntos', function ($q) use ($request) {
+                $q->where('sucursal_id', $request->origen);
+            })
+                ->whereHas('puntos', function ($q) use ($request) {
+                    $q->where('sucursal_id', $request->destino);
+                });
         }
 
         $horarios = $query->get();

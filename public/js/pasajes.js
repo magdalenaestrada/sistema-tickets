@@ -11,40 +11,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedReservedPasajeId = null;
     let puntosHorarios = {};
 
-    const todasLasRows = Array.from(
-        document.querySelectorAll(".horario-row"),
-    ).map((row) => ({
-        element: row,
-        fecha: row.dataset.fecha,
-        origen: row.dataset.origen,
-        destino: row.dataset.destino,
-        origenId: row.dataset.origenId,
-        destinoId: row.dataset.destinoId,
-        horarioId: row.dataset.horarioId,
-        tipoViajeId: row.dataset.tipoViajeId,
-        disponibles: parseInt(row.dataset.disponibles),
-    }));
-
-    cargarPuntosHorarios();
     actualizarContador(-1);
     attachRowEvents();
-
-    async function cargarPuntosHorarios() {
-        const horariosIds = todasLasRows.map((r) => r.horarioId);
-
-        const res = await fetch(route("horarios.puntos.lote"), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector(
-                    'meta[name="csrf-token"]',
-                ).content,
-            },
-            body: JSON.stringify({ horarios: horariosIds }),
-        });
-
-        puntosHorarios = await res.json();
-    }
 
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
@@ -73,85 +41,42 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function manejarViajePorTramo(horarioId) {
-        const puntos = puntosHorarios[horarioId];
+        const origenId = document.getElementById("filtro_origen").value;
+        const destinoId = document.getElementById("filtro_destino").value;
 
-        const origenSelect = document.getElementById("filtro_origen");
-        const destinoSelect = document.getElementById("filtro_destino");
+        if (!origenId || !destinoId) {
+            svgContainer.innerHTML = `
+            <div class="no-results">
+                <i class="bi bi-arrow-left-right"></i>
+                Selecciona origen y destino
+            </div>`;
+            return;
+        }
 
-        origenSelect.innerHTML = '<option value="">Seleccionar origen</option>';
-        destinoSelect.innerHTML =
-            '<option value="">Seleccionar destino</option>';
-
-        if (!puntos || puntos.length === 0) return;
-
-        puntos.forEach((punto) => {
-            origenSelect.innerHTML += `
-            <option value="${punto.id}">${punto.nombre}</option>
-        `;
-        });
+        cargarAsientos(horarioId, origenId, destinoId);
     }
 
-    function buscarIdsDeTramo(horarioId, textoOrigen, textoDestino) {
-        fetch(route("horario.puntos.index", horarioId))
-            .then((res) => res.json())
-            .then((puntos) => {
-                const pOrigen = puntos.find((p) =>
-                    p.sucursal.nombre_comercial
-                        .toLowerCase()
-                        .includes(textoOrigen),
-                );
-                const pDestino = puntos.find((p) =>
-                    p.sucursal.nombre_comercial
-                        .toLowerCase()
-                        .includes(textoDestino),
-                );
-
-                if (!pOrigen || !pDestino) {
-                    svgContainer.innerHTML = `
-                        <div class="alert alert-warning" style="font-size:.83rem;">
-                            No se encontró el tramo <strong>${textoOrigen}</strong> →
-                            <strong>${textoDestino}</strong> en este horario.
-                        </div>`;
-                    return;
-                }
-
-                cargarAsientos(
-                    horarioId,
-                    pOrigen.sucursal_id,
-                    pDestino.sucursal_id,
-                );
-            })
-            .catch((err) => console.error("Error buscando tramo:", err));
-    }
-
-    /* ────────────────────────────────────────────────────────
-     *  CARGA DE ASIENTOS
-     * ──────────────────────────────────────────────────────── */
     function cargarAsientos(horarioId, origenId, destinoId) {
+        if (!horarioId) {
+            console.warn("Horario no definido");
+            return;
+        }
+
         svgContainer.innerHTML = `<div style="text-align:center;padding:30px;">
-            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-        </div>`;
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+    </div>`;
 
         let url = route("pasajes.asientos", { horario: horarioId });
+
         if (origenId && destinoId) {
             url += `?origen_id=${origenId}&destino_id=${destinoId}`;
         }
 
         fetch(url)
             .then((res) => res.json())
-            .then((data) => {
-                if (data.error) {
-                    svgContainer.innerHTML = `<div class="alert alert-danger" style="font-size:.83rem;">${data.error}</div>`;
-                    return;
-                }
-                renderizarAsientos(data, horarioId);
-            })
-            .catch((err) => console.error("Error cargando asientos:", err));
+            .then((data) => renderizarAsientos(data, horarioId));
     }
 
-    /* ────────────────────────────────────────────────────────
-     *  RENDER DE ASIENTOS
-     * ──────────────────────────────────────────────────────── */
     function actualizarBadgeTramo(data) {
         const rowActiva = document.querySelector(
             `.horario-row[data-horario-id="${currentHorarioId}"]`,
@@ -337,104 +262,87 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document
         .getElementById("filtro_origen")
-        .addEventListener("change", function () {
-            const origenId = parseInt(this.value);
-            const puntos = puntosHorarios[currentHorarioId];
-
-            const destinoSelect = document.getElementById("filtro_destino");
-
-            destinoSelect.innerHTML =
-                '<option value="">Seleccionar destino</option>';
-
-            if (!origenId) return;
-
-            const indexOrigen = puntos.findIndex((p) => p.id == origenId);
-
-            puntos.forEach((p, index) => {
-                if (index > indexOrigen) {
-                    destinoSelect.innerHTML += `
-                <option value="${p.id}">${p.nombre}</option>
-            `;
-                }
-            });
-        });
+        .addEventListener("change", filtrarHorarios);
 
     document
         .getElementById("filtro_destino")
-        .addEventListener("change", function () {
-            const origenId = document.getElementById("filtro_origen").value;
-            const destinoId = this.value;
-
-            if (!origenId || !destinoId) return;
-
-            cargarAsientos(currentHorarioId, origenId, destinoId);
-        });
+        .addEventListener("change", filtrarHorarios);
 
     async function filtrarHorarios() {
         const fecha = document.getElementById("filtro_fecha").value;
-        const origen = document
-            .getElementById("filtro_origen")
-            .value.toLowerCase()
-            .trim();
-        const destino = document
-            .getElementById("filtro_destino")
-            .value.toLowerCase()
-            .trim();
+        const origen = document.getElementById("filtro_origen").value;
+        const destino = document.getElementById("filtro_destino").value;
 
-        if (!fecha && !origen && !destino) {
-            todasLasRows.forEach((row) => (row.element.style.display = "none"));
-            document.getElementById("estado-inicial").style.display = "";
-            resetSeleccion();
-            svgContainer.innerHTML = `<div class="no-results"><i class="bi bi-cursor"></i>Selecciona un horario para ver los asientos</div>`;
-            currentHorarioId = null;
-            actualizarContador(-1);
-            return;
-        }
+        // Ocultar estado inicial
+        const estadoInicial = document.getElementById("estado-inicial");
+        if (estadoInicial) estadoInicial.style.display = "none";
 
-        document.getElementById("estado-inicial").style.display = "none";
-        resetSeleccion();
-
+        const rows = document.querySelectorAll(".horario-row");
         let visibles = 0;
 
-        for (const row of todasLasRows) {
-            const okFecha = !fecha || row.fecha === fecha;
+        rows.forEach((row) => {
+            const rowFecha = row.dataset.fecha;
+            const rowOrigenId = row.dataset.origenId;
+            const rowDestinoId = row.dataset.destinoId;
 
-            const okTramo = validarTramoLocal(row, origen, destino);
+            const matchFecha = !fecha || rowFecha === fecha;
+            const matchOrigen = !origen || rowOrigenId === origen;
+            const matchDestino = !destino || rowDestinoId === destino;
 
-            const mostrar = okFecha && okTramo;
+            if (matchFecha && matchOrigen && matchDestino) {
+                row.style.display = "flex";
+                visibles++;
+            } else {
+                row.style.display = "none";
+            }
+        });
 
-            row.element.style.display = mostrar ? "" : "none";
-
-            if (mostrar) visibles++;
-        }
+        actualizarContador(visibles);
 
         if (visibles === 0) {
-            if (!document.getElementById("sin-resultados")) {
+            if (!document.getElementById("no-results-msg")) {
                 const msg = document.createElement("div");
-                msg.id = "sin-resultados";
+                msg.id = "no-results-msg";
                 msg.className = "no-results";
-                msg.innerHTML = `<i class="bi bi-search"></i>No hay horarios que coincidan`;
+                msg.innerHTML = `<i class="bi bi-search"></i> No hay horarios disponibles`;
                 document.getElementById("horarios-list").appendChild(msg);
             }
         } else {
-            document.getElementById("sin-resultados")?.remove();
+            const msg = document.getElementById("no-results-msg");
+            if (msg) msg.remove();
         }
-
-        attachRowEvents();
-        actualizarContador(visibles);
     }
 
-    function validarTramoLocal(row, origen, destino) {
-        if (!origen || !destino) return true;
+    function renderizarHorarios(horarios) {
+        const container = document.getElementById("horarios-list");
+        container.innerHTML = "";
 
-        const puntos = puntosHorarios[row.horarioId];
+        if (!horarios.length) {
+            container.innerHTML = `
+        <div class="no-results">
+            <i class="bi bi-search"></i>
+            No hay horarios disponibles
+        </div>`;
+            return;
+        }
 
-        if (!puntos) return false;
+        horarios.forEach((h) => {
+            const html = `
+        <div class="horario-row"
+     data-horario-id="${h.id}"
+     data-tipo-viaje-id="${h.tipo_viaje_id}"
+     data-origen="${h.origen_id}"
+     data-destino="${h.destino_id}">
+     
+            <div>${h.hora_salida}</div>
+            <div>${h.tipo_vehiculo.nombre}</div>
 
-        const indexOrigen = puntos.indexOf(origen);
-        const indexDestino = puntos.indexOf(destino);
+        </div>`;
 
-        return indexOrigen >= 0 && indexDestino > indexOrigen;
+            container.innerHTML += html;
+        });
+
+        attachRowEvents();
     }
 
     function actualizarContador(total) {
@@ -451,10 +359,11 @@ document.addEventListener("DOMContentLoaded", function () {
         .addEventListener("change", filtrarHorarios);
     document
         .getElementById("filtro_origen")
-        .addEventListener("blur", filtrarHorarios);
+        .addEventListener("change", filtrarHorarios);
+
     document
         .getElementById("filtro_destino")
-        .addEventListener("blur", filtrarHorarios);
+        .addEventListener("change", filtrarHorarios);
 
     ["filtro_origen", "filtro_destino"].forEach((id) => {
         document.getElementById(id).addEventListener("keydown", (e) => {

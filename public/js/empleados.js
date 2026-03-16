@@ -242,11 +242,22 @@ $(document).ready(async function () {
         cargarListasEmpleado(() => modal.show());
     });
 
-    // Editar y ver empleado
     function cargarEmpleado(id, viewOnly = false) {
+        Swal.fire({
+            title: "Cargando datos...",
+            text: "Por favor espere",
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
         cargarListasEmpleado(() => {
             $.get(route("empleados.mostrar", id), (res) => {
+                Swal.close();
                 const persona = res.persona ?? {};
+                const usuario = res.usuario ?? null;
+
                 $("#empleado_id").val(res.id);
                 $("#nombres").val(persona.nombres ?? "");
                 $("#apellidos").val(persona.apellidos ?? "");
@@ -296,13 +307,23 @@ $(document).ready(async function () {
                     $("#btnGuardar").removeClass("d-none");
                     $("#btnCerrarModal").addClass("d-none").hide();
                 }
+
+                if (usuario) {
+                    $("#chkUsuario").prop("checked", true);
+                    $("#seccionUsuario").removeAttr("hidden").show();
+                    $("#usuario").val(usuario.username);
+                } else {
+                    $("#chkUsuario").prop("checked", false);
+                    $("#seccionUsuario").attr("hidden", true);
+                    $("#usuario").val("");
+                }
                 modal.show();
                 lucide.createIcons();
             });
         });
     }
 
-    $("#tablaEmpleados").on("click", ".editar", function () {
+    $("#tablaEmpleados").on("click", ".editar", function (data) {
         cargarEmpleado($(this).data("id"));
     });
     $("#tablaEmpleados").on("click", ".ver", function () {
@@ -329,58 +350,51 @@ $(document).ready(async function () {
         this.value = this.value.replace(/\D/g, "").slice(0, 8);
     });
 
+    $("#fecha_nacimiento").on("change", function () {
+        const nacimiento = $(this).val();
+        $("#fecha_ingreso").attr("min", nacimiento);
+    });
+
     $("#formEmpleado").on("submit", function (e) {
         e.preventDefault();
+
         const fechaNacimiento = $("#fecha_nacimiento").val();
+        const fechaIngreso = $("#fecha_ingreso").val();
+
         if (!esMayorDeEdad(fechaNacimiento)) {
             Swal.fire({
                 icon: "warning",
                 title: "Edad no permitida",
                 text: "El empleado debe ser mayor de 18 años.",
-                confirmButtonText: "Entendido",
             });
             return;
         }
 
-        $.post(route("empleados.guardar"), $(this).serialize())
-            .done((res) => {
-                if (res.success) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Éxito",
-                        text: res.message,
-                        timer: 2000,
-                        showConfirmButton: false,
-                    });
-
-                    $("#modalEmpleado").modal("hide");
-                    tabla.ajax.reload(null, false);
-                    $(document).trigger("empleado:guardado");
-                }
-            })
-            .fail((xhr) => {
-                let mensaje = "Error al guardar el empleado";
-
-                if (xhr.status === 422 && xhr.responseJSON?.message) {
-                    mensaje = xhr.responseJSON.message;
-                } else if (xhr.status === 500 && xhr.responseJSON?.message) {
-                    mensaje = xhr.responseJSON.message;
-                } else if (xhr.responseJSON?.errors) {
-                    mensaje = Object.values(xhr.responseJSON.errors)
-                        .flat()
-                        .join("<br>");
-                }
-
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    html: mensaje,
-                    confirmButtonText: "Entendido",
-                    confirmButtonColor: "#d33",
-                });
+        if (fechaIngreso < fechaNacimiento) {
+            Swal.fire({
+                icon: "warning",
+                title: "Fecha inválida",
+                text: "La fecha de ingreso no puede ser menor que la fecha de nacimiento.",
             });
-    });
+            return;
+        }
 
+        $.post(route("empleados.guardar"), $(this).serialize()).done((res) => {
+            if (res.success) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Éxito",
+                    text: res.message,
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+
+                $("#modalEmpleado").modal("hide");
+                tabla.ajax.reload(null, false);
+                $(document).trigger("empleado:guardado");
+            }
+        });
+    });
     $("#modalEmpleado").on("hidden.bs.modal", () => {
         $("#formEmpleado")
             .find("input, select, textarea")
@@ -439,4 +453,34 @@ $(document).ready(async function () {
         $("#provincia_id").val(provId).trigger("change");
         $("#distrito_id").val(distId);
     }
+
+    $("#tablaEmpleados").on("click", ".eliminar", function () {
+        let id = $(this).data("id");
+        Swal.fire({
+            icon: "warning",
+            title: "Eliminar empleado?",
+            text: "¿Está seguro que quiere eliminar este empleado?",
+            showCancelButton: true,
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("empleados.eliminar", id),
+                    type: "DELETE",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function () {
+                        tabla.ajax.reload(null, false);
+                        Swal.fire(
+                            "Éxito",
+                            "Usuario eliminado correctamente",
+                            "success",
+                        );
+                    },
+                });
+            }
+        });
+    });
 });

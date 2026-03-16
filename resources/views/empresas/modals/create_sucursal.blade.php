@@ -10,29 +10,29 @@
                 <div class="modal-body">
                     <input type="hidden" id="sucursal_id" name="sucursal_id">
                     <div class="mb-3">
-                        <label>Departamento</label>
+                        <label>Departamento <span style="color: red">*</span></label>
                         <select name="departamento_id" id="departamento_id" class="form-select" required>
                             <option value="">Seleccione</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label>Provincia</label>
+                        <label>Provincia <span style="color: red">*</span></label>
                         <select name="provincia_id" id="provincia_id" class="form-select" required>
                             <option value="">Seleccione</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label>Distrito</label>
+                        <label>Distrito <span style="color: red">*</span></label>
                         <select name="distrito_id" id="distrito_id" class="form-select" required>
                             <option value="">Seleccione</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label>Nombre Comercial</label>
-                        <input type="text" name="nombre_comercial" class="form-control">
+                        <label>Nombre Comercial <span style="color: red">*</span></label>
+                        <input type="text" name="nombre_comercial" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label>Dirección</label>
+                        <label>Dirección <span style="color: red">*</span></label>
                         <input type="text" name="direccion" class="form-control" required>
                     </div>
                     <div class="mb-3">

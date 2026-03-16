@@ -364,12 +364,18 @@
                     <label><i class="bi bi-geo-alt"></i> Origen</label>
                     <select id="filtro_origen" class="form-select">
                         <option value="">Seleccionar origen</option>
+                        @foreach ($sucursales as $sucursal)
+                            <option value="{{ $sucursal->id }}">{{ $sucursal->nombre_comercial }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="filtro-group">
                     <label><i class="bi bi-geo"></i> Destino</label>
                     <select id="filtro_destino" class="form-select">
                         <option value="">Seleccionar destino</option>
+                        @foreach ($sucursales as $sucursal)
+                            <option value="{{ $sucursal->id }}">{{ $sucursal->nombre_comercial }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>

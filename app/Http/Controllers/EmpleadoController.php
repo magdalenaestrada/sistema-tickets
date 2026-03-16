@@ -144,20 +144,27 @@ class EmpleadoController extends Controller
                         'required',
                         Rule::unique('users', 'username')->ignore($userExistente->id ?? null)
                     ],
-                    'password' => 'required',
+                    'password' => 'nullable|min:6',
                 ]);
+
+                $dataUser = [
+                    'username' => $request->usuario,
+                    'numero_licencia' => $request->licencia_conducir,
+                    'tipo_licencia_id' => $request->tipo_licencia_id,
+                    'sucursal_id' => $request->sucursal_id,
+                    'documento' => $persona->documento,
+                    'estado' => $request->estado ?? 'A',
+                    'fecha_creacion' => now(),
+
+                ];
+
+                if ($request->filled('password')) {
+                    $dataUser['password'] = bcrypt($request->password);
+                }
+
                 $user = User::updateOrCreate(
                     ['persona_id' => $persona->id],
-                    [
-                        'username' => $request->usuario,
-                        'password' => $request->password ? bcrypt($request->password) : bcrypt('12345678'),
-                        'numero_licencia' => $request->licencia_conducir,
-                        'tipo_licencia_id' => $request->tipo_licencia_id,
-                        'sucursal_id' => $request->sucursal_id,
-                        'documento' => $persona->documento,
-                        'estado' => $request->estado ?? 'A',
-                        'fecha_creacion' => now(),
-                    ]
+                    $dataUser
                 );
 
                 $cargo = Cargo::with('rol')->find($request->cargo_id);
@@ -189,7 +196,8 @@ class EmpleadoController extends Controller
         $empleado = Empleado::with([
             'persona.distrito.provincia.departamento',
             'cargo',
-            'sucursal'
+            'sucursal',
+            'usuario'
         ])->findOrFail($id);
 
         return response()->json($empleado);
@@ -199,15 +207,6 @@ class EmpleadoController extends Controller
     public function eliminar($id)
     {
         $empleado = Empleado::findOrFail($id);
-
-        // 🔹 Validación de dependencias
-        if (method_exists($empleado, 'tareas') && $empleado->tareas()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se puede eliminar, el empleado tiene tareas asignadas.',
-            ]);
-        }
-
         $empleado->delete();
 
         return response()->json(['success' => true, 'message' => 'Empleado eliminado correctamente.']);

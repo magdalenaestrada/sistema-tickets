@@ -114,4 +114,36 @@ class Horario extends Model
             ? Carbon::parse($this->hora_salida)->format('H:i')
             : null;
     }
+
+    public function asientosDisponiblesPorTramo($origenId, $destinoId)
+    {
+        $tramos = $this->tramos()->with(['origen', 'destino'])->get();
+
+        $ordenOrigen = $this->puntos->firstWhere('sucursal_id', $origenId)->orden ?? null;
+        $ordenDestino = $this->puntos->firstWhere('sucursal_id', $destinoId)->orden ?? null;
+
+        if (!$ordenOrigen || !$ordenDestino || $ordenOrigen >= $ordenDestino) {
+            return []; 
+        }
+
+        $tramosFiltrados = $tramos->filter(function ($tramo) use ($ordenOrigen, $ordenDestino) {
+            $origenTramo = $tramo->origen->orden;
+            $destinoTramo = $tramo->destino->orden;
+            return $origenTramo >= $ordenOrigen && $destinoTramo <= $ordenDestino;
+        });
+
+        $tramoIds = $tramosFiltrados->pluck('id');
+
+        $asientosOcupados = Pasaje::whereIn('tramo_id', $tramoIds)
+            ->pluck('asiento_numero')
+            ->toArray();
+
+        $totalAsientos = $this->tipo_vehiculo->asientos ?? 0;
+        $asientos = [];
+        for ($i = 1; $i <= $totalAsientos; $i++) {
+            $asientos[$i] = in_array($i, $asientosOcupados) ? 'ocupado' : 'libre';
+        }
+
+        return $asientos;
+    }
 }

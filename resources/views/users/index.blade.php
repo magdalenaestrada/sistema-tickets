@@ -28,6 +28,7 @@
                         <th>ID</th>
                         <th>Empleado</th>
                         <th>Username</th>
+                        <th>Estado</th>
                         <th width="80">Acciones</th>
                     </tr>
                 </thead>

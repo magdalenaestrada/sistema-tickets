@@ -11,6 +11,7 @@ use App\Models\Provincia;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SucursalController extends Controller
 {
@@ -55,15 +56,36 @@ class SucursalController extends Controller
             ->rawColumns(['acciones'])
             ->make(true);
     }
+
     public function guardar(Request $request)
     {
+        $nombre = Str::lower(preg_replace('/\s+/', ' ', trim($request->nombre_comercial)));
+
         $validated = $request->validate([
-            'empresa_id' => 'required|exists:empresas,id',
-            'distrito_id' => 'required|exists:distritos,id',
-            'nombre_comercial' => 'nullable|string|max:255',
-            'direccion' => 'required|string|max:255',
-            'telefono' => 'nullable|string|max:20',
+            'empresa_id'       => 'required|exists:empresas,id',
+            'distrito_id'      => 'required|exists:distritos,id',
+            'nombre_comercial' => 'required|string|max:255',
+            'direccion'        => 'required|string|max:255',
+            'telefono'         => 'nullable|string|max:20',
         ]);
+
+        // Validación manual de unicidad
+        $existe = Sucursal::where('empresa_id', $request->empresa_id)
+            ->where('distrito_id', $request->distrito_id)
+            ->whereRaw(
+                "LOWER(TRIM(REGEXP_REPLACE(nombre_comercial, '[[:space:]]+', ' '))) = ?",
+                [$nombre]
+            )
+            ->exists();
+
+        if ($existe) {
+            return response()->json([
+                'success' => false,
+                'errors'  => ['nombre_comercial' => ['Ya existe una sucursal con ese nombre en esta zona.']]
+            ], 422);
+        }
+
+        $validated['nombre_comercial'] = preg_replace('/\s+/', ' ', trim($request->nombre_comercial));
 
         Sucursal::create($validated);
 
@@ -82,12 +104,10 @@ class SucursalController extends Controller
             'direccion' => $sucursal->direccion,
             'telefono' => $sucursal->telefono,
 
-            // ✅ IDs (los necesitas)
             'distrito_id' => $sucursal->distrito_id,
             'provincia_id' => $sucursal->distrito?->provincia_id,
             'departamento_id' => $sucursal->distrito?->provincia?->departamento_id,
 
-            // ✅ Objetos para mostrar
             'empresa' => $sucursal->empresa,
 
             'distrito' => $sucursal->distrito ? [
@@ -109,7 +129,36 @@ class SucursalController extends Controller
 
     public function actualizar(Request $request, Sucursal $sucursal)
     {
-        $sucursal->update($request->all());
+        $nombre = Str::lower(preg_replace('/\s+/', ' ', trim($request->nombre_comercial)));
+
+        $validated = $request->validate([
+            'empresa_id'       => 'required|exists:empresas,id',
+            'distrito_id'      => 'required|exists:distritos,id',
+            'nombre_comercial' => 'required|string|max:255',
+            'direccion'        => 'required|string|max:255',
+            'telefono'         => 'nullable|string|max:20',
+        ]);
+
+        $existe = Sucursal::where('empresa_id', $request->empresa_id)
+            ->where('distrito_id', $request->distrito_id)
+            ->where('id', '!=', $sucursal->id)
+            ->whereRaw(
+                "LOWER(TRIM(REGEXP_REPLACE(nombre_comercial, '[[:space:]]+', ' '))) = ?",
+                [$nombre]
+            )
+            ->exists();
+
+        if ($existe) {
+            return response()->json([
+                'success' => false,
+                'errors'  => ['nombre_comercial' => ['Ya existe una sucursal con ese nombre en esta zona.']]
+            ], 422);
+        }
+
+        $validated['nombre_comercial'] = preg_replace('/\s+/', ' ', trim($request->nombre_comercial));
+
+        $sucursal->update($validated);
+
         return response()->json(['success' => true]);
     }
     public function activar(Sucursal $sucursal)
@@ -120,7 +169,6 @@ class SucursalController extends Controller
 
     public function desactivar(Sucursal $sucursal)
     {
-        // Empleados activos
         $empleadosActivos = $sucursal->empleados()
             ->where('estado', 'A')
             ->exists();
