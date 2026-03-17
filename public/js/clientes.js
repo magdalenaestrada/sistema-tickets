@@ -46,6 +46,7 @@ $(document).ready(async function () {
 
         if (tipo == 2) {
             $(".persona").hide();
+            $(".empresa").show();
             $("#nombres").prop("required", false);
             $("#apellidos").prop("required", false);
             $("#fecha_nacimiento").prop("required", false);
@@ -58,11 +59,11 @@ $(document).ready(async function () {
             $("#razon_social").prop("hidden", false);
         } else {
             $(".persona").show();
+            $(".empresa").hide();
             $("#nombres").prop("required", true);
             $("#apellidos").prop("required", true);
             $("#razon_social").prop("required", false);
             $("#razon_social").val("");
-            $("#razon_social").prop("hidden", true);
         }
     }
 
@@ -187,10 +188,6 @@ $(document).ready(async function () {
 
     $("#tipo_documento_id").on("change", function () {
         $("#documento").val("");
-    });
-
-    $("#documento, #telefono, #celular").on("input", function () {
-        this.value = this.value.replace(/[^0-11]/g, "");
     });
 
     $("#nombres, #apellidos").on("input", function () {
@@ -408,7 +405,6 @@ $(document).ready(async function () {
         });
     });
 
-
     $("#formCliente").on("submit", function (e) {
         e.preventDefault();
         const id = $("#cliente_id").val();
@@ -416,6 +412,25 @@ $(document).ready(async function () {
         let method = id ? "PUT" : "POST";
         let formData = $(this).serialize();
         if (id) formData += "&_method=PUT";
+
+        const tipo = $("#tipo_documento_id").val();
+        let max = 20;
+
+        if (tipo == 1) max = 8;
+        if (tipo == 2) max = 11;
+        if (tipo == 3) max = 9;
+
+        const valor = $("#documento").val();
+
+        if (valor.length !== max) {
+            Swal.fire({
+                icon: "warning",
+                title: "Validación",
+                text: "El documento debe tener exactamente " + max + " dígitos",
+            });
+            return;
+        }
+
         $.ajax({
             url: url,
             type: "POST",

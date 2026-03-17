@@ -30,7 +30,7 @@
                             <label class="form-label">Documento <span style="color: red">*</span></label>
                             <div class="input-group">
                                 <input type="text" name="documento" id="documento" class="form-control" required
-                                    inputmode="numeric" pattern="\d+" title="Solo números">
+                                    inputmode="numeric" title="Solo números">
                                 <button type="button" id="btnBuscarDocumento" class="btn btn-outline-primary">
                                     <i class="link-icon" data-lucide="search"></i>
                                 </button>
@@ -50,7 +50,7 @@
                             <label class="form-label">Razón Social <span style="color:red">*</span></label>
                             <input type="text" name="razon_social" id="razon_social" class="form-control">
                         </div>
-                        <div class="col-md-3 persona">
+                        <div class="col-md-3 persona mb-3">
                             <label class="form-label">Fecha de nacimiento</label>
                             <input type="date" name="fecha_nacimiento" id="fecha_nacimiento"
                                 max="{{ $hoy }}" class="form-control">
@@ -62,7 +62,7 @@
                         <div class="col-md-3">
                             <label class="form-label">Teléfono</label>
                             <input type="text" name="telefono" id="telefono" class="form-control"
-                                inputmode="numeric" pattern="\d+" title="Solo números">
+                                inputmode="numeric" title="Solo números" maxlength="9">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Celular</label>
@@ -70,7 +70,7 @@
                                 pattern="\d{9}" maxlength="9" title="Ingrese 9 dígitos numéricos">
                         </div>
 
-                        <div class="col-md-12">
+                        <div class="col-md-12 mb-3">
                             <label class="form-label">Dirección</label>
                             <input type="text" name="direccion" id="direccion" class="form-control">
                         </div>
