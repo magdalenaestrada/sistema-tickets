@@ -49,7 +49,8 @@
             <div id="loaderOverlay"
                 style="
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: white; z-index: 9999; display: flex;
+        background: var(--bs-body-bg);
+        z-index: 9999; display: flex;
         align-items: center; justify-content: center;
      ">
                 <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;">

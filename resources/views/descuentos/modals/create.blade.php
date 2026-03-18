@@ -1,5 +1,6 @@
+
 <div class="modal fade" id="modalDescuento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalTitulo">Registrar Cupón</h5>
@@ -17,8 +18,9 @@
                     <hr class="border-gray-300 my-1">
                     <br>
                     <div class="row mb-3">
-                        <div class="col-md-3">
-                            <label for="tipo_cupon_id" class="form-label">Tipo cupón</label>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_cupon_id" class="form-label">Tipo de cupón <span
+                                    style="color: red">*</span></label>
                             <select class="form-select" name="tipo_cupon_id" id="tipo_cupon_id" required>
                                 <option value="">Selecciona un tipo</option>
                                 @foreach ($tipo_cupones as $tipo_cupon)
@@ -28,73 +30,68 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_descuento_id" class="form-label">Tipo de descuento <span
+                                    style="color: red">*</span></label>
+                            <select class="form-select" name="tipo_descuento_id" id="tipo_descuento_id" required>
+                                <option value="">Selecciona un tipo</option>
+                                <option value="M">Monto fijo</option>
+                                <option value="P">Porcentaje</option>
+                            </select>
+                        </div>
 
-                        <div class="col-md-2">
-                            <label for="codigo" class="form-label">Código</label>
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo" class="form-label">Código <span style="color: red">*</span></label>
                             <input type="text" name="codigo" id="codigo" class="form-control" required>
                         </div>
-                        <div class="col-md-2">
-                            <label for="monto_efectivo" class="form-label">Monto Descuento (S/)</label>
+                        <div class="col-md-6" id="descuento_monto_fijo">
+                            <label for="monto_efectivo" class="form-label">Monto Descuento (S/) <span
+                                    style="color: red">*</span></label>
                             <input type="number" step="0.01" name="monto_efectivo" id="monto_efectivo"
                                 class="form-control">
                         </div>
-                        <div class="col-md-2">
-                            <label for="porcentaje" class="form-label">Porcentaje (%)</label>
+                        <div class="col-md-6" id="descuento_porcentaje">
+                            <label for="porcentaje" class="form-label">Porcentaje (%) <span
+                                    style="color: red">*</span></label>
                             <input type="number" step="0.01" name="porcentaje" id="porcentaje" class="form-control"
                                 min="0" max="100">
                         </div>
-                        <div class="col-md-1">
+                        <div class="col-md-6 mb-3">
                             <label for="cantidad_usos" class="form-label">Usos</label>
                             <input type="number" name="cantidad_usos" id="cantidad_usos" class="form-control"
                                 min="0" step="1" inputmode="numeric"
                                 onkeydown="return event.key !== '.' && event.key !== ','">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-6 mb-3">
                             <label for="fecha_maxima" class="form-label">Fecha Máxima</label>
                             <input type="date" name="fecha_maxima" id="fecha_maxima" class="form-control">
                         </div>
-                    </div>
-                    <!--  <h5 style="font-weight: bold">DATOS PERSONALES (OPCIONAL)</h5>
-                    <hr class="border-gray-300 my-1">
-                    <br>
-                    <div class="row g-3">
-                        <div class="row mb-2">
-                            <div class="col-md-2 mb-3">
-                                <label for="tipo_documento_id" class="form-label">Tipo</label>
-                                <select class="form-select" name="tipo_documento_id" id="tipo_documento_id" required>
-                                    @foreach ($tipos_documentos as $tipo_documento)
-<option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
-@endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="documento" class="form-label">Documento</label>
-
-                                <div class="input-group">
-                                    <input type="text" name="documento" id="documento" class="form-control"
-                                        placeholder="N° documento">
-                                    <button class="btn btn-primary" type="button" id="btnBuscarPersona"
-                                        title="Buscar persona">
-                                        <i class="link-icon" data-lucide="search"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label for="nombres" class="form-label">Nombres</label>
-                                <input type="text" name="nombres" id="nombres" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="apellidos" class="form-label">Apellidos</label>
-                                <input type="text" name="apellidos" id="apellidos" class="form-control">
-                            </div>
-                            <div class="col-md-8">
-                                <label for="razon_social" class="form-label">Razón social</label>
-                                <input type="text" name="razon_social" id="razon_social" class="form-control">
-                            </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="tipo_asignacion_id" class="form-label">Tipo de asignación <span
+                                    style="color: red">*</span></label>
+                            <select class="form-select" name="tipo_asignacion_id" id="tipo_asignacion_id">
+                                <option value="">Selecciona un tipo</option>
+                                <option value="G">General</option>
+                                <option value="P">Asignar</option>
+                            </select>
                         </div>
+
+                        <div class="col-md-9 mb-3">
+                            <label for="empleados_asignados" class="form-label">Asignar empleados <span
+                                    style="color: red">*</span></label>
+                            <select class="form-control empleados_asignados" name="empleados_asignados[]" id="empleados_asignados"
+                                multiple>
+                                @foreach ($empleados as $empleado)
+                                    <option value="{{ $empleado->id }}">{{ $empleado->persona->nombre_completo }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+
+
                     </div>
-                </div>-->
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar</button>

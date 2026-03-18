@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Descuento;
+use App\Models\Empleado;
 use App\Models\Persona;
 use App\Models\TipoCupon;
 use App\Models\TipoDocumentoFactura;
@@ -17,7 +18,8 @@ class DescuentoController extends Controller
     {
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipo_cupones = TipoCupon::where('estado', "A")->get();
-        return view('descuentos.index', compact("tipos_documentos", "tipo_cupones"));
+        $empleados = Empleado::where("estado", "A")->get();
+        return view('descuentos.index', compact("tipos_documentos", "tipo_cupones", "empleados"));
     }
 
     public function datatable()

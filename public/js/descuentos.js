@@ -103,7 +103,7 @@ $(document).ready(function () {
         if (valor) {
             tabla
                 .column(2)
-                .search("^" + valor, true, false) // regex = true, smart = false
+                .search("^" + valor, true, false)
                 .draw();
         } else {
             tabla.column(2).search("").draw();
@@ -140,8 +140,8 @@ $(document).ready(function () {
         if ((!monto || monto <= 0) && (!porcentaje || porcentaje <= 0)) {
             Swal.fire(
                 "Error",
-                "Debes ingresar un Monto en fectivo o un porcentaje.",
-                "error"
+                "Debes ingresar un valor de descuento.",
+                "error",
             );
             return;
         }
@@ -149,7 +149,7 @@ $(document).ready(function () {
             Swal.fire(
                 "Error",
                 "Debe ingresar solo un valor, monto efectivo o porcentaje.",
-                "error"
+                "error",
             );
             return;
         }
@@ -169,8 +169,30 @@ $(document).ready(function () {
                     $("#modalDescuento").modal("hide");
                     tabla.ajax.reload();
                 }
-            }
+            },
         );
+    });
+
+    document.querySelectorAll(".empleados_asignados").forEach((el) => {
+        new TomSelect(el, {
+            placeholder: "Selecciona empleados",
+            plugins: ["remove_button"],
+            maxItems: null,
+            hidePlaceholder: true,
+            closeAfterSelect: false,
+            render: {
+                option: function (data, escape) {
+                    return `<div>
+            👤 ${escape(data.text)}
+        </div>`;
+                },
+                item: function (data, escape) {
+                    return `<div>
+            ${escape(data.text)}
+        </div>`;
+                },
+            },
+        });
     });
 
     $("#tablaDescuentos").on("click", ".eliminar", function () {
@@ -196,7 +218,7 @@ $(document).ready(function () {
             route("buscar.buscar", {
                 tipo: tipoDocumento,
                 documento: documento,
-            })
+            }),
         )
             .done(function (data) {
                 if (data.error) {
@@ -213,7 +235,7 @@ $(document).ready(function () {
                     $("#apellidos").val(
                         `${data.apellido_paterno || ""} ${
                             data.apellido_materno || ""
-                        }`.trim()
+                        }`.trim(),
                     );
                     $("#razon_social").val(""); // limpiar
                 }
@@ -222,7 +244,7 @@ $(document).ready(function () {
                 Swal.fire(
                     "Error",
                     "Ingrese un numero de documento válido.",
-                    "error"
+                    "error",
                 );
             });
     });
@@ -232,6 +254,30 @@ $(document).ready(function () {
             $("#btnBuscarPersona").click();
         }
     });
+
+    document
+        .getElementById("tipo_descuento_id")
+        .addEventListener("change", function () {
+            let contenedor_monto = document.getElementById(
+                "descuento_monto_fijo",
+            );
+            let contenedor_porcentaje = document.getElementById(
+                "descuento_porcentaje",
+            );
+
+            let monto = document.getElementById("monto_efectivo");
+            let porcentaje = document.getElementById("porcentaje");
+
+            if (this.value === "P") {
+                contenedor_monto.hidden = true;
+                monto.value = "";
+                contenedor_porcentaje.hidden = false;
+            } else {
+                contenedor_monto.hidden = false;
+                contenedor_porcentaje.hidden = true;
+                porcentaje.value = "";
+            }
+        });
 
     function actualizarCamposSegunTipo() {
         const tipo = $("#tipo_documento_id").val();

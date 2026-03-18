@@ -1,4 +1,44 @@
 @extends('layouts.app')
+<style>
+    .ts-control {
+        border-radius: 0.375rem;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        padding: 6px;
+        min-height: 38px;
+    }
+
+    .ts-control .item {
+        background-color: var(--bs-primary);
+        color: var(--bs-white);
+        border-radius: 20px;
+        padding: 2px 10px;
+        margin: 2px;
+        font-size: 13px;
+    }
+
+    .ts-control .remove {
+        margin-left: 6px;
+        color: var(--bs-white);
+    }
+
+    .ts-dropdown {
+        border-radius: 0.375rem;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+        color: var(--bs-body-color);
+    }
+
+    .ts-dropdown .option {
+        background: var(--bs-body-bg);
+    }
+
+    .ts-dropdown .option.active {
+        background-color: var(--bs-primary);
+        color: var(--bs-white);
+    }
+</style>
 
 @section('content')
     <div class="card">
@@ -47,5 +87,7 @@
 @endsection
 
 @push('scripts')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <script src="{{ asset('js/descuentos.js') }}"></script>
 @endpush
