@@ -19,7 +19,8 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="col-md-2 mb-3">
-                            <label for="tipo_documento_id" class="form-label">Tipo Documento  <span style="color: red">*</span></label>
+                            <label for="tipo_documento_id" class="form-label">Tipo Documento <span
+                                    style="color: red">*</span></label>
                             <select name="tipo_documento_id" id="tipo_documento_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                             </select>
@@ -49,17 +50,18 @@
                                 max="{{ $hoy }}" class="form-control" required>
                         </div>
                         <div class="col-md-3 mb-3">
+                            <label class="form-label">Celular <span style="color: red">*</span></label>
+                            <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
+                                maxlength="9" title="Ingrese 9 dígitos numéricos" required>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">Correo</label>
                             <input type="email" name="correo" id="correo" class="form-control">
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Teléfono</label>
                             <input type="text" name="telefono" id="telefono" class="form-control">
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Celular <span style="color: red">*</span></label>
-                            <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
-                                maxlength="9" title="Ingrese 9 dígitos numéricos" required>
                         </div>
 
 
@@ -105,7 +107,8 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="col-md-4 mb-3">
-                            <label for="sucursal_id" class="form-label">Sucursal <span style="color: red">*</span></label>
+                            <label for="sucursal_id" class="form-label">Sucursal <span
+                                    style="color: red">*</span></label>
                             <select name="sucursal_id" id="sucursal_id" class="form-select" required>
                                 <option value="">Seleccione una sucursal</option>
                             </select>

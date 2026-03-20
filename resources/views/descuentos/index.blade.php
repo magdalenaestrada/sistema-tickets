@@ -59,4 +59,5 @@
 
     @push('scripts')
         <script src="{{ asset('js/descuentos.js') }}"></script>
+        
     @endpush

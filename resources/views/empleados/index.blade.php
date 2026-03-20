@@ -3,7 +3,6 @@
 @section('content')
     <div class="empleados-wrapper">
 
-        <!-- BREADCRUMB -->
         <div class="breadcrumb-bar">
             <span class="bc-link">Personal</span>
             <span class="bc-sep">/</span>
@@ -12,9 +11,6 @@
 
         <div class="empleados-grid">
 
-            <!-- ══════════════════════════════════════
-                                                             COLUMNA IZQUIERDA — Lista empleados
-                                                        ══════════════════════════════════════ -->
             <div class="panel panel-left">
                 <div class="panel-header">
                     <h5 class="panel-title">Personal / Empleados</h5>
@@ -23,7 +19,6 @@
                     </button>
                 </div>
 
-                <!-- Buscador -->
                 <div class="search-bar">
                     <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -34,7 +29,6 @@
                     <input type="text" id="buscarEmpleado" class="search-input" placeholder="Buscar empleado">
                 </div>
 
-                <!-- Filtros ocultos para DataTable (compatibilidad JS) -->
                 <select id="filtroNombre" class="d-none">
                     <option value="">Buscar por persona</option>
                     @foreach ($empleados as $empleado)
@@ -66,8 +60,8 @@
             </div>
 
             <!-- ══════════════════════════════════════
-                                                             COLUMNA DERECHA — Cumpleaños
-                                                        ══════════════════════════════════════ -->
+                                                                                     COLUMNA DERECHA — Cumpleaños
+                                                                                ══════════════════════════════════════ -->
             <div class="panel-right">
 
                 <!-- Calendario -->
@@ -109,15 +103,14 @@
             --verde-bg: #dcfce7;
             --gris-bg: #f3f4f6;
             --gris-txt: #9ca3af;
-            --borde: #e5e7eb;
-            --texto: #111827;
-            --subtexto: #6b7280;
+            --borde:var(--bs-border-color) ;
+            --texto: var(--texto);
+            --subtexto:var(--bs-secondary);
             --azul: #2563eb;
             --radio: 12px;
             --sombra: 0 1px 4px rgba(0, 0, 0, .07);
         }
 
-        /* ── Layout wrapper ─────────────────────────── */
         .empleados-wrapper {
             padding: 0;
             font-family: 'DM Sans', 'Segoe UI', sans-serif;
@@ -146,17 +139,15 @@
             color: var(--azul);
         }
 
-        /* Grid principal */
         .empleados-grid {
             display: grid;
             grid-template-columns: 1fr 380px;
             gap: 20px;
-            align-items: start;
+            background: var(--bs-primary) align-items: start;
         }
 
-        /* ── Panel base ─────────────────────────────── */
         .panel {
-            background: #fff;
+            background: var(--bs-body-bg);
             border-radius: var(--radio);
             box-shadow: var(--sombra);
             border: 1px solid var(--borde);
@@ -169,7 +160,7 @@
             align-items: center;
             padding: 16px 20px;
             border-bottom: 1px solid var(--borde);
-            background: #fff;
+            background: var(--bs-body-bg);
         }
 
         .panel-title {
@@ -183,7 +174,6 @@
             padding: 16px 20px;
         }
 
-        /* ── Botón nuevo empleado ───────────────────── */
         .btn-nuevo {
             display: inline-flex;
             align-items: center;
@@ -208,7 +198,6 @@
             line-height: 1;
         }
 
-        /* ── Buscador ───────────────────────────────── */
         .search-bar {
             display: flex;
             align-items: center;
@@ -586,200 +575,9 @@
 @endpush
 
 @push('scripts')
+    <script>
+        const eventosLaravel = @json($datos_eventos);
+    </script>
     <script src="{{ asset('js/empleados.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-
-    <script>
-        // ─── Datos de Laravel ──────────────────────────────────────────────────────
-        const eventosLaravel = @json($datos_eventos);
-
-        document.addEventListener("DOMContentLoaded", function() {
-
-            // ── Calendario ─────────────────────────────────────────────────────────
-            const calendarEl = document.getElementById("calendar");
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: "dayGridMonth",
-                locale: "es",
-                height: 320,
-                fixedWeekCount: false,
-                headerToolbar: {
-                    left: "prev",
-                    center: "title",
-                    right: "next",
-                },
-                events: eventosLaravel,
-                eventContent(info) {
-                    const persona = info.event.extendedProps.persona ?? '';
-                    const iniciales = persona.split(' ').map(w => w[0]).join('').substring(0, 2)
-                        .toUpperCase();
-                    const foto = info.event.extendedProps.foto ?? null;
-
-                    if (foto) {
-                        return {
-                            html: `<div class="cumple-dot"><img src="${foto}" alt="${persona}"></div>`
-                        };
-                    }
-                    return {
-                        html: `<div class="cumple-dot-default">${iniciales}</div>`
-                    };
-                },
-                eventClick(info) {
-                    const persona = info.event.extendedProps.persona ?? info.event.title;
-                    const edad = info.event.extendedProps.edad ?? null;
-                    Swal.fire({
-                        icon: 'info',
-                        title: '🎂 Cumpleaños',
-                        text: `${persona}${edad ? ' — ' + edad + ' años' : ''}`,
-                        timer: 3000,
-                        showConfirmButton: false,
-                    });
-                },
-            });
-
-            calendar.render();
-            setTimeout(() => {
-                calendar.updateSize();
-            }, 50);
-
-            function renderProximos() {
-                const hoy = new Date();
-                const finVentana = new Date(hoy);
-                finVentana.setDate(hoy.getDate() + 60);
-
-                function parseFechaLocal(str) {
-                    const [y, m, d] = str.substring(0, 10).split('-').map(Number);
-                    return new Date(y, m - 1, d); // Constructor local, sin timezone
-                }
-
-                const proximos = eventosLaravel
-                    .map(ev => {
-                        const fechaBase = parseFechaLocal(ev.start);
-                        let proxima = new Date(hoy.getFullYear(), fechaBase.getMonth(), fechaBase.getDate());
-                        if (proxima < hoy) proxima.setFullYear(hoy.getFullYear() + 1);
-                        return {
-                            ...ev,
-                            proximaFecha: proxima
-                        };
-                    })
-                    .filter(ev => ev.proximaFecha <= finVentana)
-                    .sort((a, b) => a.proximaFecha - b.proximaFecha)
-                    .slice(0, 5);
-
-                const container = document.getElementById("proximosCumple");
-                if (!proximos.length) {
-                    container.innerHTML =
-                        `<p style="font-size:13px;color:var(--subtexto)">No hay cumpleaños próximos.</p>`;
-                    return;
-                }
-
-                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-                container.innerHTML = `<div class="proximos-list">` +
-                    proximos.map(ev => {
-                        const d = ev.proximaFecha;
-                        const fechaStr = `${String(d.getDate()).padStart(2,'0')} ${meses[d.getMonth()]}`;
-                        const persona = ev.extendedProps?.persona ?? ev.title ?? '';
-                        const cargo = ev.extendedProps?.cargo ?? '';
-                        const foto = ev.extendedProps?.foto ?? null;
-                        const iniciales = persona.split(' ').map(w => w[0]).join('').substring(0, 2)
-                            .toUpperCase();
-
-                        const avatar = foto ?
-                            `<div class="proximo-avatar"><img src="${foto}" alt="${persona}"></div>` :
-                            `<div class="proximo-avatar">${iniciales}</div>`;
-
-                        return `
-                    <div class="proximo-item">
-                        ${avatar}
-                        <div class="proximo-info">
-                            <div class="proximo-fecha">${fechaStr}</div>
-                            <div class="proximo-nombre">${persona}${cargo ? ' (' + cargo + ')' : ''}</div>
-                        </div>
-                    </div>`;
-                    }).join('') +
-                    `</div>`;
-            }
-            renderProximos();
-
-            document.getElementById("buscarEmpleado").addEventListener("input", function() {
-                const q = this.value.toLowerCase().trim();
-                document.querySelectorAll(".emp-item").forEach(item => {
-                    const nombre = item.querySelector(".emp-nombre")?.textContent.toLowerCase() ??
-                        '';
-                    const cargo = item.querySelector(".emp-cargo")?.textContent.toLowerCase() ?? '';
-                    item.style.display = (nombre.includes(q) || cargo.includes(q)) ? "" : "none";
-                });
-            });
-
-            document.addEventListener("click", function(e) {
-                if (!e.target.closest(".emp-menu-btn")) {
-                    document.querySelectorAll(".emp-dropdown.open").forEach(d => d.classList.remove(
-                        "open"));
-                }
-            });
-        });
-
-        function renderEmpleados(data) {
-            const container = document.getElementById("listaEmpleados");
-            if (!data || !data.length) {
-                container.innerHTML =
-                    `<p style="padding:16px 12px;font-size:13px;color:var(--subtexto)">Sin empleados registrados.</p>`;
-                return;
-            }
-
-            container.innerHTML = data.map(emp => {
-                const activo = emp.estado;
-                const badgeClass = activo ? 'badge-activo' : 'badge-inactivo';
-                const badgeText = activo ? 'Activo' : 'Inactivo';
-
-                let fechaIngreso = '';
-                if (emp.fecha_ingreso) {
-                    const raw = emp.fecha_ingreso.toString().trim();
-                    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-                        const parts = raw.substring(0, 10).split('-');
-                        fechaIngreso = `${parts[2]}/${parts[1]}`;
-                    } else {
-                        fechaIngreso = raw.substring(0, 5); // tomar solo DD/MM si ya viene formateado
-                    }
-                }
-
-                return `
-        <div class="emp-item" data-id="${emp.id}">
-            <div class="emp-info">
-                <div class="emp-nombre">${emp.nombre ?? ''}</div>
-                <div class="emp-cargo">${emp.cargo ?? ''}</div>
-            </div>
-            <div class="emp-meta">
-                <span class="emp-fecha">${fechaIngreso}</span>
-                <span class="badge-estado ${badgeClass}">${badgeText}</span>
-              
-                <button class="btn btn-secondary btn-xs ver" data-id="${emp.id}">
-                    <i class="link-icon " <i data-lucide="info"></i>
-
-                </button>
-                <button class="btn btn-warning btn-xs editar" data-id="${emp.id}">
-                    <i class="link-icon" data-lucide="pen"></i>
-                </button>
-                <button class="btn btn-danger btn-xs eliminar" data-id="${emp.id}">
-                    <i class="link-icon" data-lucide="trash-2"></i>
-                </button>
-        
-            </div>
-        </div>`;
-            }).join('');
-        }
-
-        document.querySelectorAll(".emp-menu-btn").forEach(btn => {
-            btn.addEventListener("click", function(e) {
-                e.stopPropagation();
-                const item = e.target.closest(".emp-dropdown-item");
-                if (item) return;
-                const dropdown = this.querySelector(".emp-dropdown");
-                document.querySelectorAll(".emp-dropdown.open").forEach(d => {
-                    if (d !== dropdown) d.classList.remove("open");
-                });
-                dropdown.classList.toggle("open");
-            });
-        });
-    </script>
 @endpush
