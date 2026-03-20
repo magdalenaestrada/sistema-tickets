@@ -33,7 +33,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
@@ -64,6 +64,8 @@
     </div>
     <script src="{{ asset('assets/theme/vendors/core/core.js') }}"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
     <script>
         lucide.createIcons();
     </script>

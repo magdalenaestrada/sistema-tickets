@@ -19,7 +19,6 @@ $(document).ready(function () {
     let rucBuscado = false;
 
     $("#btnBuscarRuc").prop("disabled", true);
-
     const empresaId = $("#empresa_id").val();
 
     const inputs = $(

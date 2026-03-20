@@ -25,3 +25,67 @@
         height: 16px;
     }
 }
+
+ .ts-control {
+                background-color: var(--bs-body-bg);
+                color: var(--bs-body-color);
+                border: 1px solid var(--bs-border-color);
+                border-radius: 0.375rem;
+            }
+
+            .ts-control input {
+                background-color: transparent !important;
+                color: var(--bs-body-color) !important;
+            }
+
+            .ts-wrapper .ts-control {
+                background-color: var(--bs-body-bg) !important;
+            }
+
+            .ts-dropdown {
+                background-color: var(--bs-body-bg);
+                color: var(--bs-body-color);
+                border: 1px solid var(--bs-border-color);
+            }
+
+            .ts-dropdown .option {
+                color: var(--bs-body-color);
+            }
+
+            .ts-dropdown .option.active {
+                background-color: var(--bs-primary);
+                color: #fff;
+            }
+
+            .ts-dropdown .ts-dropdown-content input {
+                background-color: var(--bs-body-bg) !important;
+                color: var(--bs-body-color) !important;
+                border: none !important;
+            }
+
+            .ts-dropdown .ts-dropdown-content {
+                background-color: var(--bs-body-bg) !important;
+            }
+
+            .ts-dropdown input::placeholder {
+                color: var(--bs-secondary-color) !important;
+            }
+
+            .ts-control .item {
+                background-color: var(--bs-primary);
+                color: #fff;
+                border-radius: 0.25rem;
+                padding: 2px 6px;
+                margin: 2px;
+            }
+
+            .ts-control.focus {
+                border-color: var(--bs-primary);
+                box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+            }
+
+            .table-header-primary thead th {
+    background-color: #055999 !important;
+    color: #fff;
+    border-bottom: 2px solid #044a80;
+}

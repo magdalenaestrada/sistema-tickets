@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('descuentos', function (Blueprint $table) {
             $table->id();
-            $table->string("codigo")->unique()->index();
+            $table->string("codigo")->index();
             $table->foreignId('persona_id')->nullable()->constrained('personas');
             $table->integer("cantidad_usos")->nullable();
             $table->date("fecha_maxima")->nullable()->index();

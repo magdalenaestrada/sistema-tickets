@@ -78,10 +78,6 @@
                 });
 
                 calendar.render();
-
-                document.getElementById("btnHoy").onclick = () => calendar.today();
-                document.getElementById("btnMes").onclick = () => calendar.changeView("dayGridMonth");
-                document.getElementById("btnSemana").onclick = () => calendar.changeView("timeGridWeek");
             }, 50);
         });
     </script>

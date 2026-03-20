@@ -353,8 +353,6 @@
             <h5 class="mb-0">Venta de pasajes</h5>
         </div>
         <div class="card-body">
-
-            {{-- Filtros --}}
             <div class="filtros-bar">
                 <div class="filtro-group">
                     <label><i class="bi bi-calendar3"></i> Fecha</label>
@@ -489,3 +487,11 @@
 @push('scripts')
     <script src="{{ asset('js/pasajes.js') }}"></script>
 @endpush
+
+<style>
+    #tablaDescuentos thead th {
+        background-color: #055999 !important;
+        color: #fff;
+        border-bottom: 2px solid #044a80;
+    }
+</style>

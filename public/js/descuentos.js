@@ -94,9 +94,16 @@ $(document).ready(function () {
         $("#modalDescuento").modal("show");
     });
 
-    $("#filtroTipoCupon").on("keyup change", function () {
-        tabla.column(1).search(this.value).draw();
-    });
+    $("#tipo_asignacion_id")
+        .on("change", function () {
+            if ($(this).val() === "P") {
+                $(".empleados_asignados").closest(".col-md-9").show();
+            } else {
+                $(".empleados_asignados").closest(".col-md-9").hide();
+            }
+        })
+        .trigger("change");
+
     $("#filtroCodigo").on("keyup change", function () {
         let valor = this.value;
 
@@ -110,8 +117,29 @@ $(document).ready(function () {
         }
     });
 
-    $("#filtroPersona").on("keyup change", function () {
-        tabla.column(3).search(this.value).draw();
+    let tsTipo = new TomSelect("#filtroTipoCupon", {
+        create: false,
+    });
+
+    let tsPersona = new TomSelect("#filtroPersona", {
+        create: false,
+    });
+
+    function soloLetras(ts) {
+        ts.control_input.addEventListener("input", function () {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+        });
+    }
+
+    soloLetras(tsTipo);
+    soloLetras(tsPersona);
+
+    $("#filtroTipoCupon").on("change", function () {
+        tabla.column(1).search(this.value, false, true).draw();
+    });
+
+    $("#filtroPersona").on("change", function () {
+        tabla.column(3).search(this.value, false, true).draw();
     });
 
     $("#tablaDescuentos").on("click", ".editar", function () {
@@ -134,26 +162,6 @@ $(document).ready(function () {
 
     $("#formDescuento").submit(function (e) {
         e.preventDefault();
-        let monto = parseFloat($("#monto_efectivo").val());
-        let porcentaje = parseFloat($("#porcentaje").val());
-
-        if ((!monto || monto <= 0) && (!porcentaje || porcentaje <= 0)) {
-            Swal.fire(
-                "Error",
-                "Debes ingresar un valor de descuento.",
-                "error",
-            );
-            return;
-        }
-        if ((!monto && !porcentaje) || (monto && porcentaje)) {
-            Swal.fire(
-                "Error",
-                "Debe ingresar solo un valor, monto efectivo o porcentaje.",
-                "error",
-            );
-            return;
-        }
-
         $.post(
             route("descuentos.guardar"),
             $(this).serialize(),
@@ -271,10 +279,14 @@ $(document).ready(function () {
             if (this.value === "P") {
                 contenedor_monto.hidden = true;
                 monto.value = "";
+                monto.required = false;
+                porcentaje.required = true;
                 contenedor_porcentaje.hidden = false;
             } else {
                 contenedor_monto.hidden = false;
                 contenedor_porcentaje.hidden = true;
+                monto.required = true;
+                porcentaje.required = false;
                 porcentaje.value = "";
             }
         });

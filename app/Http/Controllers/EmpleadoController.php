@@ -10,7 +10,9 @@ use App\Models\Encomienda;
 use App\Models\Evento;
 use App\Models\Persona;
 use App\Models\Provincia;
+use App\Models\Sucursal;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +25,47 @@ class EmpleadoController extends Controller
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
-        return view('empleados.index', compact('distritos',  'departamentos', 'provincias'));
+        $empleados = Empleado::all();
+        $cargos = Cargo::all();
+        $sucursales = Sucursal::where("estado", "A")->get();
+
+        $eventos = Evento::with('persona', 'tipo_evento')->get();
+        $datos_eventos = [];
+
+        $mesActual = date('m');
+        $yearActual = date('Y');
+
+        foreach ($eventos as $evento) {
+
+            if ($evento->tipo_evento_id == 1 && $evento->persona && $evento->persona->fecha_nacimiento) {
+                $fechaNacimiento = Carbon::parse($evento->persona->fecha_nacimiento);
+
+                if ($fechaNacimiento->month == $mesActual) {
+                    $datos_eventos[] = [
+                        'title'       => "🎂 " . $evento->persona->nombres . ' ' . $evento->persona->apellidos,
+                        'start'       => $yearActual . '-' . str_pad($fechaNacimiento->month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($fechaNacimiento->day, 2, '0', STR_PAD_LEFT),
+                        'tipo'        => 'Cumpleaños',
+                        'persona'     => $evento->persona->nombres . ' ' . $evento->persona->apellidos,
+                        'edad'        => $yearActual - $fechaNacimiento->year,
+                        'descripcion' => $evento->descripcion
+                    ];
+                }
+
+                continue;
+            }
+
+            $datos_eventos[] = [
+                'title'       => $evento->titulo,
+                'start'       => $evento->fecha_inicio,
+                'end'         => $evento->fecha_fin,
+                'tipo'        => $evento->tipo_evento->descripcion,
+                'persona'     => null,
+                'edad'        => null,
+                'descripcion' => $evento->descripcion
+            ];
+        }
+
+        return view('empleados.index', compact('distritos', 'cargos', 'departamentos', 'datos_eventos', 'provincias', 'sucursales', 'empleados'));
     }
 
     public function datatable()
