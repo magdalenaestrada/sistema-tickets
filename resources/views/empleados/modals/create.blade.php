@@ -126,18 +126,20 @@
                         </div>
 
                         <div class="col-md-6 mb-3 conductor" hidden>
-                            <label for="tipo_licencia_id" class="form-label">Categoría de licencia</label>
+                            <label for="tipo_licencia_id" class="form-label">Categoría de licencia <span
+                                    style="color: red">*</span></label>
                             <select name="tipo_licencia_id" id="tipo_licencia_id" class="form-select">
                                 <option value="">Seleccione una categoría</option>
                             </select>
                         </div>
                         <div class="col-md-3 mb-3 conductor" hidden>
-                            <label class="form-label">Licencia</label>
+                            <label class="form-label">Licencia <span style="color: red">*</span></label>
                             <input type="text" name="licencia_conducir" id="licencia_conducir"
                                 class="form-control">
                         </div>
                         <div class="col-md-3 mb-3 conductor" hidden>
-                            <label class="form-label">Fecha de vencimiento licencia</label>
+                            <label class="form-label">Fecha de vencimiento licencia <span
+                                    style="color: red">*</span></label>
                             <input type="date" name="fecha_vencimiento_licencia" id="fecha_vencimiento_licencia"
                                 class="form-control">
                         </div>
@@ -149,12 +151,14 @@
                         <div id="seccionUsuario" hidden>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <label for="usuario" class="form-label">Usuario</label>
+                                    <label for="usuario" class="form-label">Usuario <span
+                                            style="color: red">*</span></label>
                                     <input type="text" id="usuario" name="usuario" class="form-control"
                                         autocomplete="off">
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label for="password" class="form-label">Contraseña</label>
+                                    <label for="password" class="form-label">Contraseña <span
+                                            style="color: red">*</span></label>
                                     <div class="input-group">
                                         <input type="password" id="password" name="password" class="form-control"
                                             autocomplete="new-password">
@@ -162,6 +166,15 @@
                                             <i data-lucide="eye"></i>
                                         </button>
                                     </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Rol <span style="color: red">*</span></label>
+                                    <select name="rol" id="rol" class="form-select">
+                                        <option value="">Seleccione un rol</option>
+                                        @foreach ($roles as $rol)
+                                            <option value="{{ $rol->id }}">{{ $rol->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>

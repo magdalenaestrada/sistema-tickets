@@ -17,7 +17,7 @@
                             <input type="text" id="origen_nombre" class="form-control" disabled>
                         </div>
                         <div class="col-md-5">
-                            <label class="form-label">Punto (Del ultimo al más reciente)</label>
+                            <label class="form-label">Punto (Del ultimo al más reciente) <span style="color: red">*</span></label></label>
                             <select class="form-select" name="destino_id" id="destino_id" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($sucursales as $sucursal)
@@ -26,7 +26,7 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Costo desde origen (S/)</label>
+                            <label class="form-label">Costo desde origen (S/) <span style="color: red">*</span></label></label>
                             <input type="number" step="0.01" name="costo_acumulado" id="costo_acumulado"
                                 class="form-control" min="0" required>
                         </div>

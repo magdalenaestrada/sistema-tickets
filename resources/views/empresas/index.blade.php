@@ -22,7 +22,7 @@
                 <div class="row g-3">
 
                     <div class="col-md-2">
-                        <label class="form-label">RUC / Documento</label>
+                        <label class="form-label">RUC / Documento <span style="color: red">*</span></label>
                         <div class="input-group">
                             <input type="text" name="documento" id="documento" class="form-control" required
                                 maxlength="11" inputmode="numeric" pattern="[0-9]{11}"
@@ -34,7 +34,7 @@
                     </div>
 
                     <div class="col-md-5">
-                        <label class="form-label">Razón Social</label>
+                        <label class="form-label">Razón Social <span style="color: red">*</span></label>
                         <input type="text" class="form-control" name="razon_social" id="razon_social"
                             value="{{ $empresa->razon_social ?? '' }}" required>
                     </div>

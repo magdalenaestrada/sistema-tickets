@@ -20,8 +20,8 @@
 
                     <div class="row g-2">
                         <div class="col-md-2">
-                            <label class="form-label">Tipo de documento</label>
-                            <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id">
+                            <label class="form-label">Tipo de documento <span style="color: red">*</span></label></label>
+                            <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id" required>
                                 @foreach ($tipos_documentos as $tipo_documento)
                                     <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
                                 @endforeach
@@ -29,17 +29,17 @@
                         </div>
 
                         <div class="col-md-2">
-                            <label class="form-label">Documento</label>
+                            <label class="form-label">Documento <span style="color: red">*</span></label></label>
                             <input type="text" class="form-control" id="emisor_documento">
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">Nombres</label>
+                            <label class="form-label">Nombres <span style="color: red">*</span></label></label>
                             <input type="text" class="form-control" id="emisor_nombres">
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">Apellidos</label>
+                            <label class="form-label">Apellidos <span style="color: red">*</span></label></label>
                             <input type="text" class="form-control" id="emisor_apellidos">
                         </div>
                     </div>

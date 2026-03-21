@@ -12,7 +12,7 @@
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="monto_apertura" class="form-label">Monto de apertura</label>
+                        <label for="monto_apertura" class="form-label">Monto de apertura <span style="color: red">*</span></label></label>
                         <input type="number" step="0.01" name="monto_apertura" id="monto_apertura"
                             class="form-control" required>
                     </div>

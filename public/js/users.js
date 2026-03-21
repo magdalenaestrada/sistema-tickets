@@ -59,7 +59,7 @@ $(function () {
 
     $("#modalEmpleado").on("shown.bs.modal", function () {
         $("#chkUsuario").prop("checked", true);
-        $("usuario").prop("required", true);
+        $("#usuario, #password").attr("required", "required");
     });
 
     $("#filtroNombres").on("input", function () {

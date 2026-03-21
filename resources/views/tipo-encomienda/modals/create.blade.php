@@ -10,11 +10,11 @@
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Descripción</label>
+                        <label class="form-label">Descripción <span style="color: red">*</span></label></label>
                         <input type="text" name="descripcion" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Precio Base</label>
+                        <label class="form-label">Precio Base <span style="color: red">*</span></label></label>
                         <input type="number" step="0.01" name="precio_base" class="form-control" required>
                     </div>
                 </div>

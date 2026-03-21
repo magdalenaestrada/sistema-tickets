@@ -15,24 +15,22 @@
 
                 <div class="modal-body">
 
-                    {{-- DATOS EMPLEADO --}}
                     <fieldset class="border p-3 mb-3 rounded">
                         <legend class="float-none w-auto px-2 fs-6">Empleado</legend>
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">Documento</label>
+                                <label class="form-label">Documento <span style="color: red">*</span></label></label>
                                 <input type="text" id="persona_documento" class="form-control" disabled>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">Nombre</label>
+                                <label class="form-label">Nombre <span style="color: red">*</span></label></label>
                                 <input type="text" id="persona_nombre" class="form-control" disabled>
                             </div>
                         </div>
                     </fieldset>
 
-                    {{-- DATOS USUARIO --}}
                     <fieldset class="border p-3 rounded">
                         <legend class="float-none w-auto px-2 fs-6">Acceso al sistema</legend>
 
@@ -40,7 +38,7 @@
                             <input type="hidden" id="usuario_id">
 
                             <div class="mb-3">
-                                <label class="form-label">Usuario</label>
+                                <label class="form-label">Usuario <span style="color: red">*</span></label></label>
                                 <input type="text" name="username" id="username" class="form-control" required>
                             </div>
 

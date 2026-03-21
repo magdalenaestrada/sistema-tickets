@@ -12,7 +12,7 @@
 
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-3"> <label for="tipo_viaje_id" class="form-label">Viaje</label>
+                        <div class="col-md-3"> <label for="tipo_viaje_id" class="form-label">Viaje <span style="color: red">*</span></label></label>
                             <select name="tipo_viaje_id" id="tipo_viaje_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($tiposViaje as $tipo)
@@ -20,7 +20,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3"> <label for="tipo_vehiculo_id" class="form-label">Vehiculo</label>
+                        <div class="col-md-3"> <label for="tipo_vehiculo_id" class="form-label">Vehiculo <span style="color: red">*</span></label></label>
                             <select name="tipo_vehiculo_id" id="tipo_vehiculo_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($tipo_vehiculos as $tipo_vehiculo)
@@ -29,13 +29,13 @@
                             </select>
                         </div>
                         <div class="col-md-3 contenedor_costo_pasaje">
-                            <label class="form-label">Costo pasaje</label>
+                            <label class="form-label">Costo pasaje <span style="color: red">*</span></label></label>
                             <input type="number" step="0.01" name="costo_pasaje" id="costo_pasaje"
                                 class="form-control" required>
                         </div>
-                        <div class="col-md-3"> <label class="form-label">Hora embarque</label> <input type="time"
+                        <div class="col-md-3"> <label class="form-label">Hora embarque <span style="color: red">*</span></label></label> <input type="time"
                                 name="hora_salida" id="hora_salida" class="form-control" required> </div>
-                        <div class="col-md-6"> <label class="form-label">Fecha salida</label> <input type="date"
+                        <div class="col-md-6"> <label class="form-label">Fecha salida <span style="color: red">*</span></label></label> <input type="date"
                                 name="fecha_salida" id="fecha_salida" class="form-control" min="{{ $hoy }}"
                                 required> </div>
                         <div class="col-md-6"> <label class="form-label">Repetir hasta</label> <input type="date"
@@ -44,7 +44,7 @@
                     <div class="row g-3">
 
                         <div class="col-md-6">
-                            <label for="punto_origen_id" class="form-label">Punto de origen</label>
+                            <label for="punto_origen_id" class="form-label">Punto de origen <span style="color: red">*</span></label></label>
                             <select name="punto_origen_id" id="punto_origen_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($sucursales as $sucursal)
@@ -54,7 +54,7 @@
                         </div>
 
                         <div class="col-md-6 contenedor_destino">
-                            <label for="punto_destino_id" class="form-label">Punto de destino</label>
+                            <label for="punto_destino_id" class="form-label">Punto de destino <span style="color: red">*</span></label></label>
                             <select name="punto_destino_id" id="punto_destino_id" class="form-select" required>
                                 <option value="">Seleccione</option>
                                 @foreach ($sucursales as $sucursal)

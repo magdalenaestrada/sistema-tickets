@@ -13,14 +13,14 @@
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="tipo_vehiculo_id" class="form-label">Tipo de vehículo</label>
+                        <label for="tipo_vehiculo_id" class="form-label">Tipo de vehículo <span style="color: red">*</span></label></label>
                         <select name="tipo_vehiculo_id" id="tipo_vehiculo_id" class="form-select" required>
                             <option value="">Seleccione</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Placa</label>
+                        <label class="form-label">Placa <span style="color: red">*</span></label></label>
                         <input type="text" name="numero_placa" id="numero_placa" class="form-control"
                             placeholder="ABC-123" maxlength="7" pattern="[A-Za-z]{3}-[0-9]{3}" required>
                     </div>

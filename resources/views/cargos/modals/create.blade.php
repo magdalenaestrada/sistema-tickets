@@ -13,11 +13,11 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label">Descripción</label>
+                            <label class="form-label">Descripción <span style="color: red">*</span></label></label>
                             <input type="text" name="descripcion" id="descripcion" class="form-control" required>
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label">Rol</label>
+                            <label class="form-label">Rol <span style="color: red">*</span></label></label>
                             <select name="rol_id" id="rol_id" class="form-select" required>
                                 <option value="" disabled selected>Seleccione un rol</option>
                                 @foreach ($roles as $rol)

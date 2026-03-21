@@ -194,20 +194,17 @@ $(document).ready(function () {
         if (estado === "A") {
             $("#tituloMantenimiento").text("Enviar a mantenimiento");
             $("#inicioMantenimiento").removeClass("d-none");
-            $("#razon_id").prop("required", true);
             $("#fecha_inicio").prop("required", true);
             $("#hora_inicio").prop("required", true);
+            $("#razon_id").prop("required", true);
             $("#finMantenimiento").addClass("d-none");
-
-            $("input[name='fecha_inicio']").val("");
-            $("input[name='hora_inicio']").val("");
         } else {
             $("#tituloMantenimiento").text("Finalizar mantenimiento");
             $("#inicioMantenimiento").addClass("d-none");
             $("#finMantenimiento").removeClass("d-none");
-            $("#razon_id").prop("required", false);
             $("#fecha_inicio").prop("required", false);
             $("#hora_inicio").prop("required", false);
+            $("#razon_id").prop("required", false);
             $("input[name='fecha_fin']").val("");
             $("input[name='hora_fin']").val("");
         }

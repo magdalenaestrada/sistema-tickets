@@ -13,15 +13,15 @@
                     <div id="inicioMantenimiento">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label>Fecha inicio</label>
+                                <label>Fecha inicio <span style="color: red">*</span></label></label>
                                 <input type="date" name="fecha_inicio" max="{{ $hoy }}" class="form-control">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label>Hora inicio</label>
+                                <label>Hora inicio <span style="color: red">*</span></label></label>
                                 <input type="time" name="hora_inicio" class="form-control">
                             </div>
                             <div class="col-md-12 mb-3">
-                                <label for="razon_id">Motivo de mantenimiento</label>
+                                <label for="razon_id">Motivo de mantenimiento <span style="color: red">*</span></label></label>
                                 <select name="razon_id" id="razon_id" class="form-control">
                                     <option value="">Seleccionar un motivo</option>
                                     @foreach ($razones as $razon)
@@ -38,11 +38,11 @@
 
                     <div id="finMantenimiento" class="d-none">
                         <div class="mb-3">
-                            <label>Fecha fin</label>
+                            <label>Fecha fin <span style="color: red">*</span></label></label>
                             <input type="date" name="fecha_fin" max="{{ $hoy }}" class="form-control">
                         </div>
                         <div class="mb-3">
-                            <label>Hora fin</label>
+                            <label>Hora fin <span style="color: red">*</span></label></label>
                             <input type="time" name="hora_fin" class="form-control">
                         </div>
                     </div>

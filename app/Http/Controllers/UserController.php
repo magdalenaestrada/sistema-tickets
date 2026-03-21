@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Provincia;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,9 @@ class UserController extends Controller
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
-        return view('users.index', compact('distritos',  'departamentos', 'provincias'));
+        $roles = Role::all();
+
+        return view('users.index', compact('distritos',  'departamentos', 'roles','provincias'));
     }
 
     public function datatable(Request $request)

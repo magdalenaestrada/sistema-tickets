@@ -2,18 +2,11 @@
 
 @section('content')
     <div class="empleados-wrapper">
-
-        <div class="breadcrumb-bar">
-            <span class="bc-link">Personal</span>
-            <span class="bc-sep">/</span>
-            <span class="bc-current">Empleados</span>
-        </div>
-
         <div class="empleados-grid">
 
             <div class="panel panel-left">
                 <div class="panel-header">
-                    <h5 class="panel-title">Personal / Empleados</h5>
+                    <h5 class="panel-title">Lista de empleados</h5>
                     <button class="btn-nuevo" id="btnNuevoEmpleado">
                         <span class="btn-icon">+</span> Nuevo empleado
                     </button>
@@ -50,7 +43,6 @@
                     @endforeach
                 </select>
 
-                <!-- Lista de empleados -->
                 <div id="listaEmpleados" class="lista-empleados">
                     <div class="lista-loading">
                         <div class="spinner"></div>
@@ -59,12 +51,8 @@
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════
-                                                                                     COLUMNA DERECHA — Cumpleaños
-                                                                                ══════════════════════════════════════ -->
             <div class="panel-right">
 
-                <!-- Calendario -->
                 <div class="panel panel-calendar">
                     <div class="panel-header">
                         <h6 class="panel-title">
@@ -76,13 +64,11 @@
                     </div>
                 </div>
 
-                <!-- Próximos cumpleaños -->
                 <div class="panel panel-proximos mt-3">
                     <div class="panel-header">
                         <h6 class="panel-title">🎁 Próximos cumpleaños</h6>
                     </div>
                     <div class="panel-body" id="proximosCumple">
-                        <!-- Llenado por JS -->
                     </div>
                 </div>
 
@@ -97,15 +83,14 @@
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css">
     <style>
-        /* ── Variables ──────────────────────────────── */
         :root {
             --verde: #16a34a;
             --verde-bg: #dcfce7;
             --gris-bg: #f3f4f6;
             --gris-txt: #9ca3af;
-            --borde:var(--bs-border-color) ;
+            --borde: var(--bs-border-color);
             --texto: var(--texto);
-            --subtexto:var(--bs-secondary);
+            --subtexto: var(--bs-secondary);
             --azul: #2563eb;
             --radio: 12px;
             --sombra: 0 1px 4px rgba(0, 0, 0, .07);
@@ -204,7 +189,7 @@
             gap: 8px;
             margin: 12px 16px;
             padding: 9px 14px;
-            background: var(--gris-bg);
+            background: var(--bs-body-bg);
             border-radius: 8px;
             border: 1px solid var(--borde);
         }
@@ -216,7 +201,7 @@
 
         .search-input {
             border: none;
-            background: transparent;
+            background: var(--bs-body-bg);
             outline: none;
             font-size: 13.5px;
             color: var(--texto);
@@ -224,7 +209,7 @@
         }
 
         .search-input::placeholder {
-            color: var(--gris-txt);
+            color: var(--texto);
         }
 
         /* ── Lista empleados ────────────────────────── */
@@ -259,7 +244,6 @@
             }
         }
 
-        /* Item empleado */
         .emp-item {
             display: flex;
             align-items: center;
@@ -272,7 +256,7 @@
         }
 
         .emp-item:hover {
-            background: var(--gris-bg);
+            background: var(--borde);
         }
 
         .emp-info {
@@ -327,25 +311,6 @@
             color: var(--gris-txt);
         }
 
-        /* Menú tres puntos — siempre visible */
-        .emp-menu-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--subtexto);
-            padding: 4px 6px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            opacity: 1;
-            transition: background .15s, color .15s;
-            position: relative;
-        }
-
-        .emp-menu-btn:hover {
-            background: var(--borde);
-            color: var(--texto);
-        }
 
         /* Dropdown del menú */
         .emp-dropdown {
@@ -511,7 +476,6 @@
             box-shadow: 0 1px 4px rgba(0, 0, 0, .15);
         }
 
-        /* ── Próximos cumpleaños ────────────────────── */
         .proximos-list {
             display: flex;
             flex-direction: column;
@@ -565,7 +529,6 @@
             text-overflow: ellipsis;
         }
 
-        /* ── Responsive ─────────────────────────────── */
         @media (max-width: 900px) {
             .empleados-grid {
                 grid-template-columns: 1fr;
@@ -575,9 +538,12 @@
 @endpush
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
     <script>
         const eventosLaravel = @json($datos_eventos);
     </script>
+
+    <script src="{{ asset('js/calendarios.js') }}"></script>
     <script src="{{ asset('js/empleados.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 @endpush

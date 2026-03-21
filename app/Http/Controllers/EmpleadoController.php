@@ -10,6 +10,7 @@ use App\Models\Encomienda;
 use App\Models\Evento;
 use App\Models\Persona;
 use App\Models\Provincia;
+use App\Models\Role;
 use App\Models\Sucursal;
 use App\Models\User;
 use Carbon\Carbon;
@@ -28,10 +29,9 @@ class EmpleadoController extends Controller
         $empleados = Empleado::all();
         $cargos = Cargo::all();
         $sucursales = Sucursal::where("estado", "A")->get();
-
+        $roles = Role::all();
         $eventos = Evento::with('persona', 'tipo_evento')->get();
         $datos_eventos = [];
-
         $mesActual = date('m');
         $yearActual = date('Y');
 
@@ -65,7 +65,7 @@ class EmpleadoController extends Controller
             ];
         }
 
-        return view('empleados.index', compact('distritos', 'cargos', 'departamentos', 'datos_eventos', 'provincias', 'sucursales', 'empleados'));
+        return view('empleados.index', compact('distritos', 'cargos', 'roles', 'departamentos', 'datos_eventos', 'provincias', 'sucursales', 'empleados'));
     }
 
     public function datatable()
@@ -110,7 +110,7 @@ class EmpleadoController extends Controller
             ]);
             if ($persona) {
                 $empleadoExistente = Empleado::where('persona_id', $persona->id)
-                    ->where('id', '!=', $request->empleado_id ?? 0) // Ignora el empleado actual en edición
+                    ->where('id', '!=', $request->empleado_id ?? 0)
                     ->first();
 
                 if ($empleadoExistente) {
@@ -209,10 +209,12 @@ class EmpleadoController extends Controller
                     $dataUser
                 );
 
-                $cargo = Cargo::with('rol')->find($request->cargo_id);
+                if ($request->rol) {
+                    $rol = Role::find($request->rol);
 
-                if ($cargo && $cargo->rol) {
-                    $user->syncRoles([$cargo->rol->name]);
+                    if ($rol) {
+                        $user->syncRoles([$rol->name]);
+                    }
                 }
             }
 

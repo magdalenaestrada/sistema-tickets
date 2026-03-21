@@ -13,7 +13,7 @@
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label">Descripción</label>
+                            <label class="form-label">Descripción <span style="color: red">*</span></label></label>
                             <input type="text" name="descripcion" id="descripcion" class="form-control" required>
                         </div>
                     </div>
