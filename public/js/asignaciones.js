@@ -2,48 +2,30 @@ $(document).ready(function () {
     const modalAsignacion = new bootstrap.Modal(
         document.getElementById("modalAsignacion"),
     );
-    const tabla = $("#tablaAsignaciones");
-
-    function cargarTabla() {
-        $.get(route("asignaciones.list"), function (data) {
-            let tbody = "";
-
-            if (data.length === 0) {
-                tbody = `
-                <tr>
-                    <td colspan="5" class="text-center text-muted">
-                        No hay asignaciones disponibles.
-                    </td>
-                </tr>
-            `;
-            } else {
-                data.forEach((a) => {
-                    tbody += `<tr>
-                    <td>${a.horario}</td>
-                    <td>${a.primer_conductor_id}</td>
-                    <td>${a.segundo_conductor_id || "-"}</td>
-                    <td>${a.vehiculo || "-"}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning editar" data-id="${
-                            a.id
-                        }">
-                            Editar
-                        </button>
-                        <button class="btn btn-sm btn-danger eliminar" data-id="${
-                            a.id
-                        }">
-                            Eliminar
-                        </button>
-                    </td>
-                </tr>`;
-                });
-            }
-
-            tabla.find("tbody").html(tbody);
-        });
-    }
-
-    cargarTabla();
+    const tabla = $("#tablaAsignaciones").DataTable({
+        ajax: route("asignaciones.datatable"),
+        columns: [
+            { data: "horario"},
+            { data: "primer"},
+            { data: "segundo"},
+            { data: "vehiculo"},
+            {
+                data: "acciones",
+                title: "Acciones",
+                orderable: false,
+                searchable: false,
+            },
+        ],
+        order: [[0, "asc"]],
+        responsive: false,
+        dom: "rtip",
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        },
+         drawCallback: function () {
+            lucide.createIcons();
+        },
+    });
 
     $("#btnNuevo").click(function () {
         $("#formAsignacion")[0].reset();
@@ -72,7 +54,7 @@ $(document).ready(function () {
             data: $(this).serialize(),
             success: function (res) {
                 modalAsignacion.hide();
-                cargarTabla();
+                tabla.ajax.reload();
                 Swal.fire("Éxito", res.message, "success");
             },
             error: function (err) {
@@ -124,7 +106,7 @@ $(document).ready(function () {
                     url: route("asignaciones.destroy", id),
                     type: "DELETE",
                     success: function (res) {
-                        cargarTabla();
+                        tabla.ajax.reload();
                         Swal.fire("Eliminado", res.message, "success");
                     },
                 });

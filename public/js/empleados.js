@@ -152,7 +152,6 @@ $(document).ready(async function () {
         $("#tipo_documento_id").val(1).trigger("change");
     }
 
-    // ─── Inputs ───────────────────────────────────────────────────────────────
     $("#telefono").on("input", function () {
         this.value = this.value.replace(/\D/g, "");
     });
@@ -317,6 +316,8 @@ $(document).ready(async function () {
             $("#sucursal_id").val(res.sucursal_id).trigger("change");
             $("#cargo_id").val(res.cargo_id).trigger("change");
             $("#tipo_licencia_id").val(res.tipo_licencia_id).trigger("change");
+            $("#licencia_conducir").val(res.licencia_conducir).trigger("change");
+            $("#fecha_vencimiento_licencia").val(res.fecha_vencimiento_licencia).trigger("change");
             toggleConductor(res.cargo_id, res.cargo?.descripcion ?? "");
 
             if (viewOnly) {
@@ -352,8 +353,18 @@ $(document).ready(async function () {
         });
     }
 
-    // ─── Eliminar ─────────────────────────────────────────────────────────────
-    function eliminarEmpleado(id) {
+    $(document).on("click", ".editar", function () {
+        const id = $(this).data("id");
+        cargarEmpleado(id, false);
+    });
+
+    $(document).on("click", ".ver", function () {
+        const id = $(this).data("id");
+        cargarEmpleado(id, true);
+    });
+
+    $(document).on("click", ".eliminar", function () {
+        const id = $(this).data("id");
         Swal.fire({
             icon: "warning",
             title: "¿Eliminar empleado?",
@@ -380,7 +391,7 @@ $(document).ready(async function () {
                 });
             }
         });
-    }
+    });
 
     function recargarCalendario() {
         if (typeof route !== "function") return;

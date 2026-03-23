@@ -11,6 +11,7 @@ use App\Models\TipoVehiculo;
 use App\Models\TipoViaje;
 use App\Models\Vehiculo;
 use Carbon\Carbon;
+use Yajra\DataTables\Facades\DataTables;
 
 class AsignarHorarioController extends Controller
 {
@@ -23,25 +24,59 @@ class AsignarHorarioController extends Controller
         $empleados = Empleado::where('cargo_id', 3)->get();
         $vehiculos = Vehiculo::all();
         $hoy = Carbon::now("America/Lima")->format("Y-m-d");
-        return view('asignaciones.index', compact('hoy','horarios', 'empleados', 'vehiculos', 'tipo_vehiculos', 'tipo_viajes', 'sucursales'));
+        return view('asignaciones.index', compact('hoy', 'horarios', 'empleados', 'vehiculos', 'tipo_vehiculos', 'tipo_viajes', 'sucursales'));
     }
 
-    public function list()
+    public function datatable()
     {
-        $asignaciones = AsignarHorario::with(['horario', 'primerConductor', 'segundoConductor', 'vehiculoObj'])->get();
+        $asignaciones = AsignarHorario::with([
+            'horario.tipo_viaje',
+            'horario.punto_origen',
+            'horario.punto_destino',
+            'primerConductor.persona',
+            'segundoConductor.persona',
+            'vehiculo.tipo_vehiculo'
+        ]);
 
-        $data = $asignaciones->map(function ($a) {
-            return [
-                'id' => $a->id,
-                'horario' => ($a->horario->tipo_viaje->descripcion ?? '-') . ' (' . ($a->horario->punto_origen->nombre_comercial ?? '-') . ' → ' . ($a->horario->punto_destino->nombre_comercial ?? '-') . ')',
-                'horario_id' => $a->horario_id,
-                'primer_conductor_id' => $a->primerConductor->persona->nombres . ' ' . $a->primerConductor->persona->apellidos,
-                'segundo_conductor_id' => $a->segundoConductor ? $a->segundoConductor->persona->nombres . ' ' . $a->segundoConductor->persona->apellidos : null,
-                'vehiculo' => $a->vehiculoObj ? $a->vehiculoObj->numero_placa . ' - ' . $a->vehiculoObj->tipo_vehiculo->descripcion : null,
-            ];
-        });
+        return DataTables::of($asignaciones)
 
-        return response()->json($data);
+            ->addColumn('horario', function ($a) {
+                return ($a->horario->tipo_viaje->descripcion ?? '-') . ' (' .
+                    ($a->horario->punto_origen->nombre_comercial ?? '-') . ' → ' .
+                    ($a->horario->punto_destino->nombre_comercial ?? '-') . ')';
+            })
+
+            ->addColumn('primer', function ($a) {
+                return $a->primerConductor->persona->nombres . ' ' .
+                    $a->primerConductor->persona->apellidos;
+            })
+
+            ->addColumn('segundo', function ($a) {
+                return $a->segundoConductor
+                    ? $a->segundoConductor->persona->nombres . ' ' . $a->segundoConductor->persona->apellidos
+                    : '-';
+            })
+
+            ->addColumn('vehiculo', function ($a) {
+                return $a->vehiculo
+                    ? $a->vehiculo->numero_placa . ' - ' . $a->vehiculo->tipo_vehiculo->descripcion
+                    : '-';
+            })
+
+            ->addColumn('acciones', function ($vehiculo) {
+                return '
+                    <button class="btn btn-warning btn-xs editar" data-id="' . $vehiculo->id . '">
+                        <i class="link-icon" data-lucide="pen"></i> 
+                    </button>
+                     <button class="btn btn-danger btn-xs eliminar" data-id="' . $vehiculo->id . '">
+            <i class="link-icon" data-lucide="trash-2"></i> 
+        </button>
+
+                ';
+            })
+
+            ->rawColumns(['acciones'])
+            ->make(true);
     }
 
     public function store(Request $request)
@@ -49,11 +84,15 @@ class AsignarHorarioController extends Controller
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
             'primer_conductor_id' => 'required|exists:empleados,id',
-            'vehiculo' => 'nullable|exists:vehiculos,id',
+            'vehiculo_id' => 'nullable|exists:vehiculos,id',
         ]);
 
         AsignarHorario::create($request->all());
 
+        $vehiculo = Vehiculo::findOrFail($request->vehiculo_id);
+        $vehiculo->update([
+            "estado" => "V",
+        ]);
         return response()->json(['message' => 'Asignación creada correctamente']);
     }
 
@@ -64,7 +103,7 @@ class AsignarHorarioController extends Controller
             'horario_id' => $asignacion->horario_id,
             'primer_conductor_id' => $asignacion->primer_conductor_id,
             'segundo_conductor_id' => $asignacion->segundo_conductor_id,
-            'vehiculo' => $asignacion->vehiculo,
+            'vehiculo_id' => $asignacion->vehiculo_id,
         ]);
     }
 
@@ -73,7 +112,7 @@ class AsignarHorarioController extends Controller
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
             'primer_conductor_id' => 'required|exists:empleados,id',
-            'vehiculo' => 'nullable|exists:vehiculos,id',
+            'vehiculo_id' => 'nullable|exists:vehiculos,id',
             'segundo_conductor_id' => 'nullable|exists:empleados,id',
         ]);
 

@@ -21,7 +21,7 @@
                             <th>Tipo de vehiculo</th>
                             <th>Placa</th>
                             <th>Estado</th>
-                            <th style="width: 120px;">Acciones</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody></tbody>

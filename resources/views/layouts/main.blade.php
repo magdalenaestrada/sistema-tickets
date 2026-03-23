@@ -22,6 +22,17 @@
             margin-left: 260px;
             min-height: 100vh;
         }
+
+        .sidebar,
+        .page-wrapper {
+            transition: all 0.3s ease;
+        }
+
+        @media (min-width: 769px) {
+            .sidebar-toggler {
+                display: none !important;
+            }
+        }
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

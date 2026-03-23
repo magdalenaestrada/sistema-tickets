@@ -15,7 +15,7 @@ class AsignarHorario extends Model
         'horario_id',
         'primer_conductor_id',
         'segundo_conductor_id',
-        'vehiculo',
+        'vehiculo_id',
     ];
 
     public function horario()
@@ -33,9 +33,9 @@ class AsignarHorario extends Model
         return $this->belongsTo(Empleado::class, 'segundo_conductor_id');
     }
 
-    public function vehiculoObj()
+    public function vehiculo()
     {
-        return $this->belongsTo(Vehiculo::class, 'vehiculo');
+        return $this->belongsTo(Vehiculo::class, 'vehiculo_id');
     }
     public function encomiendas()
     {

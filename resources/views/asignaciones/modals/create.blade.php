@@ -69,13 +69,15 @@
                     <div class="row mt-3">
                         <h6 class="text-center">SELECCIONAR UN HORARIO Y CONDUCTOR</h6>
                         <div class="mb-3 mt-2">
-                            <label for="horario_id" class="form-label">Horario <span style="color: red">*</span></label></label>
+                            <label for="horario_id" class="form-label">Horario <span
+                                    style="color: red">*</span></label></label>
                             <select name="horario_id" id="horario_id" class="form-select" required>
                                 <option value="">Seleccione un horario</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="primer_conductor_id" class="form-label">Primer Conductor <span style="color: red">*</span></label></label>
+                            <label for="primer_conductor_id" class="form-label">Primer Conductor <span
+                                    style="color: red">*</span></label></label>
                             <select name="primer_conductor_id" id="primer_conductor_id" class="form-select" required>
                                 <option value="">Seleccione un conductor</option>
                                 @foreach ($empleados as $empleado)
@@ -102,8 +104,9 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="vehiculo" class="form-label">Vehículo <span style="color: red">*</span></label></label>
-                            <select name="vehiculo" id="vehiculo" class="form-select" required>
+                            <label for="vehiculo_id" class="form-label">Vehículo <span
+                                    style="color: red">*</span></label></label>
+                            <select name="vehiculo_id" id="vehiculo_id" class="form-select" required>
                                 <option value="">Seleccione un vehículo</option>
                                 @foreach ($vehiculos as $vehiculo)
                                     <option value="{{ $vehiculo->id }}" data-tipo="{{ $vehiculo->tipo_vehiculo_id }}">
@@ -114,8 +117,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </div>
         </form>

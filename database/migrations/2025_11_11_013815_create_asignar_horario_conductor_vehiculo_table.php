@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId("horario_id")->constrained("horarios");
             $table->foreignId("primer_conductor_id")->constrained("empleados");
             $table->foreignId("segundo_conductor_id")->nullable()->constrained("empleados");
-            $table->foreignId("vehiculo")->nullable()->constrained("vehiculos");
+            $table->foreignId("vehiculo_id")->nullable()->constrained("vehiculos");
             $table->timestamps();
         });
     }

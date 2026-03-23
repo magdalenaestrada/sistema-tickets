@@ -13,7 +13,7 @@ $(document).on("click", ".asignar-permisos", function () {
 });
 $(function () {
     let tabla = $("#tablaRoles").DataTable({
-        ajax: route("roles.datatable"), // ← cambio a Ziggy
+        ajax: route("roles.datatable"),
         columns: [
             { title: "ID", data: "id" },
             { title: "Nombre", data: "name" },
@@ -26,7 +26,7 @@ $(function () {
         ],
         order: [[0, "asc"]],
         responsive: false,
-        scrollX: true,
+        
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },

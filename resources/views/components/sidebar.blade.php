@@ -148,7 +148,7 @@
                 <div class="collapse {{ $maestrosOpen ? 'show' : '' }}" id="maestros" data-bs-parent="#sidebarNav">
                     <ul class="nav sub-menu">
                         <li class="nav-item"><a href="{{ route('cargos.index') }}"
-                                class="nav-link {{ request()->routeIs('cargos.*') ? 'active' : '' }}">Cargos
+                                class="nav-link {{ request()->routeIs('cargos.*') ? 'active' : '' }}">Tipo de cargo
                             </a>
                         </li>
                         <li class="nav-item"><a href="{{ route('tipo-cupones.index') }}"
@@ -162,29 +162,6 @@
                                 Tipo encomiendas
                             </a>
                         </li>
-
-                    </ul>
-                </div>
-            </li>
-
-            {{-- Personal --}}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" data-bs-target="#personal" role="button"
-                    aria-expanded="{{ $personalOpen ? 'true' : 'false' }}" aria-controls="personal">
-
-                    <i class="link-icon" data-lucide="users"></i>
-                    <span class="link-title">Personal</span>
-                    <i class="link-arrow" data-lucide="chevron-down"></i>
-                </a>
-
-                <div class="collapse {{ $personalOpen ? 'show' : '' }}" id="personal" data-bs-parent="#sidebarNav">
-                    <ul class="nav sub-menu">
-
-
-                        <li class="nav-item"><a href="{{ route('eventos.index') }}"
-                                class="nav-link {{ request()->routeIs('eventos.*') ? 'active' : '' }}">Cumpleaños</a>
-                        </li>
-
 
                     </ul>
                 </div>
@@ -208,7 +185,7 @@
                         <li class="nav-item">
                             <a href="{{ route('asignaciones.index') }}"
                                 class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">
-                                Salidas
+                                Crear salidas
                             </a>
                         </li>
                         <li class="nav-item"><a href="{{ route('horarios.index') }}"

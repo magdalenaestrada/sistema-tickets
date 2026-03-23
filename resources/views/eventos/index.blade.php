@@ -5,9 +5,9 @@
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-semibold">CALENDARIO DE CUMPLEAÑOS</h5>
             <div>
-                <button class="btn btn-sm btn-outline-primary" id="btnHoy">Hoy</button>
-                <button class="btn btn-sm btn-outline-secondary" id="btnMes">Mes</button>
-                <button class="btn btn-sm btn-outline-secondary" id="btnSemana">Semana</button>
+                <button class="btn btn-xs btn-outline-primary" id="btnHoy">Hoy</button>
+                <button class="btn btn-xs btn-outline-secondary" id="btnMes">Mes</button>
+                <button class="btn btn-xs btn-outline-secondary" id="btnSemana">Semana</button>
             </div>
         </div>
         <div class="card-body p-3">

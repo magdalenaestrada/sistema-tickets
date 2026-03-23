@@ -96,13 +96,13 @@ class EncomiendaController extends Controller
             })
             ->addColumn('acciones', function ($e) {
                 return '
-                <button class="btn btn-sm btn-info imprimir" data-id="' . $e->id . '" title="Imprimir">
+                <button class="btn btn-xs btn-info imprimir" data-id="' . $e->id . '" title="Imprimir">
                     <i class="link-icon" data-lucide="printer"></i>
                 </button>
-                <button class="btn btn-sm btn-warning editar" data-id="' . $e->id . '" title="Editar">
+                <button class="btn btn-xs btn-warning editar" data-id="' . $e->id . '" title="Editar">
                     <i class="link-icon" data-lucide="pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger anular" data-id="' . $e->id . '" title="Anular">
+                <button class="btn btn-xs btn-danger anular" data-id="' . $e->id . '" title="Anular">
                     <i class="link-icon" data-lucide="trash-2"></i>
                 </button>
             ';
@@ -151,14 +151,14 @@ class EncomiendaController extends Controller
             ->addColumn('acciones', function ($e) {
 
                 $botones = '
-        <button class="btn btn-sm btn-info imprimir" data-id="' . $e->id . '">
+        <button class="btn btn-xs btn-info imprimir" data-id="' . $e->id . '">
             <i data-lucide="printer"></i>
         </button>
     ';
 
                 if ($e->estado !== 'E') {
                     $botones .= '
-           <button type="button" class="btn btn-sm btn-success entregar" data-id="' . $e->id . '">
+           <button type="button" class="btn btn-xs btn-success entregar" data-id="' . $e->id . '">
                 <i data-lucide="check"></i>
             </button>
         ';

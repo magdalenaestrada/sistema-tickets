@@ -5,9 +5,9 @@
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-semibold">Calendario de Horarios</h5>
             <div>
-                <button class="btn btn-sm btn-outline-primary" id="btnHoy">Hoy</button>
-                <button class="btn btn-sm btn-outline-secondary" id="btnMes">Mes</button>
-                <button class="btn btn-sm btn-outline-secondary" id="btnSemana">Semana</button>
+                <button class="btn btn-xs btn-outline-primary" id="btnHoy">Hoy</button>
+                <button class="btn btn-xs btn-outline-secondary" id="btnMes">Mes</button>
+                <button class="btn btn-xs btn-outline-secondary" id="btnSemana">Semana</button>
             </div>
         </div>
         {{-- Filtros --}}
@@ -40,7 +40,7 @@
                 <input type="date" id="filtroFecha" class="form-control form-control-sm">
             </div>
             <div class="col-md-2">
-                <button class="btn btn-sm btn-secondary w-100" id="btnLimpiarFiltros">Limpiar</button>
+                <button class="btn btn-xs btn-secondary w-100" id="btnLimpiarFiltros">Limpiar</button>
             </div>
         </div>
         <div class="card-body p-3">

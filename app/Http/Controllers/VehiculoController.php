@@ -20,15 +20,72 @@ class VehiculoController extends Controller
         return view('vehiculos.index', compact("razones", "hoy"));
     }
 
-    public function datatable(Request $request)
+    public function datatable()
     {
-        $vehiculos = Vehiculo::with('tipo_vehiculo')->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'estado']);
+        $vehiculos = Vehiculo::with('tipo_vehiculo')
+            ->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'estado']);
 
         return DataTables::of($vehiculos)
+
             ->addColumn('tipo_vehiculo', function ($vehiculo) {
-                return $vehiculo->tipo_vehiculo ? $vehiculo->tipo_vehiculo->descripcion : '';
+                return $vehiculo->tipo_vehiculo
+                    ? $vehiculo->tipo_vehiculo->descripcion
+                    : '';
             })
-            ->rawColumns(['acciones'])
+
+            ->addColumn('estado_badge', function ($vehiculo) {
+                if ($vehiculo->estado === "A") {
+                    return '<span class="badge rounded-pill bg-success">DISPONIBLE</span>';
+                }
+
+                if ($vehiculo->estado === "M") {
+                    return '<span class="badge rounded-pill bg-danger">MANTENIMIENTO</span>';
+                }
+
+                if ($vehiculo->estado === "V") {
+                    return '<span class="badge rounded-pill bg-primary">ASIGNADO</span>';
+                }
+
+                return '<span class="badge rounded-pill bg-secondary">' . $vehiculo->estado . '</span>';
+            })
+
+            ->addColumn('acciones', function ($vehiculo) {
+
+                $btnMantenimiento = '';
+                $btnEditar = '';
+                $btnEliminar = '';
+
+                if ($vehiculo->estado !== "V") {
+
+                    if ($vehiculo->estado !== "M") {
+
+                        $btnMantenimiento = '
+            <button class="btn btn-xs btn-secondary mantenimiento"
+                data-id="' . $vehiculo->id . '"
+                data-estado="' . $vehiculo->estado . '">
+                <i data-lucide="wrench"></i>
+            </button>
+        ';
+                    }
+
+                    $btnEditar = '
+        <button class="btn btn-xs btn-warning editar"
+            data-id="' . $vehiculo->id . '">
+            <i data-lucide="edit"></i>
+        </button>
+    ';
+
+                    $btnEliminar = '
+        <button class="btn btn-xs btn-danger eliminar"
+            data-id="' . $vehiculo->id . '">
+            <i data-lucide="trash-2"></i>
+        </button>
+    ';
+                }
+                return $btnMantenimiento . $btnEditar . $btnEliminar;
+            })
+
+            ->rawColumns(['estado_badge', 'acciones'])
             ->make(true);
     }
 

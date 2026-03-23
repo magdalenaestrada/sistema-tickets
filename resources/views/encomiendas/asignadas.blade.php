@@ -9,7 +9,7 @@
             <div class="row mb-3 g-2">
                 <div class="col-md-6">
                     <input type="text" id="filtroReceptor" class="form-control"
-                        placeholder="Buscar por nombre o DNI del receptor...">
+                        placeholder="Buscar por documento">
                 </div>
             </div>
             <table class="table table-bordered table-hover w-100" id="tablaEncomiendas">

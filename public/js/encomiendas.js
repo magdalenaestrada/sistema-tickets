@@ -126,7 +126,7 @@ $(function () {
             { data: "acciones", orderable: false, searchable: false },
         ],
         order: [[1, "desc"]],
-        scrollX: true,
+        
         lengthChange: false,
         searching: false,
         language: {

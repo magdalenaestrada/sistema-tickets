@@ -116,14 +116,14 @@
                             <td>{{ $detalle->metodoPago->descripcion }}</td>
                             <td>
                                 <a href="{{ route('caja.ticket.reimprimir', $detalle) }}" target="_blank"
-                                    class="btn btn-sm btn-info">
+                                    class="btn btn-xs btn-info">
                                     Reimprimir ticket
                                 </a>
                                 @if (!$detalle->anulado)
                                     <form action="{{ route('caja.ticket.anular', $detalle) }}" method="POST"
                                         style="display:inline-block;">
                                         @csrf
-                                        <button class="btn btn-sm btn-danger"
+                                        <button class="btn btn-xs btn-danger"
                                             onclick="return confirm('¿Seguro de anular?')">
                                             Anular ticket
                                         </button>

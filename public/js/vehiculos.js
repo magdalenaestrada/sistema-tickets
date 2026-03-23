@@ -2,52 +2,17 @@ $(document).ready(function () {
     const modal = new bootstrap.Modal($("#modalVehiculo")[0]);
     const modalMantenimiento = new bootstrap.Modal($("#modalMantenimiento")[0]);
 
-    const tabla = $("#tablaVehiculos").DataTable({
+    let tabla = $("#tablaVehiculos").DataTable({
         ajax: route("vehiculos.datatable"),
         dom: "rtip",
+        info:false,
         columns: [
             { data: "id" },
-            { data: "tipo_vehiculo", title: "Tipo de vehiculo" },
+            { data: "tipo_vehiculo" },
             { data: "numero_placa" },
-            {
-                data: "estado",
-                title: "Estado",
-                render: function (data) {
-                    if (data === "A") {
-                        return `<span class="badge bg-success">Activo</span>`;
-                    }
-
-                    if (data === "M") {
-                        return `<span class="badge bg-danger">Mantenimiento</span>`;
-                    }
-
-                    return `<span class="badge bg-secondary">${data}</span>`;
-                },
-            },
-            {
-                data: "acciones",
-                orderable: false,
-                searchable: false,
-                render: function (data, type, row) {
-                    return `
-            <button class="btn btn-sm btn-secondary mantenimiento"
-                data-id="${row.id}"
-                data-estado="${row.estado}">
-                <i data-lucide="wrench"></i>
-            </button>
-
-            <button class="btn btn-sm btn-warning editar" data-id="${row.id}">
-                <i data-lucide="edit"></i>
-            </button>
-
-            <button class="btn btn-sm btn-danger eliminar" data-id="${row.id}">
-                <i data-lucide="trash-2"></i>
-            </button>
-        `;
-                },
-            },
+            { data: "estado_badge"},
+            { data: "acciones"},
         ],
-        scrollX: true,
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },

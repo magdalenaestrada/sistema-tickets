@@ -9,14 +9,12 @@
 
             <div class="row mb-3">
                 <div class="col-md-2">
-                    <label>DNI Emisor</label>
                     <input type="text" id="filtroDNI" class="form-control" placeholder="DNI del emisor">
                 </div>
 
                 <div class="col-md-2">
-                    <label>Origen</label>
                     <select id="filtroOrigen" class="form-select">
-                        <option value="">Todos</option>
+                        <option value="">Filtrar por origen</option>
                         @foreach ($sucursales as $s)
                             <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
                         @endforeach
@@ -24,9 +22,8 @@
                 </div>
 
                 <div class="col-md-2">
-                    <label>Destino</label>
                     <select id="filtroDestino" class="form-select">
-                        <option value="">Todos</option>
+                        <option value="">Filtrar por destino</option>
                         @foreach ($sucursales as $s)
                             <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
                         @endforeach
@@ -34,9 +31,8 @@
                 </div>
 
                 <div class="col-md-5">
-                    <label>Salidas</label>
                     <select id="asignacion_id" class="form-select" required>
-                        <option value="">-- Seleccione --</option>
+                        <option value="">Seleccione una salida</option>
                         @foreach ($asignaciones as $a)
                             <option value="{{ $a->id }}">{{ $a->horario->tipo_vehiculo->descripcion }} |
                                 {{ $a->horario->fecha_formateada }} |

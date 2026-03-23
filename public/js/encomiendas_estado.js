@@ -13,7 +13,7 @@ $(function () {
             { data: "acciones", orderable: false, searchable: false },
         ],
         order: [[0, "desc"]],
-        scrollX: true,
+        
         dom: "rtip",
         lengthChange: false,
         searching: true,

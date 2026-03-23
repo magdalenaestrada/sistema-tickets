@@ -17,7 +17,7 @@
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <strong>Asiento {{ $asiento }}</strong>
 
-                                    <button class="btn btn-sm btn-primary btn-cambio-horario"
+                                    <button class="btn btn-xs btn-primary btn-cambio-horario"
                                         data-index="{{ $index }}" data-asiento="{{ $asiento }}"
                                         data-horario="{{ $horario->id }}" data-bs-toggle="modal"
                                         data-bs-target="#modalCambioHorario">

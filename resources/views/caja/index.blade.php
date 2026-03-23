@@ -41,20 +41,20 @@
                             <td>{{ $caja->fecha_creacion->format('Y-m-d') }}</td>
                             <td>
                                 @if ($caja->estado === 'A')
-                                    <a href="{{ route('caja.show', $caja) }}" class="btn btn-sm" title="Ver">
+                                    <a href="{{ route('caja.show', $caja) }}" class="btn btn-xs" title="Ver">
                                         <i data-lucide="info"></i>
                                     </a>
 
                                     <form action="{{ route('caja.cerrar', $caja) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Cerrar caja"
+                                        <button type="submit" class="btn btn-xs btn-danger" title="Cerrar caja"
                                             onclick="return confirm('¿Seguro que deseas cerrar la caja?')">
                                             <i data-lucide="lock"></i>
                                         </button>
                                     </form>
 
                                     <a href="{{ route('caja.corte.imprimir', $caja->id) }}" target="_blank"
-                                        class="btn btn-sm btn-primary" title="Imprimir corte">
+                                        class="btn btn-xs btn-primary" title="Imprimir corte">
                                         <i data-lucide="printer"></i>
                                     </a>
                                 @endif
