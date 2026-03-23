@@ -14,16 +14,9 @@ $(document).ready(function () {
             { data: "id" },
             { data: "tipo_cupon" },
             { data: "codigo" },
-            { data: "persona" },
             { data: "cantidad_usos" },
             { data: "fecha_maxima" },
-            { data: "monto_efectivo" },
-            {
-                data: "porcentaje",
-                render: function (data) {
-                    return data ? data + " %" : "";
-                },
-            },
+            { data: "descuento" },
             { data: "activo" },
             { data: "acciones", orderable: false, searchable: false },
         ],
@@ -59,6 +52,7 @@ $(document).ready(function () {
             }
         });
     });
+
     $("#tablaDescuentos").on("click", ".activar", function () {
         let id = $(this).data("id");
 
@@ -96,10 +90,27 @@ $(document).ready(function () {
 
     $("#tipo_asignacion_id")
         .on("change", function () {
+            let empleados = document.querySelector(
+                ".empleados_asignados",
+            )?.tomselect;
+            let cargos = document.querySelector(".cargos_asignados")?.tomselect;
+
             if ($(this).val() === "P") {
                 $(".empleados_asignados").closest(".col-md-9").show();
+                $(".cargos_asignados").closest(".col-md-9").hide();
+
+                cargos?.clear();
+            } else if ($(this).val() === "G") {
+                $(".empleados_asignados").closest(".col-md-9").hide();
+                $(".cargos_asignados").closest(".col-md-9").show();
+
+                empleados?.clear();
             } else {
                 $(".empleados_asignados").closest(".col-md-9").hide();
+                $(".cargos_asignados").closest(".col-md-9").hide();
+
+                empleados?.clear();
+                cargos?.clear();
             }
         })
         .trigger("change");
@@ -203,16 +214,69 @@ $(document).ready(function () {
         });
     });
 
-    $("#tablaDescuentos").on("click", ".eliminar", function () {
-        if (!confirm("¿Seguro que quieres eliminar este descuento?")) return;
-        let id = $(this).data("id");
-        $.ajax({
-            url: route("descuentos.eliminar", id),
-            type: "DELETE",
-            data: { _token: $('meta[name="csrf-token"]').attr("content") },
-            success: function (res) {
-                if (res.success) tabla.ajax.reload();
+    document.querySelectorAll(".cargos_asignados").forEach((el) => {
+        new TomSelect(el, {
+            placeholder: "Selecciona los cargos",
+            plugins: ["remove_button"],
+            maxItems: null,
+            hidePlaceholder: true,
+            closeAfterSelect: false,
+            render: {
+                option: function (data, escape) {
+                    return `<div>
+            👤 ${escape(data.text)}
+        </div>`;
+                },
+                item: function (data, escape) {
+                    return `<div>
+            ${escape(data.text)}
+        </div>`;
+                },
             },
+        });
+    });
+
+    $("#tablaDescuentos").on("click", ".eliminar", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Eliminar descuento?",
+            text: "Esta acción no se puede deshacer",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: route("descuentos.eliminar", id),
+                    type: "DELETE",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function (res) {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Eliminado",
+                            text:
+                                res.message ||
+                                "Descuento eliminado correctamente",
+                            timer: 1500,
+                            showConfirmButton: false,
+                        });
+
+                        tabla.ajax.reload(null, false);
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: "No se pudo eliminar el descuento",
+                        });
+                    },
+                });
+            }
         });
     });
 
@@ -282,12 +346,19 @@ $(document).ready(function () {
                 monto.required = false;
                 porcentaje.required = true;
                 contenedor_porcentaje.hidden = false;
-            } else {
+            } else if (this.value === "M") {
                 contenedor_monto.hidden = false;
                 contenedor_porcentaje.hidden = true;
                 monto.required = true;
                 porcentaje.required = false;
                 porcentaje.value = "";
+            } else {
+                contenedor_monto.hidden = true;
+                monto.value = "";
+                porcentaje.value = "";
+                monto.required = false;
+                porcentaje.required = false;
+                contenedor_porcentaje.hidden = true;
             }
         });
 

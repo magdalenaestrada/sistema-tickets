@@ -540,7 +540,6 @@ class PasajeController extends Controller
 
     public function reservar(Request $request)
     {
-        // Log para debugging
         Log::info('Datos recibidos en reservar:', $request->all());
 
         $request->validate([

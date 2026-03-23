@@ -27,7 +27,7 @@ class HorarioController extends Controller
         return view('horarios.index', compact('hoy', 'tiposViaje', 'tipo_vehiculos', 'sucursales', 'horarios'));
     }
 
-   
+
 
     public function datatable()
     {
@@ -79,80 +79,59 @@ class HorarioController extends Controller
         }
 
         $inicio = Carbon::parse($request->fecha_salida);
-        $fin = $request->repetir_hasta ? Carbon::parse($request->repetir_hasta) : $inicio;
-        $fecha = $inicio->copy();
+        $fin = $request->repetir_hasta
+            ? Carbon::parse($request->repetir_hasta)
+            : $inicio->copy()->addMonths(3);
 
+        $fecha = $inicio->copy();
+        
+        $diasSeleccionados = [
+            'lunes' => $request->filled('lunes'),
+            'martes' => $request->filled('martes'),
+            'miercoles' => $request->filled('miercoles'),
+            'jueves' => $request->filled('jueves'),
+            'viernes' => $request->filled('viernes'),
+            'sabado' => $request->filled('sabado'),
+            'domingo' => $request->filled('domingo'),
+        ];
         while ($fecha->lte($fin)) {
 
-            $horario = Horario::create([
-                'tipo_viaje_id'    => $request->tipo_viaje_id,
-                'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
-                'punto_origen_id'  => $request->punto_origen_id,
-                'punto_destino_id' => $request->tipo_viaje_id != 2 ? $request->punto_destino_id : null,
-                'hora_salida'      => $request->hora_salida,
-                'costo_base'       => $request->costo_pasaje,
-            ]);
+            $crear = false;
 
-            if ($request->tipo_viaje_id == 2 && $request->filled('puntos')) {
-                $puntosArray = $request->input('puntos');
-                $ultimoPunto = end($puntosArray);
+            if ($fecha->isMonday() && $diasSeleccionados['lunes']) $crear = true;
+            if ($fecha->isTuesday() && $diasSeleccionados['martes']) $crear = true;
+            if ($fecha->isWednesday() && $diasSeleccionados['miercoles']) $crear = true;
+            if ($fecha->isThursday() && $diasSeleccionados['jueves']) $crear = true;
+            if ($fecha->isFriday() && $diasSeleccionados['viernes']) $crear = true;
+            if ($fecha->isSaturday() && $diasSeleccionados['sabado']) $crear = true;
+            if ($fecha->isSunday() && $diasSeleccionados['domingo']) $crear = true;
 
-                $horario->update([
-                    'punto_destino_id' => $ultimoPunto['sucursal_id'],
+            if ($crear) {
+
+                $horario = Horario::create([
+                    'tipo_viaje_id'    => $request->tipo_viaje_id,
+                    'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+                    'punto_origen_id'  => $request->punto_origen_id,
+                    'punto_destino_id' => $request->tipo_viaje_id != 2 ? $request->punto_destino_id : null,
+                    'hora_salida'      => $request->hora_salida,
+                    'costo_base'       => $request->costo_pasaje,
                 ]);
 
-                $orden = 1;
-                $puntoIds = [];
-
-                $puntoOrigen = HorarioPunto::create([
+                HorarioFecha::create([
                     'horario_id' => $horario->id,
-                    'sucursal_id' => $request->punto_origen_id,
-                    'orden' => $orden++,
+                    'fecha_salida' => $fecha->format('Y-m-d'),
+                    'lunes'     => $fecha->isMonday(),
+                    'martes'    => $fecha->isTuesday(),
+                    'miercoles' => $fecha->isWednesday(),
+                    'jueves'    => $fecha->isThursday(),
+                    'viernes'   => $fecha->isFriday(),
+                    'sabado'    => $fecha->isSaturday(),
+                    'domingo'   => $fecha->isSunday(),
                 ]);
-                $puntoIds[$request->punto_origen_id] = $puntoOrigen->id;
-
-                for ($i = 0; $i < count($puntosArray); $i++) {
-                    $punto = HorarioPunto::create([
-                        'horario_id' => $horario->id,
-                        'sucursal_id' => $puntosArray[$i]['sucursal_id'],
-                        'orden' => $orden++,
-                    ]);
-                    $puntoIds[$puntosArray[$i]['sucursal_id']] = $punto->id;
-                }
-
-                $horaActual = Carbon::parse($horario->hora_salida);
-                for ($i = 0; $i < count($puntosArray); $i++) {
-                    $origenSucursalId = $i === 0 ? $request->punto_origen_id : $puntosArray[$i - 1]['sucursal_id'];
-                    $destinoSucursalId = $puntosArray[$i]['sucursal_id'];
-                    $duracion = (int) $puntosArray[$i]['duracion'];
-                    $horaActual->addMinutes($duracion);
-
-                    HorarioTramo::create([
-                        'horario_id'       => $horario->id,
-                        'punto_origen_id'  => $puntoIds[$origenSucursalId],
-                        'punto_destino_id' => $puntoIds[$destinoSucursalId],
-                        'duracion_minutos' => $duracion,
-                        'costo_tramo'      => $puntosArray[$i]['costo'],
-                        'hora_llegada'     => $horaActual->format('H:i'),
-                    ]);
-                }
             }
-
-            HorarioFecha::create([
-                'horario_id' => $horario->id,
-                'fecha_salida' => $fecha->format('Y-m-d'),
-                'lunes'     => $fecha->isMonday(),
-                'martes'    => $fecha->isTuesday(),
-                'miercoles' => $fecha->isWednesday(),
-                'jueves'    => $fecha->isThursday(),
-                'viernes'   => $fecha->isFriday(),
-                'sabado'    => $fecha->isSaturday(),
-                'domingo'   => $fecha->isSunday(),
-            ]);
 
             $fecha->addDay();
         }
-
         return response()->json(['success' => true]);
     }
 

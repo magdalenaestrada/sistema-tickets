@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cargo;
 use App\Models\Descuento;
 use App\Models\Empleado;
 use App\Models\Persona;
@@ -19,7 +20,8 @@ class DescuentoController extends Controller
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipo_cupones = TipoCupon::where('estado', "A")->get();
         $empleados = Empleado::where("estado", "A")->get();
-        return view('descuentos.index', compact("tipos_documentos", "tipo_cupones", "empleados"));
+        $cargos = Cargo::all();
+        return view('descuentos.index', compact("tipos_documentos", "tipo_cupones", "empleados", "cargos"));
     }
 
     public function datatable()
@@ -29,25 +31,46 @@ class DescuentoController extends Controller
         return DataTables::of($data)
             ->addColumn('tipo_cupon', fn($d) => $d->tipo_cupon?->descripcion ?? '-')
             ->addColumn('persona', fn($d) => $d->persona->nombre_completo ?? '-')
-            ->addColumn('activo', fn($d) => $d->activo ? '<span class="badge bg-success">Sí</span>' : '<span class="badge bg-danger">No</span>')
+            ->addColumn('descuento', function ($d) {
+                if ($d->monto_efectivo > 0) {
+                    return  'S/ ' . $d->monto_efectivo;
+                } else {
+                    return $d->porcentaje . '%';
+                }
+            })
+            ->addColumn('activo', fn($d) => $d->activo ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>')
             ->addColumn('acciones', function ($d) {
-                $btnEstado = $d->activo
-                    ? '<button class="btn btn-xs btn-danger desactivar" data-id="' . $d->id . '">
+                $btnActivar = '';
+                $btnDesactivar = '';
+                $btnEditar = '';
+                $btnEliminar = '';
+
+                if ($d->tipo_cupon->estado === 'A') {
+
+                    if ($d->activo === 1) {
+                        $btnDesactivar = ' <button class="btn btn-xs btn-danger desactivar" data-id="' . $d->id . '">
             <i class="link-icon" data-lucide="eye-closed" style="pointer-events:none;"></i>
-       </button>'
-                    : '<button class="btn btn-xs btn-success activar" data-id="' . $d->id . '">
-            <i class="link-icon" data-lucide="eye" style="pointer-events:none;"></i>
        </button>';
 
-
-                return $btnEstado . '
-        <button class="btn btn-xs btn-warning editar" data-id="' . $d->id . '">
+                        $btnEditar = ' <button class="btn btn-xs btn-warning editar" data-id="' . $d->id . '">
             <i class="link-icon" data-lucide="pencil"></i>
-        </button>
-        <button class="btn btn-xs btn-danger eliminar" data-id="' . $d->id . '">
+        </button>';
+
+                        $btnEliminar = ' <button class="btn btn-xs btn-danger eliminar" data-id="' . $d->id . '">
             <i class="link-icon" data-lucide="trash-2"></i>
-        </button>
-    ';
+        </button>';
+                    } else {
+                        $btnActivar = '<button class="btn btn-xs btn-success activar" data-id="' . $d->id . '">
+            <i class="link-icon" data-lucide="eye" style="pointer-events:none;"></i>
+       </button>';
+                    }
+                } else {
+                    $btnActivar = '<button class="btn btn-xs btn-secondary" disabled>
+        <i data-lucide="lock"></i>
+    </button>';
+                }
+
+                return $btnActivar . $btnDesactivar . $btnEditar . $btnEliminar;
             })
 
             ->rawColumns(['activo', 'acciones'])
@@ -106,6 +129,24 @@ class DescuentoController extends Controller
                 foreach ($request->empleados_asignados as $empleado_id) {
 
                     $empleado = Empleado::with('persona')->find($empleado_id);
+
+                    if (!$empleado) continue;
+
+                    Descuento::create([
+                        'tipo_cupon_id' => $request->tipo_cupon_id,
+                        'codigo' => $request->codigo,
+                        'cantidad_usos' => $request->cantidad_usos,
+                        'fecha_maxima' => $request->fecha_maxima,
+                        'monto_efectivo' => $request->monto_efectivo,
+                        'porcentaje' => $request->porcentaje,
+                        'activo' => 1,
+                        'persona_id' => $empleado->persona_id,
+                    ]);
+                }
+
+                foreach ($request->cargos_asignados as $cargo_id) {
+
+                    $empleado = Empleado::with('persona')->where("cargo_id", $cargo_id);
 
                     if (!$empleado) continue;
 

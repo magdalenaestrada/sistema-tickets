@@ -25,20 +25,24 @@ class TipoCuponController extends Controller
                     : '<span class="badge bg-danger">Inactivo</span>';
             })
             ->addColumn('acciones', function ($t) {
+                $btnActivar = '';
+                $btnDesactivar = '';
+                $btnEditar = '';
 
-                $btnEstado = $t->estado === 'A'
-                    ? '<button class="btn btn-danger btn-xs desactivar" data-id="' . $t->id . '">
+                if ($t->estado === 'A') {
+                    $btnDesactivar = ' <button class="btn btn-danger btn-xs desactivar" data-id="' . $t->id . '">
                         <i class="link-icon" data-lucide="eye-closed"></i>
-                   </button>'
-                    : '<button class="btn btn-success btn-xs activar" data-id="' . $t->id . '">
+                   </button> ';
+                    $btnEditar = ' <button class="btn btn-warning btn-xs editar" data-id="' . $t->id . '">
+                    <i class="link-icon" data-lucide="pencil"></i>
+                </button>';
+                } else {
+                    $btnActivar = ' <button class="btn btn-success btn-xs activar" data-id="' . $t->id . '">
                         <i class="link-icon" data-lucide="eye"></i>
                    </button>';
+                }
 
-                return $btnEstado . '
-                <button class="btn btn-warning btn-xs editar" data-id="' . $t->id . '">
-                    <i class="link-icon" data-lucide="pencil"></i>
-                </button>
-            ';
+                return $btnActivar . $btnDesactivar . $btnEditar;
             })
             ->rawColumns(['acciones', 'estado'])
             ->make(true);

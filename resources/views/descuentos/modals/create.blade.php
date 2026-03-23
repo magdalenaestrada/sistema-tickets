@@ -1,4 +1,3 @@
-
 <div class="modal fade" id="modalDescuento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -44,13 +43,13 @@
                             <label for="codigo" class="form-label">Código <span style="color: red">*</span></label>
                             <input type="text" name="codigo" id="codigo" class="form-control" required>
                         </div>
-                        <div class="col-md-6" id="descuento_monto_fijo">
+                        <div class="col-md-6" id="descuento_monto_fijo" hidden>
                             <label for="monto_efectivo" class="form-label">Monto Descuento (S/) <span
                                     style="color: red">*</span></label>
                             <input type="number" step="0.01" name="monto_efectivo" id="monto_efectivo"
                                 class="form-control">
                         </div>
-                        <div class="col-md-6" id="descuento_porcentaje">
+                        <div class="col-md-6" id="descuento_porcentaje" hidden>
                             <label for="porcentaje" class="form-label">Porcentaje (%) <span
                                     style="color: red">*</span></label>
                             <input type="number" step="0.01" name="porcentaje" id="porcentaje" class="form-control"
@@ -63,26 +62,39 @@
                                 onkeydown="return event.key !== '.' && event.key !== ','">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="fecha_maxima" class="form-label">Fecha Máxima</label>
+                            <label for="fecha_maxima" class="form-label">Fecha límite de uso</label>
                             <input type="date" name="fecha_maxima" id="fecha_maxima" class="form-control">
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label for="tipo_asignacion_id" class="form-label">Tipo de asignación <span
+                            <label for="tipo_asignacion_id" class="form-label">Tipo de asignación<span
                                     style="color: red">*</span></label>
                             <select class="form-select" name="tipo_asignacion_id" id="tipo_asignacion_id">
                                 <option value="">Selecciona un tipo</option>
-                                <option value="G">General</option>
-                                <option value="P">Asignar</option>
+                                <option value="T">Todos los empleados</option>
+                                <option value="G">Por áreas</option>
+                                <option value="P">Personal</option>
                             </select>
                         </div>
 
-                        <div class="col-md-9 mb-3">
-                            <label for="empleados_asignados" class="form-label">Asignar empleados <span
+                        <div class="col-md-9 mb-3" id="empleados_asignados">
+                            <label for="empleados_asignados" class="form-label">Seleccionar empleados <span
                                     style="color: red">*</span></label>
-                            <select class="form-control empleados_asignados" name="empleados_asignados[]" id="empleados_asignados"
-                                multiple>
+                            <select class="form-control empleados_asignados" name="empleados_asignados[]"
+                                id="empleados_asignados" multiple>
                                 @foreach ($empleados as $empleado)
                                     <option value="{{ $empleado->id }}">{{ $empleado->persona->nombre_completo }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-9 mb-3" id="cargos_asignados">
+                            <label for="cargos_asignados" class="form-label">Seleccionar áreas<span
+                                    style="color: red">*</span></label>
+                            <select class="form-control cargos_asignados" name="cargos_asignados[]"
+                                id="cargos_asignados" multiple>
+                                @foreach ($cargos as $cargo)
+                                    <option value="{{ $cargo->id }}"> Todos / {{ $cargo->descripcion }}
                                     </option>
                                 @endforeach
                             </select>

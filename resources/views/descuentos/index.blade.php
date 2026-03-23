@@ -41,12 +41,10 @@
                             <th>ID</th>
                             <th>Tipo cupón</th>
                             <th>Código</th>
-                            <th class="text-center">NOMBRE COMPLETO</th>
                             <th>Cantidad Usos</th>
                             <th>Fecha Máxima</th>
-                            <th>Monto Descuento</th>
-                            <th>Porcentaje</th>
-                            <th>Activo</th>
+                            <th>Descuento</th>
+                            <th>Estado</th>
                             <th class="text-center" style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>
