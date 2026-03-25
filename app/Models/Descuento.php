@@ -13,19 +13,15 @@ class Descuento extends Model
 
     protected $fillable = [
         'codigo',
-        'persona_id',
         'cantidad_usos',
         'fecha_maxima',
         'monto_efectivo',
         'porcentaje',
         'tipo_cupon_id',
-        'activo'
+        'activo',
+        'tipo_asignacion_id',
+        'tipo_descuento_id',
     ];
-
-    public function persona()
-    {
-        return $this->belongsTo(Persona::class);
-    }
 
     public function tipo_cupon()
     {
@@ -37,5 +33,15 @@ class Descuento extends Model
         return $this->activo &&
             $this->tipo_cupon?->estado &&
             (is_null($this->fecha_maxima) || $this->fecha_maxima >= now());
+    }
+
+    public function personas()
+    {
+        return $this->hasMany(DescuentoPersona::class, "descuento_id");
+    }
+
+    public function cargos()
+    {
+        return $this->hasMany(DescuentoCargo::class, "descuento_id");
     }
 }

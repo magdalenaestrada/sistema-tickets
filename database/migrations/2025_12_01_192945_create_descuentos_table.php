@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('descuentos', function (Blueprint $table) {
             $table->id();
             $table->string("codigo")->index();
-            $table->foreignId('persona_id')->nullable()->constrained('personas');
             $table->integer("cantidad_usos")->nullable();
             $table->date("fecha_maxima")->nullable()->index();
             $table->decimal('monto_efectivo', 10, 2)->nullable();
             $table->decimal('porcentaje', 5, 2)->nullable();
             $table->boolean('activo')->default(true);
+            $table->string("tipo_asignacion_id");
+            $table->string("tipo_descuento_id");
             $table->timestamps();
         });
     }

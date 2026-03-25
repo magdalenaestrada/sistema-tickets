@@ -155,17 +155,43 @@ $(document).ready(function () {
 
     $("#tablaDescuentos").on("click", ".editar", function () {
         let id = $(this).data("id");
+
         $.get(route("descuentos.mostrar", id), function (data) {
             $("#descuento_id").val(data.id);
             $("#codigo").val(data.codigo);
-            $("#persona_documento").val(data.persona?.documento ?? "");
-            $("#persona_nombres").val(data.persona?.nombres ?? "");
-            $("#persona_apellidos").val(data.persona?.apellidos ?? "");
-            $('[name="cantidad_usos"]').val(data.cantidad_usos);
-            $('[name="fecha_maxima"]').val(data.fecha_maxima);
-            $('[name="monto_efectivo"]').val(data.monto_efectivo);
-            $('[name="porcentaje"]').val(data.porcentaje);
-            $('[name="activo"]').prop("checked", data.activo);
+            $("#cantidad_usos").val(data.cantidad_usos);
+            $("#fecha_maxima").val(data.fecha_maxima);
+            $("#monto_efectivo").val(data.monto_efectivo);
+            $("#porcentaje").val(data.porcentaje);
+            $("#activo").prop("checked", data.activo);
+            $("#tipo_asignacion_id")
+                .val(data.tipo_asignacion_id)
+                .trigger("change");
+
+            $("#tipo_descuento_id")
+                .val(data.tipo_descuento_id)
+                .trigger("change");
+
+            let empleadosTS = document.querySelector(
+                ".empleados_asignados",
+            )?.tomselect;
+            empleadosTS?.clear();
+
+            if (data.personas) {
+                data.personas.forEach((p) => {
+                    empleadosTS?.addItem(p.persona_id);
+                });
+            }
+            let cargosTS =
+                document.querySelector(".cargos_asignados")?.tomselect;
+            cargosTS?.clear();
+
+            if (data.cargos) {
+                data.cargos.forEach((c) => {
+                    cargosTS?.addItem(c.cargo_id);
+                });
+            }
+
             $("#modalTitulo").text("Editar Descuento");
             $("#modalDescuento").modal("show");
         });
