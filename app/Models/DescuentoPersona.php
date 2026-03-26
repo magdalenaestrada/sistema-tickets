@@ -9,7 +9,7 @@ class DescuentoPersona extends Model
     protected $table = "descuentos_persona";
     protected $fillable = [
         "descuento_id",
-        "persona_id",
+        "empleado_id",
     ];
 
     public function descuento()
@@ -17,8 +17,8 @@ class DescuentoPersona extends Model
         return $this->belongsTo(Descuento::class, "descuento_id");
     }
 
-    public function persona()
+    public function empleado()
     {
-        return $this->belongsTo(Persona::class, "persona_id");
+        return $this->belongsTo(Empleado::class, "empleado_id");
     }
 }

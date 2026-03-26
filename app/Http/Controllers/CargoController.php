@@ -43,7 +43,6 @@ class CargoController extends Controller
     {
         $data = $request->validate([
             'descripcion' => 'required|string|max:255|unique:cargos,descripcion',
-            'rol_id' => 'required|exists:roles,id',
         ]);
 
         $data['descripcion'] = Str::ucfirst(Str::lower($data['descripcion']));

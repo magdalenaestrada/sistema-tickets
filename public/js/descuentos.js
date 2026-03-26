@@ -84,6 +84,8 @@ $(document).ready(function () {
     $("#btnNuevoDescuento").click(function () {
         $("#formDescuento")[0].reset();
         $("#descuento_id").val("");
+        document.querySelector(".empleados_asignados")?.tomselect?.clear();
+        document.querySelector(".cargos_asignados")?.tomselect?.clear();
         $("#modalTitulo").text("Registrar Descuento");
         $("#modalDescuento").modal("show");
     });
@@ -158,6 +160,7 @@ $(document).ready(function () {
 
         $.get(route("descuentos.mostrar", id), function (data) {
             $("#descuento_id").val(data.id);
+            $("#tipo_cupon_id").val(data.tipo_cupon_id);
             $("#codigo").val(data.codigo);
             $("#cantidad_usos").val(data.cantidad_usos);
             $("#fecha_maxima").val(data.fecha_maxima);
@@ -177,9 +180,9 @@ $(document).ready(function () {
             )?.tomselect;
             empleadosTS?.clear();
 
-            if (data.personas) {
-                data.personas.forEach((p) => {
-                    empleadosTS?.addItem(p.persona_id);
+            if (data.empleados) {
+                data.empleados.forEach((p) => {
+                    empleadosTS?.addItem(p.empleado_id);
                 });
             }
             let cargosTS =
@@ -199,6 +202,7 @@ $(document).ready(function () {
 
     $("#formDescuento").submit(function (e) {
         e.preventDefault();
+        console.log($(this).serialize()); 
         $.post(
             route("descuentos.guardar"),
             $(this).serialize(),
@@ -353,40 +357,36 @@ $(document).ready(function () {
         }
     });
 
-    document
-        .getElementById("tipo_descuento_id")
-        .addEventListener("change", function () {
-            let contenedor_monto = document.getElementById(
-                "descuento_monto_fijo",
-            );
-            let contenedor_porcentaje = document.getElementById(
-                "descuento_porcentaje",
-            );
+    $("#tipo_descuento_id").on("change", function () {
+        let contenedor_monto = document.getElementById("descuento_monto_fijo");
+        let contenedor_porcentaje = document.getElementById(
+            "descuento_porcentaje",
+        );
 
-            let monto = document.getElementById("monto_efectivo");
-            let porcentaje = document.getElementById("porcentaje");
+        let monto = document.getElementById("monto_efectivo");
+        let porcentaje = document.getElementById("porcentaje");
 
-            if (this.value === "P") {
-                contenedor_monto.hidden = true;
-                monto.value = "";
-                monto.required = false;
-                porcentaje.required = true;
-                contenedor_porcentaje.hidden = false;
-            } else if (this.value === "M") {
-                contenedor_monto.hidden = false;
-                contenedor_porcentaje.hidden = true;
-                monto.required = true;
-                porcentaje.required = false;
-                porcentaje.value = "";
-            } else {
-                contenedor_monto.hidden = true;
-                monto.value = "";
-                porcentaje.value = "";
-                monto.required = false;
-                porcentaje.required = false;
-                contenedor_porcentaje.hidden = true;
-            }
-        });
+        if (this.value === "P") {
+            contenedor_monto.hidden = true;
+            monto.value = "";
+            monto.required = false;
+            porcentaje.required = true;
+            contenedor_porcentaje.hidden = false;
+        } else if (this.value === "M") {
+            contenedor_monto.hidden = false;
+            contenedor_porcentaje.hidden = true;
+            monto.required = true;
+            porcentaje.required = false;
+            porcentaje.value = "";
+        } else {
+            contenedor_monto.hidden = true;
+            monto.value = "";
+            porcentaje.value = "";
+            monto.required = false;
+            porcentaje.required = false;
+            contenedor_porcentaje.hidden = true;
+        }
+    });
 
     function actualizarCamposSegunTipo() {
         const tipo = $("#tipo_documento_id").val();

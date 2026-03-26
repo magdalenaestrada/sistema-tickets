@@ -19,7 +19,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <input type="text" id="filtroNombres" class="form-control" placeholder="Buscar persona">
+                    <input type="text" id="filtroNombres" class="form-control" placeholder="Buscar razón social">
                 </div>
             </div>
 

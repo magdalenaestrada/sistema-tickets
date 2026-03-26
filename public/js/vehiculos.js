@@ -5,13 +5,13 @@ $(document).ready(function () {
     let tabla = $("#tablaVehiculos").DataTable({
         ajax: route("vehiculos.datatable"),
         dom: "rtip",
-        info:false,
+        info: false,
         columns: [
             { data: "id" },
             { data: "tipo_vehiculo" },
             { data: "numero_placa" },
-            { data: "estado_badge"},
-            { data: "acciones"},
+            { data: "estado_badge" },
+            { data: "acciones" },
         ],
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
@@ -93,7 +93,23 @@ $(document).ready(function () {
             }
         } catch (err) {
             console.error(err);
-            Swal.fire("Error", "Error en la petición", "error");
+
+            if (err.status === 422) {
+                let errores = err.responseJSON.errors;
+                let mensaje = Object.values(errores).join("\n");
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Validación",
+                    text: mensaje,
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: err.responseJSON?.message || "Error en la petición",
+                });
+            }
         }
     });
 

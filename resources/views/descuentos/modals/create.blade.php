@@ -76,11 +76,11 @@
                             </select>
                         </div>
 
-                        <div class="col-md-9 mb-3" id="empleados_asignados">
+                        <div class="col-md-9 mb-3" id="contenedor_empleados">
                             <label for="empleados_asignados" class="form-label">Seleccionar empleados <span
                                     style="color: red">*</span></label>
-                            <select class="empleados_asignados" name="empleados_asignados[]"
-                                id="empleados_asignados" multiple>
+                            <select class="empleados_asignados" name="empleados_asignados[]" id="empleados_asignados"
+                                multiple>
                                 @foreach ($empleados as $empleado)
                                     <option value="{{ $empleado->id }}">{{ $empleado->persona->nombre_completo }}
                                     </option>
@@ -91,8 +91,8 @@
                         <div class="col-md-9 mb-3" id="cargos_asignados">
                             <label for="cargos_asignados" class="form-label">Seleccionar áreas<span
                                     style="color: red">*</span></label>
-                            <select class="cargos_asignados" name="cargos_asignados[]"
-                                id="cargos_asignados" multiple>
+                            <select class="cargos_asignados" name="cargos_asignados[]" id="cargos_asignados"
+                                multiple>
                                 @foreach ($cargos as $cargo)
                                     <option value="{{ $cargo->id }}"> Todos / {{ $cargo->descripcion }}
                                     </option>

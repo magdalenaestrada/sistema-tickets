@@ -8,6 +8,7 @@ use App\Models\VehiculoMantenimiento;
 use Carbon\Carbon;
 use Database\Seeders\RazonesMantenimientoSeeder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Str;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -57,30 +58,38 @@ class VehiculoController extends Controller
 
                 if ($vehiculo->estado !== "V") {
 
-                    if ($vehiculo->estado !== "M") {
 
-                        $btnMantenimiento = '
-            <button class="btn btn-xs btn-secondary mantenimiento"
-                data-id="' . $vehiculo->id . '"
-                data-estado="' . $vehiculo->estado . '">
-                <i data-lucide="wrench"></i>
-            </button>
-        ';
+                    $color = 'btn-secondary';
+
+                    if ($vehiculo->estado === 'M') {
+                        $color = 'btn-success';
+                    } elseif ($vehiculo->estado === 'A') {
+                        $color = 'btn-primary';
                     }
 
-                    $btnEditar = '
+                    $btnMantenimiento = '
+    <button class="btn btn-xs ' . $color . ' mantenimiento"
+        data-id="' . $vehiculo->id . '"
+        data-estado="' . $vehiculo->estado . '">
+        <i data-lucide="wrench"></i>
+    </button>
+';
+                    if ($vehiculo->estado !== "M") {
+
+                        $btnEditar = '
         <button class="btn btn-xs btn-warning editar"
             data-id="' . $vehiculo->id . '">
             <i data-lucide="edit"></i>
         </button>
     ';
 
-                    $btnEliminar = '
+                        $btnEliminar = '
         <button class="btn btn-xs btn-danger eliminar"
             data-id="' . $vehiculo->id . '">
             <i data-lucide="trash-2"></i>
         </button>
     ';
+                    }
                 }
                 return $btnMantenimiento . $btnEditar . $btnEliminar;
             })
@@ -89,9 +98,18 @@ class VehiculoController extends Controller
             ->make(true);
     }
 
+
     public function guardar(Request $request)
     {
+        $request->validate([
+            'tipo_vehiculo_id' => 'required',
+            'numero_placa' => 'required|unique:vehiculos,numero_placa'
+        ], [
+            'numero_placa.unique' => 'La placa ya está registrada'
+        ]);
+
         $hoy = Carbon::now("America/Lima")->format("Y-m-d");
+
         $vehiculo = Vehiculo::create([
             "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
             "numero_placa" => Str::upper($request->numero_placa),
@@ -100,15 +118,27 @@ class VehiculoController extends Controller
 
         return response()->json(['success' => true, 'vehiculo' => $vehiculo]);
     }
-
     public function actualizar(Request $request, Vehiculo $vehiculo)
     {
-        $vehiculo->update([
-            "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
-            "numero_placa" => $request->numero_placa,
+        $request->validate([
+            'tipo_vehiculo_id' => 'required',
+            'numero_placa' => [
+                'required',
+                Rule::unique('vehiculos', 'numero_placa')->ignore($vehiculo->id),
+            ],
+        ], [
+            'numero_placa.unique' => 'La placa ya está registrada'
         ]);
 
-        return response()->json(['success' => true]);
+        $vehiculo->update([
+            "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
+            "numero_placa" => Str::upper($request->numero_placa),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vehículo actualizado correctamente'
+        ]);
     }
 
     public function mostrar($id)

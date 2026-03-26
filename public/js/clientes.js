@@ -8,7 +8,7 @@ $(document).ready(async function () {
 
     const tabla = $("#tablaClientes").DataTable({
         processing: true,
-        serverSide: false,
+        serverSide: true,
         dom: "rtip",
         ajax: {
             url: route("clientes.datatable"),
@@ -22,7 +22,7 @@ $(document).ready(async function () {
             { data: "documento", title: "Documento" },
             {
                 data: "nombre",
-                title: "Nombre",
+                title: "Razón social",
             },
             { data: "telefono", title: "Teléfono" },
             { data: "celular", title: "Celular" },
@@ -34,7 +34,7 @@ $(document).ready(async function () {
                 searchable: false,
             },
         ],
-        
+
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
@@ -69,18 +69,12 @@ $(document).ready(async function () {
 
     $("#tipo_documento_id").on("change", toggleTipoDocumento);
 
-    $("#filtroDocumento").on("keyup change", function () {
-        const val = this.value;
-
-        if (val) {
-            tabla
-                .column(0)
-                .search("^" + val, true, false)
-                .draw();
-        } else {
-            tabla.column(0).search("").draw();
-        }
-    });
+    $("#filtroDocumento, #filtroNombres, #filtroApellidos").on(
+        "keyup change",
+        function () {
+            tabla.ajax.reload();
+        },
+    );
 
     document
         .getElementById("filtroDocumento")

@@ -10,7 +10,6 @@ $(function () {
         columns: [
             { title: "ID", data: "id" },
             { title: "Descripcion", data: "descripcion" },
-            { title: "Rol", data: "rol" },
             {
                 title: "Acciones",
                 data: "acciones",

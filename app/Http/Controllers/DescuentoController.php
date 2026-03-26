@@ -28,15 +28,15 @@ class DescuentoController extends Controller
 
     public function datatable()
     {
-        $data = Descuento::with('personas')->orderBy('id', 'asc');
+        $data = Descuento::with('empleados')->orderBy('id', 'asc');
 
         return DataTables::of($data)
             ->addColumn('tipo_cupon', fn($d) => $d->tipo_cupon?->descripcion ?? '-')
             ->addColumn('persona', function ($d) {
-                if ($d->personas->count() > 1) {
+                if ($d->empleados->count() > 1) {
                     return "Asignado a más de 1 persona";
-                } elseif ($d->personas->count() === 1) {
-                    return $d->personas->first()->persona->nombre_completo ?? '-';
+                } elseif ($d->empleados->count() === 1) {
+                    return $d->empleados->first()->persona->nombre_completo ?? '-';
                 } else {
                     return '-';
                 }
@@ -88,24 +88,39 @@ class DescuentoController extends Controller
 
     public function mostrar($id)
     {
-        $descuento = Descuento::with('personas', 'cargos')->findOrFail($id);
+        $descuento = Descuento::with('empleados', 'cargos')->findOrFail($id);
         return response()->json($descuento);
     }
 
     public function guardar(Request $request)
     {
-        $now = Carbon::now("America/Lima");
-
         $request->validate([
             'tipo_cupon_id' => 'required',
             'tipo_asignacion_id' => 'required',
-            'codigo.unique' => 'Ya existe un cupón con este código'
-
+            'codigo' => 'required|unique:descuentos,codigo,' . $request->id
         ]);
 
         try {
-            if ($request->tipo_asignacion_id === 'T') {
-                Descuento::create([
+
+            if ($request->id) {
+                $descuento = Descuento::findOrFail($request->id);
+
+                $descuento->update([
+                    'tipo_cupon_id' => $request->tipo_cupon_id,
+                    'codigo' => $request->codigo,
+                    'cantidad_usos' => $request->cantidad_usos,
+                    'fecha_maxima' => $request->fecha_maxima,
+                    'monto_efectivo' => $request->monto_efectivo,
+                    'porcentaje' => $request->porcentaje,
+                    'tipo_asignacion_id' => $request->tipo_asignacion_id,
+                    'tipo_descuento_id' => $request->tipo_descuento_id,
+                ]);
+
+                DescuentoPersona::where('descuento_id', $descuento->id)->delete();
+                DescuentoCargo::where('descuento_id', $descuento->id)->delete();
+            } else {
+
+                $descuento = Descuento::create([
                     'tipo_cupon_id' => $request->tipo_cupon_id,
                     'codigo' => $request->codigo,
                     'cantidad_usos' => $request->cantidad_usos,
@@ -121,62 +136,23 @@ class DescuentoController extends Controller
 
             if ($request->tipo_asignacion_id === 'P') {
 
-                if (!$request->has('empleados_asignados')) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Debes seleccionar empleados'
-                    ], 400);
+                if ($request->has('empleados_asignados')) {
+                    foreach ($request->empleados_asignados as $empleado_id) {
+                        DescuentoPersona::create([
+                            "descuento_id" => $descuento->id,
+                            "empleado_id" => $empleado_id
+                        ]);
+                    }
                 }
+            } elseif ($request->tipo_asignacion_id === 'G') {
 
-                $descuento = Descuento::create([
-                    'tipo_cupon_id' => $request->tipo_cupon_id,
-                    'codigo' => $request->codigo,
-                    'cantidad_usos' => $request->cantidad_usos,
-                    'fecha_maxima' => $request->fecha_maxima,
-                    'monto_efectivo' => $request->monto_efectivo,
-                    'porcentaje' => $request->porcentaje,
-                    'tipo_asignacion_id' => $request->tipo_asignacion_id,
-                    'tipo_descuento_id' => $request->tipo_descuento_id,
-                    'activo' => 1,
-                ]);
-
-                foreach ($request->empleados_asignados as $empleado_id) {
-
-                    $empleado = Empleado::with('persona')->find($empleado_id);
-                    if (!$empleado) continue;
-
-                    DescuentoPersona::create([
-                        "descuento_id" => $descuento->id,
-                        "persona_id" => $empleado->persona_id
-                    ]);
-                }
-            }
-
-            if ($request->tipo_asignacion_id === 'G') {
-                if (!$request->has('cargos_asignados')) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Debes seleccionar algún cargo'
-                    ], 400);
-                }
-
-                $descuento = Descuento::create([
-                    'tipo_cupon_id' => $request->tipo_cupon_id,
-                    'codigo' => $request->codigo,
-                    'cantidad_usos' => $request->cantidad_usos,
-                    'fecha_maxima' => $request->fecha_maxima,
-                    'monto_efectivo' => $request->monto_efectivo,
-                    'porcentaje' => $request->porcentaje,
-                    'tipo_asignacion_id' => $request->tipo_asignacion_id,
-                    'tipo_descuento_id' => $request->tipo_descuento_id,
-                    'activo' => 1,
-                ]);
-
-                foreach ($request->cargos_asignados as $cargo_id) {
-                    DescuentoCargo::create([
-                        "descuento_id" => $descuento->id,
-                        "cargo_id" => $cargo_id
-                    ]);
+                if ($request->has('cargos_asignados')) {
+                    foreach ($request->cargos_asignados as $cargo_id) {
+                        DescuentoCargo::create([
+                            "descuento_id" => $descuento->id,
+                            "cargo_id" => $cargo_id
+                        ]);
+                    }
                 }
             }
 
