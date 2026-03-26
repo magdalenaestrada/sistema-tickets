@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->foreignId("distrito_id")->constrained("distritos");
             $table->string("nombre_comercial")->nullable();
             $table->string("direccion");
-            $table->string("telefono");
+            $table->string("telefono")->nullable();
             $table->unique(['empresa_id', 'distrito_id', 'nombre_comercial']);
             $table->timestamps();
         });

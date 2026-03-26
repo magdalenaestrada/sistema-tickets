@@ -26,21 +26,20 @@ class ClientesController extends Controller
 
     public function datatable(Request $request)
     {
-        $query = Cliente::with(['persona', 'user']);
+        $query = Cliente::select('clientes.*')
+            ->join('personas', 'personas.id', '=', 'clientes.persona_id')
+            ->whereNull('personas.deleted_at');
 
         if ($request->filled('documento')) {
-            $query->whereHas('persona', function ($q) use ($request) {
-                $q->where('documento', 'like', $request->documento . '%');
-            });
+            $query->where('personas.documento', 'like', $request->documento . '%');
         }
 
         if ($request->filled('nombres')) {
-            $query->whereHas('persona', function ($q) use ($request) {
-                $q->where(function ($sub) use ($request) {
-                    $sub->where('nombres', 'like', '%' . $request->nombres . '%')
-                        ->orWhere('apellidos', 'like', '%' . $request->nombres . '%')
-                        ->orWhere('razon_social', 'like', '%' . $request->nombres . '%');
-                });
+            $busqueda = $request->nombres . '%';
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('personas.nombres', 'like', $busqueda)
+                    ->orWhere('personas.apellidos', 'like', $busqueda)
+                    ->orWhere('personas.razon_social', 'like', $busqueda);
             });
         }
 
@@ -59,9 +58,8 @@ class ClientesController extends Controller
             <button class="btn btn-primary btn-xs editar" data-id="' . $c->id . '">
                 <i data-lucide="edit"></i>
             </button>
-
             <button class="btn btn-danger btn-xs eliminar" data-id="' . $c->id . '">
-                <i class="link-icon" data-lucide="trash-2"></i>
+                <i data-lucide="trash-2"></i>
             </button>
         ')
             ->rawColumns(['acciones'])

@@ -7,7 +7,6 @@ $(document).ready(async function () {
     const modal = new bootstrap.Modal($("#modalCliente")[0]);
 
     const tabla = $("#tablaClientes").DataTable({
-        processing: true,
         serverSide: true,
         dom: "rtip",
         ajax: {
@@ -69,10 +68,12 @@ $(document).ready(async function () {
 
     $("#tipo_documento_id").on("change", toggleTipoDocumento);
 
+    let searchTimeout;
     $("#filtroDocumento, #filtroNombres, #filtroApellidos").on(
         "keyup change",
         function () {
-            tabla.ajax.reload();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => tabla.ajax.reload(), 400);
         },
     );
 

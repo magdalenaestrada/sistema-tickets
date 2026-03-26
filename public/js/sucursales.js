@@ -24,10 +24,7 @@ $(document).ready(async function () {
             },
         ],
         responsive: false,
-         
-        language: {
-            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-        },
+
         drawCallback: function () {
             lucide.createIcons();
         },
@@ -97,6 +94,27 @@ $(document).ready(async function () {
             .append('<option value="">Seleccione</option>');
 
         $("#modalSucursal").modal("show");
+    });
+
+    $(document).on("click", ".editar", function () {
+        const id = $(this).data("id");
+
+        $.get(route("sucursales.detalle", id), function (data) {
+            $("#sucursal_id").val(data.id);
+            $("#nombre_comercial_sucursal").val(data.nombre_comercial);
+            $("#direccion_sucursal").val(data.direccion);
+            $("#telefono").val(data.telefono);
+            $("#modalTitulo").text("Editar Sucursal");
+
+            cargarSelectDepartamentos();
+            setUbigeo(
+                data.departamento_id,
+                data.provincia_id,
+                data.distrito_id,
+            );
+
+            $("#modalSucursal").modal("show");
+        });
     });
 
     $(document).on("click", ".activar", function () {
@@ -237,7 +255,6 @@ $(document).ready(async function () {
             },
         });
     });
-
 
     $("#tablaSucursales").on("click", ".ver", function () {
         const id = $(this).data("id");

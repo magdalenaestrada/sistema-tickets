@@ -29,16 +29,17 @@
                     </div>
                     <div class="mb-3">
                         <label>Nombre Comercial <span style="color: red">*</span></label>
-                        <input type="text" name="nombre_comercial" class="form-control" required>
+                        <input type="text" name="nombre_comercial" id="nombre_comercial_sucursal" class="form-control"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label>Dirección <span style="color: red">*</span></label>
-                        <input type="text" name="direccion" class="form-control" required>
+                        <input type="text" name="direccion" id="direccion_sucursal" class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label>Teléfono</label>
-                        <input type="text" name="telefono" class="form-control" maxlength="9" pattern="\d{9}"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
+                        <input type="text" name="telefono" id="telefono" class="form-control" maxlength="9"
+                            pattern="\d{9}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
                     </div>
                 </div>
                 <div class="modal-footer">
