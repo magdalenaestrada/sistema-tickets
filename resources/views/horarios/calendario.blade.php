@@ -5,12 +5,10 @@
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-semibold">Calendario de Horarios</h5>
             <div>
-                <button class="btn btn-xs btn-outline-primary" id="btnHoy">Hoy</button>
-                <button class="btn btn-xs btn-outline-secondary" id="btnMes">Mes</button>
                 <button class="btn btn-xs btn-outline-secondary" id="btnSemana">Semana</button>
+                <button class="btn btn-xs btn-outline-secondary" id="btnMes">Mes</button>
             </div>
         </div>
-        {{-- Filtros --}}
         <div class="row g-2 mb-3 px-3">
             <div class="col-md-3">
                 <select id="filtroOrigen" class="form-select form-select-sm">
@@ -181,7 +179,6 @@
                     calendar.refetchEvents();
                 });
 
-                document.getElementById("btnHoy").onclick = () => calendar.today();
                 document.getElementById("btnSemana").onclick = () => calendar.changeView("timeGridWeek");
                 document.getElementById("btnMes").onclick = () => calendar.changeView("dayGridMonth");
 

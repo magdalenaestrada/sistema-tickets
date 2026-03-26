@@ -19,7 +19,7 @@ class UserSeeder extends Seeder
                 'numero_licencia'   => null,
                 'username'          => 'superadministrador@edimsa.com',
                 'email_verified_at' => now(),
-                'password'          => Hash::make('12345678'),
+                'password'          => Hash::make('edimsa2026$'),
                 'estado'            => 'A',
                 'fecha_creacion'    => now(),
                 'created_at'        => now(),

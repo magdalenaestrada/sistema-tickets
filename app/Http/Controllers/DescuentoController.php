@@ -23,7 +23,8 @@ class DescuentoController extends Controller
         $tipo_cupones = TipoCupon::where('estado', "A")->get();
         $empleados = Empleado::where("estado", "A")->get();
         $cargos = Cargo::whereHas('empleados')->get();
-        return view('descuentos.index', compact("tipos_documentos", "tipo_cupones", "empleados", "cargos"));
+        $hoy = Carbon::now("America/Lima")->format("Y-m-d");
+        return view('descuentos.index', compact("tipos_documentos", "tipo_cupones", "empleados", "cargos", "hoy"));
     }
 
     public function datatable()

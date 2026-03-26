@@ -541,7 +541,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
     <script>
-        const eventosLaravel = @json($datos_eventos);
+        const eventosLaravel = @json($datos_eventos ?? []);
     </script>
 
     <script src="{{ asset('js/calendarios.js') }}"></script>

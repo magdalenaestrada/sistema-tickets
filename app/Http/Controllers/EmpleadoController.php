@@ -55,13 +55,13 @@ class EmpleadoController extends Controller
             }
 
             $datos_eventos[] = [
-                'title'       => $evento->titulo,
-                'start'       => $evento->fecha_inicio,
-                'end'         => $evento->fecha_fin,
-                'tipo'        => $evento->tipo_evento->descripcion,
+                'title'       => $evento->titulo ?? '',
+                'start'       => $evento->fecha_inicio ? \Carbon\Carbon::parse($evento->fecha_inicio)->format('Y-m-d') : null,
+                'end'         => $evento->fecha_fin ? \Carbon\Carbon::parse($evento->fecha_fin)->format('Y-m-d') : null,
+                'tipo'        => optional($evento->tipo_evento)->descripcion ?? '',
                 'persona'     => null,
                 'edad'        => null,
-                'descripcion' => $evento->descripcion
+                'descripcion' => $evento->descripcion ?? ''
             ];
         }
 

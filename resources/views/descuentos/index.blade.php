@@ -12,7 +12,7 @@
         </div>
         <div class="card-body">
             <div class="row mt-1">
-                <div class="col-md-3 mb-3 mt-3">
+                <div class="col-md-2 mb-3 mt-3">
                     <input type="text" id="filtroCodigo" class="form-control" placeholder="Buscar código">
                 </div>
                 <div class="col-md-3 mb-3 mt-3">
@@ -23,13 +23,21 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-6 mb-3 mt-3">
+                <div class="col-md-4 mb-3 mt-3">
                     <select id="filtroPersona">
                         <option value="">Buscar por persona</option>
                         @foreach ($empleados as $empleado)
                             <option value="{{ $empleado->persona->nombre_completo }}">
                                 {{ $empleado->persona->nombre_completo }}
                             </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3 mt-3">
+                    <select id="filtroCargo">
+                        <option value="">Buscar por cargo</option>
+                        @foreach ($cargos as $cargo)
+                            <option value="{{ $cargo->id }}">{{ $cargo->descripcion }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -57,5 +65,4 @@
 
     @push('scripts')
         <script src="{{ asset('js/descuentos.js') }}"></script>
-        
     @endpush

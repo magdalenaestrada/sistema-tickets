@@ -63,7 +63,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="fecha_maxima" class="form-label">Fecha límite de uso</label>
-                            <input type="date" name="fecha_maxima" id="fecha_maxima" class="form-control">
+                            <input type="date" name="fecha_maxima" min="{{ $hoy }}" id="fecha_maxima" class="form-control">
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="tipo_asignacion_id" class="form-label">Tipo de asignación<span
@@ -71,7 +71,7 @@
                             <select class="form-select" name="tipo_asignacion_id" id="tipo_asignacion_id">
                                 <option value="">Selecciona un tipo</option>
                                 <option value="T">Todos los empleados</option>
-                                <option value="G">Por áreas</option>
+                                <option value="G">Por cargos</option>
                                 <option value="P">Personal</option>
                             </select>
                         </div>
@@ -89,7 +89,7 @@
                         </div>
 
                         <div class="col-md-9 mb-3" id="cargos_asignados">
-                            <label for="cargos_asignados" class="form-label">Seleccionar áreas<span
+                            <label for="cargos_asignados" class="form-label">Seleccionar cargos<span
                                     style="color: red">*</span></label>
                             <select class="cargos_asignados" name="cargos_asignados[]" id="cargos_asignados"
                                 multiple>

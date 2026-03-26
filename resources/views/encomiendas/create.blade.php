@@ -4,10 +4,7 @@
     <form id="formEncomienda">
         @csrf
         <div class="row">
-            <!-- COLUMNA IZQUIERDA (70%) -->
             <div class="col-md-9">
-
-                <!-- DATOS DEL EMISOR -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h6>Datos del Emisor</h6>
@@ -15,7 +12,7 @@
 
                         <div class="row g-2">
                             <div class="col-md-2">
-                                <label class="form-label">Tipo de documento</label>
+                                <label class="form-label">Tipo de documento <span style="color: red">*</span></label>
                                 <select class="form-select" name="emisor_tipo_documento_id" id="emisor_tipo_documento_id"
                                     required>
                                     @foreach ($tipos_documentos as $tipo_documento)
@@ -25,19 +22,19 @@
                             </div>
 
                             <div class="col-md-2">
-                                <label class="form-label">Documento</label>
+                                <label class="form-label">Documento <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-numeros" id="emisor_documento"
                                     name="emisor_documento" required>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Nombres</label>
+                                <label class="form-label">Nombres <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-letras" id="emisor_nombres"
                                     name="emisor_nombres" required>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Apellidos</label>
+                                <label class="form-label">Apellidos <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-letras" id="emisor_apellidos"
                                     name="emisor_apellidos" required>
                             </div>
@@ -45,7 +42,7 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
-                                <label class="form-label">Celular</label>
+                                <label class="form-label">Celular <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-numeros" id="emisor_celular"
                                     name="emisor_celular" required>
                             </div>
@@ -70,7 +67,6 @@
                     </div>
                 </div>
 
-                <!-- DATOS DEL RECEPTOR -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h6>Datos del Receptor</h6>
@@ -78,7 +74,7 @@
 
                         <div class="row g-2">
                             <div class="col-md-2">
-                                <label class="form-label">Tipo de documento</label>
+                                <label class="form-label">Tipo de documento <span style="color: red">*</span></label>
                                 <select class="form-select" name="receptor_tipo_documento_id"
                                     id="receptor_tipo_documento_id" required>
                                     @foreach ($tipos_documentos as $tipo_documento)
@@ -94,13 +90,13 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Nombres</label>
+                                <label class="form-label">Nombres <span style="color: red">*</span></label>
                                 <input type="text" class="form-control  solo-letras" id="receptor_nombres"
                                     name="receptor_nombres" required>
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Apellidos</label>
+                                <label class="form-label">Apellidos <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-letras" id="receptor_apellidos"
                                     name="receptor_apellidos" required>
                             </div>
@@ -108,7 +104,7 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
-                                <label class="form-label">Celular</label>
+                                <label class="form-label">Celular <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-numeros" id="receptor_celular"
                                     name="receptor_celular" required>
                             </div>
@@ -128,7 +124,7 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
-                                <label class="form-label">DEPARTAMENTO</label>
+                                <label class="form-label">DEPARTAMENTO <span style="color: red">*</span></label>
                                 <select name="receptor_departamento_id" id="departamento_id" class="form-select"
                                     required>
                                     <option value="">Seleccione</option>
@@ -136,7 +132,7 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label">PROVINCIA</label>
+                                <label class="form-label">PROVINCIA <span style="color: red">*</span></label>
                                 <select name="receptor_provincia_id" id="provincia_id" class="form-select" required>
                                     <option value="">Seleccione</option>
 
@@ -144,7 +140,7 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label">DISTRITO</label>
+                                <label class="form-label">DISTRITO <span style="color: red">*</span></label>
                                 <select name="receptor_distrito_id" id="distrito_id" class="form-select" required>
                                     <option value="">Seleccione</option>
                                 </select>
@@ -160,7 +156,6 @@
                     </div>
                 </div>
 
-                <!-- RUTA -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h6>Ruta</h6>
@@ -168,7 +163,7 @@
 
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label">SUCURSAL ORIGEN</label>
+                                <label class="form-label">SUCURSAL ORIGEN <span style="color: red">*</span></label>
                                 <select id="origen" class="form-select" name="origen">
                                     <option value="" disabled>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
@@ -182,7 +177,7 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">SUCURSAL DESTINO</label>
+                                <label class="form-label">SUCURSAL DESTINO <span style="color: red">*</span></label>
                                 <select id="destino" class="form-select" name="destino" required>
                                     <option value="" disabled selected>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
@@ -195,10 +190,9 @@
                     </div>
                 </div>
 
-                <!-- DETALLES -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h6>Detalles de Encomienda</h6>
+                        <h6>Detalles de Encomienda <span style="color: red">*</span></h6>
                         <hr>
 
                         <button type="button" class="btn btn-success btn-sm mb-2" id="btnAgregarDetalle">
@@ -225,7 +219,6 @@
 
             <div class="col-md-3">
 
-                <!-- Resumen Encomienda -->
                 <div class="card mb-3">
                     <div class="card-body">
                         <h6 class="mb-3">Tipo de servicio: Encomienda</h6>
@@ -279,7 +272,7 @@
                             <input class="form-check-input" type="checkbox" id="pago_instantaneo"
                                 name="pago_instantaneo" value="1">
                             <label class="form-check-label" for="pago_instantaneo">
-                                Registrar pago
+                                Registrar pago 
                             </label>
                         </div>
                         <div id="container_pago">

@@ -21,7 +21,7 @@
                                     <div class="row">
 
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">Tipo</label>
+                                            <label class="form-label">Tipo <span style="color: red">*</span></label>
                                             <select class="form-select" name="tipo_documento_id[]"
                                                 id="tipo_documento_id_{{ $index }}" required>
                                                 @foreach ($tipos_documentos as $tipo_documento)
@@ -33,25 +33,25 @@
                                         </div>
 
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">Documento</label>
+                                            <label class="form-label">Documento <span style="color: red">*</span></label>
                                             <input type="text" class="form-control" id="documento_{{ $index }}"
                                                 name="documento[]" required>
                                         </div>
 
                                         <div class="col-md-4 mb-2">
-                                            <label class="form-label">Nombres</label>
+                                            <label class="form-label">Nombres <span style="color: red">*</span></label>
                                             <input type="text" class="form-control" id="nombres_{{ $index }}"
                                                 name="nombres[]" required>
                                         </div>
 
                                         <div class="col-md-4 mb-2">
-                                            <label class="form-label">Apellidos</label>
+                                            <label class="form-label">Apellidos <span style="color: red">*</span></label>
                                             <input type="text" class="form-control" id="apellidos_{{ $index }}"
                                                 name="apellidos[]" required>
                                         </div>
 
                                         <div class="col-md-3 mb-2">
-                                            <label class="form-label">Celular</label>
+                                            <label class="form-label">Celular <span style="color: red">*</span></label>
                                             <input type="text" class="form-control" id="celular_{{ $index }}"
                                                 name="celular[]" required>
                                         </div>
@@ -88,20 +88,18 @@
                                         </div>
                                         <div class="col-md-6 autorizacion-container"
                                             id="autorizacion_container_{{ $index }}" style="display:none;">
-                                            <label class="form-label">Autorización PDF</label>
+                                            <label class="form-label">Autorización PDF <span
+                                                    style="color: red">*</span></label>
                                             <input type="file" accept=".pdf" class="form-control"
                                                 id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
                                         </div>
-
                                     </div>
-
                                 </div>
                             </div>
                         @endforeach
                     </div>
 
                     <div class="col-md-3">
-
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
@@ -149,14 +147,12 @@
                             </div>
                         </div>
 
-                        {{-- MÉTODO DE PAGO --}}
                         <div class="card mb-3">
                             <div class="card-header">
                                 <strong>Método de Pago</strong>
                             </div>
 
                             <div class="card-body">
-
                                 <div class="mb-3">
                                     <label class="form-label">Método</label>
                                     <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">

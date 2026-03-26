@@ -39,13 +39,13 @@ class SucursalController extends Controller
             </button>
 
             <button class="btn btn-danger btn-xs desactivar" data-id="' . $sucursal->id . '">
-                <i class="link-icon" data-lucide="power-off"></i>
+                <i class="link-icon" data-lucide="eye-closed"></i>
             </button>
         ';
                 } else {
                     $acciones .= '
             <button class="btn btn-success btn-xs activar" data-id="' . $sucursal->id . '">
-                <i class="link-icon" data-lucide="circle-power"></i>
+                <i class="link-icon" data-lucide="eye"></i>
             </button>
         ';
                 }
@@ -69,7 +69,6 @@ class SucursalController extends Controller
             'telefono'         => 'nullable|string|max:20',
         ]);
 
-        // Validación manual de unicidad
         $existe = Sucursal::where('empresa_id', $request->empresa_id)
             ->where('distrito_id', $request->distrito_id)
             ->whereRaw(

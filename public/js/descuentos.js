@@ -138,6 +138,10 @@ $(document).ready(function () {
         create: false,
     });
 
+    let tsCargo = new TomSelect("#filtroCargo", {
+        create: false,
+    });
+
     function soloLetras(ts) {
         ts.control_input.addEventListener("input", function () {
             this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
@@ -146,6 +150,7 @@ $(document).ready(function () {
 
     soloLetras(tsTipo);
     soloLetras(tsPersona);
+    soloLetras(tsCargo);
 
     $("#filtroTipoCupon").on("change", function () {
         tabla.column(1).search(this.value, false, true).draw();
@@ -202,7 +207,7 @@ $(document).ready(function () {
 
     $("#formDescuento").submit(function (e) {
         e.preventDefault();
-        console.log($(this).serialize()); 
+        console.log($(this).serialize());
         $.post(
             route("descuentos.guardar"),
             $(this).serialize(),

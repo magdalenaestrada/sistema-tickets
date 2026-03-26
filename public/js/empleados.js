@@ -316,8 +316,12 @@ $(document).ready(async function () {
             $("#sucursal_id").val(res.sucursal_id).trigger("change");
             $("#cargo_id").val(res.cargo_id).trigger("change");
             $("#tipo_licencia_id").val(res.tipo_licencia_id).trigger("change");
-            $("#licencia_conducir").val(res.licencia_conducir).trigger("change");
-            $("#fecha_vencimiento_licencia").val(res.fecha_vencimiento_licencia).trigger("change");
+            $("#licencia_conducir")
+                .val(res.licencia_conducir)
+                .trigger("change");
+            $("#fecha_vencimiento_licencia")
+                .val(res.fecha_vencimiento_licencia)
+                .trigger("change");
             toggleConductor(res.cargo_id, res.cargo?.descripcion ?? "");
 
             if (viewOnly) {
@@ -420,11 +424,26 @@ $(document).ready(async function () {
         });
     }
 
+    function calcularEdad(fechaNacimiento, fechaReferencia) {
+        let edad =
+            fechaReferencia.getFullYear() - fechaNacimiento.getFullYear();
+        const mes = fechaReferencia.getMonth() - fechaNacimiento.getMonth();
+
+        if (
+            mes < 0 ||
+            (mes === 0 && fechaReferencia.getDate() < fechaNacimiento.getDate())
+        ) {
+            edad--;
+        }
+
+        return edad;
+    }
+
     $("#formEmpleado").on("submit", function (e) {
         e.preventDefault();
 
-        const fechaNacimiento = $("#fecha_nacimiento").val();
-        const fechaIngreso = $("#fecha_ingreso").val();
+        const fechaNacimiento = new Date($("#fecha_nacimiento").val());
+        const fechaIngreso = new Date($("#fecha_ingreso").val());
 
         if (!esMayorDeEdad(fechaNacimiento))
             return Swal.fire({
@@ -438,6 +457,15 @@ $(document).ready(async function () {
                 icon: "warning",
                 title: "Fecha inválida",
                 text: "La fecha de ingreso no puede ser menor que la fecha de nacimiento.",
+            });
+
+        const edad = calcularEdad(fechaNacimiento, fechaIngreso);
+
+        if (edad < 18)
+            return Swal.fire({
+                icon: "warning",
+                title: "Fecha inválida",
+                text: "El empleado debe tener al menos 18 años para trabajar, cambie la fecha de ingreso",
             });
 
         $.post(route("empleados.guardar"), $(this).serialize())

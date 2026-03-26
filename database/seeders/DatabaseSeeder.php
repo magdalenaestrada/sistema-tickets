@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             TipoDocumentoFacturaSeeder::class,
             PersonaSeeder::class,
             EmpresaSeeder::class,
+            SucursalesSeeder::class,
             UserSeeder::class,
             TipoServicioSeeder::class,
             TipoMovimientoCajaSeeder::class,
