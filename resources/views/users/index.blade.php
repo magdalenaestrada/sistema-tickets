@@ -36,7 +36,6 @@
         </div>
     </div>
 
-    @include('users.modals.edit')
     @include('empleados.modals.create')
 @endsection
 

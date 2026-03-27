@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
             TipoServicioSeeder::class,
             TipoMovimientoCajaSeeder::class,
             AreasSeeder::class,
-            AreasSeeder::class,
+            EmpleadoSeeder::class,
             RazonesMantenimientoSeeder::class,
         ]);
     }

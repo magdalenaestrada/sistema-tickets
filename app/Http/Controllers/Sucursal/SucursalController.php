@@ -15,45 +15,64 @@ use Illuminate\Validation\Rule;
 
 class SucursalController extends Controller
 {
-    public function datatable($empresa_id)
+    public function datatable(Request $request, $empresa_id)
     {
-        $sucursales = Sucursal::where('empresa_id', $empresa_id)
-            ->with(['empresa', 'distrito'])
-            ->get();
+        $query = Sucursal::with(['empresa', 'distrito.provincia.departamento'])
+            ->where('empresa_id', $empresa_id);
 
-        return DataTables::of($sucursales)
+        if ($request->departamento_id) {
+            $query->whereHas('distrito.provincia.departamento', function ($q) use ($request) {
+                $q->where('id', $request->departamento_id);
+            });
+        }
+
+        if ($request->provincia_id) {
+            $query->whereHas('distrito.provincia', function ($q) use ($request) {
+                $q->where('id', $request->provincia_id);
+            });
+        }
+
+        if ($request->distrito_id) {
+            $query->where('distrito_id', $request->distrito_id);
+        }
+
+        if ($request->nombre_sucursal) {
+            $query->where('nombre_comercial', 'like', '%' . $request->nombre_sucursal . '%');
+        }
+
+        return DataTables::of($query)
             ->addColumn('empresa', fn($row) => $row->empresa->razon_social ?? '-')
-            ->addColumn('distrito', fn($row) => $row->distrito->nombre ?? '-')
+            ->addColumn('direccion', fn($row) => $row->direccion ?? '-')
+            ->addColumn('telefono', fn($row) => $row->telefono ?? '-')
+            ->addColumn('distrito', function ($row) {
+                return '<span class="badge bg-success-subtle text-dark">' . $row->distrito->nombre . '</span>';
+            })
             ->addColumn('acciones', function ($sucursal) {
 
                 $acciones = '
-        <button class="btn btn-xs ver" data-id="' . $sucursal->id . '">
-            <i class="link-icon" data-lucide="info"></i>
-        </button>
-    ';
+            <button class="btn btn-xs ver" data-id="' . $sucursal->id . '">
+                <i class="link-icon" data-lucide="info"></i>
+            </button>';
 
                 if ($sucursal->estado === 'A') {
                     $acciones .= '
-            <button class="btn btn-warning btn-xs editar" data-id="' . $sucursal->id . '">
-                <i class="link-icon" data-lucide="pen"></i>
-            </button>
+                <button class="btn btn-warning btn-xs editar" data-id="' . $sucursal->id . '">
+                    <i class="link-icon" data-lucide="pen"></i>
+                </button>
 
-            <button class="btn btn-danger btn-xs desactivar" data-id="' . $sucursal->id . '">
-                <i class="link-icon" data-lucide="eye-closed"></i>
-            </button>
-        ';
+                <button class="btn btn-danger btn-xs desactivar" data-id="' . $sucursal->id . '">
+                    <i class="link-icon" data-lucide="eye-closed"></i>
+                </button>';
                 } else {
                     $acciones .= '
-            <button class="btn btn-success btn-xs activar" data-id="' . $sucursal->id . '">
-                <i class="link-icon" data-lucide="eye"></i>
-            </button>
-        ';
+                <button class="btn btn-success btn-xs activar" data-id="' . $sucursal->id . '">
+                    <i class="link-icon" data-lucide="eye"></i>
+                </button>';
                 }
 
                 return $acciones;
             })
-
-            ->rawColumns(['acciones'])
+            ->rawColumns(['acciones', 'distrito'])
             ->make(true);
     }
 
@@ -65,7 +84,7 @@ class SucursalController extends Controller
             'empresa_id'       => 'required|exists:empresas,id',
             'distrito_id'      => 'required|exists:distritos,id',
             'nombre_comercial' => 'required|string|max:255',
-            'direccion'        => 'required|string|max:255',
+            'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
         ]);
 
@@ -134,7 +153,7 @@ class SucursalController extends Controller
             'empresa_id'       => 'required|exists:empresas,id',
             'distrito_id'      => 'required|exists:distritos,id',
             'nombre_comercial' => 'required|string|max:255',
-            'direccion'        => 'required|string|max:255',
+            'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
         ]);
 

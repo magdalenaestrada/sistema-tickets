@@ -241,9 +241,14 @@ class EmpleadoController extends Controller
             'persona.distrito.provincia.departamento',
             'cargo',
             'sucursal',
-            'usuario'
+            'usuario',
+            'usuario.roles'
+
         ])->findOrFail($id);
 
+        if ($empleado->usuario) {
+            $empleado->usuario->rol = $empleado->usuario->roles->first()->id ?? null;
+        }
         return response()->json($empleado);
     }
 

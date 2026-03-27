@@ -29,8 +29,8 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         $user = User::where('username', $request->username)->first();
-        $desactivado = $user->estado == "I";
-        if (!$user || $desactivado) {
+        
+        if (!$user || $user->estado == "I") {
             throw ValidationException::withMessages([
                 'login' => 'El usuario no existe o está deshabilitado, por favor contacte con el administrador',
             ]);

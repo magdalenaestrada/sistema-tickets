@@ -33,8 +33,8 @@
                             required>
                     </div>
                     <div class="mb-3">
-                        <label>Dirección <span style="color: red">*</span></label>
-                        <input type="text" name="direccion" id="direccion_sucursal" class="form-control" required>
+                        <label>Dirección</label>
+                        <input type="text" name="direccion" id="direccion_sucursal" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label>Teléfono</label>

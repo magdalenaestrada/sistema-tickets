@@ -346,6 +346,9 @@ $(document).ready(async function () {
                 $("#chkUsuario").prop("checked", true);
                 $("#seccionUsuario").removeAttr("hidden").show();
                 $("#usuario").val(usuario.username);
+                $("#rol")
+                    .val(usuario.rol ?? "")
+                    .trigger("change");
             } else {
                 $("#chkUsuario").prop("checked", false);
                 $("#seccionUsuario").attr("hidden", true);

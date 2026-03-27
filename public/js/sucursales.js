@@ -7,28 +7,99 @@ let UBIGEO = null;
 $(document).ready(async function () {
     UBIGEO = await $.get(route("ubigeos.todo"));
     cargarSelectDepartamentos();
-
     let tabla = $("#tablaSucursales").DataTable({
-        ajax: route("sucursales.datatable", EMPRESA_ID),
+        ajax: {
+            url: route("sucursales.datatable", EMPRESA_ID),
+            data: function (d) {
+                d.departamento_id = $("#filtro_departamento_id").val();
+                d.provincia_id = $("#filtro_provincia_id").val();
+                d.distrito_id = $("#filtro_distrito_id").val();
+                d.nombre_sucursal = $("#nombre_sucursal").val();
+            },
+        },
         columns: [
-            { title: "ID", data: "id" },
-            { title: "Distrito", data: "distrito" },
-            { title: "Nombre Comercial", data: "nombre_comercial" },
-            { title: "Dirección", data: "direccion" },
-            { title: "Teléfono", data: "telefono" },
+            { data: "id" },
+            { data: "distrito" },
+            { data: "nombre_comercial" },
+            { data: "direccion" },
+            { data: "telefono" },
             {
-                title: "Acciones",
                 data: "acciones",
                 orderable: false,
                 searchable: false,
             },
         ],
-        responsive: false,
-
+        responsive: true,
+        info: false,
         drawCallback: function () {
             lucide.createIcons();
         },
         dom: "rtip",
+    });
+
+    let timeout;
+    $("#nombre_sucursal").on("keyup", function () {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            $("#tablaSucursales").DataTable().ajax.reload();
+        }, 400);
+    });
+
+    function cargarFiltros() {
+        const $dep = $("#filtro_departamento_id");
+        $dep.empty().append(
+            '<option value="">Filtrar por departamento</option>',
+        );
+
+        UBIGEO.forEach((dep) => {
+            $dep.append(`<option value="${dep.id}">${dep.nombre}</option>`);
+        });
+    }
+
+    $("#btnLimpiarFiltros").on("click", function () {
+        $("#filtro_departamento_id").val("");
+        $("#filtro_provincia_id").val("");
+        $("#filtro_distrito_id").val("");
+        $("#nombre_sucursal").val("");
+        tabla.ajax.reload();
+    });
+
+    $("#filtro_departamento_id").on("change", function () {
+        const depId = this.value;
+
+        const $prov = $("#filtro_provincia_id");
+        $prov.empty().append('<option value="">Filtrar por provincia</option>');
+
+        const $dist = $("#filtro_distrito_id");
+        $dist.empty().append('<option value="">Filtrar por distrito</option>');
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        if (!dep) return tabla.ajax.reload();
+
+        dep.provincias.forEach((p) => {
+            $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
+        });
+
+        tabla.ajax.reload();
+    });
+
+    $("#filtro_provincia_id").on("change", function () {
+        const depId = $("#filtro_departamento_id").val();
+        const provId = this.value;
+
+        const $dist = $("#filtro_distrito_id");
+        $dist.empty().append('<option value="">Filtrar por distrito</option>');
+
+        const dep = UBIGEO.find((d) => d.id == depId);
+        const prov = dep?.provincias.find((p) => p.id == provId);
+
+        if (!prov) return;
+
+        prov.distritos.forEach((d) => {
+            $dist.append(`<option value="${d.id}">${d.nombre}</option>`);
+        });
+
+        tabla.ajax.reload();
     });
 
     function cargarSelectDepartamentos() {

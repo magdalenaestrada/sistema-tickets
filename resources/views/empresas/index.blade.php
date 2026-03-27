@@ -13,7 +13,7 @@
 @section('content')
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Datos de la Empresa</h5>
+            <h5 class="mb-0 fw-medium">DATOS DE LA EMPRESA</h5>
         </div>
         <div class="card-body">
             <form id="formEmpresa" enctype="multipart/form-data">
@@ -83,16 +83,65 @@
         <br>
         <div class="card py-2">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Sucursales de {{ $empresa->razon_social }}</h5>
+                <h5 class="mb-0 text-dark">Sucursales de {{ $empresa->razon_social }}</h5>
                 <button class="btn btn-primary" id="btnNuevaSucursal">
                     <i class="fa fa-plus"></i> Nueva Sucursal
                 </button>
             </div>
 
             <div class="card-body">
-                <table id="tablaSucursales" class="table table-striped w-100"></table>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <select id="filtro_departamento_id" class="form-select">
+                            <option value="">Filtrar por departamento</option>
+                            @foreach ($departamentos as $departamento)
+                                <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select id="filtro_provincia_id" class="form-select">
+                            <option value="">Filtrar por provincia</option>
+                            @foreach ($provincias as $provincia)
+                                <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select id="filtro_distrito_id" class="form-select">
+                            <option value="">Filtrar por distrito</option>
+                            @foreach ($distritos as $distrito)
+                                <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <input type="text" id="nombre_sucursal" name="nombre_sucursal" class="form-control"
+                            placeholder="Filtrar por sucursal">
+                    </div>
+                    <div class="col-md-1 mb-3 d-flex align-items-end">
+                        <button class="btn btn-secondary" id="btnLimpiarFiltros">
+                            <i class="fa fa-filter"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+                <table id="tablaSucursales" class="table table-hover w-100 border rounded">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>ID</th>
+                            <th>Distrito</th>
+                            <th>Nombre Sucursal</th>
+                            <th>Dirección</th>
+                            <th>Teléfono</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
             </div>
         </div>
+
         @include('empresas.modals.create_sucursal')
     @endif
 @endsection

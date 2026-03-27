@@ -26,7 +26,7 @@ class UserController extends Controller
 
     public function datatable(Request $request)
     {
-        $users = User::with('persona')
+        $users = User::with('persona', 'roles')
             ->select('users.*');
 
         if ($request->filled('empleado')) {
@@ -88,7 +88,11 @@ class UserController extends Controller
 
     public function mostrar(User $user)
     {
-        $user->load('persona');
+        $user->load('persona', 'roles');
+
+        if ($user->roles->isNotEmpty()) {
+            $user->rol = $user->roles->pluck('name')->first();
+        }
 
         return response()->json([
             'id' => $user->id,
