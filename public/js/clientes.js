@@ -18,14 +18,12 @@ $(document).ready(async function () {
             },
         },
         columns: [
-            { data: "documento", title: "Documento" },
-            {
-                data: "nombre",
-                title: "Razón social",
-            },
-            { data: "telefono", title: "Teléfono" },
-            { data: "celular", title: "Celular" },
-            { data: "correo", title: "Correo" },
+            { data: "id" },
+            { data: "documento" },
+            { data: "nombre" },
+            { data: "telefono" },
+            { data: "celular" },
+            { data: "correo" },
             {
                 data: "acciones",
                 title: "Acciones",
@@ -76,6 +74,19 @@ $(document).ready(async function () {
             searchTimeout = setTimeout(() => tabla.ajax.reload(), 400);
         },
     );
+
+    $("#correo").on("input", function () {
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (this.value === "") {
+            this.setCustomValidity("");
+            return;
+        }
+        if (!regex.test(this.value)) {
+            this.setCustomValidity("Correo inválido");
+        } else {
+            this.setCustomValidity("");
+        }
+    });
 
     document
         .getElementById("filtroDocumento")
@@ -241,7 +252,7 @@ $(document).ready(async function () {
             });
     });
 
-    $("#celular").on("input", function () {
+    $("#celular, #telefono").on("input", function () {
         this.value = this.value.replace(/\D/g, "").slice(0, 9);
     });
 

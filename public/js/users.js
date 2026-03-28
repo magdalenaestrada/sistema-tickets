@@ -37,29 +37,19 @@ $(function () {
         tabla.ajax.reload();
     });
 
-    $(document).on("click", ".editar", function () {
+    $(document).on("click", ".editar-usuario", function () {
         let id = $(this).data("id");
 
         $.get(route("usuarios.mostrar", id), function (data) {
             $("#usuario_id").val(data.id);
-            $("#username").val(data.username);
-
+            $('input[name="password"]').val("");
+            $('input[name="password_confirmation"]').val("");
             $("#persona_documento").val(data.persona.documento);
             $("#persona_nombre").val(data.persona.nombre);
+            $("#rol_id").val(data.rol_id);
 
             $("#modalUsuario").modal("show");
         });
-    });
-
-    $(document).on("click change", "#chkUsuario", function (e) {
-        e.preventDefault();
-        $(this).prop("checked", true);
-        return false;
-    });
-
-    $("#modalEmpleado").on("shown.bs.modal", function () {
-        $("#chkUsuario").prop("checked", true);
-        $("#usuario, #password").attr("required", "required");
     });
 
     $("#filtroNombres").on("input", function () {

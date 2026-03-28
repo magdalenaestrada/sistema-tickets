@@ -22,8 +22,8 @@
                 </div>
             </div>
 
-            <table id="tablaUsuarios" class="table table-striped w-100">
-                <thead>
+            <table id="tablaUsuarios" class="table table-hover w-100">
+                <thead class="table-primary">
                     <tr>
                         <th>ID</th>
                         <th>Empleado</th>
@@ -35,7 +35,7 @@
             </table>
         </div>
     </div>
-
+    @include('users.modals.edit')
     @include('empleados.modals.create')
 @endsection
 

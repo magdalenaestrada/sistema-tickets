@@ -28,7 +28,8 @@ class ClientesController extends Controller
     {
         $query = Cliente::select('clientes.*')
             ->join('personas', 'personas.id', '=', 'clientes.persona_id')
-            ->whereNull('personas.deleted_at');
+            ->whereNull('personas.deleted_at')
+            ->orderBy("id", "desc");
 
         if ($request->filled('documento')) {
             $query->where('personas.documento', 'like', $request->documento . '%');
@@ -74,7 +75,10 @@ class ClientesController extends Controller
         ]);
 
         $persona = Persona::updateOrCreate(
-            ['documento' => $request->input('documento')],
+            [
+                'documento' => $request->input('documento'),
+                'tipo_documento_id' => $request->input('tipo_documento_id'),
+            ],
             [
                 'tipo_documento_id' => $request->input('tipo_documento_id', 1),
                 'distrito_id' => $request->input('distrito_id', 1),

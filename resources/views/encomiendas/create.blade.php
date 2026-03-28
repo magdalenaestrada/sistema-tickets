@@ -43,14 +43,14 @@
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular <span style="color: red">*</span></label>
-                                <input type="text" class="form-control solo-numeros" id="emisor_celular"
+                                <input type="text" class="form-control solo-numeros" id="emisor_celular" maxlength="9"
                                     name="emisor_celular" required>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
                                 <input type="text" class="form-control solo-numeros" id="emisor_telefono"
-                                    name="emisor_telefono">
+                                    name="emisor_telefono" maxlength="9">
                             </div>
 
                             <div class="col-md-4">
@@ -106,13 +106,13 @@
                             <div class="col-md-3">
                                 <label class="form-label">Celular <span style="color: red">*</span></label>
                                 <input type="text" class="form-control solo-numeros" id="receptor_celular"
-                                    name="receptor_celular" required>
+                                    maxlength="9" name="receptor_celular" required>
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control solo-numeros" id="receptor_telefono"
-                                    name="receptor_telefono">
+                                <input type="text" class="form-control solo-numeros" maxlength="9"
+                                    id="receptor_telefono" name="receptor_telefono">
                             </div>
 
                             <div class="col-md-6">
@@ -204,9 +204,9 @@
                                 <tr>
                                     <th>Tipo</th>
                                     <th>Descripción</th>
-                                    <th>Peso</th>
-                                    <th>Costo</th>
-                                    <th></th>
+                                    <th>Peso (KG)</th>
+                                    <th>Costo (S/)</th>
+                                    <th>ACCIONES</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -224,7 +224,7 @@
                         <h6 class="mb-3">Tipo de servicio: Encomienda</h6>
 
                         <div class="row mb-2">
-                            <label for="peso_total" class="col-6 col-form-label">Peso Equipaje</label>
+                            <label for="peso_total" class="col-6 col-form-label">Peso total <b>(KG)</b></label>
                             <div class="col-6">
                                 <input type="number" id="peso_total" class="form-control" readonly>
                             </div>
@@ -272,7 +272,7 @@
                             <input class="form-check-input" type="checkbox" id="pago_instantaneo"
                                 name="pago_instantaneo" value="1">
                             <label class="form-check-label" for="pago_instantaneo">
-                                Registrar pago 
+                                Registrar pago
                             </label>
                         </div>
                         <div id="container_pago">
@@ -286,12 +286,11 @@
                                             </option>
                                         @endforeach
                                     </select>
-
                                 </div>
                             </div>
 
                             <div class="row mb-2 grupo_costo_total" hidden>
-                                <label for="costo_total" class="col-6 col-form-label">Costo total</label>
+                                <label for="costo_total" class="col-6 col-form-label">Costo total <b>(S/)</b></label>
                                 <div class="col-6">
                                     <input type="number" step="0.01" id="costo_total" name="costo_total"
                                         class="form-control" readonly>
@@ -299,7 +298,7 @@
                             </div>
 
                             <div class="row mb-2">
-                                <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo</label>
+                                <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo <b>(S/)</b></label>
                                 <div class="col-6">
                                     <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
                                         class="form-control">
@@ -320,7 +319,7 @@
                             </div>
 
                             <div class="row mb-2">
-                                <label for="pago_billetera" class="col-6 col-form-label">Pago digital</label>
+                                <label for="pago_billetera" class="col-6 col-form-label">Pago digital <b>(S/)</b></label>
                                 <div class="col-6">
                                     <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
                                         class="form-control">

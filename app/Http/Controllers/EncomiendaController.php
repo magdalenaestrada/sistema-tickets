@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AsignarHorario;
 use App\Models\BilleteraDigital;
+use App\Models\Cliente;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Encomienda;
@@ -17,6 +18,7 @@ use App\Models\TipoEncomienda;
 use App\Services\EncomiendaService;
 use App\Services\PagoService;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -335,7 +337,10 @@ class EncomiendaController extends Controller
 
             if ($receptorDocumento) {
                 $receptor = Persona::updateOrCreate(
-                    ['documento' => $request->input('receptor.documento')],
+                    [
+                        'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
+                        'documento' => $request->input('receptor.documento'),
+                    ],
                     [
                         'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
                         'distrito_id' => $request->input('receptor.distrito_id'),
@@ -366,6 +371,16 @@ class EncomiendaController extends Controller
             }
 
             $user_id = Auth::id();
+
+            Cliente::updateOrCreate(
+                ['persona_id' => $emisor->id],
+                ['user_id' => $user_id]
+            );
+
+            Cliente::updateOrCreate(
+                ['persona_id' => $receptor->id],
+                ['user_id' => $user_id]
+            );
 
             $encomienda = $encomiendaService->crearEncomienda($request, $emisor->id, $receptor->id, $user_id);
 

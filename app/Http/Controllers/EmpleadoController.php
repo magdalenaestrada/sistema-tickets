@@ -78,6 +78,7 @@ class EmpleadoController extends Controller
             ->addColumn('documento', fn($e) => $e->persona->documento ?? '-')
             ->addColumn('sucursal', fn($e) => $e->sucursal->nombre_comercial ?? '-')
             ->addColumn('cargo', fn($e) => $e->cargo->descripcion ?? '-')
+            ->addColumn('fecha_nacimiento', fn($e) => $e->persona->fecha_nacimiento ?? '-')
             ->addColumn('acciones', fn($e) => '
                 <button class="btn btn-secondary btn-xs ver" data-id="' . $e->id . '">
                     <i class="link-icon " <i data-lucide="info"></i>

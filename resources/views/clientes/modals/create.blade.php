@@ -57,12 +57,14 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Correo</label>
-                            <input type="email" name="correo" id="correo" class="form-control">
+                            <input type="email" name="correo" id="correo" class="form-control"
+                                pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                                title="Ingrese un correo válido (ej: ejemplo@gmail.com)">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Teléfono</label>
                             <input type="text" name="telefono" id="telefono" class="form-control"
-                                inputmode="numeric" title="Solo números" maxlength="9">
+                                inputmode="numeric" maxlength="9" pattern="\d{9}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Celular</label>

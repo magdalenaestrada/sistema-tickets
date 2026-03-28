@@ -27,14 +27,14 @@ $(document).ready(async function () {
                 const badgeClass = activo ? "badge-activo" : "badge-inactivo";
                 const badgeText = activo ? "Activo" : "Inactivo";
 
-                let fechaIngreso = "";
-                if (emp.fecha_ingreso) {
-                    const raw = emp.fecha_ingreso.toString().trim();
+                let fechaNacimiento = "";
+                if (emp.fecha_nacimiento) {
+                    const raw = emp.fecha_nacimiento.toString().trim();
                     if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
                         const parts = raw.substring(0, 10).split("-");
-                        fechaIngreso = `${parts[2]}/${parts[1]}`;
+                        fechaNacimiento = `${parts[2]}/${parts[1]}`;
                     } else {
-                        fechaIngreso = raw.substring(0, 5); // tomar solo DD/MM si ya viene formateado
+                        fechaNacimiento = raw.substring(0, 5); // tomar solo DD/MM si ya viene formateado
                     }
                 }
 
@@ -45,7 +45,7 @@ $(document).ready(async function () {
                 <div class="emp-cargo">${emp.cargo ?? ""}</div>
             </div>
             <div class="emp-meta">
-                <span class="emp-fecha">${fechaIngreso}</span>
+                <span class="emp-fecha">${fechaNacimiento}</span>
                 <span class="badge-estado ${badgeClass}">${badgeText}</span>
               
                 <button class="btn btn-secondary btn-xs ver" data-id="${emp.id}">

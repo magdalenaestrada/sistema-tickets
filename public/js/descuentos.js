@@ -207,7 +207,8 @@ $(document).ready(function () {
 
     $("#formDescuento").submit(function (e) {
         e.preventDefault();
-        console.log($(this).serialize());
+        const $btn = $(this).find('button[type="submit"]');
+        $btn.prop("disabled", true);
         $.post(
             route("descuentos.guardar"),
             $(this).serialize(),
@@ -225,6 +226,14 @@ $(document).ready(function () {
                 }
             },
         );
+    });
+
+    $("#btnLimpiarFiltros").click(function () {
+        $("#filtroCodigo").val("");
+        $("#filtroTipoCupon")[0].tomselect.clear();
+        $("#filtroPersona")[0].tomselect.clear();
+        $("#filtroCargo")[0].tomselect.clear();
+        tabla.ajax.reload();
     });
 
     document.querySelectorAll(".empleados_asignados").forEach((el) => {

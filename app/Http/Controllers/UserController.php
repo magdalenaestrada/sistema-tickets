@@ -55,7 +55,7 @@ class UserController extends Controller
             })->addColumn('acciones', function ($u) {
 
                 $acciones = '
-        <button class="btn btn-warning btn-xs editar"
+        <button class="btn btn-warning btn-xs editar-usuario"
             data-id="' . $u->id . '">
             <i data-lucide="edit"></i>
         </button>
@@ -101,7 +101,8 @@ class UserController extends Controller
                 'documento' => $user->persona->documento,
                 'nombre' => $user->persona->razon_social
                     ?? trim($user->persona->nombres . ' ' . $user->persona->apellidos),
-            ]
+            ],
+            'rol_id' => $user->roles->pluck('id')->first(),
         ]);
     }
 
@@ -116,6 +117,8 @@ class UserController extends Controller
         $data = [
             'username' => $request->username,
         ];
+
+        $user->roles()->sync($request->rol_id);
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);

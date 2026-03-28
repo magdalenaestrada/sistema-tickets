@@ -23,7 +23,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 mb-3 mt-3">
+                <div class="col-md-3 mb-3 mt-3">
                     <select id="filtroPersona">
                         <option value="">Buscar por persona</option>
                         @foreach ($empleados as $empleado)
@@ -41,10 +41,13 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-md-1 mb-3 mt-3">
+                    <button class="btn btn-primary" id="btnLimpiarFiltros">Limpiar</button>
+                </div>
             </div>
             <div class="table-responsive">
-                <table id="tablaDescuentos" class="table align-middle w-100">
-                    <thead class="table-header-primary">
+                <table id="tablaDescuentos" class="table table-hover align-middle w-100">
+                    <thead class="table-primary">
                         <tr>
                             <th>ID</th>
                             <th>Tipo cupón</th>

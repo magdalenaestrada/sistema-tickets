@@ -23,7 +23,21 @@
                 </div>
             </div>
 
-            <table id="tablaClientes" class="table table-striped w-100"></table>
+            <table id="tablaClientes" class="table table-hover w-100">
+                <thead class="table-primary">
+                    <tr>
+                        <th>ID</th>
+                        <th>DOCUMENTO</th>
+                        <th>RAZÓN SOCIAL</th>
+                        <th>TELÉFONO</th>
+                        <th>CELULAR</th>
+                        <th>CORREO</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
         </div>
     </div>
     @include('clientes.modals.create')

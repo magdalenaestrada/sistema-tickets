@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tipo_encomienda', function (Blueprint $table) {
             $table->id();
             $table->string('descripcion')->unique();
-            $table->decimal('precio_base', 10, 2);
+            $table->decimal('precio_base', 10, 2)->nullable()->default(0);
             $table->decimal('peso_limite', 8, 2)->nullable();
             $table->decimal('costo_kilo_extra', 10, 2)->nullable();
             $table->timestamps();

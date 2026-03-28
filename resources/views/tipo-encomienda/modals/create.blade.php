@@ -14,13 +14,13 @@
                         <input type="text" name="descripcion" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Precio Base <span style="color: red">*</span></label></label>
-                        <input type="number" step="0.01" name="precio_base" class="form-control" required>
+                        <label class="form-label">Precio Base (S/)</label></label>
+                        <input type="number" step="0.01" name="precio_base" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
             </form>
 

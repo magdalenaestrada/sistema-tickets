@@ -19,6 +19,9 @@ class TipoEncomiendaController extends Controller
         $data = TipoEncomienda::orderBy('id', 'desc');
 
         return DataTables::of($data)
+            ->editColumn('precio_base', function ($t) {
+                return $t->precio_base ?? '-';
+            })
             ->addColumn('acciones', function ($t) {
                 return '
                 <button class="btn btn-warning btn-xs editar" data-id="' . $t->id . '">
@@ -40,7 +43,7 @@ class TipoEncomiendaController extends Controller
 
         $request->validate([
             'descripcion' => 'required|unique:tipo_encomienda,descripcion',
-            'precio_base' => 'required|numeric',
+            'precio_base' => 'nullable|numeric',
             'peso_limite' => 'nullable|numeric',
             'costo_kilo_extra' => 'nullable|numeric',
         ]);

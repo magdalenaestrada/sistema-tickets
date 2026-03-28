@@ -121,15 +121,14 @@ $(function () {
 
     $("#formTipoCupon").on("submit", function (e) {
         e.preventDefault();
-
+        const $btn = $(this).find('button[type="submit"]');
+        $btn.prop("disabled", true);
         const id = $("#tipo_cupon_id").val();
         const url = id
             ? route("tipo-cupones.actualizar", id)
             : route("tipo-cupones.guardar");
         const method = id ? "PUT" : "POST";
-
         let formData = $(this).serializeArray();
-
         $.ajax({
             url: url,
             type: method,
@@ -148,6 +147,9 @@ $(function () {
                         showConfirmButton: false,
                     });
                 } else {
+                    $btn.prop("disabled", false);
+                    console.error(xhr.responseText);
+
                     Swal.fire({
                         icon: "error",
                         title: "Error",
