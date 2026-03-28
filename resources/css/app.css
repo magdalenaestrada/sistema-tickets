@@ -139,8 +139,6 @@
 }
 
 .btn {
-    display: inline-flex !important;
-    align-items: center;
     gap: 5px;
     border-radius: 8px !important;
     padding: 7px 14px !important;
