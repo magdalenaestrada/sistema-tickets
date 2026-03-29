@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Sucursal\SucursalController;
+use App\Models\Sucursal;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->prefix('sucursales')->name('sucursales.')->group(function () {
+    Route::get('/lista', [SucursalController::class, 'lista'])->name('lista');
     Route::get('/{empresa_id}', [SucursalController::class, 'index'])->name('index');
     Route::get('/{empresa_id}/datatable', [SucursalController::class, 'datatable'])->name('datatable');
     Route::post('/', [SucursalController::class, 'guardar'])->name('guardar');

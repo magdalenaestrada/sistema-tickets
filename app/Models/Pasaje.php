@@ -5,59 +5,39 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class Pasaje extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'pasajes';
-
     protected $fillable = [
-        'venta_id',
-        'usuario_id',
-        'persona_id',
-        'horario_id',
-        'tramo_id',
-        'asiento_numero',
-        'pasajero_menor',
-        'autorizacion_pdf',
-        'estado',
-        'fecha_creacion',
-        'fecha_inactivacion',
+        "venta_id",
+        "usuario_id",
+        "persona_id",
+        "pasajero_menor",
+        "autorizacion_pdf",
+        "asiento_numero",
+        "salida_id",
+        "estado",
+        "fecha_creacion",
+        "fecha_inactivacion",
     ];
 
-    protected $casts = [
-        'pasajero_menor' => 'boolean',
-        'fecha_creacion' => 'datetime',
-        'fecha_inactivacion' => 'datetime',
-    ];
-
-    // Relaciones
-    public function venta()
+    public function tramos()
     {
-        return $this->belongsTo(Venta::class);
+        return $this->belongsToMany(
+            RutaTramo::class,
+            'pasaje_tramos',
+            'pasaje_id',
+            'tramo_id'
+        );
     }
 
+    public function salida()
+    {
+        return $this->belongsTo(Salida::class, "salida_id");
+    }
     public function usuario()
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function persona()
-    {
-        return $this->belongsTo(Persona::class);
-    }
-
-    public function horario()
-    {
-        return $this->belongsTo(Horario::class);
-    }
-    public function tramo()
-    {
-        return $this->belongsTo(HorarioTramo::class, 'tramo_id');
-    }
-
-    public function scopePorHorario($query, $horarioId)
-    {
-        return $query->where('horario_id', $horarioId);
+        return $this->belongsTo(User::class, "usuario_id");
     }
 }

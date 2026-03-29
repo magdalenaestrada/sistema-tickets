@@ -1,15 +1,12 @@
 <?php
 
-use App\Http\Controllers\HorarioPuntoController;
+use App\Http\Controllers\HorarioController;
 
-Route::middleware(['auth'])->prefix('horarios')->group(function () {
-
-    Route::get('{horario}/puntos', [HorarioPuntoController::class, 'index'])->name('horario.puntos.index');
-    Route::get('{horario}/puntos/{punto}', [HorarioPuntoController::class, 'show'])->name('horario.puntos.show');
-    Route::post('/puntos-lote', [HorarioPuntoController::class, 'lote'])->name('horario.puntos.lote');
-    Route::middleware('can:gestionar horarios')->group(function () {
-        Route::post('{horario}/puntos', [HorarioPuntoController::class, 'store'])->name('horario.puntos.store');
-        Route::put('{horario}/puntos/{punto}', [HorarioPuntoController::class, 'update'])->name('horario.puntos.update');
-        Route::delete('{horario}/puntos/{punto}', [HorarioPuntoController::class, 'destroy'])->name('horario.puntos.destroy');
-    });
+Route::middleware(['auth'])->prefix('horarios')->name('horarios.')->group(function () {
+    Route::get('/', [HorarioController::class, 'index'])->name('index');
+    Route::get('/datatable', [HorarioController::class, 'datatable'])->name('datatable');
+    Route::post('/', [HorarioController::class, 'store'])->name('store');
+    Route::get('/{id}', [HorarioController::class, 'show'])->name('show');
+    Route::put('/{id}', [HorarioController::class, 'update'])->name('update');
+    Route::delete('/{id}', [HorarioController::class, 'destroy'])->name('destroy');
 });

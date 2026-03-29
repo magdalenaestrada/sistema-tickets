@@ -11,17 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('horarios', function (Blueprint $table) {
+        Schema::create('rutas', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('ruta_id')->constrained('rutas');
-
-            $table->foreignId('tipo_viaje_id')->constrained('tipos_viajes');
-            $table->foreignId('tipo_vehiculo_id')->constrained('tipo_vehiculos');
-
-            $table->time('hora_salida');
-            $table->decimal('costo_base', 8, 2);
-
+            $table->string('nombre');
+            $table->foreignId('tipo_viaje_id')->nullable()->constrained('tipos_viajes');
             $table->timestamps();
         });
     }
@@ -31,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('horarios');
+        Schema::dropIfExists('rutas');
     }
 };

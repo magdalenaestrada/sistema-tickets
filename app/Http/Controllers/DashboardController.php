@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Venta;
 use App\Models\Encomienda;
-use App\Models\Horario;
 use App\Models\Caja;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -44,17 +41,11 @@ class DashboardController extends Controller
 
         $hoy = now()->toDateString();
 
-        $horariosHoy = Horario::where('punto_origen_id', $sucursalId)
-            ->whereHas('fechas', function ($query) use ($hoy) {
-                $query->whereDate('fecha_salida', $hoy);
-            })
-            ->with(['punto_origen', 'punto_destino', 'tipo_vehiculo', 'tipo_viaje', 'fechas'])
-            ->get();
+       
         return view('dashboard', [
             'ventasHoy' => $ventasHoy,
             'encomiendasHoy' => $encomiendasHoy,
             'montoActual' => $montoActual,
-            'horariosHoy' => $horariosHoy,
             'usuario' => $usuario,
         ]);
     }

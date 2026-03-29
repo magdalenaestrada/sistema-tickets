@@ -104,20 +104,20 @@
         <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
     </g>
 
-    <g id="seat-3" class="seat" transform="translate(550,120)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">3</text>
-    </g>
-
-    <g id="seat-4" class="seat" transform="translate(710,120)">
+    <g id="seat-4" class="seat" transform="translate(550,120)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">4</text>
+    </g>
+
+    <g id="seat-3" class="seat" transform="translate(710,120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">3</text>
     </g>
 
     <!-- ---------- FILA 2 (rowY = 320): X X O X X ---------- -->
@@ -142,20 +142,20 @@
         <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
     </g>
 
-    <g id="seat-7" class="seat" transform="translate(550,320)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">7</text>
-    </g>
-
-    <g id="seat-8" class="seat" transform="translate(710,320)">
+    <g id="seat-8" class="seat" transform="translate(550,320)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">8</text>
+    </g>
+
+    <g id="seat-7" class="seat" transform="translate(710,320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">7</text>
     </g>
 
     <!-- ---------- FILA 3 (rowY = 520): X X O X X ---------- -->
@@ -180,20 +180,20 @@
         <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
     </g>
 
-    <g id="seat-11" class="seat" transform="translate(550,520)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">11</text>
-    </g>
-
-    <g id="seat-12" class="seat" transform="translate(710,520)">
+    <g id="seat-12" class="seat" transform="translate(550,520)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">12</text>
+    </g>
+
+    <g id="seat-11" class="seat" transform="translate(710,520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">11</text>
     </g>
 
     <!-- ---------- FILA 4 (rowY = 720): X X O X X ---------- -->
@@ -218,20 +218,20 @@
         <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
     </g>
 
-    <g id="seat-15" class="seat" transform="translate(550,720)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">15</text>
-    </g>
-
-    <g id="seat-16" class="seat" transform="translate(710,720)">
+    <g id="seat-16" class="seat" transform="translate(550,720)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">16</text>
+    </g>
+
+    <g id="seat-15" class="seat" transform="translate(710,720)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">15</text>
     </g>
 
     <!-- ---------- FILA 5 (rowY = 920): X X O X X ---------- -->
@@ -256,20 +256,20 @@
         <rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/>
     </g>
 
-    <g id="seat-19" class="seat" transform="translate(550,920)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">19</text>
-    </g>
-
-    <g id="seat-20" class="seat" transform="translate(710,920)">
+    <g id="seat-20" class="seat" transform="translate(550,920)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">20</text>
+    </g>
+
+    <g id="seat-19" class="seat" transform="translate(710,920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">19</text>
     </g>
 
     <!-- ---------- FILA 6 (rowY = 1120): O O O T O  -> TV at col4 ---------- -->
@@ -308,20 +308,20 @@
     <!-- espacio -->
     <g transform="translate(390,1320)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
 
-    <g id="seat-23" class="seat" transform="translate(550,1320)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">23</text>
-    </g>
-
-    <g id="seat-24" class="seat" transform="translate(710,1320)">
+    <g id="seat-24" class="seat" transform="translate(550,1320)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">24</text>
+    </g>
+
+    <g id="seat-23" class="seat" transform="translate(710,1320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">23</text>
     </g>
 
     <!-- ---------- FILA 8 (rowY = 1520): X X O X X ---------- -->
@@ -343,20 +343,20 @@
 
     <g transform="translate(390,1520)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
 
-    <g id="seat-27" class="seat" transform="translate(550,1520)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">27</text>
-    </g>
-
-    <g id="seat-28" class="seat" transform="translate(710,1520)">
+    <g id="seat-28" class="seat" transform="translate(550,1520)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">28</text>
+    </g>
+
+    <g id="seat-27" class="seat" transform="translate(710,1520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">27</text>
     </g>
 
     <!-- ---------- FILA 9 (rowY = 1720): O T O O O  -> TV at col2 ---------- -->
@@ -392,20 +392,20 @@
 
     <g transform="translate(390,1920)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
 
-    <g id="seat-31" class="seat" transform="translate(550,1920)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">31</text>
-    </g>
-
-    <g id="seat-32" class="seat" transform="translate(710,1920)">
+    <g id="seat-32" class="seat" transform="translate(550,1920)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">32</text>
+    </g>
+
+    <g id="seat-31" class="seat" transform="translate(710,1920)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">31</text>
     </g>
 
     <!-- ---------- FILA 11 (rowY = 2120): X X O X X ---------- -->
@@ -427,20 +427,20 @@
 
     <g transform="translate(390,2120)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
 
-    <g id="seat-35" class="seat" transform="translate(550,2120)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">35</text>
-    </g>
-
-    <g id="seat-36" class="seat" transform="translate(710,2120)">
+    <g id="seat-36" class="seat" transform="translate(550,2120)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">36</text>
+    </g>
+
+    <g id="seat-35" class="seat" transform="translate(710,2120)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">35</text>
     </g>
 
     <!-- ---------- FILA 12 (rowY = 2320): X X O X X ---------- -->
@@ -462,20 +462,20 @@
 
     <g transform="translate(390,2320)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
 
-    <g id="seat-39" class="seat" transform="translate(550,2320)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">39</text>
-    </g>
-
-    <g id="seat-40" class="seat" transform="translate(710,2320)">
+    <g id="seat-40" class="seat" transform="translate(550,2320)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">40</text>
+    </g>
+
+    <g id="seat-39" class="seat" transform="translate(710,2320)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">39</text>
     </g>
 
     <!-- ---------- FILA 13 (rowY = 2520): X X O X X ---------- -->
@@ -497,20 +497,20 @@
 
     <g transform="translate(390,2520)"><rect class="aisle" x="0" y="0" width="110" height="163" rx="8" ry="8"/></g>
 
-    <g id="seat-43" class="seat" transform="translate(550,2520)">
-        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
-        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
-        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
-        <text class="seat-text" x="55" y="70" text-anchor="middle">43</text>
-    </g>
-
-    <g id="seat-44" class="seat" transform="translate(710,2520)">
+    <g id="seat-44" class="seat" transform="translate(550,2520)">
         <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
         <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
         <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
         <text class="seat-text" x="55" y="70" text-anchor="middle">44</text>
+    </g>
+
+    <g id="seat-43" class="seat" transform="translate(710,2520)">
+        <rect class="seat-body" x="10" y="0" width="90" height="120" rx="18" ry="18"/>
+        <rect class="seat-base" x="0" y="115" width="110" height="48" rx="14" ry="14"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="-12" y="30" width="8" height="72" rx="4"/>
+        <rect class="armrest" vector-effect="non-scaling-stroke" x="110" y="30" width="8" height="72" rx="4"/>
+        <text class="seat-text" x="55" y="70" text-anchor="middle">43</text>
     </g>
 
     <!-- ---------- FILA 14 (rowY = 2720): X X O B B  -> baños at col4 & col5 ---------- -->

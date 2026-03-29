@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('horario_tramos', function (Blueprint $table) {
+        Schema::create('ruta_tramos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('horario_id')->constrained('horarios')->cascadeOnDelete();
-            $table->foreignId('punto_origen_id')->constrained('horario_puntos');
-            $table->foreignId('punto_destino_id')->constrained('horario_puntos');
+            $table->foreignId('ruta_id')->constrained()->cascadeOnDelete();
+
+            $table->foreignId('punto_origen_id')->constrained('ruta_puntos');
+            $table->foreignId('punto_destino_id')->constrained('ruta_puntos');
+
             $table->integer('duracion_minutos');
-            $table->time('hora_llegada')->nullable(); // <-- nueva columna
             $table->decimal('costo_tramo', 8, 2);
+
             $table->timestamps();
         });
     }
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('rutas_tramos');
     }
 };

@@ -6,20 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('horario_puntos', function (Blueprint $table) {
+        Schema::create('ruta_puntos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('horario_id')->constrained('horarios')->cascadeOnDelete();
+            $table->foreignId('ruta_id')->constrained("rutas")->cascadeOnDelete();
             $table->foreignId('sucursal_id')->constrained('sucursales');
             $table->unsignedInteger('orden');
             $table->timestamps();
-            $table->unique(['horario_id', 'orden']);
+
+            $table->unique(['ruta_id', 'orden']);
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('horarios_puntos');
+        Schema::dropIfExists('rutas_puntos');
     }
 };

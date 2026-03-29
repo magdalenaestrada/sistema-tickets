@@ -76,6 +76,10 @@ class SucursalController extends Controller
             ->make(true);
     }
 
+    public function lista()
+    {
+        return Sucursal::select('id', 'nombre_comercial')->get();
+    }
     public function guardar(Request $request)
     {
         $nombre = Str::lower(preg_replace('/\s+/', ' ', trim($request->nombre_comercial)));

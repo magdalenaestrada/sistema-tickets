@@ -3,15 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Horario;
-use App\Models\HorarioFecha;
-use App\Models\HorarioPunto;
-use App\Models\HorarioTramo;
-use App\Models\Pasaje;
-use App\Models\Sucursal;
-use App\Models\TipoVehiculo;
+use App\Models\Ruta;
 use App\Models\TipoViaje;
-use App\Models\Vehiculo;
-use Carbon\Carbon;
+use App\Models\TipoVehiculo;
+use Exception;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -19,331 +14,168 @@ class HorarioController extends Controller
 {
     public function index()
     {
-        $tiposViaje = TipoViaje::all();
-        $tipo_vehiculos   = TipoVehiculo::all();
-        $sucursales  = Sucursal::where('estado', 'A')->get();
-        $horarios = Horario::with(['tipo_viaje', 'punto_origen', 'punto_destino', 'tipo_vehiculo'])->select('horarios.*');
-        $hoy = Carbon::now("America/Lima")->format('Y-m-d');
-        return view('horarios.index', compact('hoy', 'tiposViaje', 'tipo_vehiculos', 'sucursales', 'horarios'));
+        $rutas = Ruta::select('id', 'nombre')->orderBy('nombre')->get();
+        $tiposViaje = TipoViaje::select('id', 'descripcion')->orderBy('descripcion')->get();
+        $tiposVehiculo = TipoVehiculo::select('id', 'descripcion')->orderBy('descripcion')->get();
+
+        return view('horarios.index', compact('rutas', 'tiposViaje', 'tiposVehiculo'));
     }
-
-
 
     public function datatable()
     {
-        $horarios = Horario::with(['fechas', 'tipo_viaje', 'punto_origen', 'punto_destino', 'tipo_vehiculo']);
+        $horarios = Horario::with(['ruta.puntos.sucursal', 'tipo_viaje', 'tipo_vehiculo']);
 
         return DataTables::of($horarios)
-            ->addColumn('tipo_viaje', fn($h) => $h->tipo_viaje->descripcion)
-            ->addColumn('tipo_vehiculo', fn($h) => $h->tipo_vehiculo->descripcion)
-            ->addColumn('origen', fn($h) => optional($h->punto_origen)->nombre_comercial)
-            ->addColumn('fecha_salida', function ($h) {
-                return optional($h->fechas->first())->fecha_salida
-                    ? Carbon::parse($h->fechas->first()->fecha_salida)->format('d-m-Y')
-                    : '';
+            ->addColumn('ruta', function ($horario) {
+                return $horario->ruta?->nombre ?? '-';
             })
-            ->addColumn('destino', fn($h) => optional($h->punto_destino)->nombre_comercial)
-            ->addColumn('acciones', function ($h) {
+            ->addColumn('tipo_viaje', function ($horario) {
+                return $horario->tipo_viaje?->nombre ?? '-';
+            })
+            ->addColumn('tipo_vehiculo', function ($horario) {
+                return $horario->tipo_vehiculo?->nombre ?? '-';
+            })
+            ->addColumn('hora_salida_formateada', function ($horario) {
+                return $horario->hora_formateada;
+            })
+            ->addColumn('hora_llegada', function ($horario) {
+                return $horario->hora_llegada;
+            })
+            ->addColumn('duracion', function ($horario) {
+                return $horario->duracion_total_formateada;
+            })
+            ->addColumn('acciones', function ($horario) {
                 return '
-        <button class="btn btn-warning btn-xs editar" data-id="' . $h->id . '">
-            <i data-lucide="pen"></i>
-        </button>
-        <button class="btn btn-danger btn-xs eliminar" data-id="' . $h->id . '">
-            <i data-lucide="trash-2"></i>
-        </button>
-    ';
-            })
+                    <button class="btn btn-light btn-xs ver" data-id="' . $horario->id . '">
+                        <i class="link-icon" data-lucide="info"></i>
+                    </button>
 
+                    <button class="btn btn-warning btn-xs editar" data-id="' . $horario->id . '">
+                        <i class="link-icon" data-lucide="pen"></i>
+                    </button>
+
+                    <button class="btn btn-danger btn-xs eliminar" data-id="' . $horario->id . '">
+                        <i class="link-icon" data-lucide="trash"></i>
+                    </button>
+                ';
+            })
             ->rawColumns(['acciones'])
             ->make(true);
     }
 
-    public function guardar(Request $request)
-    {
-        $request->validate([
-            'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
-            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
-            'punto_origen_id' => 'required|exists:sucursales,id',
-            'hora_salida' => 'required',
-            'fecha_salida' => 'required|date',
-            'repetir_hasta' => 'nullable|date|after_or_equal:fecha_salida',
-        ]);
-
-        if ($request->tipo_viaje_id == 2) {
-            $request->validate([
-                'puntos' => 'required|array|min:1',
-                'puntos.*.sucursal_id' => 'required|exists:sucursales,id',
-                'puntos.*.costo' => 'required|numeric|min:0',
-                'puntos.*.duracion' => 'required|integer|min:1',
-            ]);
-        }
-
-        $inicio = Carbon::parse($request->fecha_salida);
-        $fin = $request->repetir_hasta
-            ? Carbon::parse($request->repetir_hasta)
-            : $inicio->copy()->addMonths(3);
-
-        $fecha = $inicio->copy();
-        
-        $diasSeleccionados = [
-            'lunes' => $request->filled('lunes'),
-            'martes' => $request->filled('martes'),
-            'miercoles' => $request->filled('miercoles'),
-            'jueves' => $request->filled('jueves'),
-            'viernes' => $request->filled('viernes'),
-            'sabado' => $request->filled('sabado'),
-            'domingo' => $request->filled('domingo'),
-        ];
-        while ($fecha->lte($fin)) {
-
-            $crear = false;
-
-            if ($fecha->isMonday() && $diasSeleccionados['lunes']) $crear = true;
-            if ($fecha->isTuesday() && $diasSeleccionados['martes']) $crear = true;
-            if ($fecha->isWednesday() && $diasSeleccionados['miercoles']) $crear = true;
-            if ($fecha->isThursday() && $diasSeleccionados['jueves']) $crear = true;
-            if ($fecha->isFriday() && $diasSeleccionados['viernes']) $crear = true;
-            if ($fecha->isSaturday() && $diasSeleccionados['sabado']) $crear = true;
-            if ($fecha->isSunday() && $diasSeleccionados['domingo']) $crear = true;
-
-            if ($crear) {
-
-                $horario = Horario::create([
-                    'tipo_viaje_id'    => $request->tipo_viaje_id,
-                    'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
-                    'punto_origen_id'  => $request->punto_origen_id,
-                    'punto_destino_id' => $request->tipo_viaje_id != 2 ? $request->punto_destino_id : null,
-                    'hora_salida'      => $request->hora_salida,
-                    'costo_base'       => $request->costo_pasaje,
-                ]);
-
-                HorarioFecha::create([
-                    'horario_id' => $horario->id,
-                    'fecha_salida' => $fecha->format('Y-m-d'),
-                    'lunes'     => $fecha->isMonday(),
-                    'martes'    => $fecha->isTuesday(),
-                    'miercoles' => $fecha->isWednesday(),
-                    'jueves'    => $fecha->isThursday(),
-                    'viernes'   => $fecha->isFriday(),
-                    'sabado'    => $fecha->isSaturday(),
-                    'domingo'   => $fecha->isSunday(),
-                ]);
-            }
-
-            $fecha->addDay();
-        }
-        return response()->json(['success' => true]);
-    }
-
-    public function buscar(Request $request)
-    {
-        $fecha = $request->fecha;
-        $origen = $request->origen;
-        $destino = $request->destino;
-
-        $horarios = Horario::whereHas('puntos', function ($q) use ($origen) {
-            $q->where('sucursal_id', $origen);
-        })
-            ->whereHas('puntos', function ($q) use ($destino) {
-                $q->where('sucursal_id', $destino);
-            })
-            ->with(['puntos', 'vehiculo'])
-            ->get()
-            ->filter(function ($horario) use ($origen, $destino) {
-
-                $puntos = $horario->puntos->sortBy('orden');
-
-                $pOrigen = $puntos->firstWhere('sucursal_id', $origen);
-                $pDestino = $puntos->firstWhere('sucursal_id', $destino);
-
-                return $pOrigen && $pDestino && $pOrigen->orden < $pDestino->orden;
-            })
-            ->values();
-
-        return response()->json($horarios);
-    }
-
-    public function mostrar($id)
+    public function show($id)
     {
         $horario = Horario::with([
+            'ruta.puntos.sucursal',
+            'ruta.tramos.origen.sucursal',
+            'ruta.tramos.destino.sucursal',
             'tipo_viaje',
-            'punto_origen',
-            'punto_destino',
-            'fechas',
-            'puntos',
-            'tramos.origen.sucursal',
-            'tramos.destino.sucursal',
+            'tipo_vehiculo'
         ])->findOrFail($id);
 
-        $horario->fecha_salida = optional($horario->fechas->first())->fecha_salida;
-        $horario->fecha_fin = optional($horario->fechas->last())->fecha_salida;
-
-        return response()->json($horario);
-    }
-
-
-
-    public function actualizar(Request $request, Horario $horario)
-    {
-        $request->validate([
-            'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
-            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
-            'punto_origen_id' => 'required|exists:sucursales,id',
-            'punto_destino_id' => 'required|exists:sucursales,id',
-            'costo_pasaje' => 'required|numeric',
-            'hora_salida' => 'required',
-            'fecha_salida' => 'required|date',
-        ]);
-
-        $horario->update([
-            'tipo_viaje_id'    => $request->tipo_viaje_id,
-            'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
-            'punto_origen_id'  => $request->punto_origen_id,
-            'punto_destino_id' => $request->punto_destino_id,
-            'hora_salida'      => $request->hora_salida,
-            'costo_base'       => $request->costo_pasaje,
-        ]);
-        return response()->json(['success' => true]);
-    }
-
-    public function eliminar(Horario $horario)
-    {
-        try {
-            $horario->delete();
-            return response()->json(['success' => true, 'message' => 'Horario eliminado correctamente.']);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al eliminar: ' . $e->getMessage()]);
-        }
-    }
-
-    public function calendario()
-    {
-        $sucursales = Sucursal::where('estado', 'A')->orderBy('nombre_comercial')->get();
-        $tiposViaje = TipoViaje::all();
-
-        $fechas = HorarioFecha::with([
-            'horario.tipo_viaje',
-            'horario.punto_destino',
-            'horario.punto_origen',
-            'horario.tipo_vehiculo'
-        ])
-            ->whereDate('fecha_salida', '>=', now()->startOfYear())
-            ->whereDate('fecha_salida', '<=', now()->endOfYear())
-            ->get();
-
-        $eventos = $fechas->map(fn($f) => [
-            'title' => optional($f->horario->punto_origen)->nombre_comercial . ' -> ' . optional($f->horario->punto_destino)->nombre_comercial ?? 'Sin destino',
-            'start' => Carbon::parse($f->fecha_salida)->format('Y-m-d') . 'T' . $f->horario->hora_salida,
-            'color' => $f->horario->tipo_viaje_id == 1 ? '#007bff' : '#ff006f', // Directo=azul, Tramos=naranja
-            'extendedProps' => [
-                'id'          => $f->horario->id,
-                'origen' => $f->horario->punto_origen->nombre_comercial ?? 'Sin origen',
-                'destino' => $f->horario->punto_destino->nombre_comercial ?? 'Sin destino',
-                'hora'        => $f->horario->hora_salida,
-                'tipo_viaje'  => $f->horario->tipo_viaje->descripcion ?? '',
-                'tipo_viaje_id' => $f->horario->tipo_viaje_id,
-                'vehiculo'    => $f->horario->tipo_vehiculo->descripcion ?? '',
-                'costo'       => $f->horario->costo_base,
+        return response()->json([
+            'id' => $horario->id,
+            'ruta_id' => $horario->ruta_id,
+            'tipo_viaje_id' => $horario->tipo_viaje_id,
+            'tipo_vehiculo_id' => $horario->tipo_vehiculo_id,
+            'hora_salida' => $horario->hora_salida,
+            'costo_base' => $horario->costo_base,
+            'hora_llegada' => $horario->hora_llegada,
+            'duracion_total' => $horario->duracion_total_formateada,
+            'ruta' => [
+                'id' => $horario->ruta?->id,
+                'nombre' => $horario->ruta?->nombre,
+                'puntos' => $horario->ruta?->puntos?->sortBy('orden')->values()->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'orden' => $p->orden,
+                        'nombre' => $p->sucursal?->nombre_comercial,
+                    ];
+                }),
             ]
         ]);
-
-        return view('horarios.calendario', compact('eventos', 'sucursales', 'tiposViaje'));
     }
 
-    public function getEventos(Request $request)
+    public function store(Request $request)
     {
-        $inicio = $request->start;
-        $fin = $request->end;
+        $request->validate([
+            'ruta_id' => 'required|exists:rutas,id',
+            'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
+            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
+            'hora_salida' => 'required',
+            'costo_base' => 'required|numeric|min:0',
+        ]);
 
-        $fechas = HorarioFecha::with([
-            'horario.tipo_viaje',
-            'horario.punto_destino',
-            'horario.tipo_vehiculo'
-        ])
-            ->whereBetween('fecha_salida', [$inicio, $fin])
-            ->get();
+        try {
+            $horario = Horario::create([
+                'ruta_id' => $request->ruta_id,
+                'tipo_viaje_id' => $request->tipo_viaje_id,
+                'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+                'hora_salida' => $request->hora_salida,
+                'costo_base' => $request->costo_base,
+            ]);
 
-        $eventos = [];
-
-        foreach ($fechas as $fecha) {
-
-            $horario = $fecha->horario;
-
-            $eventos[] = [
-                'title' => optional($horario->punto_destino)->nombre_comercial ?? 'Sin destino',
-                'start' => $fecha->fecha_salida . 'T' . $horario->hora_salida,
-                'extendedProps' => [
-                    'id' => $horario->id,
-                    'tipo_viaje' => $horario->tipo_viaje->descripcion ?? '',
-                    'tipo_vehiculo' => $horario->tipo_vehiculo->descripcion ?? '',
-                    'costo' => $horario->costo_base,
-                ],
-            ];
+            return response()->json([
+                'ok' => true,
+                'id' => $horario->id,
+                'mensaje' => 'Horario creado correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json($eventos);
     }
 
-    public function filtrar(Request $request)
+    public function update(Request $request, $id)
     {
-        $query = Horario::query()
-            ->with([
-                'tipo_viaje',
-                'punto_origen',
-                'punto_destino',
-                'tipo_vehiculo'
-            ])
-            ->withCount('pasajes');
+        $request->validate([
+            'ruta_id' => 'required|exists:rutas,id',
+            'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
+            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
+            'hora_salida' => 'required',
+            'costo_base' => 'required|numeric|min:0',
+        ]);
 
-        if ($request->origen) {
-            $query->where('punto_origen_id', $request->origen);
+        try {
+            $horario = Horario::findOrFail($id);
+
+            $horario->update([
+                'ruta_id' => $request->ruta_id,
+                'tipo_viaje_id' => $request->tipo_viaje_id,
+                'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+                'hora_salida' => $request->hora_salida,
+                'costo_base' => $request->costo_base,
+            ]);
+
+            return response()->json([
+                'ok' => true,
+                'mensaje' => 'Horario actualizado correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
+    }
 
-        if ($request->destino) {
-            $query->where('punto_destino_id', $request->destino);
+    public function destroy($id)
+    {
+        try {
+            $horario = Horario::findOrFail($id);
+            $horario->delete();
+
+            return response()->json([
+                'ok' => true,
+                'mensaje' => 'Horario eliminado correctamente'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        if ($request->tipo_viaje) {
-            $query->where('tipo_viaje_id', $request->tipo_viaje);
-        }
-
-        if ($request->tipo_vehiculo) {
-            $query->where('tipo_vehiculo_id', $request->tipo_vehiculo);
-        }
-
-        if ($request->fecha) {
-            $query->whereHas('fechas', function ($q) use ($request) {
-                $q->whereDate('fecha_salida', $request->fecha);
-            });
-        }
-
-        $horarios = $query->get();
-
-        return response()->json(
-            $horarios->map(function ($h) {
-                return [
-                    'id' => $h->id,
-                    'hora_salida' => $h->hora_salida,
-                    'fecha_salida' => $h->fecha_salida_formateada,
-                    'pasajes_count' => $h->pasajes_count,
-                    'tipo_vehiculo' => [
-                        'id' => $h->tipo_vehiculo->id ?? null,
-                        'descripcion' => $h->tipo_vehiculo->descripcion ?? ''
-                    ],
-                    'tipo_viaje' => [
-                        'id' => $h->tipo_viaje->id ?? null,
-                        'descripcion' => $h->tipo_viaje->descripcion ?? ''
-                    ],
-                    'punto_origen' => [
-                        'id' => $h->punto_origen->id ?? null,
-                        'nombre_comercial' => $h->punto_origen->nombre_comercial ?? ''
-                    ],
-                    'punto_destino' => [
-                        'id' => $h->punto_destino->id ?? null,
-                        'nombre_comercial' => $h->punto_destino->nombre_comercial ?? ''
-                    ],
-                ];
-            })
-        );
     }
 }

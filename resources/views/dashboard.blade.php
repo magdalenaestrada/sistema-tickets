@@ -39,16 +39,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($horariosHoy as $horario)
-                                    <tr>
-                                        <td>{{ $horario->tipo_viaje->descripcion ?? '-' }}</td>
-                                        <td>{{ $horario->punto_origen->nombre_comercial ?? '-' }}</td>
-                                        <td>{{ $horario->punto_destino->nombre_comercial ?? '-' }}</td>
-                                        <td>{{ $horario->tipo_vehiculo->descripcion ?? '-' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($horario->hora_embarque)->format('H:i') }}</td>
-                                        <td>{{ number_format($horario->costo_pasaje, 2) }}</td>
-                                    </tr>
-                                @endforeach
+                              
                             </tbody>
                         </table>
                     </div>

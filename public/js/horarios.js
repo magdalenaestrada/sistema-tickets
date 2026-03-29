@@ -1,391 +1,339 @@
-$(document).ready(function () {
-    const modalHorario = new bootstrap.Modal($("#modalHorario")[0]);
-    const formHorario = $("#formHorario");
-    const tabla = $("#tablaHorarios").DataTable({
-        ajax: route("horarios.datatable"),
+let tablaHorarios;
+let rutasHorario = window.RUTAS_HORARIO || [];
+let tiposViajeHorario = window.TIPOS_VIAJE_HORARIO || [];
+let tiposVehiculoHorario = window.TIPOS_VEHICULO_HORARIO || [];
+
+$(document).ready(async function () {
+    tablaHorarios = $("#tablaHorarios").DataTable({
+        ajax: {
+            url: route("horarios.datatable"),
+        },
         columns: [
             { data: "id" },
-            { data: "tipo_viaje" },
-            { data: "origen" },
-            { data: "destino" },
-            { data: "tipo_vehiculo" },
-            { data: "costo_base" },
-            { data: "hora_salida" },
-            { data: "fecha_salida" },
-            {
-                data: null,
-                render: function (data, type, row) {
-                    let dias = [];
-                    if (row.lunes) dias.push("L");
-                    if (row.martes) dias.push("M");
-                    if (row.miercoles) dias.push("X");
-                    if (row.jueves) dias.push("J");
-                    if (row.viernes) dias.push("V");
-                    if (row.sabado) dias.push("S");
-                    if (row.domingo) dias.push("D");
-                    return dias.join(", ");
-                },
-            },
-            { data: "acciones", orderable: false, searchable: false },
+            { data: "ruta" },
+            { data: "hora_salida_formateada" },
+            { data: "hora_llegada_formateada" },
+            { data: "duracion" },
+            { data: "acciones" },
         ],
+        responsive: true,
+        info: false,
+        dom: "rtip",
         drawCallback: function () {
             lucide.createIcons();
         },
-        dom: "rtip",
+    });
+});
+
+function opcionesRutas(selected = "") {
+    let html = `<option value="">Seleccione ruta</option>`;
+
+    rutasHorario.forEach((r) => {
+        html += `<option value="${r.id}" ${String(selected) === String(r.id) ? "selected" : ""}>${r.nombre}</option>`;
     });
 
-    $("#btnNuevoHorario").click(function () {
-        formHorario[0].reset();
-        limpiarPuntos();
-        toggleContenedorPuntos();
-        modalHorario.show();
-    });
-    const fechaSalida = document.getElementById("fecha_salida");
-    const repetirHasta = document.getElementById("repetir_hasta");
+    return html;
+}
 
-    fechaSalida.addEventListener("change", function () {
-        repetirHasta.min = this.value;
+function opcionesTiposViaje(selected = "") {
+    let html = `<option value="">Seleccione tipo de viaje</option>`;
 
-        if (repetirHasta.value && repetirHasta.value < this.value) {
-            repetirHasta.value = "";
-        }
-    });
-    formHorario.submit(function (e) {
-        e.preventDefault();
-
-        const formData = $(this).serializeArray();
-        $("#formHorario input[type=checkbox]").each(function () {
-            let name = $(this).attr("name");
-            formData.push({ name: name, value: this.checked ? 1 : 0 });
-        });
-
-        let id = $("#horario_id").val();
-        let url = id
-            ? route("horarios.actualizar", id)
-            : $(this).attr("action");
-        let method = id ? "PUT" : "POST";
-        if (id) formData.push({ name: "_method", value: "PUT" });
-
-        $.ajax({
-            url: url,
-            type: method,
-            data: $.param(formData),
-            success: function (res) {
-                if (res.success) {
-                    tabla.ajax.reload(null, false);
-                    modalHorario.hide();
-                    Swal.fire(
-                        "Éxito",
-                        "Horario guardado correctamente",
-                        "success",
-                    );
-                } else {
-                    Swal.fire(
-                        "Error",
-                        res.message || "Ocurrió un error",
-                        "error",
-                    );
-                }
-            },
-            error: function (xhr) {
-                let errors = xhr.responseJSON?.errors;
-                let msg = errors
-                    ? Object.values(errors).flat().join("<br>")
-                    : "Error al procesar la solicitud";
-                Swal.fire("Error", msg, "error");
-            },
-        });
+    tiposViajeHorario.forEach((t) => {
+        html += `<option value="${t.id}" ${String(selected) === String(t.id) ? "selected" : ""}>${t.descripcion}</option>`;
     });
 
-    $("#tablaHorarios").on("click", ".editar", function () {
-        let id = $(this).data("id");
-        $.get(route("horarios.mostrar", id), function (data) {
-            $("#horario_id").val(data.id);
-            $("#tipo_viaje_id").val(data.tipo_viaje_id).prop("disabled", false);
-            $("#tipo_horario_id")
-                .val(data.tipo_horario_id)
-                .prop("disabled", false);
-            $("#tipo_vehiculo_id")
-                .val(data.tipo_vehiculo_id)
-                .prop("disabled", false);
-            $("#punto_origen_id")
-                .val(data.punto_origen_id)
-                .prop("disabled", false);
-            $("#punto_destino_id")
-                .val(data.punto_destino_id)
-                .prop("disabled", false);
-            $("#costo_pasaje").val(data.costo_base).prop("disabled", false);
-            $("#hora_salida").val(data.hora_salida).prop("disabled", false);
-            $("#fecha_salida").val(data.fecha_salida).prop("disabled", false);
-            $("#lunes").prop("checked", data.lunes).prop("disabled", false);
-            $("#martes").prop("checked", data.martes).prop("disabled", false);
-            $("#miercoles")
-                .prop("checked", data.miercoles)
-                .prop("disabled", false);
-            $("#jueves").prop("checked", data.jueves).prop("disabled", false);
-            $("#viernes").prop("checked", data.viernes).prop("disabled", false);
-            $("#sabado").prop("checked", data.sabado).prop("disabled", false);
-            $("#domingo").prop("checked", data.domingo).prop("disabled", false);
+    return html;
+}
 
-            $("#modalTitulo").text("Editar Horario");
+function opcionesTiposVehiculo(selected = "") {
+    let html = `<option value="">Seleccione tipo de vehículo</option>`;
 
-            toggleContenedorPuntos();
+    tiposVehiculoHorario.forEach((t) => {
+        html += `<option value="${t.id}" ${String(selected) === String(t.id) ? "selected" : ""}>${t.descripcion}</option>`;
+    });
 
-            limpiarPuntos();
+    return html;
+}
 
-            if (data.tramos && data.tramos.length > 0) {
-                let origenId = data.punto_origen_id;
-                let origenText = $("#punto_origen_id option:selected").text();
+window.modoCrearHorario = function () {
+    let html = `
 
-                data.tramos.forEach((t) => {
-                    const destinoText =
-                        t.destino?.sucursal?.nombre_comercial || "Destino";
-                    const horaLlegada = t.hora_llegada;
+        <div class="mb-2">
+            <label class="form-label">Ruta</label>
+            <select id="ruta_id" class="form-select">
+                ${opcionesRutas()}
+            </select>
+        </div>
 
-                    puntosData.push({
-                        origen_id: origenId,
-                        destino_id: t.punto_destino_id,
-                        destino_text: destinoText,
-                        costo: parseFloat(t.costo_tramo),
-                        duracion: parseInt(t.duracion_minutos),
-                        index: puntoIndex,
-                    });
+        <div class="mb-2">
+            <label class="form-label">Tipo de viaje</label>
+            <select id="tipo_viaje_id" class="form-select">
+                ${opcionesTiposViaje()}
+            </select>
+        </div>
 
-                    $("#tablaPuntos tbody").append(`
-<tr data-index="${puntoIndex}">
-    <td>${origenText}</td>
-    <td>${destinoText}</td>
-    <td>S/ ${parseFloat(t.costo_tramo).toFixed(2)}</td>
-    <td>${t.duracion_minutos} min</td>
-    <td>${horaLlegada}</td>
-    <td>
-        <button type="button" class="btn btn-danger btn-sm eliminarPunto">
-            Eliminar
+        <div class="mb-2">
+            <label class="form-label">Tipo de vehículo</label>
+            <select id="tipo_vehiculo_id" class="form-select">
+                ${opcionesTiposVehiculo()}
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Hora salida</label>
+            <input type="time" id="hora_salida" class="form-control">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Costo base</label>
+            <input type="number" id="costo_base" class="form-control" min="0" step="0.01">
+        </div>
+
+        <button class="btn btn-primary w-100 mt-2" onclick="guardarHorario()">
+            Guardar horario
         </button>
-    </td>
-</tr>
-`);
+    `;
 
-                    $("#inputsPuntos").append(`
-<input type="hidden" name="puntos[${puntoIndex}][sucursal_id]" value="${t.punto_destino_id}">
-<input type="hidden" name="puntos[${puntoIndex}][costo]" value="${t.costo_tramo}">
-<input type="hidden" name="puntos[${puntoIndex}][duracion]" value="${t.duracion_minutos}">
-`);
+    $("#tituloPanelHorario").text("Crear horario");
+    $("#panelHorarioContenido").html(html);
+    lucide.createIcons();
+};
 
-                    puntoIndex++;
-                    origenId = t.punto_destino_id;
-                    origenText = destinoText;
-                });
+window.guardarHorario = function () {
+    let ruta_id = $("#ruta_id").val();
+    let tipo_viaje_id = $("#tipo_viaje_id").val();
+    let tipo_vehiculo_id = $("#tipo_vehiculo_id").val();
+    let hora_salida = $("#hora_salida").val();
+    let costo_base = $("#costo_base").val();
 
-                actualizarCostoFinal();
-            }
-
-            modalHorario.show();
-        });
-    });
-
-    $("#tablaHorarios").on("click", ".ver", function () {
-        let id = $(this).data("id");
-        $.get(route("horarios.mostrar", id), function (data) {
-            $("#horario_id").val(data.id);
-            $("#tipo_viaje_id").val(data.tipo_viaje_id).prop("disabled", true);
-            $("#tipo_vehiculo_id")
-                .val(data.tipo_vehiculo_id)
-                .prop("disabled", true);
-            $("#punto_origen_id")
-                .val(data.punto_origen_id)
-                .prop("disabled", true);
-            $("#punto_destino_id")
-                .val(data.punto_destino_id)
-                .prop("disabled", true);
-            $("#costo_pasaje").val(data.costo_pasaje).prop("disabled", true);
-            $("#hora_salida").val(data.hora_salida).prop("disabled", true);
-            $("#fecha_salida").val(data.fecha_salida).prop("disabled", true);
-            $("#lunes").prop("checked", data.lunes).prop("disabled", true);
-            $("#martes").prop("checked", data.martes).prop("disabled", true);
-            $("#miercoles")
-                .prop("checked", data.miercoles)
-                .prop("disabled", true);
-            $("#jueves").prop("checked", data.jueves).prop("disabled", true);
-            $("#viernes").prop("checked", data.viernes).prop("disabled", true);
-            $("#sabado").prop("checked", data.sabado).prop("disabled", true);
-            $("#domingo").prop("checked", data.domingo).prop("disabled", true);
-
-            $("#modalTitulo").text("Ver Horario");
-            modalHorario.show();
-        });
-        toggleContenedorPuntos();
-    });
-
-    function toggleContenedorPuntos() {
-        const tipoViaje = $("#tipo_viaje_id").val();
-        if (tipoViaje == 2) {
-            $("#contenedorPuntos").removeClass("d-none");
-
-            $(".contenedor_destino").addClass("d-none");
-            $(".contenedor_costo_pasaje").addClass("d-none");
-
-            $("#punto_destino_id").prop("required", false).val("");
-            $("#costo_pasaje").prop("required", false);
-        } else {
-            $("#contenedorPuntos").addClass("d-none");
-
-            $(".contenedor_destino").removeClass("d-none");
-            $(".contenedor_costo_pasaje").removeClass("d-none");
-
-            $("#punto_destino_id").prop("required", true);
-            $("#costo_pasaje").prop("required", true);
-
-            limpiarPuntos();
-        }
+    if (
+        !ruta_id ||
+        !tipo_viaje_id ||
+        !tipo_vehiculo_id ||
+        !hora_salida ||
+        costo_base === ""
+    ) {
+        Swal.fire("Error", "Todos los campos son obligatorios", "error");
+        return;
     }
 
-    $("#tipo_viaje_id").change(toggleContenedorPuntos);
-
-    $("#tablaHorarios").on("click", ".eliminar", function () {
-        let id = $(this).data("id");
-        Swal.fire({
-            title: "¿Está seguro?",
-            text: "No podrá revertir esto",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: route("horarios.eliminar", id),
-                    type: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                            "content",
-                        ),
-                    },
-                    success: function (res) {
-                        if (res.success) {
-                            tabla.ajax.reload(null, false);
-                            Swal.fire("Eliminado", res.message, "success");
-                        } else {
-                            Swal.fire("Error", res.message, "error");
-                        }
-                    },
-                });
-            }
-        });
+    Swal.fire({
+        title: "Guardando...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
     });
 
-    $("#punto_origen_id").change(function () {
-        let origen = $(this).val();
-        $("#punto_destino_id option").each(function () {
-            if ($(this).val() === origen && origen !== "") {
-                $(this).hide();
-            } else {
-                $(this).show();
-            }
-        });
-        if ($("#punto_destino_id").val() === origen)
-            $("#punto_destino_id").val("");
-    });
-
-    let puntosData = [];
-    let puntoIndex = 0;
-
-    $("#btnAgregarPunto").click(function () {
-        let origenId;
-        let origenText;
-
-        if (puntosData.length === 0) {
-            origenId = $("#punto_origen_id").val();
-            origenText = $("#punto_origen_id option:selected").text();
-        } else {
-            const ultimo = puntosData[puntosData.length - 1];
-            origenId = ultimo.destino_id;
-            origenText = $(
-                "#punto_destino option[value='" + origenId + "']",
-            ).text();
-        }
-
-        const destinoId = $("#punto_destino").val();
-        const destinoText = $("#punto_destino option:selected").text();
-        const costo = $("#costo_tramo").val();
-        const duracion = $("#duracion_tramo").val();
-
-        if (!destinoId || !costo || !duracion) {
-            Swal.fire("Error", "Complete todos los campos del tramo", "error");
-            return;
-        }
-
-        if (destinoId === origenId) {
+    $.post(route("horarios.store"), {
+        _token: $("meta[name=csrf-token]").attr("content"),
+        ruta_id: ruta_id,
+        tipo_viaje_id: tipo_viaje_id,
+        tipo_vehiculo_id: tipo_vehiculo_id,
+        hora_salida: hora_salida,
+        costo_base: costo_base,
+    })
+        .done(function () {
+            Swal.fire("Guardado", "", "success");
+            tablaHorarios.ajax.reload();
+            $("#panelHorarioContenido").html(
+                '<p class="text-muted">Selecciona un horario</p>',
+            );
+        })
+        .fail(function (err) {
             Swal.fire(
                 "Error",
-                "El destino no puede ser igual al origen",
+                err.responseJSON?.message || "No se pudo guardar",
                 "error",
             );
-            return;
-        }
-
-        if (puntosData.some((p) => p.destino_id == destinoId)) {
-            Swal.fire("Error", "Este destino ya fue agregado", "error");
-            return;
-        }
-
-        const origenHorario = $("#punto_origen_id").val(); // origen principal del horario
-
-        puntosData.push({
-            origen_id: origenId,
-            destino_id: destinoId,
-            costo: parseFloat(costo),
-            duracion: parseInt(duracion),
-            index: puntoIndex,
         });
+};
 
-        $("#tablaPuntos tbody").append(`
-<tr data-index="${puntoIndex}">
-    <td>${origenText}</td>
-    <td>${destinoText}</td>
-    <td>S/ ${parseFloat(costo).toFixed(2)}</td>
-    <td>
-        <button type="button" class="btn btn-danger btn-sm eliminarPunto">
-            Eliminar
-        </button>
-    </td>
-</tr>
-`);
+function verHorario(id) {
+    $.get(route("horarios.show", { id: id }), function (horario) {
+        let puntos = "";
 
-        $("#inputsPuntos").append(`
-<input type="hidden" name="puntos[${puntoIndex}][sucursal_id]" value="${destinoId}">
-<input type="hidden" name="puntos[${puntoIndex}][costo]" value="${costo}">
-<input type="hidden" name="puntos[${puntoIndex}][duracion]" value="${duracion}">
-`);
-
-        puntoIndex++;
-        $("#punto_destino").val("");
-        $("#costo_tramo").val("");
-        $("#duracion_tramo").val("");
-
-        actualizarCostoFinal();
-    });
-
-    function limpiarPuntos() {
-        puntosData = [];
-        puntoIndex = 0;
-        $("#tablaPuntos tbody").empty();
-        $("#inputsPuntos").empty();
-    }
-
-    $("#punto_origen_id").change(function () {
-        const texto = $("#punto_origen_id option:selected").text();
-        $("#origen_nombre").val(texto);
-
-        limpiarPuntos();
-    });
-
-    function actualizarCostoFinal() {
-        if (puntosData.length === 0) {
-            $("#costo_pasaje").val("");
-            return;
+        if (horario.ruta?.puntos?.length) {
+            puntos = `
+                <ul class="list-group mt-2">
+                    ${horario.ruta.puntos
+                        .map(
+                            (p) => `
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>${p.orden}. ${p.nombre}</span>
+                        </li>
+                    `,
+                        )
+                        .join("")}
+                </ul>
+            `;
         }
-        const ultimo = puntosData[puntosData.length - 1];
-        $("#costo_pasaje").val(ultimo.costo.toFixed(2));
+
+        let html = `
+            <h6>${horario.ruta?.nombre ?? "Sin ruta"}</h6>
+
+            <div class="mb-2"><strong>Tipo viaje:</strong> ${horario.tipo_viaje ?? "-"}</div>
+            <div class="mb-2"><strong>Tipo vehículo:</strong> ${horario.tipo_vehiculo ?? "-"}</div>
+            <div class="mb-2"><strong>Hora salida:</strong> ${horario.hora_salida_formateada ?? "-"}</div>
+            <div class="mb-2"><strong>Hora llegada:</strong> ${horario.hora_llegada ?? "-"}</div>
+            <div class="mb-2"><strong>Duración:</strong> ${horario.duracion_total ?? "-"}</div>
+            <div class="mb-2"><strong>Costo base:</strong> S/ ${horario.costo_base ?? "0.00"}</div>
+
+            <hr>
+
+            <h6>Puntos de la ruta</h6>
+            ${puntos}
+        `;
+
+        $("#tituloPanelHorario").text("Detalle de horario");
+        $("#panelHorarioContenido").html(html);
+        lucide.createIcons();
+    });
+}
+
+function editarHorario(id) {
+    $.get(route("horarios.show", { id: id }), function (horario) {
+        let html = `
+            <h6>Editar Horario</h6>
+
+            <div class="mb-2">
+                <label class="form-label">Ruta</label>
+                <select id="ruta_id" class="form-select">
+                    ${opcionesRutas(horario.ruta_id)}
+                </select>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Tipo de viaje</label>
+                <select id="tipo_viaje_id" class="form-select">
+                    ${opcionesTiposViaje(horario.tipo_viaje_id)}
+                </select>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Tipo de vehículo</label>
+                <select id="tipo_vehiculo_id" class="form-select">
+                    ${opcionesTiposVehiculo(horario.tipo_vehiculo_id)}
+                </select>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Hora salida</label>
+                <input type="time" id="hora_salida" class="form-control" value="${(horario.hora_salida || "").substring(0, 5)}">
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Costo base</label>
+                <input type="number" id="costo_base" class="form-control" min="0" step="0.01" value="${horario.costo_base}">
+            </div>
+
+            <button class="btn btn-success w-100 mt-2" onclick="guardarEdicionHorario(${horario.id})">
+                Guardar cambios
+            </button>
+        `;
+
+        $("#tituloPanelHorario").text("Editar horario");
+        $("#panelHorarioContenido").html(html);
+        lucide.createIcons();
+    });
+}
+
+window.guardarEdicionHorario = function (id) {
+    let ruta_id = $("#ruta_id").val();
+    let tipo_viaje_id = $("#tipo_viaje_id").val();
+    let tipo_vehiculo_id = $("#tipo_vehiculo_id").val();
+    let hora_salida = $("#hora_salida").val();
+    let costo_base = $("#costo_base").val();
+
+    if (
+        !ruta_id ||
+        !tipo_viaje_id ||
+        !tipo_vehiculo_id ||
+        !hora_salida ||
+        costo_base === ""
+    ) {
+        Swal.fire("Error", "Todos los campos son obligatorios", "error");
+        return;
     }
+
+    Swal.fire({
+        title: "Actualizando...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+    });
+
+    $.ajax({
+        url: route("horarios.update", { id: id }),
+        method: "POST",
+        data: {
+            _token: $("meta[name=csrf-token]").attr("content"),
+            _method: "PUT",
+            ruta_id: ruta_id,
+            tipo_viaje_id: tipo_viaje_id,
+            tipo_vehiculo_id: tipo_vehiculo_id,
+            hora_salida: hora_salida,
+            costo_base: costo_base,
+        },
+        success: function () {
+            Swal.fire("Actualizado", "", "success");
+            tablaHorarios.ajax.reload();
+            $("#panelHorarioContenido").html(
+                '<p class="text-muted">Selecciona un horario</p>',
+            );
+        },
+        error: function (err) {
+            Swal.fire(
+                "Error",
+                err.responseJSON?.message || "No se pudo actualizar",
+                "error",
+            );
+        },
+    });
+};
+
+function eliminarHorario(id) {
+    Swal.fire({
+        title: "¿Eliminar horario?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.ajax({
+            url: route("horarios.destroy", { id: id }),
+            method: "POST",
+            data: {
+                _token: $("meta[name=csrf-token]").attr("content"),
+                _method: "DELETE",
+            },
+            success: function () {
+                Swal.fire("Eliminado", "", "success");
+                tablaHorarios.ajax.reload();
+                $("#panelHorarioContenido").html(
+                    '<p class="text-muted">Selecciona un horario</p>',
+                );
+            },
+            error: function (err) {
+                Swal.fire(
+                    "Error",
+                    err.responseJSON?.message || "No se pudo eliminar",
+                    "error",
+                );
+            },
+        });
+    });
+}
+
+$(document).on("click", ".ver", function () {
+    let id = $(this).data("id");
+    verHorario(id);
+});
+
+$(document).on("click", ".editar", function () {
+    let id = $(this).data("id");
+    editarHorario(id);
+});
+
+$(document).on("click", ".eliminar", function () {
+    let id = $(this).data("id");
+    eliminarHorario(id);
 });

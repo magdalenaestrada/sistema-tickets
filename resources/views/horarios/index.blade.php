@@ -1,40 +1,53 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Gestión de Salidas</h5>
-            <div class="d-flex gap-2"> <button class="btn btn-primary" id="btnNuevoHorario"> <i class="link-icon"
-                        data-lucide="plus"></i>
-                    Añadir Salida </button> </div>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestión de horarios</h5>
+
+                    <button class="btn btn-primary" onclick="modoCrearHorario()">
+                        <i class="link-icon" data-lucide="plus"></i>
+                        Añadir horario
+                    </button>
+                </div>
+
+                <div class="card-body">
+                    <table id="tablaHorarios" class="table table-hover align-middle w-100">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>ID</th>
+                                <th>Ruta</th>
+                                <th>Salida</th>
+                                <th>Llegada</th>
+                                <th>Duración</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="tablaHorarios" class="table table-striped table-hover align-middle w-100">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Tipo de viaje</th>
-                            <th>Origen</th>
-                            <th>Destino</th>
-                            <th>Vehículo</th>
-                            <th>Costo</th>
-                            <th>Hora embarque</th>
-                            <th>Fecha salida</th>
-                            <th>Días</th>
-                            <th style="width: 120px;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 id="tituloPanelHorario">Detalle</h5>
+                </div>
+                <div class="card-body" id="panelHorarioContenido">
+                    <p class="text-muted">Selecciona un horario</p>
+                </div>
             </div>
         </div>
     </div>
-
-    @include('horarios.modals.create')
-    @include('horarios.modals.puntos')
 @endsection
 
 @push('scripts')
+    <script>
+        window.RUTAS_HORARIO = @json($rutas);
+        window.TIPOS_VIAJE_HORARIO = @json($tiposViaje);
+        window.TIPOS_VEHICULO_HORARIO = @json($tiposVehiculo);
+    </script>
     <script src="{{ asset('js/horarios.js') }}"></script>
 @endpush

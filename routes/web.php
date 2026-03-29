@@ -32,6 +32,7 @@ Route::get('/caja/verificar', function () {
 
 
 
+require __DIR__ . '/api.php';
 require __DIR__ . '/areas.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/buscar.php';
@@ -48,12 +49,12 @@ require __DIR__ . '/tipo-encomienda.php';
 require __DIR__ . '/ubigeos.php';
 require __DIR__ . '/vehiculos.php';
 require __DIR__ . '/caja.php';
-require __DIR__ . '/horario.php';
 require __DIR__ . '/asignaciones.php';
 require __DIR__ . '/pasajes.php';
 require __DIR__ . '/permisos.php';
 require __DIR__ . '/descuentos.php';
 require __DIR__ . '/roles.php';
+require __DIR__ . '/rutas.php';
 require __DIR__ . '/reportes.php';
 require __DIR__ . '/clientes.php';
 require __DIR__ . '/usuarios.php';
