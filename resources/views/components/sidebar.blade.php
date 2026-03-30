@@ -21,7 +21,8 @@
 
         $transportesOpen =
             request()->routeIs('vehiculos.*') ||
-            (request()->routeIs('horarios.*', 'asignaciones.*', 'rutas.*') && !request()->routeIs('horarios.calendario'));
+            (request()->routeIs('horarios.*', 'asignaciones.*', 'rutas.*', 'salidas.*') &&
+                !request()->routeIs('horarios.calendario'));
 
         $gestionOpen = request()->routeIs('clientes.*', 'descuentos.*', 'reportes.*');
 
@@ -194,11 +195,19 @@
                                 Rutas
                             </a>
                         </li>
-                        <li class="nav-item"><a href="{{ route('horarios.index') }}"
-                                class="nav-link {{ request()->routeIs('horarios.index') ? 'active' : '' }}">Salidas
-                                programadas</a>
+                        <li class="nav-item">
+                            <a href="{{ route('horarios.index') }}"
+                                class="nav-link {{ request()->routeIs('horarios.index') ? 'active' : '' }}">
+                                Horarios
+                            </a>
                         </li>
 
+                        <li class="nav-item">
+                            <a href="{{ route('salidas.index') }}"
+                                class="nav-link {{ request()->routeIs('salidas.*') ? 'active' : '' }}">
+                                Salidas
+                            </a>
+                        </li>
 
                     </ul>
                 </div>
