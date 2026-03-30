@@ -72,10 +72,16 @@ class Salida extends Model
             ->with(['origen', 'destino'])
             ->get()
             ->filter(function ($tramo) use ($puntoOrigen, $puntoDestino) {
+                if (!$tramo->origen || !$tramo->destino) {
+                    return false;
+                }
+
                 return $tramo->origen->orden >= $puntoOrigen->orden
                     && $tramo->destino->orden <= $puntoDestino->orden;
             })
-            ->sortBy(fn($t) => $t->origen->orden)
+            ->sortBy(function ($tramo) {
+                return $tramo->origen?->orden ?? 9999;
+            })
             ->values();
     }
 

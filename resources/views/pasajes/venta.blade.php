@@ -6,6 +6,10 @@
             <form method="POST" enctype="multipart/form-data" id="formVenta">
                 @csrf
 
+                <input type="hidden" name="salida_id" value="{{ $salida->id }}">
+                <input type="hidden" name="origen_id" value="{{ $origen->id }}">
+                <input type="hidden" name="destino_id" value="{{ $destino->id }}">
+
                 <div class="row">
                     <div class="col-md-9 mb-3">
                         @foreach ($asientos as $index => $asiento)
@@ -16,12 +20,10 @@
 
                                 <div class="card-body">
                                     <input type="hidden" name="asientos[]" value="{{ $asiento }}">
-                                    <input type="hidden" name="horario_id[]" value="{{ $horario->id }}">
 
                                     <div class="row">
-
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">Tipo <span style="color: red">*</span></label>
+                                            <label class="form-label">Tipo <span class="text-danger">*</span></label>
                                             <select class="form-select" name="tipo_documento_id[]"
                                                 id="tipo_documento_id_{{ $index }}" required>
                                                 @foreach ($tipos_documentos as $tipo_documento)
@@ -33,25 +35,26 @@
                                         </div>
 
                                         <div class="col-md-2 mb-2">
-                                            <label class="form-label">Documento <span style="color: red">*</span></label>
-                                            <input type="text" class="form-control" id="documento_{{ $index }}"
+                                            <label class="form-label">Documento <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control documento-input"
+                                                id="documento_{{ $index }}" data-index="{{ $index }}"
                                                 name="documento[]" required>
                                         </div>
 
                                         <div class="col-md-4 mb-2">
-                                            <label class="form-label">Nombres <span style="color: red">*</span></label>
+                                            <label class="form-label">Nombres <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="nombres_{{ $index }}"
                                                 name="nombres[]" required>
                                         </div>
 
                                         <div class="col-md-4 mb-2">
-                                            <label class="form-label">Apellidos <span style="color: red">*</span></label>
+                                            <label class="form-label">Apellidos <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="apellidos_{{ $index }}"
                                                 name="apellidos[]" required>
                                         </div>
 
                                         <div class="col-md-3 mb-2">
-                                            <label class="form-label">Celular <span style="color: red">*</span></label>
+                                            <label class="form-label">Celular <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="celular_{{ $index }}"
                                                 name="celular[]" required>
                                         </div>
@@ -63,33 +66,34 @@
                                         </div>
 
                                         <div class="col-md-4 mb-2">
-                                            <label class="form-label">Correo electrónico</label>
+                                            <label class="form-label">Correo</label>
                                             <input type="email" class="form-control" id="correo_{{ $index }}"
-                                                name="direccion[]">
+                                                name="correo[]">
                                         </div>
 
                                         <div class="col-md-2 mb-2">
                                             <label class="form-label">Descuento</label>
                                             <input type="text" class="form-control descuento-input"
                                                 data-index="{{ $index }}" id="descuento_{{ $index }}"
-                                                placeholder="Código">
-
+                                                name="descuento_codigo[]" placeholder="Código">
+                                            <small class="text-muted" id="descuento_msg_{{ $index }}"></small>
                                         </div>
                                     </div>
 
                                     <div class="row mt-2">
                                         <div class="col-md-6 form-check">
-                                            <input type="checkbox" class="form-check-input"
-                                                id="pasajero_menor_{{ $index }}"
+                                            <input type="checkbox" class="form-check-input pasajero-menor-check"
+                                                id="pasajero_menor_{{ $index }}" data-index="{{ $index }}"
                                                 name="pasajero_menor[{{ $index }}]" value="1">
                                             <label class="form-check-label" for="pasajero_menor_{{ $index }}">
                                                 ¿Pasajero menor de edad?
                                             </label>
                                         </div>
+
                                         <div class="col-md-6 autorizacion-container"
                                             id="autorizacion_container_{{ $index }}" style="display:none;">
                                             <label class="form-label">Autorización PDF <span
-                                                    style="color: red">*</span></label>
+                                                    class="text-danger">*</span></label>
                                             <input type="file" accept=".pdf" class="form-control"
                                                 id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
                                         </div>
@@ -103,24 +107,21 @@
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
-                                <p class="mb-1"><strong>Precio C/U:</strong> {{ $horario->costo_base }}</p>
-                                <p class="mb-1"><strong>Origen:</strong> {{ $horario->punto_origen->nombre_comercial }}
-                                </p>
-                                <p class="mb-1"><strong>Destino:</strong> {{ $horario->punto_destino->nombre_comercial }}
-                                </p>
-                                <p class="mb-1"><strong>Vehículo:</strong> {{ $horario->tipo_vehiculo->descripcion }}</p>
-                                <p class="mb-1"><strong>Fecha:</strong>
-                                    {{ optional($horario->fechas->first())->fecha_salida?->format('Y-m-d') }}
-                                </p>
-                                <p class="mb-0"><strong>Hora:</strong> {{ $horario->hora_salida }}</p>
+                                <p class="mb-1"><strong>Precio C/U:</strong> <span
+                                        id="precio_unitario">{{ number_format($precioUnitario, 2) }}</span></p>
+                                <p class="mb-1"><strong>Origen:</strong> {{ $origen->nombre_comercial }}</p>
+                                <p class="mb-1"><strong>Destino:</strong> {{ $destino->nombre_comercial }}</p>
+                                <p class="mb-1"><strong>Vehículo:</strong>
+                                    {{ $salida->horario->tipo_vehiculo->descripcion }}</p>
+                                <p class="mb-1"><strong>Fecha:</strong> {{ $salida->fecha_salida->format('Y-m-d') }}</p>
+                                <p class="mb-0"><strong>Hora:</strong> {{ $salida->horario->hora_formateada }}</p>
                             </div>
                         </div>
-                        {{-- FACTURACIÓN SIN EDICIÓN --}}
+
                         <div class="card mb-3">
                             <div class="card-header">
                                 <strong>Facturación</strong>
                             </div>
-
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label class="form-label">Tipo de documento</label>
@@ -156,17 +157,16 @@
                                 <div class="mb-3">
                                     <label class="form-label">Método</label>
                                     <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
-                                        @foreach ($metodos_pago as $metodo_pago)
-                                            <option value="{{ $metodo_pago->id }}">{{ $metodo_pago->descripcion }}
-                                            </option>
-                                        @endforeach
+                                        <option value="1">Efectivo</option>
+                                        <option value="2">Digital</option>
+                                        <option value="3">Mixto</option>
                                     </select>
                                 </div>
 
                                 <div class="mb-3 grupo_costo_total" hidden>
                                     <label class="form-label">Costo total</label>
                                     <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control" readonly value="{{ $horario->costo_base }}">
+                                        class="form-control" readonly>
                                 </div>
 
                                 <div class="mb-3">
@@ -190,29 +190,37 @@
                                     <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
                                         class="form-control">
                                 </div>
-
                             </div>
-
-                            <div class="card mb-3">
-                                <div class="card-body text-center">
-                                    <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
-                                        <i class="bi bi-bookmark"></i> Reservar
-                                    </button>
-
-                                    <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
-                                        <i class="bi bi-cash-coin"></i> Terminar venta
-                                    </button>
-                                </div>
-                            </div>
-
                         </div>
 
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
+                                    Reservar
+                                </button>
+
+                                <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
+                                    Terminar venta
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                </div>
             </form>
         </div>
     </div>
 @endsection
 
 @push('scripts')
+    <script>
+        window.VENTA_CONFIG = {
+            salidaId: @json($salida->id),
+            origenId: @json($origen->id),
+            destinoId: @json($destino->id),
+            asientos: @json($asientos),
+            precioUnitario: @json((float) $precioUnitario),
+            descuentoPromoId: 1
+        };
+    </script>
     <script src="{{ asset('js/ventas.js') }}"></script>
 @endpush

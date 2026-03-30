@@ -22,11 +22,11 @@ class RutaTramo extends Model
 
     public function origen()
     {
-        return $this->belongsTo(RutaPunto::class)->orderBy('punto_origen_id');
+        return $this->belongsTo(RutaPunto::class, 'punto_origen_id');
     }
 
     public function destino()
     {
-        return $this->belongsTo(RutaPunto::class)->orderBy('punto_destino_id');
+        return $this->belongsTo(RutaPunto::class, 'punto_destino_id');
     }
 }

@@ -307,25 +307,21 @@
                         </div>
 
                         @foreach ($salidas as $salida)
-                            @php
-                                $ruta = $salida->horario->ruta;
-                                $puntos = $ruta->puntos->sortBy('orden')->values();
-                                $origen = $puntos->first();
-                                $destino = $puntos->last();
-                                $capacidad =
-                                    $salida->horario->tipo_vehiculo->capacidad ??
-                                    ($salida->horario->tipo_vehiculo->asientos ?? 0);
-                            @endphp
-
+                            {{--
+                                CAMBIO CLAVE: el atributo usa comillas simples como delimitador
+                                para que el JSON interior (con comillas dobles escapadas via
+                                JSON_HEX_QUOT en el controlador como &quot;) funcione sin
+                                romper el HTML. Blade escapa {{ }} con htmlspecialchars por
+                                defecto, así que NO usamos htmlspecialchars() manual.
+                            --}}
                             <div class="horario-row" style="display:none;" data-salida-id="{{ $salida->id }}"
                                 data-tipo-viaje-id="{{ $salida->horario->tipo_viaje_id }}"
                                 data-fecha="{{ optional($salida->fecha_salida)->format('Y-m-d') }}"
-                                data-origen-id="{{ $origen?->sucursal_id }}" data-destino-id="{{ $destino?->sucursal_id }}">
+                                data-puntos="{{ $salida->puntos_json }}">
+
                                 <div class="hr-route">
                                     <div class="hr-route-label">
-                                        {{ $origen?->sucursal?->nombre_comercial ?? '—' }}
-                                        →
-                                        {{ $destino?->sucursal?->nombre_comercial ?? '—' }}
+                                        {{ $salida->origen_nombre }} → {{ $salida->destino_nombre }}
                                     </div>
                                     <div class="hr-route-sub">
                                         {{ $salida->horario->tipo_viaje->descripcion ?? '-' }}
@@ -342,8 +338,10 @@
                                 </div>
 
                                 <div class="hr-seats">
-                                    <span class="seats-badge ok seats-disponibles">
-                                        {{ $capacidad }} libres
+                                    @php $cap = $salida->capacidad_bus; @endphp
+                                    <span
+                                        class="seats-badge seats-disponibles {{ $cap > 10 ? 'ok' : ($cap > 0 ? 'low' : 'full') }}">
+                                        {{ $cap }} libres
                                     </span>
                                 </div>
                             </div>
@@ -353,12 +351,6 @@
 
                 <div class="asientos-panel">
                     <div class="asientos-panel-header">Mapa de asientos</div>
-
-                    <div id="svg-container">
-                        <div class="no-results">
-                            Selecciona una salida para ver los asientos
-                        </div>
-                    </div>
 
                     <div class="leyenda">
                         <div class="leyenda-item">
@@ -372,6 +364,12 @@
                         </div>
                         <div class="leyenda-item">
                             <span class="leyenda-dot" style="background:#2563eb;"></span> Seleccionado
+                        </div>
+                    </div>
+
+                    <div id="svg-container">
+                        <div class="no-results">
+                            Selecciona una salida para ver los asientos
                         </div>
                     </div>
 

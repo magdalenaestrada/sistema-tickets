@@ -47,6 +47,7 @@ $(function () {
             $("#persona_documento").val(data.persona.documento);
             $("#persona_nombre").val(data.persona.nombre);
             $("#rol_id").val(data.rol_id);
+            $("#username").val(data.username);
 
             $("#modalUsuario").modal("show");
         });

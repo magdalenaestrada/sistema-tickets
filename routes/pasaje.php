@@ -9,4 +9,5 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::get('/buscar', [PasajeController::class, 'buscarReservado'])->name('buscar');
     Route::post('/verificar-promocion', [PasajeController::class, 'verificarPromocion'])->name('verificar_promocion');
     Route::post('/', [PasajeController::class, 'store'])->name('store');
+    Route::get('/vender', [PasajeController::class, 'vender'])->name('vender');
 });

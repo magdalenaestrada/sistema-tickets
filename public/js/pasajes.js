@@ -29,10 +29,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (tipoViajeId === 2) {
                     manejarViajePorTramo(salidaId);
                 } else {
+                    let puntos = [];
+
+                    try {
+                        puntos = JSON.parse(this.dataset.puntos || "[]");
+                    } catch (e) {
+                        puntos = [];
+                    }
+
+                    const primero = puntos[0];
+                    const ultimo = puntos[puntos.length - 1];
+
                     cargarAsientos(
                         salidaId,
-                        this.dataset.origenId,
-                        this.dataset.destinoId,
+                        primero?.sucursal_id || null,
+                        ultimo?.sucursal_id || null,
                     );
                 }
             });
@@ -227,22 +238,55 @@ document.addEventListener("DOMContentLoaded", function () {
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
 
+        console.log({
+            fecha,
+            origen,
+            destino,
+        });
+        
         const estadoInicial = document.getElementById("estado-inicial");
-        if (estadoInicial) estadoInicial.style.display = "none";
-
         const rows = document.querySelectorAll(".horario-row");
+
         let visibles = 0;
 
         rows.forEach((row) => {
-            const rowFecha = row.dataset.fecha;
-            const rowOrigenId = row.dataset.origenId;
-            const rowDestinoId = row.dataset.destinoId;
+            const rowFecha = row.dataset.fecha || "";
+            let puntos = [];
+            console.log("fila", {
+                salida: row.dataset.salidaId,
+                rowFecha,
+                puntos,
+            });
+            try {
+                puntos = JSON.parse(row.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+
+            const puntoOrigen = origen
+                ? puntos.find((p) => String(p.sucursal_id) === String(origen))
+                : null;
+
+            const puntoDestino = destino
+                ? puntos.find((p) => String(p.sucursal_id) === String(destino))
+                : null;
 
             const matchFecha = !fecha || rowFecha === fecha;
-            const matchOrigen = !origen || rowOrigenId === origen;
-            const matchDestino = !destino || rowDestinoId === destino;
+            const matchOrigen = !origen || !!puntoOrigen;
+            const matchDestino = !destino || !!puntoDestino;
 
-            if (matchFecha && matchOrigen && matchDestino) {
+            let matchOrden = true;
+            if (origen && destino) {
+                matchOrden =
+                    !!puntoOrigen &&
+                    !!puntoDestino &&
+                    Number(puntoOrigen.orden) < Number(puntoDestino.orden);
+            }
+
+            const visible =
+                matchFecha && matchOrigen && matchDestino && matchOrden;
+
+            if (visible) {
                 row.style.display = "flex";
                 visibles++;
             } else {
@@ -251,6 +295,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         actualizarContador(visibles);
+
+        if (estadoInicial) {
+            estadoInicial.style.display = visibles === 0 ? "block" : "none";
+            if (visibles === 0) {
+                estadoInicial.innerHTML =
+                    "No hay salidas disponibles con esos filtros";
+            }
+        }
 
         if (visibles === 0) {
             svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
@@ -269,4 +321,8 @@ document.addEventListener("DOMContentLoaded", function () {
     ["filtro_fecha", "filtro_origen", "filtro_destino"].forEach((id) => {
         document.getElementById(id)?.addEventListener("change", filtrarSalidas);
     });
+
+
+
 });
+

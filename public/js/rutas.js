@@ -32,38 +32,49 @@ $(document).ready(async function () {
 
     window.modoCrear = function () {
         let html = `
-        <h6>Nueva Ruta</h6>
+       <form id="formRuta">
+    <h6 class="mb-2"><b>NOMBRE DE LA RUTA</b></h6>
 
-        <input type="text" id="nombreNuevaRuta"
-            class="form-control mb-2"
-            placeholder="Nombre de la ruta">
+    <input type="text" id="nombreNuevaRuta"
+        class="form-control mb-3"
+        placeholder="Nombre de la ruta" required>
 
-        <div id="contenedorPuntos"></div>
+    <div id="contenedorPuntos"></div>
 
-        <button class="btn btn-sm btn-success mb-2"
-            onclick="agregarPunto()">
-            Añadir Punto
-        </button>
+    <button type="button" class="btn btn-sm btn-success mb-2"
+        onclick="agregarPunto()">
+        Añadir Punto
+    </button>
 
-        <hr>
+    <hr>
 
-        <h6>Tramos</h6>
-        <div id="contenedorTramos"></div>
+    <h6>Tramos</h6>
+    <div id="contenedorTramos"></div>
 
-        <button class="btn btn-primary w-100 mt-2"
-            onclick="guardarRuta()">
-            Guardar ruta
-        </button>
+    <button type="submit" class="btn btn-primary w-100 mt-2">
+        Guardar ruta
+    </button>
+</form>
     `;
 
         $("#tituloPanel").text("Crear Ruta");
         $("#panelContenido").html(html);
+        $("#formRuta").on("submit", function (e) {
+            e.preventDefault();
 
+            if (!this.checkValidity()) {
+                this.reportValidity();
+                return;
+            }
+
+            guardarRuta();
+        });
         setTimeout(() => {
             agregarPunto();
             agregarPunto();
         }, 100);
     };
+
 });
 
 window.guardarRuta = function () {
