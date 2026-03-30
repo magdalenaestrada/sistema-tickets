@@ -21,8 +21,7 @@
 
         $transportesOpen =
             request()->routeIs('vehiculos.*') ||
-            (request()->routeIs('horarios.*', 'asignaciones.*', 'rutas.*', 'salidas.*') &&
-                !request()->routeIs('horarios.calendario'));
+            request()->routeIs('horarios.*', 'asignaciones.*', 'rutas.*', 'salidas.*');
 
         $gestionOpen = request()->routeIs('clientes.*', 'descuentos.*', 'reportes.*');
 
@@ -57,12 +56,7 @@
                 </a>
             </li>
 
-            <li class="nav-item {{ request()->is('pasajes/tabla*') ? 'active' : '' }}">
-                <a href="{{ route('pasajes.index-busqueda') }}" class="nav-link">
-                    <i class="link-icon" data-lucide="user-search"></i>
-                    <span class="link-title">Buscar pasajes</span>
-                </a>
-            </li>
+            
 
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="collapse" href="#encomiendas"
@@ -97,14 +91,6 @@
                     </ul>
                 </div>
             </li>
-
-            <li class="nav-item {{ request()->routeIs('horarios.calendario') ? 'active' : '' }}">
-                <a href="{{ route('horarios.calendario') }}" class="nav-link">
-                    <i class="link-icon" data-lucide="calendar-days"></i>
-                    <span class="link-title">Calendario de salidas</span>
-                </a>
-            </li>
-
 
             <li class="nav-item nav-category">ADMINISTRACIÓN</li>
 
@@ -184,12 +170,6 @@
                                 class="nav-link {{ request()->routeIs('vehiculos.*') ? 'active' : '' }}">Transportes</a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('asignaciones.index') }}"
-                                class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">
-                                Crear salidas
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a href="{{ route('rutas.index') }}"
                                 class="nav-link {{ request()->routeIs('rutas.*') ? 'active' : '' }}">
                                 Rutas
@@ -201,14 +181,18 @@
                                 Horarios
                             </a>
                         </li>
-
                         <li class="nav-item">
                             <a href="{{ route('salidas.index') }}"
                                 class="nav-link {{ request()->routeIs('salidas.*') ? 'active' : '' }}">
-                                Salidas
+                                Programaciones
                             </a>
                         </li>
-
+                        <li class="nav-item">
+                            <a href="{{ route('asignaciones.index') }}"
+                                class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">
+                                Asignar conductor
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </li>

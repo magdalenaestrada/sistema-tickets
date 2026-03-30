@@ -10,6 +10,15 @@
                 <div class="modal-body">
                     <input type="hidden" id="sucursal_id" name="sucursal_id">
                     <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="venta_otras" name="venta_otras"
+                                value="1">
+                            <label class="form-check-label" for="venta_otras">
+                                Permitir venta en otras sucursales
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
                         <label>Departamento <span style="color: red">*</span></label>
                         <select name="departamento_id" id="departamento_id" class="form-select" required>
                             <option value="">Seleccione</option>
@@ -29,8 +38,8 @@
                     </div>
                     <div class="mb-3">
                         <label>Nombre Comercial <span style="color: red">*</span></label>
-                        <input type="text" name="nombre_comercial" id="nombre_comercial_sucursal" class="form-control"
-                            required>
+                        <input type="text" name="nombre_comercial" id="nombre_comercial_sucursal"
+                            class="form-control" required>
                     </div>
                     <div class="mb-3">
                         <label>Dirección</label>
@@ -41,6 +50,7 @@
                         <input type="text" name="telefono" id="telefono" class="form-control" maxlength="9"
                             pattern="\d{9}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
                     </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

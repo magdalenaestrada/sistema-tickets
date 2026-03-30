@@ -29,10 +29,18 @@ return new class extends Migration {
             $table->enum("estado", ["R", "V", "F", "X"])
                 ->default("R")
                 ->index();
-
             $table->dateTime("fecha_creacion");
             $table->dateTime("fecha_inactivacion")->nullable();
-
+            $table->foreignId('origen_sucursal_id')
+                ->nullable()
+                ->constrained('sucursales');
+            $table->foreignId('destino_sucursal_id')
+                ->nullable()
+                ->constrained('sucursales');
+            $table->boolean('es_promocion')
+                ->default(false);
+            $table->decimal('precio_cobrado', 8, 2)
+                ->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

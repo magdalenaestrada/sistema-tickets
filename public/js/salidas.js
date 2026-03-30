@@ -53,8 +53,6 @@ function opcionesEstados(selected = "programado") {
 
 window.modoCrearSalida = function () {
     let html = `
-        <h6>Nueva Salida</h6>
-
         <div class="mb-2">
             <label class="form-label">Horario</label>
             <select id="horario_id" class="form-select">
@@ -64,7 +62,7 @@ window.modoCrearSalida = function () {
 
         <div class="mb-2">
             <label class="form-label">Fecha</label>
-            <input type="date" id="fecha" class="form-control">
+            <input type="date" id="fecha_salida" class="form-control">
         </div>
 
         <div class="mb-2">
@@ -131,10 +129,10 @@ window.modoGenerarSalidas = function () {
 
 window.guardarSalida = function () {
     let horario_id = $("#horario_id").val();
-    let fecha = $("#fecha").val();
+    let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
 
-    if (!horario_id || !fecha || !estado) {
+    if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
@@ -148,7 +146,7 @@ window.guardarSalida = function () {
     $.post(route("salidas.store"), {
         _token: $("meta[name=csrf-token]").attr("content"),
         horario_id: horario_id,
-        fecha: fecha,
+        fecha_salida: fecha_salida,
         estado: estado,
     })
         .done(function () {
@@ -271,7 +269,7 @@ function editarSalida(id) {
 
             <div class="mb-2">
                 <label class="form-label">Fecha</label>
-                <input type="date" id="fecha" class="form-control" value="${salida.fecha}">
+                <input type="date" id="fecha_salida" class="form-control" value="${salida.fecha_salida}">
             </div>
 
             <div class="mb-2">
@@ -294,10 +292,10 @@ function editarSalida(id) {
 
 window.guardarEdicionSalida = function (id) {
     let horario_id = $("#horario_id").val();
-    let fecha = $("#fecha").val();
+    let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
 
-    if (!horario_id || !fecha || !estado) {
+    if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
@@ -315,7 +313,7 @@ window.guardarEdicionSalida = function (id) {
             _token: $("meta[name=csrf-token]").attr("content"),
             _method: "PUT",
             horario_id: horario_id,
-            fecha: fecha,
+            fecha_salida: fecha_salida,
             estado: estado,
         },
         success: function () {

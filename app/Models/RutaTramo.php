@@ -15,6 +15,11 @@ class RutaTramo extends Model
         'costo_tramo',
     ];
 
+    protected $casts = [
+        'duracion_minutos' => 'integer',
+        'costo_tramo' => 'float',
+    ];
+
     public function origen()
     {
         return $this->belongsTo(RutaPunto::class)->orderBy('punto_origen_id');

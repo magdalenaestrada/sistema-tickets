@@ -11,6 +11,7 @@ $(document).ready(async function () {
         columns: [
             { data: "id" },
             { data: "ruta" },
+            { data: "tipo_viaje" },
             { data: "hora_salida_formateada" },
             { data: "hora_llegada_formateada" },
             { data: "duracion" },
@@ -85,7 +86,7 @@ window.modoCrearHorario = function () {
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Costo base</label>
+            <label class="form-label">Costo total S/</label>
             <input type="number" id="costo_base" class="form-control" min="0" step="0.01">
         </div>
 
@@ -149,6 +150,8 @@ window.guardarHorario = function () {
 
 function verHorario(id) {
     $.get(route("horarios.show", { id: id }), function (horario) {
+        console.log("HORARIO:", horario);
+
         let puntos = "";
 
         if (horario.ruta?.puntos?.length) {
@@ -172,10 +175,10 @@ function verHorario(id) {
 
             <div class="mb-2"><strong>Tipo viaje:</strong> ${horario.tipo_viaje ?? "-"}</div>
             <div class="mb-2"><strong>Tipo vehículo:</strong> ${horario.tipo_vehiculo ?? "-"}</div>
-            <div class="mb-2"><strong>Hora salida:</strong> ${horario.hora_salida_formateada ?? "-"}</div>
+            <div class="mb-2"><strong>Hora salida:</strong> ${horario.hora_salida_formateada ?? horario.hora_salida ?? "-"}</div>
             <div class="mb-2"><strong>Hora llegada:</strong> ${horario.hora_llegada ?? "-"}</div>
             <div class="mb-2"><strong>Duración:</strong> ${horario.duracion_total ?? "-"}</div>
-            <div class="mb-2"><strong>Costo base:</strong> S/ ${horario.costo_base ?? "0.00"}</div>
+            <div class="mb-2"><strong>Costo total:</strong> S/ ${horario.costo_base ?? "0.00"}</div>
 
             <hr>
 
@@ -186,6 +189,9 @@ function verHorario(id) {
         $("#tituloPanelHorario").text("Detalle de horario");
         $("#panelHorarioContenido").html(html);
         lucide.createIcons();
+    }).fail(function (err) {
+        console.error("ERROR SHOW:", err);
+        Swal.fire("Error", "No se pudo cargar el horario", "error");
     });
 }
 

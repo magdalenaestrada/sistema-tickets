@@ -18,14 +18,12 @@ return new class extends Migration {
             $table->string("nombre_comercial")->nullable();
             $table->string("direccion")->nullable();
             $table->string("telefono")->nullable();
+            $table->boolean("venta_otras")->default(1);
             $table->unique(['empresa_id', 'distrito_id', 'nombre_comercial']);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists("sucursales");

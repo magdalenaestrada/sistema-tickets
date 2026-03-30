@@ -47,24 +47,10 @@ class Horario extends Model
         return $this->hasMany(AsignarHorario::class);
     }
 
-    public function getDuracionTotalAttribute()
-    {
-        return $this->ruta?->tramos()->sum('duracion_minutos') ?? 0;
-    }
-
     public function getDuracionTotalFormateadaAttribute()
     {
         $min = $this->duracion_total;
         return floor($min / 60) . 'h ' . ($min % 60) . 'm';
-    }
-
-    public function getHoraLlegadaAttribute()
-    {
-        if (!$this->hora_salida) return null;
-
-        return Carbon::parse($this->hora_salida)
-            ->addMinutes($this->duracion_total)
-            ->format('H:i');
     }
 
     public function getHoraFormateadaAttribute()
@@ -72,6 +58,20 @@ class Horario extends Model
         return $this->hora_salida
             ? Carbon::parse($this->hora_salida)->format('H:i')
             : null;
+    }
+
+    public function getDuracionTotalAttribute()
+    {
+        return (int) ($this->ruta?->tramos()->sum('duracion_minutos') ?? 0);
+    }
+
+    public function getHoraLlegadaAttribute()
+    {
+        if (!$this->hora_salida) return null;
+
+        return Carbon::parse($this->hora_salida)
+            ->addMinutes((int) $this->duracion_total)
+            ->format('H:i');
     }
 
     public function horaEnPunto($rutaPuntoId)
@@ -89,7 +89,7 @@ class Horario extends Model
             ->sortBy(fn($t) => $t->origen->orden);
 
         foreach ($tramos as $tramo) {
-            $hora->addMinutes($tramo->duracion_minutos);
+            $hora->addMinutes((int) $tramo->duracion_minutos);
         }
 
         return $hora->format('H:i');

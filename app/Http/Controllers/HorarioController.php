@@ -23,22 +23,26 @@ class HorarioController extends Controller
 
     public function datatable()
     {
-        $horarios = Horario::with(['ruta.puntos.sucursal', 'tipo_viaje', 'tipo_vehiculo']);
+        $horarios = Horario::with([
+            'ruta.puntos.sucursal',
+            'tipo_viaje',
+            'tipo_vehiculo'
+        ]);
 
         return DataTables::of($horarios)
             ->addColumn('ruta', function ($horario) {
                 return $horario->ruta?->nombre ?? '-';
             })
             ->addColumn('tipo_viaje', function ($horario) {
-                return $horario->tipo_viaje?->nombre ?? '-';
+                return $horario->tipo_viaje?->descripcion ?? '-';
             })
             ->addColumn('tipo_vehiculo', function ($horario) {
-                return $horario->tipo_vehiculo?->nombre ?? '-';
+                return $horario->tipo_vehiculo?->descripcion ?? '-';
             })
             ->addColumn('hora_salida_formateada', function ($horario) {
                 return $horario->hora_formateada;
             })
-            ->addColumn('hora_llegada', function ($horario) {
+            ->addColumn('hora_llegada_formateada', function ($horario) {
                 return $horario->hora_llegada;
             })
             ->addColumn('duracion', function ($horario) {
@@ -46,23 +50,22 @@ class HorarioController extends Controller
             })
             ->addColumn('acciones', function ($horario) {
                 return '
-                    <button class="btn btn-light btn-xs ver" data-id="' . $horario->id . '">
-                        <i class="link-icon" data-lucide="info"></i>
-                    </button>
+                <button class="btn btn-light btn-xs ver" data-id="' . $horario->id . '">
+                    <i class="link-icon" data-lucide="info"></i>
+                </button>
 
-                    <button class="btn btn-warning btn-xs editar" data-id="' . $horario->id . '">
-                        <i class="link-icon" data-lucide="pen"></i>
-                    </button>
+                <button class="btn btn-warning btn-xs editar" data-id="' . $horario->id . '">
+                    <i class="link-icon" data-lucide="pen"></i>
+                </button>
 
-                    <button class="btn btn-danger btn-xs eliminar" data-id="' . $horario->id . '">
-                        <i class="link-icon" data-lucide="trash"></i>
-                    </button>
-                ';
+                <button class="btn btn-danger btn-xs eliminar" data-id="' . $horario->id . '">
+                    <i class="link-icon" data-lucide="trash"></i>
+                </button>
+            ';
             })
             ->rawColumns(['acciones'])
             ->make(true);
     }
-
     public function show($id)
     {
         $horario = Horario::with([
@@ -79,6 +82,8 @@ class HorarioController extends Controller
             'tipo_viaje_id' => $horario->tipo_viaje_id,
             'tipo_vehiculo_id' => $horario->tipo_vehiculo_id,
             'hora_salida' => $horario->hora_salida,
+            'tipo_viaje' => $horario->tipo_viaje?->descripcion,
+            'tipo_vehiculo' => $horario->tipo_vehiculo?->descripcion,
             'costo_base' => $horario->costo_base,
             'hora_llegada' => $horario->hora_llegada,
             'duracion_total' => $horario->duracion_total_formateada,

@@ -2,811 +2,241 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BilleteraDigital;
-use App\Models\Cliente;
 use App\Models\Pasaje;
-use App\Models\Persona;
-use App\Models\Horario;
-use App\Models\HorarioPunto;
-use App\Models\HorarioTramo;
-use App\Models\MetodoPago;
+use App\Models\Salida;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
-use App\Models\TipoVehiculo;
-use App\Models\TipoViaje;
-use App\Services\VentaService;
-use App\Services\PagoService;
-use Carbon\Carbon;
+use App\Models\MetodoPago;
+use App\Models\BilleteraDigital;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class PasajeController extends Controller
 {
-    protected $ventaService;
-    protected $pagoService;
-
-    public function __construct(VentaService $ventaService, PagoService $pagoService)
-    {
-        $this->ventaService = $ventaService;
-        $this->pagoService = $pagoService;
-    }
-
-    public function vender(Request $request)
-    {
-        $asientos = explode(',', $request->asientos);
-        $horario = Horario::with([
-            'punto_origen',
-            'punto_destino',
-            'tipo_vehiculo'
-        ])->findOrFail($request->horario);
-        $tipos_documentos = TipoDocumentoPersona::all();
-        $tipos_documentos_facturas = TipoDocumentoFactura::all();
-        $metodos_pago = MetodoPago::all();
-        $billeteras_digitales = BilleteraDigital::all();
-        $hoy = Carbon::now('America/Lima')->format("Y-m-d");
-        $sucursales = Sucursal::where("estado", "A")
-            ->orderBy('nombre_comercial')->get();
-
-        return view('pasajes.venta', compact(
-            'asientos',
-            'horario',
-            'tipos_documentos',
-            'billeteras_digitales',
-            'tipos_documentos_facturas',
-            'metodos_pago',
-            'hoy',
-            'sucursales'
-        ));
-    }
-
-    public function index_busqueda()
-    {
-        $pasajes = Pasaje::with([
-            'persona',
-            'horario.punto_origen',
-            'horario.punto_destino',
-            'venta'
-        ])->get();
-
-        $sucursales = Sucursal::where("estado", "A")
-            ->orderBy('nombre_comercial')->get();
-
-        return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
-    }
-
-    public function listarVendidos(Request $request)
-    {
-        $query = Pasaje::with([
-            'persona',
-            'horario.punto_origen',
-            'horario.punto_destino'
-        ])->orderBy('created_at', 'desc');
-
-        if ($request->dni) {
-            $query->whereHas('persona', function ($q) use ($request) {
-                $q->where('documento', 'like', '%' . $request->dni . '%');
-            });
-        }
-
-        if ($request->fecha) {
-            $query->whereHas('horario', function ($q) use ($request) {
-                $q->whereDate('fecha_salida', $request->fecha);
-            });
-        }
-
-        if ($request->origen && $request->destino) {
-
-            $query->whereHas('tramos', function ($q) use ($request) {
-                $q->whereHas(
-                    'origen',
-                    fn($q2) =>
-                    $q2->where('sucursal_id', $request->origen)
-                )->whereHas(
-                    'destino',
-                    fn($q2) =>
-                    $q2->where('sucursal_id', $request->destino)
-                );
-            });
-        }
-
-        return response()->json($query->get());
-    }
-    protected function registrarCliente($personaId)
-    {
-        Cliente::firstOrCreate([
-            'user_id' => Auth::id(),
-            'persona_id' => $personaId,
-        ]);
-    }
-
     public function index()
     {
-        $puntos_origen = Sucursal::where('estado', 'A')->get();
-        $puntos_destino = Sucursal::where('estado', 'A')->get();
-        $hoy = Carbon::now('America/Lima')->format("Y-m-d");
-        $horarios = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino', 'tipo_viaje', 'fechas'])
-            ->withCount('pasajes')
+        $hoy = now('America/Lima')->format('Y-m-d');
+
+        $salidas = Salida::with([
+            'horario.ruta.puntos.sucursal',
+            'horario.tipo_viaje',
+            'horario.tipo_vehiculo',
+        ])
+            ->where('estado', 'activo')
+            ->orderBy('fecha_salida')
             ->get();
-        $sucursales = Sucursal::where("estado", "A")
-            ->orderBy('nombre_comercial')->get();
-        return view('pasajes.index', compact('hoy', 'sucursales', 'horarios', 'puntos_origen', 'puntos_destino'));
+
+        $sucursales = Sucursal::where('estado', 'A')
+            ->orderBy('nombre_comercial')
+            ->get();
+
+        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales'));
     }
 
-    protected function validarTerminarVenta($request, $i)
+    public function asientos(Salida $salida, Request $request)
     {
-        $rules = [
-            "tipo_documento_id.$i" => 'required|integer',
-            "documento.$i" => 'required|string|max:20',
-            "nombres.$i" => 'required|string|max:200',
-            "apellidos.$i" => 'required|string|max:200',
-            "celular.$i" => 'required|string',
-            "pago_efectivo.$i" => 'nullable|numeric|min:0',
-            "pago_billetera.$i" => 'nullable|numeric|min:0',
-        ];
-
-        $request->validate($rules);
-    }
-
-    protected function crearPasajeMultiple(Request $request, $personaId, $i, $estado, $cantidadPasajes)
-    {
-        $asiento = $request->asientos[$i];
-        $horario_id = $request->horario_id[$i];
-
-        $reserva = Pasaje::where('horario_id', $horario_id)
-            ->where('asiento_numero', $asiento)
-            ->where('estado', 'R')
-            ->first();
-
-        $horario = Horario::findOrFail($horario_id);
-        $origenOrden = null;
-        $destinoOrden = null;
-        if ($horario->tipo_viaje_id == 2) {
-            $origenOrden = HorarioPunto::where('horario_id', $horario_id)
-                ->where('sucursal_id', $request->origen_id[$i])
-                ->value('orden');
-
-            $destinoOrden = HorarioPunto::where('horario_id', $horario_id)
-                ->where('sucursal_id', $request->destino_id[$i])
-                ->value('orden');
-
-            $ocupado = $this->asientoOcupadoEnTramo($horario_id, $asiento, $origenOrden, $destinoOrden);
-        } else {
-            $ocupado = Pasaje::where('horario_id', $horario_id)
-                ->where('asiento_numero', $asiento)
-                ->whereIn('estado', ['V', 'R'])
-                ->exists();
-        }
-
-        if ($ocupado) {
-            throw new \Exception("El asiento $asiento ya está ocupado.");
-        }
-
-
-        $pdf = null;
-        if ($request->hasFile("autorizacion_pdf.$i")) {
-            $pdf = $request->file("autorizacion_pdf.$i")->store('pasajes', 'public');
-        }
-
-        $ventaData = null;
-        $venta_id = null;
-
-        if ($estado === 'V') {
-            $horario = Horario::with(['punto_origen', 'punto_destino'])->findOrFail($horario_id);
-            $precioPasaje = floatval($request->precio[$i] ?? 0);
-            $descuento = $request->descuento[$i] ?? 0;
-
-            $ventaData = $this->ventaService->crearVentaPasaje(
-                $horario,
-                $asiento,
-                $precioPasaje,
-                $descuento,
-                $request->tipo_documento_factura_id ?? 1
-            );
-
-            $venta_id = $ventaData['venta']->id;
-
-            if ($reserva) {
-                $reserva->update([
-                    'estado' => 'V',
-                    'venta_id' => $venta_id,
-                ]);
-
-                if ($ventaData) {
-                    $pagoData = [];
-
-                    $pagoEfectivoTotal = floatval(str_replace(',', '.', $request->pago_efectivo ?? 0));
-                    $pagoBilleteraTotal = floatval(str_replace(',', '.', $request->pago_billetera ?? 0));
-
-                    $pagoEfectivo = $pagoEfectivoTotal / $cantidadPasajes;
-                    $pagoBilletera = $pagoBilleteraTotal / $cantidadPasajes;
-
-                    if ($pagoEfectivo > 0) {
-                        $pagoData[] = [
-                            'metodo_pago_id' => 1,
-                            'total' => $pagoEfectivo,
-                            'billetera_id' => null,
-                        ];
-                    }
-
-                    if ($pagoBilletera > 0) {
-                        $pagoData[] = [
-                            'metodo_pago_id' => 2,
-                            'total' => $pagoBilletera,
-                            'billetera_id' => $request->billetera_id[$i] ?? null,
-                        ];
-                    }
-
-                    $this->pagoService->registrarPagos(
-                        $ventaData['venta']->id,
-                        $pagoData,
-                        Pasaje::class,
-                        $reserva->id
-                    );
-                }
-                return $reserva;
-            }
-        }
-
-        if ($horario->tipo_viaje_id == 2) {
-
-            $tramos = HorarioTramo::where('horario_id', $horario_id)
-                ->whereHas(
-                    'origen',
-                    fn($q) =>
-                    $q->where('orden', '>=', $origenOrden)
-                )
-                ->whereHas(
-                    'destino',
-                    fn($q) =>
-                    $q->where('orden', '<=', $destinoOrden)
-                )
-                ->get()
-                ->filter(function ($tramo) use ($origenOrden, $destinoOrden) {
-                    return $tramo->origen->orden < $destinoOrden
-                        && $tramo->destino->orden > $origenOrden;
-                });
-
-            $primerPasaje = null;
-            foreach ($tramos as $tramo) {
-                $p = Pasaje::create([
-                    'usuario_id'       => Auth::id(),
-                    'persona_id'       => $personaId,
-                    'horario_id'       => $horario_id,
-                    'tramo_id'         => $tramo->id,
-                    'asiento_numero'   => $asiento,
-                    'pasajero_menor'   => isset($request->pasajero_menor[$i]) ? true : false,
-                    'autorizacion_pdf' => $pdf,
-                    'venta_id'         => $venta_id,
-                    'estado'           => $estado,
-                    'fecha_creacion'   => now(),
-                ]);
-                if (!$primerPasaje) $primerPasaje = $p;
-            }
-            $pasaje = $primerPasaje;
-        } else {
-            $pasaje = Pasaje::create([
-                'usuario_id'       => Auth::id(),
-                'persona_id'       => $personaId,
-                'horario_id'       => $horario_id,
-                'asiento_numero'   => $asiento,
-                'pasajero_menor'   => isset($request->pasajero_menor[$i]) ? true : false,
-                'autorizacion_pdf' => $pdf,
-                'venta_id'         => $venta_id,
-                'estado'           => $estado,
-                'fecha_creacion'   => now(),
-            ]);
-        }
-
-        if ($ventaData) {
-            $pagoData = [];
-            $pagoEfectivoTotal = floatval(str_replace(',', '.', $request->pago_efectivo ?? 0));
-            $pagoBilleteraTotal = floatval(str_replace(',', '.', $request->pago_billetera ?? 0));
-
-            $pagoEfectivo = $pagoEfectivoTotal / $cantidadPasajes;
-            $pagoBilletera = $pagoBilleteraTotal / $cantidadPasajes;
-
-            if ($pagoEfectivo > 0) {
-                $pagoData[] = [
-                    'metodo_pago_id' => 1,
-                    'total' => $pagoEfectivo,
-                    'billetera_id' => null
-                ];
-            }
-
-            if ($pagoBilletera > 0) {
-                $pagoData[] = [
-                    'metodo_pago_id' => 2,
-                    'total' => $pagoBilletera,
-                    'billetera_id' => $request->billetera_id[$i] ?? null
-                ];
-            }
-            $this->pagoService->registrarPagos(
-                $ventaData['venta']->id,
-                $pagoData,
-                Pasaje::class,
-                $pasaje->id
-            );
-        }
-
-
-        return $pasaje;
-    }
-
-    public function guardar(Request $request)
-    {
-        $accion = $request->accion;
-
-        try {
-            DB::beginTransaction();
-
-            $asientos = $request->asientos;
-
-            $estado = ($accion === 'terminar') ? 'V' : 'R';
-
-            $cantidadPasajes = count($asientos);
-
-            foreach ($asientos as $index => $asiento) {
-
-                if ($accion === 'terminar') {
-                    $this->validarTerminarVenta($request, $index);
-
-                    $persona = Persona::updateOrCreate(
-                        ['documento' => $request->documento[$index] ?? null],
-                        [
-                            'tipo_documento_id' => $request->tipo_documento_id[$index] ?? 1,
-                            'nombres' => $request->nombres[$index] ?? null,
-                            'apellidos' => $request->apellidos[$index] ?? null,
-                            'telefono' => $request->telefono[$index] ?? null,
-                            'celular' => $request->celular[$index] ?? null,
-                            'correo' => $request->direccion[$index] ?? null,
-                            'fecha_creacion' => now(),
-
-                        ]
-                    );
-
-                    $this->registrarCliente($persona->id);
-
-
-                    $this->crearPasajeMultiple(
-                        $request,
-                        $persona->id,
-                        $index,
-                        $estado,
-                        $cantidadPasajes
-                    );
-                }
-            }
-
-            DB::commit();
-
-            Log::info('Pasajes guardados exitosamente', ['estado' => $estado]);
-
-            return response()->json([
-                'success' => true,
-                'message' => $estado === 'V' ? 'Venta realizada correctamente' : 'Reserva realizada correctamente',
-                'redirect' => route('pasajes.index')
-            ]);
-        } catch (ValidationException $e) {
-            DB::rollBack();
-            Log::error('Error de validación', ['errors' => $e->errors()]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación: ' . json_encode($e->errors())
-            ], 422);
-        } catch (Throwable $th) {
-            DB::rollBack();
-            Log::error('Error al guardar pasajes', [
-                'message' => $th->getMessage(),
-                'line' => $th->getLine()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
-    }
-
-    protected function crearPasaje(Request $request, $personaId, $user_id)
-    {
-        return DB::transaction(function () use ($request, $personaId, $user_id) {
-            $autorizacionPath = null;
-            if ($request->hasFile('autorizacion_pdf')) {
-                $autorizacionPath = $request->file('autorizacion_pdf')->store('pasajes', 'public');
-            }
-
-            $ventaData = $this->ventaService->crearVenta(
-                $request->all(),
-                Pasaje::class,
-                null
-            );
-
-            $pasaje = Pasaje::create([
-                'usuario_id' => $user_id,
-                'persona_id' => $personaId,
-                'horario_id' => $request->horario_id,
-                'asiento_numero' => $request->asiento_numero,
-                'pasajero_menor' => $request->pasajero_menor ?? false,
-                'autorizacion_pdf' => $autorizacionPath,
-                'estado' => 'R',
-                'fecha_creacion' => now(),
-                'venta_id' => $ventaData['venta']->id,
-            ]);
-
-            if ($ventaData) {
-                $pagoData = [];
-
-                $pagoEfectivo = floatval(str_replace(',', '.', $request->pago_efectivo ?? 0));
-                $pagoBilletera = floatval(str_replace(',', '.', $request->pago_billetera ?? 0));
-
-                if ($pagoEfectivo > 0) {
-                    $pagoData[] = [
-                        'metodo_pago_id' => 1,
-                        'total' => $pagoEfectivo,
-                        'billetera_id' => null
-                    ];
-                }
-
-                if ($pagoBilletera > 0) {
-                    $pagoData[] = [
-                        'metodo_pago_id' => 2,
-                        'total' => $pagoBilletera,
-                        'billetera_id' => $request->billetera_id ?? null
-                    ];
-                }
-
-                $this->pagoService->registrarPagos(
-                    $ventaData['venta']->id,
-                    $pagoData,
-                    Pasaje::class,
-                    $pasaje->id
-                );
-            }
-            return $pasaje;
-        });
-    }
-    public function asientosHorario(Horario $horario, Request $request)
-    {
-        $capacidad = $horario->tipo_vehiculo->capacidad;
-        $asientos = [];
-        $precios = [];
-
-        $esConTramos = $horario->tipo_viaje_id == 2
-            && $request->filled('origen_id')
-            && $request->filled('destino_id');
-
-        if ($esConTramos) {
-            $origenOrden = HorarioPunto::where('horario_id', $horario->id)
-                ->where('sucursal_id', $request->origen_id)
-                ->value('orden');
-
-            $destinoOrden = HorarioPunto::where('horario_id', $horario->id)
-                ->where('sucursal_id', $request->destino_id)
-                ->value('orden');
-
-            if (!$origenOrden || !$destinoOrden || $origenOrden >= $destinoOrden) {
-                return response()->json(['error' => 'Tramo no válido'], 422);
-            }
-
-            $tramos = HorarioTramo::with(['origen', 'destino'])
-                ->where('horario_id', $horario->id)
-                ->get()
-                ->filter(
-                    fn($t) =>
-                    $t->origen->orden >= $origenOrden &&
-                        $t->destino->orden <= $destinoOrden
-                );
-
-            $costoTramo = $tramos->sum('costo_tramo');
-
-            for ($i = 1; $i <= $capacidad; $i++) {
-                $ocupado = Pasaje::whereIn('tramo_id', $tramos->pluck('id'))
-                    ->where('asiento_numero', $i)
-                    ->whereIn('estado', ['V', 'R'])
-                    ->exists();
-
-                $asientos[$i] = $ocupado ? 'ocupado' : 'libre';
-                $precios[$i] = $costoTramo;
-            }
-        } else {
-            $pasajes = $horario->pasajes()->whereIn('estado', ['V', 'R'])->get();
-            for ($i = 1; $i <= $capacidad; $i++) {
-                $pasaje = $pasajes->firstWhere('asiento_numero', $i);
-                $asientos[$i] = match ($pasaje?->estado) {
-                    'R' => 'reservado',
-                    'V' => 'ocupado',
-                    default => 'libre'
-                };
-                $precios[$i] = $horario->costo_base ?? 0;
-            }
-        }
-
-        $rawSvg = file_get_contents(storage_path('app/public/' . $horario->tipo_vehiculo->ruta_svg));
-        $cleanSvg = preg_replace('/<\?xml.*?\?>/is', '', $rawSvg);
-        $cleanSvg = preg_replace('/<!DOCTYPE.*?>/is', '', $cleanSvg);
-
-        return response()->json([
-            'asientos' => $asientos,
-            'precios'  => $precios,
-            'svg'      => $cleanSvg
-        ]);
-    }
-
-    public function reservar(Request $request)
-    {
-        Log::info('Datos recibidos en reservar:', $request->all());
-
         $request->validate([
-            'horario_id' => 'required|exists:horarios,id',
-            'asiento_numero' => 'required|integer|min:1',
-            'persona.documento' => 'nullable|string|max:20',
-            'persona.nombres' => 'nullable|string|max:200',
-            'persona.apellidos' => 'nullable|string|max:200',
+            'origen_id' => 'nullable|exists:sucursales,id',
+            'destino_id' => 'nullable|exists:sucursales,id',
         ]);
 
-        try {
+        $origenId = $request->origen_id;
+        $destinoId = $request->destino_id;
 
-            $horario = Horario::findOrFail($request->horario_id);
-
-            if ($horario->tipo_viaje_id == 2) {
-                $request->validate([
-                    'origen_id' => 'required|exists:sucursales,id',
-                    'destino_id' => 'required|exists:sucursales,id',
-                ]);
-
-                $origenOrden = HorarioPunto::where('horario_id', $horario->id)
-                    ->where('sucursal_id', $request->origen_id)
-                    ->value('orden');
-
-                $destinoOrden = HorarioPunto::where('horario_id', $horario->id)
-                    ->where('sucursal_id', $request->destino_id)
-                    ->value('orden');
-
-                $ocupado = $this->asientoOcupadoEnTramo(
-                    $horario->id,
-                    $request->asiento_numero,
-                    $origenOrden,
-                    $destinoOrden
-                );
-
-                if ($ocupado) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "El asiento {$request->asiento_numero} ya está ocupado en ese tramo."
-                    ], 422);
-                }
-
-                $tramos = HorarioTramo::where('horario_id', $horario->id)
-                    ->whereHas('origen', fn($q) => $q->where('orden', '>=', $origenOrden))
-                    ->whereHas('destino', fn($q) => $q->where('orden', '<=', $destinoOrden))
-                    ->get();
-
-                $primerPasaje = null;
-                foreach ($tramos as $tramo) {
-                    $p = Pasaje::create([
-                        'usuario_id'     => Auth::id(),
-                        'horario_id'     => $horario->id,
-                        'tramo_id'       => $tramo->id,
-                        'asiento_numero' => $request->asiento_numero,
-                        'persona_id'     => $persona?->id,
-                        'pasajero_menor' => false,
-                        'estado'         => 'R',
-                        'fecha_creacion' => now(),
-                        'venta_id'       => null,
-                    ]);
-                    if (!$primerPasaje) $primerPasaje = $p;
-                }
-
+        if ($salida->horario->tipo_viaje_id == 2) {
+            if (!$origenId || !$destinoId) {
                 return response()->json([
-                    'success'        => true,
-                    'pasaje_id'      => $primerPasaje->id,
-                    'asiento_numero' => $request->asiento_numero,
-                    'message'        => 'Asiento reservado correctamente'
-                ]);
-            }
-
-            $existe = Pasaje::where('horario_id', $request->horario_id)
-                ->where('asiento_numero', $request->asiento_numero)
-                ->whereIn('estado', ['V', 'R'])
-                ->exists();
-
-            if ($existe) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "El asiento {$request->asiento_numero} ya está ocupado."
+                    'message' => 'Origen y destino son obligatorios para viaje por tramo.'
                 ], 422);
             }
 
-            $persona = null;
-            if ($request->has('persona.documento') && !empty($request->input('persona.documento'))) {
-                $persona = Persona::updateOrCreate(
-                    ['documento' => $request->input('persona.documento')],
-                    [
-                        'tipo_documento_id' => $request->input('persona.tipo_documento_id', 1),
-                        'nombres'  => $request->input('persona.nombres'),
-                        'apellidos' => $request->input('persona.apellidos'),
-                        'celular'  => $request->input('persona.celular'),
-                        'estado'   => 'A',
-                        'fecha_creacion' => now(),
-                    ]
-                );
-                $this->registrarCliente($persona->id);
-            }
+            $asientos = $salida->asientosDisponibles($origenId, $destinoId);
+            $precio = $salida->calcularCostoPorTramos($origenId, $destinoId);
+        } else {
+            $ruta = $salida->horario->ruta;
+            $puntos = $ruta->puntos()->orderBy('orden')->get();
 
-            $pasaje = Pasaje::create([
-                'usuario_id'     => Auth::id(),
-                'horario_id'     => $request->horario_id,
-                'asiento_numero' => $request->asiento_numero,
-                'persona_id'     => $persona?->id,
-                'pasajero_menor' => false,
-                'estado'         => 'R',
-                'fecha_creacion' => now(),
-                'venta_id'       => null,
-            ]);
+            $origenId = $puntos->first()?->sucursal_id;
+            $destinoId = $puntos->last()?->sucursal_id;
 
-            return response()->json([
-                'success'        => true,
-                'pasaje_id'      => $pasaje->id,
-                'asiento_numero' => $request->asiento_numero,
-                'message'        => 'Asiento reservado correctamente'
-            ]);
-        } catch (ValidationException $e) {
-            Log::error('Error de validación:', $e->errors());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (Throwable $th) {
-            Log::error('Error al reservar:', [
-                'message' => $th->getMessage(),
-                'line' => $th->getLine(),
-                'file' => $th->getFile()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al reservar: ' . $th->getMessage()
-            ], 500);
+            $asientos = $salida->asientosDisponibles($origenId, $destinoId);
+            $precio = $salida->horario->costo_base;
         }
+
+        $svg = file_get_contents(storage_path('app/public/' . $salida->horario->tipo_vehiculo->ruta_svg));
+        $svg = preg_replace('/<\?xml.*?\?>/is', '', $svg);
+        $svg = preg_replace('/<!DOCTYPE.*?>/is', '', $svg);
+
+        return response()->json([
+            'asientos' => $asientos,
+            'precio' => $precio,
+            'svg' => $svg,
+        ]);
     }
 
-    public function editar(Pasaje $pasaje)
+    public function buscarReservado(Request $request)
     {
-        $puntos_origen = Sucursal::where('estado', 'A')->get();
-        $puntos_destino = Sucursal::where('estado', 'A')->get();
-        $tipos_viaje = TipoViaje::all();
-        $tipos_vehiculos = TipoVehiculo::all();
-
-        $pasaje->load([
-            'persona',
-            'horario.punto_origen',
-            'horario.punto_destino',
-            'horario.tipo_vehiculo',
-            'horario.fechas',
-            'venta.pagos.billetera',
-            'venta.pagos.metodoPago',
-            'venta.persona', // AGREGADO: Cargar la persona de la venta
-            'venta.tipoDocumentoFactura' // AGREGADO: Cargar tipo documento
+        $request->validate([
+            'salida_id' => 'required|exists:salidas,id',
+            'asiento' => 'required|integer|min:1',
         ]);
 
-        $tipos_documentos = TipoDocumentoPersona::all();
-        $tipos_documentos_facturas = TipoDocumentoFactura::all();
-        $metodos_pago = MetodoPago::all();
-        $billeteras_digitales = BilleteraDigital::all();
+        $pasaje = Pasaje::where('salida_id', $request->salida_id)
+            ->where('asiento_numero', $request->asiento)
+            ->where('estado', 'R')
+            ->first();
 
-        $asientos = [$pasaje->asiento_numero];
-        $horario = $pasaje->horario;
-
-        return view('pasajes.editar', compact(
-            'pasaje',
-            'asientos',
-            'horario',
-            'tipos_documentos',
-            'billeteras_digitales',
-            'tipos_documentos_facturas',
-            'metodos_pago',
-            'tipos_viaje',
-            'tipos_vehiculos',
-            'puntos_origen',
-            'puntos_destino'
-        ));
-    }
-
-    public function buscarPasaje(Request $request)
-    {
-        try {
-            $pasaje = Pasaje::where('horario_id', $request->horario_id)
-                ->where('asiento_numero', $request->asiento)
-                ->where('estado', 'R')
-                ->first();
-
-            if ($pasaje) {
-                return response()->json([
-                    'success' => true,
-                    'pasaje_id' => $pasaje->id
-                ]);
-            }
-
+        if (!$pasaje) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pasaje no encontrado'
+                'message' => 'Reserva no encontrada'
             ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al buscar pasaje: ' . $e->getMessage()
-            ], 500);
         }
-    }
-
-    public function filtrarHorarios(Request $request)
-    {
-        $query = Horario::with(['tipo_vehiculo', 'punto_origen', 'punto_destino'])
-            ->withCount('pasajes');
-
-        if ($request->fecha) {
-            $query->whereDate('fecha_salida', $request->fecha);
-        }
-
-        if ($request->origen && $request->destino) {
-
-            $query->whereHas('puntos', function ($q) use ($request) {
-                $q->where('sucursal_id', $request->origen);
-            })
-                ->whereHas('puntos', function ($q) use ($request) {
-                    $q->where('sucursal_id', $request->destino);
-                });
-        }
-
-        $horarios = $query->get();
-
-        return response()->json(['horarios' => $horarios]);
-    }
-
-    public function abordo(Pasaje $pasaje)
-    {
-        if ($pasaje->estado !== 'V') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Solo pasajes vendidos pueden finalizarse'
-            ], 422);
-        }
-
-        $pasaje->update([
-            'estado' => 'F',
-            'fecha_inactivacion' => now()
-        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Pasajero abordó correctamente'
+            'pasaje_id' => $pasaje->id
         ]);
+    }
+
+    public function verificarPromocion(Request $request)
+    {
+        $request->validate([
+            'salida_id' => 'required|exists:salidas,id',
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
+        ]);
+
+        $cantidad = Pasaje::where('salida_id', $request->salida_id)
+            ->where('origen_sucursal_id', $request->origen_id)
+            ->where('destino_sucursal_id', $request->destino_id)
+            ->whereIn('estado', ['V', 'F'])
+            ->count();
+
+        $numeroActual = $cantidad + 1;
+        $esGratis = $numeroActual % 10 === 0;
+
+        return response()->json([
+            'numero_actual' => $numeroActual,
+            'es_gratis' => $esGratis,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'salida_id' => 'required|exists:salidas,id',
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
+            'asiento_numero' => 'required|integer|min:1',
+            'persona_id' => 'nullable|exists:personas,id',
+            'descuento_id' => 'nullable|exists:descuentos,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $salida = Salida::with([
+                'horario.tipo_vehiculo',
+                'horario.ruta.puntos',
+                'horario.ruta.tramos.origen',
+                'horario.ruta.tramos.destino',
+            ])->findOrFail($request->salida_id);
+
+            $asientos = $salida->asientosDisponibles($request->origen_id, $request->destino_id);
+
+            if (($asientos[$request->asiento_numero] ?? 'ocupado') !== 'libre') {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'El asiento ya está ocupado para ese tramo.'
+                ], 422);
+            }
+
+            $tramos = $salida->obtenerTramosDeViaje($request->origen_id, $request->destino_id);
+
+            if ($tramos->isEmpty()) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'No se pudo determinar el tramo del viaje.'
+                ], 422);
+            }
+
+            $cantidad = Pasaje::where('salida_id', $request->salida_id)
+                ->where('origen_sucursal_id', $request->origen_id)
+                ->where('destino_sucursal_id', $request->destino_id)
+                ->whereIn('estado', ['V', 'F'])
+                ->lockForUpdate()
+                ->count();
+
+            $numeroActual = $cantidad + 1;
+            $esPromo10 = $numeroActual % 10 === 0;
+
+            $precioNormal = $tramos->sum('costo_tramo');
+            $precioCobrado = $precioNormal;
+
+            if ($request->descuento_id == 1) {
+                if (!$esPromo10) {
+                    return response()->json([
+                        'ok' => false,
+                        'message' => 'El descuento promocional solo aplica al pasaje número 10 de ese mismo tramo.'
+                    ], 422);
+                }
+
+                $precioCobrado = 0;
+            }
+
+            $pasaje = Pasaje::create([
+                'usuario_id' => Auth::id(),
+                'persona_id' => $request->persona_id,
+                'salida_id' => $salida->id,
+                'origen_sucursal_id' => $request->origen_id,
+                'destino_sucursal_id' => $request->destino_id,
+                'asiento_numero' => $request->asiento_numero,
+                'estado' => 'V',
+                'es_promocion' => $request->descuento_id == 1,
+                'precio_cobrado' => $precioCobrado,
+                'fecha_creacion' => now(),
+            ]);
+
+            $pasaje->tramos()->attach($tramos->pluck('id')->toArray());
+
+            DB::commit();
+
+            return response()->json([
+                'ok' => true,
+                'message' => 'Pasaje vendido correctamente',
+                'precio_cobrado' => $precioCobrado,
+                'numero_actual' => $numeroActual,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'ok' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
     public function show(Pasaje $pasaje)
     {
         $pasaje->load([
             'persona',
-            'horario.punto_origen',
-            'horario.punto_destino',
-            'horario.tipo_vehiculo',
-            'venta.pagos.metodoPago'
+            'salida.horario.ruta.puntos.sucursal',
+            'salida.horario.tipo_vehiculo',
+            'venta.pagos.metodoPago',
         ]);
 
         return response()->json([
             'id' => $pasaje->id,
             'estado' => $pasaje->estado,
             'asiento' => $pasaje->asiento_numero,
-            'fecha' => $pasaje->horario->fecha_salida,
-            'hora' => $pasaje->horario->hora_embarque,
-            'origen' => $pasaje->horario->punto_origen->nombre_comercial,
-            'destino' => $pasaje->horario->punto_destino->nombre_comercial,
+            'fecha' => $pasaje->salida?->fecha_salida?->format('Y-m-d'),
+            'hora' => $pasaje->salida?->horario?->hora_formateada,
+            'ruta' => $pasaje->salida?->horario?->ruta?->nombre,
+            'origen' => $pasaje->origen?->nombre_comercial,
+            'destino' => $pasaje->destino?->nombre_comercial,
             'pasajero' => $pasaje->persona ? [
                 'documento' => $pasaje->persona->documento,
                 'nombres' => $pasaje->persona->nombres,
@@ -817,130 +247,229 @@ class PasajeController extends Controller
         ]);
     }
 
+    public function editar(Pasaje $pasaje)
+    {
+        $pasaje->load([
+            'persona',
+            'salida.horario.ruta.puntos.sucursal',
+            'salida.horario.tipo_vehiculo',
+            'venta.pagos.billetera',
+            'venta.pagos.metodoPago',
+            'venta.persona',
+            'venta.tipoDocumentoFactura',
+        ]);
+
+        $tipos_documentos = TipoDocumentoPersona::all();
+        $tipos_documentos_facturas = TipoDocumentoFactura::all();
+        $metodos_pago = MetodoPago::all();
+        $billeteras_digitales = BilleteraDigital::all();
+        $sucursales = Sucursal::where('estado', 'A')->orderBy('nombre_comercial')->get();
+
+        return view('pasajes.editar', compact(
+            'pasaje',
+            'tipos_documentos',
+            'tipos_documentos_facturas',
+            'metodos_pago',
+            'billeteras_digitales',
+            'sucursales'
+        ));
+    }
+
+    public function abordo(Pasaje $pasaje)
+    {
+        if ($pasaje->estado !== 'V') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo pasajes vendidos pueden marcarse como abordó.'
+            ], 422);
+        }
+
+        $pasaje->update([
+            'estado' => 'F',
+            'fecha_inactivacion' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pasajero marcado como abordó correctamente.'
+        ]);
+    }
+
     public function noAbordo(Pasaje $pasaje)
     {
         if ($pasaje->estado !== 'V') {
             return response()->json([
                 'success' => false,
-                'message' => 'Solo pasajes vendidos pueden cancelarse'
+                'message' => 'Solo pasajes vendidos pueden marcarse como no abordó.'
             ], 422);
         }
 
         $pasaje->update([
             'estado' => 'X',
-            'fecha_inactivacion' => now()
+            'fecha_inactivacion' => now(),
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Pasajero marcado como NO abordó'
+            'message' => 'Pasajero marcado como no abordó.'
         ]);
     }
-
 
     public function cambiarHorario(Pasaje $pasaje)
     {
-        $pasaje->load(['persona', 'horario.punto_origen', 'horario.punto_destino', 'horario.tipo_vehiculo']);
-
-        $horarios = Horario::where('punto_origen_id', $pasaje->horario->punto_origen_id)
-            ->where('punto_destino_id', $pasaje->horario->punto_destino_id)
-            ->where('fecha_salida', '>=', now()->toDateString())
-            ->with(['punto_origen', 'punto_destino', 'tipo_vehiculo'])
-            ->orderBy('fecha_salida')
-            ->orderBy('hora_salida')
-            ->get();
-
-        return view('pasajes.cambiar-horario', compact('pasaje', 'horarios'));
-    }
-
-    private function asientoOcupadoEnTramo($horarioId, $asientoNumero, $origenOrden, $destinoOrden)
-    {
-        return Pasaje::where('horario_id', $horarioId)
-            ->where('asiento_numero', $asientoNumero)
-            ->whereIn('estado', ['V', 'R'])
-            ->whereHas('tramo', function ($q) use ($origenOrden, $destinoOrden) {
-                $q->whereHas(
-                    'origen',
-                    fn($q2) =>
-                    $q2->where('orden', '<', $destinoOrden)
-                )
-                    ->whereHas(
-                        'destino',
-                        fn($q2) =>
-                        $q2->where('orden', '>', $origenOrden)
-                    );
-            })
-            ->exists();
-    }
-
-    public function asientosDisponibles(Horario $horario)
-    {
-        $asientosOcupados = Pasaje::where('horario_id', $horario->id)
-            ->whereIn('estado', ['V', 'R'])
-            ->pluck('asiento_numero')
-            ->toArray();
-
-        $totalAsientos = $horario->tipo_vehiculo->cantidad_asientos ?? 40;
-
-        $asientosDisponibles = [];
-        for ($i = 1; $i <= $totalAsientos; $i++) {
-            $asientosDisponibles[] = [
-                'numero' => $i,
-                'disponible' => !in_array($i, $asientosOcupados)
-            ];
+        if (!in_array($pasaje->estado, ['R', 'V'])) {
+            return redirect()->back()->withErrors('Solo se puede cambiar horario a pasajes reservados o vendidos.');
         }
 
-        return response()->json([
-            'asientos' => $asientosDisponibles,
-            'precio' => $horario->costo_pasaje
+        $pasaje->load([
+            'persona',
+            'salida.horario.ruta',
+            'salida.horario.tipo_vehiculo',
         ]);
+
+        $salidas = Salida::with([
+            'horario.ruta',
+            'horario.tipo_vehiculo',
+        ])
+            ->whereHas('horario', function ($q) use ($pasaje) {
+                $q->where('ruta_id', $pasaje->salida->horario->ruta_id);
+            })
+            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->orderBy('fecha_salida')
+            ->get();
+
+        return view('pasajes.cambiar-horario', compact('pasaje', 'salidas'));
     }
 
     public function actualizarHorario(Request $request, Pasaje $pasaje)
     {
         $request->validate([
-            'nuevo_horario_id' => 'required|exists:horarios,id',
+            'nueva_salida_id' => 'required|exists:salidas,id',
             'nuevo_asiento_numero' => 'required|integer|min:1',
         ]);
 
-        $nuevoHorario = Horario::findOrFail($request->nuevo_horario_id);
-        $nuevoAsiento = $request->nuevo_asiento_numero;
-
-        $asientoOcupado = Pasaje::where('horario_id', $nuevoHorario->id)
-            ->where('asiento_numero', $nuevoAsiento)
-            ->whereIn('estado', ['V', 'R'])
-            ->exists();
-
-        if ($asientoOcupado) {
+        if (!in_array($pasaje->estado, ['R', 'V'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'El asiento seleccionado ya no está disponible'
+                'message' => 'Solo se puede cambiar horario a pasajes reservados o vendidos.'
             ], 422);
         }
 
-        $horarioAnterior = $pasaje->horario_id;
-        $asientoAnterior = $pasaje->asiento_numero;
+        if (!$pasaje->salida_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El pasaje no tiene una salida asociada.'
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($request, $pasaje) {
+
+                $pasaje->load([
+                    'salida.horario.ruta',
+                    'tramos',
+                ]);
+
+                $nuevaSalida = Salida::with([
+                    'horario.tipo_vehiculo',
+                    'horario.ruta.puntos.sucursal',
+                    'horario.ruta.tramos.origen',
+                    'horario.ruta.tramos.destino',
+                ])->findOrFail($request->nueva_salida_id);
+
+                $rutaActualId = $pasaje->salida?->horario?->ruta_id;
+                $nuevaRutaId = $nuevaSalida->horario?->ruta_id;
+
+                if (!$rutaActualId || !$nuevaRutaId || $rutaActualId != $nuevaRutaId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Solo puedes cambiar el pasaje a una salida de la misma ruta.'
+                    ], 422);
+                }
+
+                if (!$pasaje->origen_sucursal_id || !$pasaje->destino_sucursal_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El pasaje no tiene origen y destino definidos.'
+                    ], 422);
+                }
+
+                $asientos = $nuevaSalida->asientosDisponibles(
+                    $pasaje->origen_sucursal_id,
+                    $pasaje->destino_sucursal_id
+                );
+
+                if (empty($asientos)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se pudo calcular la disponibilidad para el nuevo viaje.'
+                    ], 422);
+                }
+
+                if (($asientos[$request->nuevo_asiento_numero] ?? 'ocupado') !== 'libre') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El asiento seleccionado ya no está disponible.'
+                    ], 422);
+                }
+
+                $tramos = $nuevaSalida->obtenerTramosDeViaje(
+                    $pasaje->origen_sucursal_id,
+                    $pasaje->destino_sucursal_id
+                );
+
+                if ($tramos->isEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se pudieron determinar los tramos del nuevo viaje.'
+                    ], 422);
+                }
+
+                $pasaje->update([
+                    'salida_id' => $nuevaSalida->id,
+                    'asiento_numero' => $request->nuevo_asiento_numero,
+                    'fecha_inactivacion' => null,
+                ]);
+
+                $pasaje->tramos()->sync($tramos->pluck('id')->toArray());
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Salida y asiento actualizados correctamente.',
+                    'data' => [
+                        'pasaje_id' => $pasaje->id,
+                        'salida_id' => $nuevaSalida->id,
+                        'asiento_numero' => $pasaje->asiento_numero,
+                        'fecha_salida' => optional($nuevaSalida->fecha_salida)->format('Y-m-d'),
+                        'hora_salida' => $nuevaSalida->horario?->hora_formateada,
+                    ]
+                ]);
+            });
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar la salida: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function cancelar(Pasaje $pasaje)
+    {
+        if (!in_array($pasaje->estado, ['R', 'V'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se pueden cancelar pasajes reservados o vendidos.'
+            ], 422);
+        }
 
         $pasaje->update([
-            'horario_id' => $nuevoHorario->id,
-            'asiento_numero' => $nuevoAsiento,
+            'estado' => 'X',
+            'fecha_inactivacion' => now(),
         ]);
-
-        if ($pasaje->venta) {
-            $diferenciaPrecio = $nuevoHorario->costo_pasaje - $pasaje->horario->costo_pasaje;
-
-            if ($diferenciaPrecio != 0) {
-                $pasaje->venta->update([
-                    'total' => $pasaje->venta->total + $diferenciaPrecio,
-                    'subtotal' => $pasaje->venta->subtotal + $diferenciaPrecio,
-                ]);
-            }
-        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Horario y asiento actualizados correctamente',
-            'redirect' => route('pasajes.index')
+            'message' => 'Pasaje cancelado correctamente.',
         ]);
     }
 }

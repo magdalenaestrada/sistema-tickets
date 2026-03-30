@@ -19,10 +19,10 @@ $(document).ready(async function () {
         },
         columns: [
             { data: "id" },
-            { data: "distrito" },
             { data: "nombre_comercial" },
             { data: "direccion" },
             { data: "telefono" },
+            { data: "venta_otras" },
             {
                 data: "acciones",
                 orderable: false,
@@ -175,6 +175,7 @@ $(document).ready(async function () {
             $("#nombre_comercial_sucursal").val(data.nombre_comercial);
             $("#direccion_sucursal").val(data.direccion);
             $("#telefono").val(data.telefono);
+            $("#venta_otras").prop("checked", data.venta_otras == 1);
             $("#modalTitulo").text("Editar Sucursal");
 
             cargarSelectDepartamentos();
@@ -288,7 +289,11 @@ $(document).ready(async function () {
 
         let formData = $(this).serializeArray();
         formData.push({ name: "empresa_id", value: EMPRESA_ID });
-
+        formData = formData.filter((f) => f.name !== "venta_otras");
+        formData.push({
+            name: "venta_otras",
+            value: $("#venta_otras").is(":checked") ? 1 : 0,
+        });
         $.ajax({
             url,
             method,

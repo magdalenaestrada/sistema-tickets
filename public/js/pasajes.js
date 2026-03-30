@@ -1,15 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
-    /* ─── Referencias DOM ─────────────────────────────────── */
     const svgContainer = document.getElementById("svg-container");
     const sellButton = document.getElementById("sell-button");
     const editButton = document.getElementById("edit-button");
     const resultadosInfo = document.getElementById("resultados-info");
 
-    /* ─── Estado ──────────────────────────────────────────── */
     let selectedSeats = [];
-    let currentHorarioId = null;
+    let currentSalidaId = null;
     let selectedReservedPasajeId = null;
-    let puntosHorarios = {};
 
     actualizarContador(-1);
     attachRowEvents();
@@ -17,56 +14,57 @@ document.addEventListener("DOMContentLoaded", function () {
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
             row.addEventListener("click", function () {
-                const horarioId = this.dataset.horarioId;
+                const salidaId = this.dataset.salidaId;
                 const tipoViajeId = parseInt(this.dataset.tipoViajeId);
-                currentHorarioId = horarioId;
-                window.selectedHorario = horarioId;
+
+                currentSalidaId = salidaId;
 
                 document
                     .querySelectorAll(".horario-row")
                     .forEach((r) => r.classList.remove("active"));
-                this.classList.add("active");
 
+                this.classList.add("active");
                 resetSeleccion();
 
                 if (tipoViajeId === 2) {
-                    manejarViajePorTramo(horarioId);
+                    manejarViajePorTramo(salidaId);
                 } else {
-                    document.getElementById("tramo_selector").style.display =
-                        "none";
-                    cargarAsientos(horarioId, null, null);
+                    cargarAsientos(
+                        salidaId,
+                        this.dataset.origenId,
+                        this.dataset.destinoId,
+                    );
                 }
             });
         });
     }
 
-    function manejarViajePorTramo(horarioId) {
+    function manejarViajePorTramo(salidaId) {
         const origenId = document.getElementById("filtro_origen").value;
         const destinoId = document.getElementById("filtro_destino").value;
 
         if (!origenId || !destinoId) {
             svgContainer.innerHTML = `
-            <div class="no-results">
-                <i class="bi bi-arrow-left-right"></i>
-                Selecciona origen y destino
-            </div>`;
+                <div class="no-results">
+                    Selecciona origen y destino para ver asientos
+                </div>
+            `;
             return;
         }
 
-        cargarAsientos(horarioId, origenId, destinoId);
+        cargarAsientos(salidaId, origenId, destinoId);
     }
 
-    function cargarAsientos(horarioId, origenId, destinoId) {
-        if (!horarioId) {
-            console.warn("Horario no definido");
-            return;
-        }
+    function cargarAsientos(salidaId, origenId, destinoId) {
+        if (!salidaId) return;
 
-        svgContainer.innerHTML = `<div style="text-align:center;padding:30px;">
-        <div class="spinner-border spinner-border-sm text-primary"></div>
-    </div>`;
+        svgContainer.innerHTML = `
+            <div style="text-align:center;padding:30px;">
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+            </div>
+        `;
 
-        let url = route("pasajes.asientos", { horario: horarioId });
+        let url = route("pasajes.asientos", { salida: salidaId });
 
         if (origenId && destinoId) {
             url += `?origen_id=${origenId}&destino_id=${destinoId}`;
@@ -74,80 +72,59 @@ document.addEventListener("DOMContentLoaded", function () {
 
         fetch(url)
             .then((res) => res.json())
-            .then((data) => renderizarAsientos(data, horarioId));
+            .then((data) => renderizarAsientos(data, salidaId))
+            .catch(() => {
+                svgContainer.innerHTML = `<div class="no-results">No se pudieron cargar los asientos</div>`;
+            });
     }
 
-    function actualizarBadgeTramo(data) {
-        const rowActiva = document.querySelector(
-            `.horario-row[data-horario-id="${currentHorarioId}"]`,
-        );
-        if (!rowActiva) return;
-        const badge = rowActiva.querySelector(
-            ".seats-disponibles[data-pendiente]",
-        );
-        if (!badge) return;
-
-        const libres = Object.values(data.asientos).filter(
-            (e) => e === "libre",
-        ).length;
-        badge.textContent = `${libres} libre${libres !== 1 ? "s" : ""}`;
-        badge.className = `seats-badge seats-disponibles ${libres > 5 ? "ok" : libres > 0 ? "low" : "full"}`;
-        delete badge.dataset.pendiente;
-    }
-
-    function renderizarAsientos(data, horarioId) {
-        actualizarBadgeTramo(data);
+    function renderizarAsientos(data, salidaId) {
         svgContainer.innerHTML = data.svg;
+
         const svgEl = svgContainer.querySelector("svg");
         if (!svgEl) return;
 
         Object.keys(data.asientos).forEach((numero) => {
             const estado = data.asientos[numero];
-            const g = svgEl.querySelector(`#seat-${numero}`);
-            if (!g) return;
+            const seat = svgEl.querySelector(`#seat-${numero}`);
+            if (!seat) return;
 
-            g.classList.remove(
+            seat.classList.remove(
                 "ocupado",
                 "reservado",
                 "libre",
                 "selected-seat",
             );
-            g.classList.add(estado);
-            g.dataset.estado = estado;
-            g.dataset.numero = numero;
+            seat.classList.add("seat");
+            seat.classList.add(estado);
+            seat.dataset.estado = estado;
+            seat.dataset.numero = numero;
 
             if (estado === "libre") {
-                g.style.cursor = "pointer";
-                g.style.opacity = "1";
-                g.onclick = (e) => {
+                seat.style.cursor = "pointer";
+                seat.style.opacity = "1";
+                seat.onclick = (e) => {
                     e.stopPropagation();
-                    toggleSeatSelection(g, numero);
+                    toggleSeatSelection(seat, numero);
                 };
             } else if (estado === "reservado") {
-                g.style.cursor = "pointer";
-                g.style.opacity = "1";
-                g.onclick = (e) => {
+                seat.style.cursor = "pointer";
+                seat.style.opacity = "1";
+                seat.onclick = (e) => {
                     e.stopPropagation();
-                    obtenerPasajeReservado(horarioId, numero);
+                    obtenerPasajeReservado(salidaId, numero);
                 };
             } else {
-                g.style.cursor = "not-allowed";
-                g.style.opacity = "0.6";
-                g.onclick = (e) => {
-                    e.stopPropagation();
-                    alert("Este asiento está vendido");
-                };
+                seat.style.cursor = "not-allowed";
+                seat.style.opacity = "0.7";
+                seat.onclick = null;
             }
         });
     }
 
-    /* ────────────────────────────────────────────────────────
-     *  SELECCIÓN DE ASIENTOS
-     * ──────────────────────────────────────────────────────── */
     function toggleSeatSelection(seatElement, numero) {
         const seatNum = parseInt(numero);
 
-        // Si había un reservado seleccionado, deseleccionarlo
         if (selectedReservedPasajeId) {
             document
                 .querySelectorAll(".selected-seat")
@@ -156,6 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const isSelected = selectedSeats.includes(seatNum);
+
         if (isSelected) {
             selectedSeats = selectedSeats.filter((s) => s !== seatNum);
             seatElement.classList.remove("selected-seat");
@@ -169,13 +147,12 @@ document.addEventListener("DOMContentLoaded", function () {
         actualizarBotones();
     }
 
-    async function obtenerPasajeReservado(horarioId, numeroAsiento) {
+    async function obtenerPasajeReservado(salidaId, numeroAsiento) {
         try {
             const seatElement = document.querySelector(
                 `#seat-${numeroAsiento}`,
             );
 
-            // Toggle: si ya estaba seleccionado, deseleccionar
             if (seatElement?.classList.contains("selected-seat")) {
                 seatElement.classList.remove("selected-seat");
                 selectedReservedPasajeId = null;
@@ -185,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const res = await fetch(
                 route("pasajes.buscar") +
-                    `?horario_id=${horarioId}&asiento=${numeroAsiento}`,
+                    `?salida_id=${salidaId}&asiento=${numeroAsiento}`,
             );
             const data = await res.json();
 
@@ -196,12 +173,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 document
                     .querySelectorAll(".selected-seat")
                     .forEach((s) => s.classList.remove("selected-seat"));
-                seatElement?.classList.add("selected-seat");
 
+                seatElement?.classList.add("selected-seat");
                 actualizarBotones();
             }
         } catch (err) {
-            console.error("Error al obtener pasaje reservado:", err);
+            console.error(err);
         }
     }
 
@@ -222,58 +199,34 @@ document.addEventListener("DOMContentLoaded", function () {
         actualizarBotones();
     }
 
-    sellButton.addEventListener("click", async function () {
-        if (!selectedSeats.length || !currentHorarioId) return;
+    sellButton.addEventListener("click", function () {
+        if (!selectedSeats.length || !currentSalidaId) return;
 
-        try {
-            const res = await fetch(route("caja.verificar"));
-            const data = await res.json();
+        const seats = selectedSeats.sort((a, b) => a - b).join(",");
+        const origenId = document.getElementById("filtro_origen").value;
+        const destinoId = document.getElementById("filtro_destino").value;
 
-            if (!data.abierta) {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Caja no abierta",
-                    text: "Aún no has abierto caja. No puedes vender pasajes.",
-                    confirmButtonText: "Entendido",
-                });
-                return;
-            }
-
-            const seats = selectedSeats.sort((a, b) => a - b).join(",");
-            window.location.href = route("pasajes.vender", {
-                asientos: seats,
-                horario: currentHorarioId,
-            });
-        } catch (err) {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "No se pudo verificar el estado de la caja.",
-            });
-        }
+        window.location.href = route("pasajes.vender", {
+            salida: currentSalidaId,
+            asientos: seats,
+            origen_id: origenId,
+            destino_id: destinoId,
+        });
     });
 
     editButton.addEventListener("click", function () {
         if (!selectedReservedPasajeId) return;
+
         window.location.href = route("pasajes.editar", {
             pasaje: selectedReservedPasajeId,
         });
     });
 
-    document
-        .getElementById("filtro_origen")
-        .addEventListener("change", filtrarHorarios);
-
-    document
-        .getElementById("filtro_destino")
-        .addEventListener("change", filtrarHorarios);
-
-    async function filtrarHorarios() {
+    function filtrarSalidas() {
         const fecha = document.getElementById("filtro_fecha").value;
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
 
-        // Ocultar estado inicial
         const estadoInicial = document.getElementById("estado-inicial");
         if (estadoInicial) estadoInicial.style.display = "none";
 
@@ -300,49 +253,8 @@ document.addEventListener("DOMContentLoaded", function () {
         actualizarContador(visibles);
 
         if (visibles === 0) {
-            if (!document.getElementById("no-results-msg")) {
-                const msg = document.createElement("div");
-                msg.id = "no-results-msg";
-                msg.className = "no-results";
-                msg.innerHTML = `<i class="bi bi-search"></i> No hay horarios disponibles`;
-                document.getElementById("horarios-list").appendChild(msg);
-            }
-        } else {
-            const msg = document.getElementById("no-results-msg");
-            if (msg) msg.remove();
+            svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
         }
-    }
-
-    function renderizarHorarios(horarios) {
-        const container = document.getElementById("horarios-list");
-        container.innerHTML = "";
-
-        if (!horarios.length) {
-            container.innerHTML = `
-        <div class="no-results">
-            <i class="bi bi-search"></i>
-            No hay horarios disponibles
-        </div>`;
-            return;
-        }
-
-        horarios.forEach((h) => {
-            const html = `
-        <div class="horario-row"
-     data-horario-id="${h.id}"
-     data-tipo-viaje-id="${h.tipo_viaje_id}"
-     data-origen="${h.origen_id}"
-     data-destino="${h.destino_id}">
-     
-            <div>${h.hora_salida}</div>
-            <div>${h.tipo_vehiculo.nombre}</div>
-
-        </div>`;
-
-            container.innerHTML += html;
-        });
-
-        attachRowEvents();
     }
 
     function actualizarContador(total) {
@@ -350,27 +262,11 @@ document.addEventListener("DOMContentLoaded", function () {
             resultadosInfo.innerHTML = "";
             return;
         }
-        resultadosInfo.innerHTML = `Mostrando <strong>${total}</strong> horario${total !== 1 ? "s" : ""}`;
+
+        resultadosInfo.innerHTML = `Mostrando <strong>${total}</strong> salida${total !== 1 ? "s" : ""}`;
     }
 
-    // Listeners de filtros
-    document
-        .getElementById("filtro_fecha")
-        .addEventListener("change", filtrarHorarios);
-    document
-        .getElementById("filtro_origen")
-        .addEventListener("change", filtrarHorarios);
-
-    document
-        .getElementById("filtro_destino")
-        .addEventListener("change", filtrarHorarios);
-
-    ["filtro_origen", "filtro_destino"].forEach((id) => {
-        document.getElementById(id).addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                filtrarHorarios();
-                e.target.blur();
-            }
-        });
+    ["filtro_fecha", "filtro_origen", "filtro_destino"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("change", filtrarSalidas);
     });
 });

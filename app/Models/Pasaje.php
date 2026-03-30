@@ -9,17 +9,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Pasaje extends Model
 {
     protected $table = 'pasajes';
+
     protected $fillable = [
-        "venta_id",
-        "usuario_id",
-        "persona_id",
-        "pasajero_menor",
-        "autorizacion_pdf",
-        "asiento_numero",
-        "salida_id",
-        "estado",
-        "fecha_creacion",
-        "fecha_inactivacion",
+        'venta_id',
+        'usuario_id',
+        'persona_id',
+        'pasajero_menor',
+        'autorizacion_pdf',
+        'asiento_numero',
+        'salida_id',
+        'origen_sucursal_id',
+        'destino_sucursal_id',
+        'estado',
+        'es_promocion',
+        'precio_cobrado',
+        'fecha_creacion',
+        'fecha_inactivacion',
     ];
 
     public function tramos()
@@ -39,5 +44,15 @@ class Pasaje extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, "usuario_id");
+    }
+
+    public function origen()
+    {
+        return $this->belongsTo(Sucursal::class, 'origen_sucursal_id');
+    }
+
+    public function destino()
+    {
+        return $this->belongsTo(Sucursal::class, 'destino_sucursal_id');
     }
 }

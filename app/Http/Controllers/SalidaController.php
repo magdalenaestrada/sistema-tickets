@@ -77,7 +77,7 @@ class SalidaController extends Controller
         return response()->json([
             'id' => $salida->id,
             'horario_id' => $salida->horario_id,
-            'fecha' => $salida->fecha?->format('Y-m-d'),
+            'fecha_salida' => $salida->fecha_salida?->format('Y-m-d'),
             'fecha_formateada' => $salida->fecha_formateada,
             'estado' => $salida->estado,
             'hora_salida' => $salida->horario?->hora_formateada,
@@ -100,13 +100,13 @@ class SalidaController extends Controller
     {
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
-            'fecha' => 'required|date',
+            'fecha_salida' => 'required|date',
             'estado' => 'required|in:programado,en_ruta,finalizado,cancelado',
         ]);
 
         try {
             $existe = Salida::where('horario_id', $request->horario_id)
-                ->where('fecha', $request->fecha)
+                ->where('fecha_salida', $request->fecha_salida)
                 ->exists();
 
             if ($existe) {
@@ -118,7 +118,7 @@ class SalidaController extends Controller
 
             $salida = Salida::create([
                 'horario_id' => $request->horario_id,
-                'fecha' => $request->fecha,
+                'fecha_salida' => $request->fecha_salida,
                 'estado' => $request->estado,
             ]);
 
@@ -152,17 +152,17 @@ class SalidaController extends Controller
             $creadas = 0;
 
             while ($fechaInicio->lte($fechaFin)) {
-                $dayOfWeek = $fechaInicio->dayOfWeekIso; // 1 lunes ... 7 domingo
+                $dayOfWeek = $fechaInicio->dayOfWeekIso;
 
                 if (in_array($dayOfWeek, $dias)) {
                     $existe = Salida::where('horario_id', $request->horario_id)
-                        ->where('fecha', $fechaInicio->format('Y-m-d'))
+                        ->where('fecha_salida', $fechaInicio->format('Y-m-d'))
                         ->exists();
 
                     if (!$existe) {
                         Salida::create([
                             'horario_id' => $request->horario_id,
-                            'fecha' => $fechaInicio->format('Y-m-d'),
+                            'fecha_salida' => $fechaInicio->format('Y-m-d'),
                             'estado' => 'programado',
                         ]);
 
@@ -189,7 +189,7 @@ class SalidaController extends Controller
     {
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
-            'fecha' => 'required|date',
+            'fecha_salida' => 'required|date',
             'estado' => 'required|in:programado,en_ruta,finalizado,cancelado',
         ]);
 
@@ -197,7 +197,7 @@ class SalidaController extends Controller
             $salida = Salida::findOrFail($id);
 
             $existe = Salida::where('horario_id', $request->horario_id)
-                ->where('fecha', $request->fecha)
+                ->where('fecha_salida', $request->fecha_salida)
                 ->where('id', '!=', $salida->id)
                 ->exists();
 
@@ -210,7 +210,7 @@ class SalidaController extends Controller
 
             $salida->update([
                 'horario_id' => $request->horario_id,
-                'fecha' => $request->fecha,
+                'fecha_salida' => $request->fecha_salida,
                 'estado' => $request->estado,
             ]);
 

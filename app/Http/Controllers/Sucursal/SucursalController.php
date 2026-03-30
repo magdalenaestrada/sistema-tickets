@@ -47,6 +47,13 @@ class SucursalController extends Controller
             ->addColumn('distrito', function ($row) {
                 return '<span class="badge bg-success-subtle text-dark">' . $row->distrito->nombre . '</span>';
             })
+            ->addColumn('venta_otras', function ($row) {
+                if ($row->venta_otras == 1) {
+                    return '<span class="badge bg-success-subtle text-success"> PERMITIR </span>';
+                } else {
+                    return '<span class="badge bg-danger-subtle text-danger"> NO PERMITIDO</span>';
+                }
+            })
             ->addColumn('acciones', function ($sucursal) {
 
                 $acciones = '
@@ -72,7 +79,7 @@ class SucursalController extends Controller
 
                 return $acciones;
             })
-            ->rawColumns(['acciones', 'distrito'])
+            ->rawColumns(['acciones', 'distrito','venta_otras'])
             ->make(true);
     }
 
@@ -90,6 +97,7 @@ class SucursalController extends Controller
             'nombre_comercial' => 'required|string|max:255',
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
+            'venta_otras'         => 'nullable|boolean',
         ]);
 
         $existe = Sucursal::where('empresa_id', $request->empresa_id)
@@ -125,6 +133,7 @@ class SucursalController extends Controller
             'nombre_comercial' => $sucursal->nombre_comercial,
             'direccion' => $sucursal->direccion,
             'telefono' => $sucursal->telefono,
+            'venta_otras' => $sucursal->venta_otras,
 
             'distrito_id' => $sucursal->distrito_id,
             'provincia_id' => $sucursal->distrito?->provincia_id,
@@ -159,6 +168,7 @@ class SucursalController extends Controller
             'nombre_comercial' => 'required|string|max:255',
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
+            'venta_otras' => 'nullable|boolean',
         ]);
 
         $existe = Sucursal::where('empresa_id', $request->empresa_id)
