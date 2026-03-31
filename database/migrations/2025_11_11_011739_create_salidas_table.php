@@ -15,7 +15,9 @@ return new class extends Migration
             $table->enum('estado', ['programado', 'en_ruta', 'finalizado', 'cancelado'])
                 ->default('programado');
             $table->timestamps();
-
+            $table->foreignId('vehiculo_id')->nullable()->constrained('vehiculos');
+            $table->foreignId('conductor_principal_id')->nullable()->constrained('personas');
+            $table->foreignId('conductor_secundario_id')->nullable()->constrained('personas');
             $table->unique(['horario_id', 'fecha_salida']);
         });
     }

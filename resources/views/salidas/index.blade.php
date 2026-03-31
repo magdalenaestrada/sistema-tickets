@@ -53,6 +53,8 @@
 
 @push('scripts')
     <script>
+        window.VEHICULOS = @json($vehiculos);
+        window.CONDUCTORES = @json($conductores);
         window.HORARIOS_SALIDA = @json(
             \App\Models\Horario::with('ruta')->get()->map(function ($h) {
                     return [

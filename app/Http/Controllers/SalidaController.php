@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Empleado;
+use App\Models\Empresa;
 use App\Models\Salida;
+use App\Models\Vehiculo;
+use App\Services\PdfService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -12,7 +16,9 @@ class SalidaController extends Controller
 {
     public function index()
     {
-        return view('salidas.index');
+        $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
+        $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
+        return view('salidas.index', compact('vehiculos', 'conductores'));
     }
 
     public function datatable()
@@ -37,15 +43,18 @@ class SalidaController extends Controller
                 return $salida->fecha_formateada;
             })
             ->addColumn('estado_badge', function ($salida) {
-                $clase = match ($salida->estado) {
-                    'programado' => 'bg-primary',
-                    'en_ruta' => 'bg-warning',
-                    'finalizado' => 'bg-success',
-                    'cancelado' => 'bg-danger',
-                    default => 'bg-secondary',
-                };
-
-                return '<span class="badge ' . $clase . '">' . ucfirst($salida->estado) . '</span>';
+                if ($salida->estado == 'en_ruta') {
+                    return '<span class="badge bg-warning">EN RUTA</span>';
+                }
+                if ($salida->estado == 'programado') {
+                    return '<span class="badge bg-primary">PROGRAMADO</span>';
+                }
+                if ($salida->estado == 'finalizado') {
+                    return '<span class="badge bg-success">FINALIZADO</span>';
+                }
+                if ($salida->estado == 'cancelado') {
+                    return '<span class="badge bg-danger">CANCELADO</span>';
+                }
             })
             ->addColumn('acciones', function ($salida) {
                 return '
@@ -66,6 +75,102 @@ class SalidaController extends Controller
             ->make(true);
     }
 
+    public function manifiestoPasajeros(Salida $salida, PdfService $pdfService)
+    {
+        $salida->load([
+            'horario.ruta.puntos.sucursal',
+            'horario.tipo_vehiculo',
+            'vehiculo',
+            'conductorPrincipal',
+            'conductorSecundario',
+            'pasajes.persona.tipoDocumento',
+            'pasajes.origen',
+            'pasajes.destino',
+            'pasajes.venta',
+        ]);
+
+        $empresa = \App\Models\Empresa::first();
+
+        $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
+        $origenNombre = $puntos->first()?->sucursal?->distrito?->nombre ?? '-';
+        $destinoNombre = $puntos->last()?->sucursal?->distrito?->nombre ?? '-';
+
+        $pasajes = $salida->pasajes
+            ->whereIn('estado', ['V', 'F'])
+            ->sortBy('asiento_numero')
+            ->values();
+
+        $capacidad = $salida->horario->tipo_vehiculo->capacidad
+            ?? $salida->horario->tipo_vehiculo->asientos
+            ?? 46;
+
+        $html = view('salidas.manifiestos.pasajeros', compact(
+            'salida',
+            'empresa',
+            'pasajes',
+            'origenNombre',
+            'destinoNombre',
+            'capacidad'
+        ))->render();
+
+        return $pdfService->generar(
+            $html,
+            "manifiesto_pasajeros_{$salida->id}.pdf",
+            'P'
+        );
+    }
+
+    public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService)
+    {
+        $salida->load([
+            'horario.ruta.puntos.sucursal',
+            'vehiculo',
+            'conductorPrincipal',
+            'conductorSecundario',
+        ]);
+
+        $encomiendas = collect();
+
+        $html = view('salidas.manifiestos.encomiendas', compact(
+            'salida',
+            'encomiendas'
+        ))->render();
+
+        return $pdfService->generar(
+            $html,
+            "manifiesto_encomiendas_{$salida->id}.pdf",
+            'P'
+        );
+    }
+
+    public function manifiestoConductores(Salida $salida, PdfService $pdfService)
+    {
+        $salida->load([
+            'horario.ruta.puntos.sucursal',
+            'vehiculo',
+            'conductorPrincipal',
+            'conductorSecundario',
+        ]);
+
+        $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
+        $origenNombre = $puntos->first()?->sucursal?->nombre_comercial ?? '-';
+        $destinoNombre = $puntos->last()?->sucursal?->nombre_comercial ?? '-';
+
+        $html = view('salidas.manifiestos.conductores', compact(
+            'salida',
+            'origenNombre',
+            'destinoNombre'
+        ))->render();
+
+        return $pdfService->generar(
+            $html,
+            "manifiesto_conductores_{$salida->id}.pdf",
+            'P'
+        );
+    }
+
+
+
     public function show($id)
     {
         $salida = Salida::with([
@@ -77,6 +182,9 @@ class SalidaController extends Controller
         return response()->json([
             'id' => $salida->id,
             'horario_id' => $salida->horario_id,
+            'vehiculo_id' => $salida->vehiculo_id,
+            'conductor_principal_id' => $salida->conductor_principal_id,
+            'conductor_secundario_id' => $salida->conductor_secundario_id,
             'fecha_salida' => $salida->fecha_salida?->format('Y-m-d'),
             'fecha_formateada' => $salida->fecha_formateada,
             'estado' => $salida->estado,
@@ -102,6 +210,9 @@ class SalidaController extends Controller
             'horario_id' => 'required|exists:horarios,id',
             'fecha_salida' => 'required|date',
             'estado' => 'required|in:programado,en_ruta,finalizado,cancelado',
+            'vehiculo_id' => 'nullable|exists:vehiculos,id',
+            'conductor_principal_id' => 'nullable|exists:personas,id',
+            'conductor_secundario_id' => 'nullable|exists:personas,id',
         ]);
 
         try {
@@ -114,6 +225,22 @@ class SalidaController extends Controller
                     'ok' => false,
                     'message' => 'Ya existe una salida para ese horario y fecha.'
                 ], 422);
+            }
+
+            if ($request->estado === 'en_ruta') {
+                if (!$request->vehiculo_id || !$request->conductor_principal_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Para poner la salida en ruta debes asignar vehículo y conductor principal.'
+                    ], 422);
+                }
+
+                if ($request->conductor_principal_id == $request->conductor_secundario_id && $request->conductor_secundario_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No puedes repetir el mismo conductor en ambos campos.'
+                    ], 422);
+                }
             }
 
             $salida = Salida::create([
@@ -191,6 +318,9 @@ class SalidaController extends Controller
             'horario_id' => 'required|exists:horarios,id',
             'fecha_salida' => 'required|date',
             'estado' => 'required|in:programado,en_ruta,finalizado,cancelado',
+            'vehiculo_id' => 'nullable|exists:vehiculos,id',
+            'conductor_principal_id' => 'nullable|exists:personas,id',
+            'conductor_secundario_id' => 'nullable|exists:personas,id',
         ]);
 
         try {
@@ -208,10 +338,30 @@ class SalidaController extends Controller
                 ], 422);
             }
 
+
+            if ($request->estado === 'en_ruta') {
+                if (!$request->vehiculo_id || !$request->conductor_principal_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Para poner la salida en ruta debes asignar vehículo y conductor principal.'
+                    ], 422);
+                }
+
+                if ($request->conductor_principal_id == $request->conductor_secundario_id && $request->conductor_secundario_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No puedes repetir el mismo conductor en ambos campos.'
+                    ], 422);
+                }
+            }
+
             $salida->update([
                 'horario_id' => $request->horario_id,
                 'fecha_salida' => $request->fecha_salida,
                 'estado' => $request->estado,
+                'vehiculo_id' => $request->vehiculo_id,
+                'conductor_principal_id' => $request->conductor_principal_id,
+                'conductor_secundario_id' => $request->conductor_secundario_id,
             ]);
 
             return response()->json([

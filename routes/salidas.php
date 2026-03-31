@@ -10,4 +10,7 @@ Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function
     Route::get('/{id}', [SalidaController::class, 'show'])->name('show');
     Route::put('/{id}', [SalidaController::class, 'update'])->name('update');
     Route::delete('/{id}', [SalidaController::class, 'destroy'])->name('destroy');
+    Route::get('/{salida}/manifiesto-pasajeros', [SalidaController::class, 'manifiestoPasajeros'])->name('manifiesto_pasajeros');
+    Route::get('/{salida}/manifiesto-encomiendas', [SalidaController::class, 'manifiestoEncomiendas'])->name('manifiesto_encomiendas');
+    Route::get('/{salida}/manifiesto-conductores', [SalidaController::class, 'manifiestoConductores'])->name('manifiesto_conductores');
 });

@@ -10,4 +10,15 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::post('/verificar-promocion', [PasajeController::class, 'verificarPromocion'])->name('verificar_promocion');
     Route::post('/', [PasajeController::class, 'store'])->name('store');
     Route::get('/vender', [PasajeController::class, 'vender'])->name('vender');
+    Route::get('/{pasaje}', [PasajeController::class, 'show'])->name('show');
+    Route::get('/{pasaje}/editar', [PasajeController::class, 'editar'])->name('editar');
+
+    Route::put('/{pasaje}', [PasajeController::class, 'actualizar'])->name('actualizar');
+    Route::put('/{pasaje}/horario', [PasajeController::class, 'actualizarHorario'])->name('actualizar_horario');
+    Route::put('/{pasaje}/venta', [PasajeController::class, 'actualizarVenta'])->name('actualizar_venta');
+
+    Route::post('/{pasaje}/abordo', [PasajeController::class, 'abordo'])->name('abordo');
+    Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('no_abordo');
+    Route::post('/{pasaje}/cancelar', [PasajeController::class, 'cancelar'])->name('cancelar');
+    Route::get('/buscar', [PasajeController::class, 'buscarPasaje'])->name('buscar');
 });

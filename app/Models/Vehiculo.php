@@ -11,7 +11,9 @@ class Vehiculo extends Model
         "tipo_vehiculo_id",
         "numero_placa",
         "fecha_creacion",
-        "estado"
+        "estado",
+        "marca",
+        "habilitacion_vehicular",
     ];
 
     public function tipo_vehiculo()

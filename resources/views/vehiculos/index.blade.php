@@ -20,6 +20,8 @@
                             <th>ID</th>
                             <th>Tipo de vehiculo</th>
                             <th>Placa</th>
+                            <th>Marca</th>
+                            <th>Hab. vehicular</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>

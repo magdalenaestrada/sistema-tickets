@@ -24,7 +24,7 @@ class VehiculoController extends Controller
     public function datatable()
     {
         $vehiculos = Vehiculo::with('tipo_vehiculo')
-            ->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'estado']);
+            ->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'estado', 'marca', 'habilitacion_vehicular']);
 
         return DataTables::of($vehiculos)
 
@@ -32,6 +32,13 @@ class VehiculoController extends Controller
                 return $vehiculo->tipo_vehiculo
                     ? $vehiculo->tipo_vehiculo->descripcion
                     : '';
+            })
+            ->addColumn('habilitacion_vehicular', function ($vehiculo) {
+                return $vehiculo->habilitacion_vehicular;
+            })
+
+            ->addColumn('marca', function ($vehiculo) {
+                return $vehiculo->marca;
             })
 
             ->addColumn('estado_badge', function ($vehiculo) {
@@ -103,9 +110,11 @@ class VehiculoController extends Controller
     {
         $request->validate([
             'tipo_vehiculo_id' => 'required',
-            'numero_placa' => 'required|unique:vehiculos,numero_placa'
+            'numero_placa' => 'required|unique:vehiculos,numero_placa',
+            'habilitacion_vehicular' => 'required|unique:vehiculos,habilitacion_vehicular',
         ], [
-            'numero_placa.unique' => 'La placa ya está registrada'
+            'numero_placa.unique' => 'La placa ya está registrada',
+            'habilitacion_vehicular.unique' => 'La habilitación vehicular ya está registrada'
         ]);
 
         $hoy = Carbon::now("America/Lima")->format("Y-m-d");
@@ -114,6 +123,8 @@ class VehiculoController extends Controller
             "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
             "numero_placa" => Str::upper($request->numero_placa),
             "fecha_creacion" => $hoy,
+            "marca" => $request->marca,
+            "habilitacion_vehicular" => $request->habilitacion_vehicular,
         ]);
 
         return response()->json(['success' => true, 'vehiculo' => $vehiculo]);
@@ -126,12 +137,18 @@ class VehiculoController extends Controller
                 'required',
                 Rule::unique('vehiculos', 'numero_placa')->ignore($vehiculo->id),
             ],
+            'habilitacion_vehicular' => [
+                'required',
+                Rule::unique('vehiculos', 'habilitacion_vehicular')->ignore($vehiculo->id),
+            ]
         ], [
             'numero_placa.unique' => 'La placa ya está registrada'
         ]);
 
         $vehiculo->update([
             "tipo_vehiculo_id" => $request->tipo_vehiculo_id,
+            "marca" => $request->marca,
+            "habilitacion_vehicular" => $request->habilitacion_vehicular,
             "numero_placa" => Str::upper($request->numero_placa),
         ]);
 

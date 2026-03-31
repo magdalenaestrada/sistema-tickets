@@ -14,6 +14,9 @@ class Salida extends Model
         'horario_id',
         'fecha_salida',
         'estado',
+        'vehiculo_id',
+        'conductor_principal_id',
+        'conductor_secundario_id',
     ];
 
     protected $casts = [
@@ -95,14 +98,24 @@ class Salida extends Model
 
         $tramoIds = $tramos->pluck('id');
 
-        $asientosOcupados = DB::table('pasajes')
+        $pasajes = DB::table('pasajes')
             ->join('pasaje_tramos', 'pasajes.id', '=', 'pasaje_tramos.pasaje_id')
             ->where('pasajes.salida_id', $this->id)
             ->whereIn('pasaje_tramos.tramo_id', $tramoIds)
             ->whereIn('pasajes.estado', ['R', 'V'])
-            ->pluck('pasajes.asiento_numero')
-            ->unique()
-            ->toArray();
+            ->select('pasajes.asiento_numero', 'pasajes.estado')
+            ->get();
+
+        $ocupados = [];
+        $reservados = [];
+
+        foreach ($pasajes as $p) {
+            if ($p->estado === 'V') {
+                $ocupados[] = $p->asiento_numero;
+            } elseif ($p->estado === 'R') {
+                $reservados[] = $p->asiento_numero;
+            }
+        }
 
         $totalAsientos = $this->horario?->tipo_vehiculo?->capacidad
             ?? $this->horario?->tipo_vehiculo?->asientos
@@ -111,15 +124,35 @@ class Salida extends Model
         $asientos = [];
 
         for ($i = 1; $i <= $totalAsientos; $i++) {
-            $asientos[$i] = in_array($i, $asientosOcupados) ? 'ocupado' : 'libre';
+            if (in_array($i, $ocupados)) {
+                $asientos[$i] = 'ocupado';
+            } elseif (in_array($i, $reservados)) {
+                $asientos[$i] = 'reservado';
+            } else {
+                $asientos[$i] = 'libre';
+            }
         }
 
         return $asientos;
     }
-
     public function calcularCostoPorTramos($origenSucursalId, $destinoSucursalId)
     {
         return $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)
             ->sum('costo_tramo');
+    }
+
+    public function vehiculo()
+    {
+        return $this->belongsTo(Vehiculo::class);
+    }
+
+    public function conductorPrincipal()
+    {
+        return $this->belongsTo(Persona::class, 'conductor_principal_id');
+    }
+
+    public function conductorSecundario()
+    {
+        return $this->belongsTo(Persona::class, 'conductor_secundario_id');
     }
 }

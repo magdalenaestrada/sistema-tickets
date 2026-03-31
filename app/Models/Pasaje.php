@@ -55,4 +55,12 @@ class Pasaje extends Model
     {
         return $this->belongsTo(Sucursal::class, 'destino_sucursal_id');
     }
+
+    public function persona(){
+        return $this->belongsTo(Persona::class, 'persona_id');
+    }
+
+    public function venta(){
+        return $this->belongsTo(Venta::class, 'venta_id');
+    }
 }

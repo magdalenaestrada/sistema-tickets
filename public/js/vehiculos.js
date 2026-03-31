@@ -10,6 +10,8 @@ $(document).ready(function () {
             { data: "id" },
             { data: "tipo_vehiculo" },
             { data: "numero_placa" },
+            { data: "marca" },
+            { data: "habilitacion_vehicular" },
             { data: "estado_badge" },
             { data: "acciones" },
         ],

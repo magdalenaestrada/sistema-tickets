@@ -118,17 +118,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     e.stopPropagation();
                     toggleSeatSelection(seat, numero);
                 };
-            } else if (estado === "reservado") {
+            } else if (estado === "reservado" || estado === "ocupado") {
                 seat.style.cursor = "pointer";
                 seat.style.opacity = "1";
                 seat.onclick = (e) => {
                     e.stopPropagation();
-                    obtenerPasajeReservado(salidaId, numero);
+                    obtenerPasajeAsiento(salidaId, numero);
                 };
             } else {
-                seat.style.cursor = "not-allowed";
-                seat.style.opacity = "0.7";
-                seat.onclick = null;
+                seat.style.cursor = "pointer";
+                seat.style.opacity = "1";
+                seat.onclick = (e) => {
+                    e.stopPropagation();
+                    obtenerPasajeAsiento(salidaId, numero);
+                };
             }
         });
     }
@@ -156,6 +159,47 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         actualizarBotones();
+    }
+
+    async function obtenerPasajeAsiento(salidaId, numeroAsiento) {
+        try {
+            const seatElement = document.querySelector(
+                `#seat-${numeroAsiento}`,
+            );
+
+            if (seatElement?.classList.contains("selected-seat")) {
+                seatElement.classList.remove("selected-seat");
+                selectedReservedPasajeId = null;
+                actualizarBotones();
+                return;
+            }
+
+            const res = await fetch(
+                route("pasajes.buscar") +
+                    `?salida_id=${salidaId}&asiento=${numeroAsiento}`,
+            );
+
+            const data = await res.json();
+
+            if (data.success && data.pasaje_id) {
+                selectedReservedPasajeId = data.pasaje_id;
+                selectedSeats = [];
+
+                document
+                    .querySelectorAll(".selected-seat")
+                    .forEach((s) => s.classList.remove("selected-seat"));
+
+                seatElement?.classList.add("selected-seat");
+                actualizarBotones();
+            }
+        } catch (err) {
+            console.error(err);
+            Swal.fire(
+                "Error",
+                "No se pudo obtener el pasaje del asiento",
+                "error",
+            );
+        }
     }
 
     async function obtenerPasajeReservado(salidaId, numeroAsiento) {
@@ -201,7 +245,12 @@ document.addEventListener("DOMContentLoaded", function () {
             sellButton.style.display = "none";
         }
 
-        editButton.style.display = selectedReservedPasajeId ? "block" : "none";
+        if (selectedReservedPasajeId) {
+            editButton.style.display = "block";
+            editButton.textContent = "Editar pasaje";
+        } else {
+            editButton.style.display = "none";
+        }
     }
 
     function resetSeleccion() {

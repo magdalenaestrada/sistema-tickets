@@ -84,8 +84,6 @@ window.modoCrearSalida = function () {
 
 window.modoGenerarSalidas = function () {
     let html = `
-        <h6>Generar Salidas</h6>
-
         <div class="mb-2">
             <label class="form-label">Horario</label>
             <select id="horario_id_generar" class="form-select">
@@ -243,10 +241,20 @@ function verSalida(id) {
             <div class="mb-2"><strong>Tipo vehículo:</strong> ${salida.tipo_vehiculo ?? "-"}</div>
             <div class="mb-2"><strong>Estado:</strong> ${salida.estado ?? "-"}</div>
 
-            <hr>
+            <div class="d-grid gap-2">
+            <a href="${route("salidas.manifiesto_pasajeros", { salida: salida.id })}" class="btn btn-primary" target="_blank">
+                Manifiesto de pasajeros
+            </a>
 
-            <h6>Puntos de la ruta</h6>
-            ${puntos}
+            <a href="${route("salidas.manifiesto_encomiendas", { salida: salida.id })}" class="btn btn-warning" target="_blank">
+                Manifiesto de encomiendas
+            </a>
+
+            <a href="${route("salidas.manifiesto_conductores", { salida: salida.id })}" class="btn btn-success" target="_blank">
+                Manifiesto de conductores
+            </a>
+        </div>
+
         `;
 
         $("#tituloPanelSalida").text("Detalle de salida");
@@ -258,25 +266,72 @@ function verSalida(id) {
 function editarSalida(id) {
     $.get(route("salidas.show", { id: id }), function (salida) {
         let html = `
-            <h6>Editar Salida</h6>
-
             <div class="mb-2">
-                <label class="form-label">Horario</label>
+                <label class="form-label">Horario <span class="text-danger">*</span></label>
                 <select id="horario_id" class="form-select">
                     ${opcionesHorarios(salida.horario_id)}
                 </select>
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Fecha</label>
+                <label class="form-label">Fecha <span class="text-danger">*</span></label>
                 <input type="date" id="fecha_salida" class="form-control" value="${salida.fecha_salida}">
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Estado</label>
+                <label class="form-label">Estado <span class="text-danger">*</span></label>
                 <select id="estado" class="form-select">
                     ${opcionesEstados(salida.estado)}
                 </select>
+            </div>
+
+            <!-- BLOQUE NUEVO -->
+            <div id="bloqueAsignacionRuta" style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
+
+                <hr>
+
+                <div class="mb-2">
+                    <label class="form-label">Vehículo <span class="text-danger">*</span></label>
+                    <select id="vehiculo_id" class="form-select">
+                        <option value="">Seleccione vehículo</option>
+                        ${window.VEHICULOS.map(
+                            (v) => `
+                            <option value="${v.id}" ${v.id == salida.vehiculo_id ? "selected" : ""}>
+                                ${v.tipo_vehiculo.descripcion} - ${v.numero_placa} 
+                            </option>
+                        `,
+                        ).join("")}
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Conductor principal <span class="text-danger">*</span></label>
+                    <select id="conductor_principal_id" class="form-select">
+                        <option value="">Seleccione</option>
+                        ${window.CONDUCTORES.map(
+                            (c) => `
+                            <option value="${c.id}" ${c.id == salida.conductor_principal_id ? "selected" : ""}>
+                                ${c.persona.nombres} ${c.persona.apellidos}
+                            </option>
+                        `,
+                        ).join("")}
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Conductor secundario</label>
+                    <select id="conductor_secundario_id" class="form-select">
+                        <option value="">Opcional</option>
+                        ${window.CONDUCTORES.map(
+                            (c) => `
+                            <option value="${c.id}" ${c.id == salida.conductor_secundario_id ? "selected" : ""}>
+                                ${c.persona.nombres} ${c.persona.apellidos}
+                            </option>
+                        `,
+                        ).join("")}
+                    </select>
+                </div>
+
             </div>
 
             <button class="btn btn-success w-100 mt-2" onclick="guardarEdicionSalida(${salida.id})">
@@ -286,6 +341,15 @@ function editarSalida(id) {
 
         $("#tituloPanelSalida").text("Editar salida");
         $("#panelSalidaContenido").html(html);
+
+        $("#estado").on("change", function () {
+            if ($(this).val() === "en_ruta") {
+                $("#bloqueAsignacionRuta").slideDown();
+            } else {
+                $("#bloqueAsignacionRuta").slideUp();
+            }
+        });
+
         lucide.createIcons();
     });
 }
@@ -295,16 +359,21 @@ window.guardarEdicionSalida = function (id) {
     let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
 
+    let vehiculo_id = $("#vehiculo_id").val();
+    let conductor_principal_id = $("#conductor_principal_id").val();
+    let conductor_secundario_id = $("#conductor_secundario_id").val();
+
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
 
-    Swal.fire({
-        title: "Actualizando...",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-    });
+    if (estado === "en_ruta") {
+        if (!vehiculo_id || !conductor_principal_id) {
+            Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
+            return;
+        }
+    }
 
     $.ajax({
         url: route("salidas.update", { id: id }),
@@ -312,23 +381,16 @@ window.guardarEdicionSalida = function (id) {
         data: {
             _token: $("meta[name=csrf-token]").attr("content"),
             _method: "PUT",
-            horario_id: horario_id,
-            fecha_salida: fecha_salida,
-            estado: estado,
+            horario_id,
+            fecha_salida,
+            estado,
+            vehiculo_id,
+            conductor_principal_id,
+            conductor_secundario_id,
         },
         success: function () {
             Swal.fire("Actualizado", "", "success");
             tablaSalidas.ajax.reload();
-            $("#panelSalidaContenido").html(
-                '<p class="text-muted">Selecciona una salida</p>',
-            );
-        },
-        error: function (err) {
-            Swal.fire(
-                "Error",
-                err.responseJSON?.message || "No se pudo actualizar",
-                "error",
-            );
         },
     });
 };
@@ -380,4 +442,12 @@ $(document).on("click", ".editar", function () {
 $(document).on("click", ".eliminar", function () {
     let id = $(this).data("id");
     eliminarSalida(id);
+});
+
+$("#estado_salida").on("change", function () {
+    if ($(this).val() === "en_ruta") {
+        $("#bloqueAsignacionRuta").slideDown();
+    } else {
+        $("#bloqueAsignacionRuta").slideUp();
+    }
 });

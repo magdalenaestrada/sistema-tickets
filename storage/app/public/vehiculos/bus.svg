@@ -20,13 +20,13 @@
     .seat.ocupado .seat-body,
     .seat.ocupado .seat-base,
     .seat.ocupado .armrest {
-        fill: #e74c3c !important; /* Rojo */
+        fill: #51dc26 !important; /* Rojo */
     }
 
     .seat.reservado .seat-body,
     .seat.reservado .seat-base,
     .seat.reservado .armrest {
-        fill: #f39c12 !important; /* Naranja */
+        fill: #f9db16 !important; /* Naranja */
     }
 
     .seat.selected-seat .seat-body,

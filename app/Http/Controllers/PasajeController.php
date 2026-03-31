@@ -607,6 +607,8 @@ class PasajeController extends Controller
         $request->validate([
             'nueva_salida_id' => 'required|exists:salidas,id',
             'nuevo_asiento_numero' => 'required|integer|min:1',
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
         ]);
 
         if (!in_array($pasaje->estado, ['R', 'V'])) {
@@ -616,20 +618,9 @@ class PasajeController extends Controller
             ], 422);
         }
 
-        if (!$pasaje->salida_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El pasaje no tiene una salida asociada.'
-            ], 422);
-        }
-
         try {
             return DB::transaction(function () use ($request, $pasaje) {
-
-                $pasaje->load([
-                    'salida.horario.ruta',
-                    'tramos',
-                ]);
+                $pasaje->load(['salida.horario.ruta', 'tramos']);
 
                 $nuevaSalida = Salida::with([
                     'horario.tipo_vehiculo',
@@ -648,24 +639,10 @@ class PasajeController extends Controller
                     ], 422);
                 }
 
-                if (!$pasaje->origen_sucursal_id || !$pasaje->destino_sucursal_id) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El pasaje no tiene origen y destino definidos.'
-                    ], 422);
-                }
-
                 $asientos = $nuevaSalida->asientosDisponibles(
-                    $pasaje->origen_sucursal_id,
-                    $pasaje->destino_sucursal_id
+                    $request->origen_id,
+                    $request->destino_id
                 );
-
-                if (empty($asientos)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No se pudo calcular la disponibilidad para el nuevo viaje.'
-                    ], 422);
-                }
 
                 if (($asientos[$request->nuevo_asiento_numero] ?? 'ocupado') !== 'libre') {
                     return response()->json([
@@ -675,8 +652,8 @@ class PasajeController extends Controller
                 }
 
                 $tramos = $nuevaSalida->obtenerTramosDeViaje(
-                    $pasaje->origen_sucursal_id,
-                    $pasaje->destino_sucursal_id
+                    $request->origen_id,
+                    $request->destino_id
                 );
 
                 if ($tramos->isEmpty()) {
@@ -686,9 +663,19 @@ class PasajeController extends Controller
                     ], 422);
                 }
 
+                $nuevoPrecio = $tramos->sum('costo_tramo');
+
+                $descuentoMonto = (float) ($request->descuento_monto ?? 0);
+                $nuevoPrecio = max(0, $tramos->sum('costo_tramo') - $descuentoMonto);
+
+
                 $pasaje->update([
                     'salida_id' => $nuevaSalida->id,
+                    'origen_sucursal_id' => $request->origen_id,
+                    'destino_sucursal_id' => $request->destino_id,
                     'asiento_numero' => $request->nuevo_asiento_numero,
+                    'precio_cobrado' => $nuevoPrecio,
+                    'es_promocion' => (int) $request->descuento_id === 1,
                     'fecha_inactivacion' => null,
                 ]);
 
@@ -696,14 +683,7 @@ class PasajeController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Salida y asiento actualizados correctamente.',
-                    'data' => [
-                        'pasaje_id' => $pasaje->id,
-                        'salida_id' => $nuevaSalida->id,
-                        'asiento_numero' => $pasaje->asiento_numero,
-                        'fecha_salida' => optional($nuevaSalida->fecha_salida)->format('Y-m-d'),
-                        'hora_salida' => $nuevaSalida->horario?->hora_formateada,
-                    ]
+                    'message' => 'Pasaje actualizado correctamente.',
                 ]);
             });
         } catch (Throwable $e) {
@@ -797,5 +777,166 @@ class PasajeController extends Controller
             'metodos_pago',
             'billeteras_digitales'
         ));
+    }
+
+    public function actualizar(Request $request, Pasaje $pasaje)
+    {
+        if (!in_array($pasaje->estado, ['R', 'V'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se pueden editar pasajes reservados o vendidos.'
+            ], 422);
+        }
+
+        $request->validate([
+            'tipo_documento_id' => 'required|integer',
+            'documento' => 'required|string|max:20',
+            'nombres' => 'required|string|max:200',
+            'apellidos' => 'required|string|max:200',
+            'celular' => 'required|string|max:20',
+            'telefono' => 'nullable|string|max:20',
+            'correo' => 'nullable|email|max:255',
+            'pasajero_menor' => 'nullable|boolean',
+            'descuento_id' => 'nullable|exists:descuentos,id',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $persona = Persona::updateOrCreate(
+                ['documento' => $request->documento],
+                [
+                    'tipo_documento_id' => $request->tipo_documento_id,
+                    'nombres' => $request->nombres,
+                    'apellidos' => $request->apellidos,
+                    'celular' => $request->celular,
+                    'telefono' => $request->telefono,
+                    'correo' => $request->correo,
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
+                ]
+            );
+
+            $autorizacionPdf = $pasaje->autorizacion_pdf;
+
+            $esMenor = (bool) $request->pasajero_menor;
+
+            if ($esMenor) {
+                if ($request->hasFile('autorizacion_pdf')) {
+                    $autorizacionPdf = $request->file('autorizacion_pdf')->store('pasajes', 'public');
+                } elseif (!$autorizacionPdf) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El pasajero menor requiere autorización PDF.'
+                    ], 422);
+                }
+            } else {
+                $autorizacionPdf = null;
+            }
+
+            $pasaje->update([
+                'persona_id' => $persona->id,
+                'pasajero_menor' => $esMenor,
+                'autorizacion_pdf' => $autorizacionPdf,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pasaje actualizado correctamente.',
+                'redirect' => route('pasajes.index'),
+            ]);
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function actualizarVenta(Request $request, Pasaje $pasaje)
+    {
+        if (!$pasaje->venta_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este pasaje no tiene venta asociada.'
+            ], 422);
+        }
+
+        if ($pasaje->estado !== 'V') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se puede editar la venta de pasajes vendidos.'
+            ], 422);
+        }
+
+        $request->validate([
+            'tipo_documento_factura_id' => 'required|integer',
+            'numero_documento_id' => 'nullable|string|max:20',
+            'razon_social' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $personaVenta = Persona::updateOrCreate(
+                ['documento' => $request->numero_documento_id ?: 'SIN-DOC-' . $pasaje->venta_id],
+                [
+                    'tipo_documento_id' => $request->tipo_documento_factura_id,
+                    'nombres' => $request->razon_social ?: 'CLIENTE',
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
+                ]
+            );
+
+            $pasaje->venta->update([
+                'persona_id' => $personaVenta->id,
+                'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta actualizada correctamente.',
+            ]);
+        } catch (Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function buscarPasaje(Request $request)
+    {
+        $request->validate([
+            'salida_id' => 'required|exists:salidas,id',
+            'asiento' => 'required|integer|min:1',
+        ]);
+
+        $pasaje = Pasaje::where('salida_id', $request->salida_id)
+            ->where('asiento_numero', $request->asiento)
+            ->whereIn('estado', ['R', 'V', 'F'])
+            ->latest('id')
+            ->first();
+
+        if (!$pasaje) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró pasaje para ese asiento.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'pasaje_id' => $pasaje->id,
+            'estado' => $pasaje->estado,
+        ]);
     }
 }
