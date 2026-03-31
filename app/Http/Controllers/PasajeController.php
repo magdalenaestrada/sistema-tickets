@@ -12,6 +12,7 @@ use App\Models\BilleteraDigital;
 use App\Models\Descuento;
 use App\Models\Persona;
 use App\Models\Venta;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -52,9 +53,10 @@ class PasajeController extends Controller
                 $salida->origen_nombre = $puntos->first()?->sucursal?->nombre_comercial ?? '—';
                 $salida->destino_nombre = $puntos->last()?->sucursal?->nombre_comercial ?? '—';
 
-                $salida->capacidad_bus = $salida->horario->tipo_vehiculo->capacidad
-                    ?? $salida->horario->tipo_vehiculo->asientos
-                    ?? 0;
+                $origenId = $puntos->first()?->sucursal_id;
+                $destinoId = $puntos->last()?->sucursal_id;
+                $asientosMap = $salida->asientosDisponibles($origenId, $destinoId);
+                $salida->capacidad_bus = collect($asientosMap)->filter(fn($estado) => $estado === 'libre')->count();
 
                 return $salida;
             });
@@ -62,7 +64,6 @@ class PasajeController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
-
         return view('pasajes.index', compact('hoy', 'salidas', 'sucursales'));
     }
 
@@ -410,12 +411,13 @@ class PasajeController extends Controller
 
                 $pagoEfectivo = (float) ($request->pago_efectivo ?? 0);
                 $pagoBilletera = (float) ($request->pago_billetera ?? 0);
-
+                $hoy = Carbon::now();
                 if ($pagoEfectivo > 0) {
                     $venta->pagos()->create([
                         'metodo_pago_id' => 1,
                         'billetera_id' => null,
                         'total' => $pagoEfectivo,
+                        'fecha_creacion' => $hoy,
                     ]);
                 }
 
@@ -424,6 +426,8 @@ class PasajeController extends Controller
                         'metodo_pago_id' => 2,
                         'billetera_id' => $request->billetera_id,
                         'total' => $pagoBilletera,
+                        'fecha_creacion' => $hoy,
+
                     ]);
                 }
             }

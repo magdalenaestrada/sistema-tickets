@@ -238,12 +238,15 @@ document.addEventListener("DOMContentLoaded", function () {
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
 
-        console.log({
-            fecha,
-            origen,
-            destino,
-        });
-        
+        if (!fecha || !origen || !destino) {
+            document
+                .querySelectorAll(".horario-row")
+                .forEach((r) => (r.style.display = "none"));
+            document.getElementById("estado-inicial").style.display = "block";
+            document.getElementById("resultados-info").textContent = "";
+            return;
+        }
+
         const estadoInicial = document.getElementById("estado-inicial");
         const rows = document.querySelectorAll(".horario-row");
 
@@ -321,8 +324,4 @@ document.addEventListener("DOMContentLoaded", function () {
     ["filtro_fecha", "filtro_origen", "filtro_destino"].forEach((id) => {
         document.getElementById(id)?.addEventListener("change", filtrarSalidas);
     });
-
-
-
 });
-

@@ -250,12 +250,12 @@
 
         .seat.reservado .seat-body,
         .seat.reservado .seat-base {
-            fill: #f97316 !important;
+            fill: #f9db16 !important;
         }
 
         .seat.ocupado .seat-body,
         .seat.ocupado .seat-base {
-            fill: #dc2626 !important;
+            fill: #51dc26 !important;
         }
 
         .seat.selected-seat .seat-body,
@@ -307,13 +307,6 @@
                         </div>
 
                         @foreach ($salidas as $salida)
-                            {{--
-                                CAMBIO CLAVE: el atributo usa comillas simples como delimitador
-                                para que el JSON interior (con comillas dobles escapadas via
-                                JSON_HEX_QUOT en el controlador como &quot;) funcione sin
-                                romper el HTML. Blade escapa {{ }} con htmlspecialchars por
-                                defecto, así que NO usamos htmlspecialchars() manual.
-                            --}}
                             <div class="horario-row" style="display:none;" data-salida-id="{{ $salida->id }}"
                                 data-tipo-viaje-id="{{ $salida->horario->tipo_viaje_id }}"
                                 data-fecha="{{ optional($salida->fecha_salida)->format('Y-m-d') }}"
@@ -357,10 +350,10 @@
                             <span class="leyenda-dot" style="background:#cbd5e1;"></span> Libre
                         </div>
                         <div class="leyenda-item">
-                            <span class="leyenda-dot" style="background:#f97316;"></span> Reservado
+                            <span class="leyenda-dot" style="background:#f9db16;"></span> Reservado
                         </div>
                         <div class="leyenda-item">
-                            <span class="leyenda-dot" style="background:#dc2626;"></span> Vendido
+                            <span class="leyenda-dot" style="background:#51dc26;"></span> Vendido
                         </div>
                         <div class="leyenda-item">
                             <span class="leyenda-dot" style="background:#2563eb;"></span> Seleccionado
