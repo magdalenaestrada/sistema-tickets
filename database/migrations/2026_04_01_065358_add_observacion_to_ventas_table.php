@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rutas', function (Blueprint $table) {
-            $table->id();
-            $table->string('nombre');
-            $table->foreignId('tipo_viaje_id')->nullable()->constrained('tipos_viajes');
-            $table->string('estado')->default("A");
-            $table->timestamps();
+        Schema::table('ventas', function (Blueprint $table) {
+            $table->text('observacion')->nullable();
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rutas');
+        Schema::table('ventas', function (Blueprint $table) {
+            //
+        });
     }
 };

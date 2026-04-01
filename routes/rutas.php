@@ -12,4 +12,6 @@ Route::middleware(['auth'])->prefix('rutas')->name('rutas.')->group(function () 
     Route::put('/{id}', [RutaController::class, 'update'])->name('update');
     Route::get('/{id}', [RutaController::class, 'show'])->name('show');
     Route::delete('/{id}', [RutaController::class, 'destroy'])->name('destroy');
+    Route::post('/{id}/activar', [RutaController::class, 'activar'])->name('activar');
+    Route::post('/{id}/desactivar', [RutaController::class, 'desactivar'])->name('desactivar');
 });

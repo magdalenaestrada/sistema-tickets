@@ -29,9 +29,16 @@ class RutaController extends Controller
             ->addColumn('puntos', function ($ruta) {
                 return $ruta->puntos->count();
             })
-
+            ->addColumn('estado', function ($ruta) {
+                if ($ruta->estado == "A") {
+                    return '<span class="badge bagde-pill bg-success">ACTIVO </span>';
+                } else {
+                    return '<span class="badge bagde-pill bg-danger">INACTIVO </span>';
+                }
+            })
             ->addColumn('acciones', function ($ruta) {
-                return '
+                if ($ruta->estado == "A") {
+                    return '
 
                  <button class="btn btn-light btn-xs ver" data-id="' . $ruta->id . '">
                     <i class="link-icon" data-lucide="info"></i>
@@ -44,8 +51,14 @@ class RutaController extends Controller
                 <button class="btn btn-danger btn-xs desactivar" data-id="' . $ruta->id . '">
                     <i class="link-icon" data-lucide="eye-closed"></i>
                 </button>';
+                } else {
+                    return '
+                <button class="btn btn-success btn-xs activar" data-id="' . $ruta->id . '">
+                    <i class="link-icon" data-lucide="eye"></i>
+                </button>';
+                }
             })
-            ->rawColumns(['acciones'])
+            ->rawColumns(['acciones', 'estado'])
             ->make(true);
     }
 
@@ -112,14 +125,14 @@ class RutaController extends Controller
     public function edit($id)
     {
         $ruta = Ruta::with('puntos')->findOrFail($id);
-        $sucursales = Sucursal::all();
+        $sucursales = Sucursal::where("estado", "A");
 
         return view('rutas.edit', compact('ruta', 'sucursales'));
     }
 
     public function update(Request $request, $id)
     {
-        
+
         $ruta = Ruta::findOrFail($id);
 
         DB::beginTransaction();
@@ -198,7 +211,7 @@ class RutaController extends Controller
                 return [
                     'id' => $p->id,
                     'sucursal_id' => $p->sucursal_id,
-                    'nombre' => $p->sucursal->nombre_comercial
+                    'nombre_comercial' => $p->sucursal->nombre_comercial
                 ];
             }),
 
@@ -239,5 +252,33 @@ class RutaController extends Controller
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    public function desactivar($id)
+    {
+        $ruta = Ruta::findOrFail($id);
+
+        $ruta->update([
+            "estado" => "I"
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Ruta desactivada'
+        ]);
+    }
+
+    public function activar($id)
+    {
+        $ruta = Ruta::findOrFail($id);
+
+        $ruta->update([
+            "estado" => "A"
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Ruta activada'
+        ]);
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\SalidaController;
 
 Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function () {
     Route::get('/', [SalidaController::class, 'index'])->name('index');
+    Route::get('/index-vendedor', [SalidaController::class, 'index_vendedor'])->name('index-vendedor');
     Route::get('/datatable', [SalidaController::class, 'datatable'])->name('datatable');
     Route::post('/', [SalidaController::class, 'store'])->name('store');
     Route::post('/generar', [SalidaController::class, 'generar'])->name('generar');

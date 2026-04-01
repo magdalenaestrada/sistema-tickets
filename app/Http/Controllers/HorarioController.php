@@ -14,7 +14,7 @@ class HorarioController extends Controller
 {
     public function index()
     {
-        $rutas = Ruta::select('id', 'nombre')->orderBy('nombre')->get();
+        $rutas = Ruta::where("estado", "A")->select('id', 'nombre')->orderBy('nombre')->get();
         $tiposViaje = TipoViaje::select('id', 'descripcion')->orderBy('descripcion')->get();
         $tiposVehiculo = TipoVehiculo::select('id', 'descripcion')->orderBy('descripcion')->get();
 

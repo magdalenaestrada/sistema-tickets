@@ -60,33 +60,33 @@ window.modoCrearHorario = function () {
     let html = `
 
         <div class="mb-2">
-            <label class="form-label">Ruta</label>
-            <select id="ruta_id" class="form-select">
+            <label class="form-label">Ruta <span style="color: red">*</span></label>
+            <select id="ruta_id" class="form-select" required>
                 ${opcionesRutas()}
             </select>
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Tipo de viaje</label>
+            <label class="form-label">Tipo de viaje <span style="color: red">*</span></label>
             <select id="tipo_viaje_id" class="form-select">
                 ${opcionesTiposViaje()}
             </select>
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Tipo de vehículo</label>
+            <label class="form-label">Tipo de vehículo <span style="color: red">*</span></label>
             <select id="tipo_vehiculo_id" class="form-select">
                 ${opcionesTiposVehiculo()}
             </select>
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Hora salida</label>
+            <label class="form-label">Hora salida <span style="color: red">*</span></label>
             <input type="time" id="hora_salida" class="form-control">
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Costo total S/</label>
+            <label class="form-label">Costo total S/ <span style="color: red">*</span></label>
             <input type="number" id="costo_base" class="form-control" min="0" step="0.01">
         </div>
 
@@ -201,33 +201,34 @@ function editarHorario(id) {
             <h6>Editar Horario</h6>
 
             <div class="mb-2">
-                <label class="form-label">Ruta</label>
-                <select id="ruta_id" class="form-select">
+                <label class="form-label">Ruta <span
+                                style="color: red">*</span></label>
+                <select id="ruta_id" class="form-select" required>
                     ${opcionesRutas(horario.ruta_id)}
                 </select>
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Tipo de viaje</label>
+                <label class="form-label">Tipo de viaje <span style="color: red">*</span></label>
                 <select id="tipo_viaje_id" class="form-select">
                     ${opcionesTiposViaje(horario.tipo_viaje_id)}
                 </select>
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Tipo de vehículo</label>
+                <label class="form-label">Tipo de vehículo <span style="color: red">*</span></label>
                 <select id="tipo_vehiculo_id" class="form-select">
                     ${opcionesTiposVehiculo(horario.tipo_vehiculo_id)}
                 </select>
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Hora salida</label>
+                <label class="form-label">Hora salida <span style="color: red">*</span></label>
                 <input type="time" id="hora_salida" class="form-control" value="${(horario.hora_salida || "").substring(0, 5)}">
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Costo base</label>
+                <label class="form-label">Costo base S/ <span style="color: red">*</span></label>
                 <input type="number" id="costo_base" class="form-control" min="0" step="0.01" value="${horario.costo_base}">
             </div>
 

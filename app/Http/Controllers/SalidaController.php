@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Empleado;
 use App\Models\Empresa;
+use App\Models\Horario;
 use App\Models\Salida;
 use App\Models\Vehiculo;
 use App\Services\PdfService;
@@ -18,8 +19,42 @@ class SalidaController extends Controller
     {
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
         $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
-        return view('salidas.index', compact('vehiculos', 'conductores'));
+        $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
+            ->get()
+            ->map(function ($h) {
+                return [
+                    'id' => $h->id,
+                    'tipo_vehiculo_id' => $h->tipo_vehiculo_id,
+                    'nombre' => ($h->ruta?->nombre ?? 'Sin ruta') .
+                        ' - ' .
+                        ($h->hora_formateada ?? '') .
+                        ' - ' .
+                        ($h->tipo_vehiculo?->descripcion ?? ''),
+                ];
+            });
+        return view('salidas.index', compact('vehiculos', 'conductores', 'horariosSalida'));
     }
+
+    public function index_vendedor()
+    {
+        $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
+        $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
+        $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
+            ->get()
+            ->map(function ($h) {
+                return [
+                    'id' => $h->id,
+                    'tipo_vehiculo_id' => $h->tipo_vehiculo_id,
+                    'nombre' => ($h->ruta?->nombre ?? 'Sin ruta') .
+                        ' - ' .
+                        ($h->hora_formateada ?? '') .
+                        ' - ' .
+                        ($h->tipo_vehiculo?->descripcion ?? ''),
+                ];
+            });
+        return view('salidas.index-vendedor', compact('vehiculos', 'conductores', 'horariosSalida'));
+    }
+
 
     public function datatable()
     {
@@ -65,10 +100,6 @@ class SalidaController extends Controller
                     <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
                         <i class="link-icon" data-lucide="pen"></i>
                     </button>
-
-                    <button class="btn btn-danger btn-xs eliminar" data-id="' . $salida->id . '">
-                        <i class="link-icon" data-lucide="trash"></i>
-                    </button>
                 ';
             })
             ->rawColumns(['acciones', 'estado_badge'])
@@ -89,7 +120,7 @@ class SalidaController extends Controller
             'pasajes.venta',
         ]);
 
-        $empresa = \App\Models\Empresa::first();
+        $empresa = Empresa::first();
 
         $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
         $origenNombre = $puntos->first()?->sucursal?->distrito?->nombre ?? '-';
@@ -168,8 +199,6 @@ class SalidaController extends Controller
             'P'
         );
     }
-
-
 
     public function show($id)
     {

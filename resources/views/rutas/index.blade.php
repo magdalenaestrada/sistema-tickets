@@ -5,24 +5,27 @@
         <div class="col-md-7">
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
-                    <h5>Rutas</h5>
+                    <h5>Lista de rutas</h5>
 
                     <button class="btn btn-primary" onclick="modoCrear()">
-                        <i data-lucide="plus"></i> Nueva
+                        <i data-lucide="plus"></i> Nueva ruta
                     </button>
                 </div>
 
                 <div class="card-body">
-                    <table id="tablaRutas" class="table table-responsive table-hover">
-                        <thead class="thead-primary">
-                            <tr>
-                                <td>ID</td>
-                                <td>NOMBRE</td>
-                                <td>PUNTOS</td>
-                                <td>ACCIONES</td>
-                            </tr>
-                        </thead>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="tablaRutas" class="table table-hover w-100">
+                            <thead class="table-primary">
+                                <tr>
+                                    <td>ID</td>
+                                    <td>NOMBRE</td>
+                                    <td>PUNTOS</td>
+                                    <td>ESTADO</td>
+                                    <td>ACCIONES</td>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -36,7 +39,7 @@
                 <div class="card-body" id="panelContenido">
                     <p class="text-muted">Selecciona una ruta</p>
                 </div>
-                
+
                 <div id="contenedorTramos"></div>
 
             </div>
@@ -47,5 +50,6 @@
 
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="{{ asset('js/rutas.js') }}"></script>
 @endpush

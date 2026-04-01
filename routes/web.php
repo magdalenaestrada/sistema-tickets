@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardVendedorController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Caja;
 use App\Services\VentaService;
@@ -11,9 +13,13 @@ Route::get('/', function () {
 });
 
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/vendedor', DashboardVendedorController::class)
+        ->name('dashboard.vendedor');
+
+    Route::get('/dashboard/admin', DashboardAdminController::class)
+        ->name('dashboard.admin');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

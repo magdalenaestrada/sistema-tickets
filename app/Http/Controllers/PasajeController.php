@@ -381,13 +381,21 @@ class PasajeController extends Controller
                     $personaFacturacion = $primerPasajero;
                 }
 
+                $tipoDoc = $request->tipo_documento_factura_id;
+
+                $serie = match ($tipoDoc) {
+                    1 => 'B001',
+                    2 => 'F001',
+                    default => 'B001',
+                };
+
                 $venta = Venta::create([
                     'tipo_servicio_id' => 1,
                     'sucursal_id' => Auth::user()->sucursal_id,
                     'usuario_id' => Auth::id(),
                     'persona_id' => $personaFacturacion->id,
-                    'tipo_documento_factura_id' => $request->tipo_documento_factura_id ?? 1,
-                    'serie' => 'TEMP',
+                    'tipo_documento_factura_id' => $tipoDoc,
+                    'serie' => $serie,
                     'numero' => 1,
                     'total' => $totalVenta,
                     'fecha_emision' => now(),

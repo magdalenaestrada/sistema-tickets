@@ -14,6 +14,7 @@ $(document).ready(async function () {
             { data: "id" },
             { data: "nombre" },
             { data: "puntos" },
+            { data: "estado" },
             { data: "acciones" },
         ],
 
@@ -33,7 +34,8 @@ $(document).ready(async function () {
     window.modoCrear = function () {
         let html = `
        <form id="formRuta">
-    <h6 class="mb-2"><b>NOMBRE DE LA RUTA</b></h6>
+    <h6 class="mb-2"><b>NOMBRE DE LA RUTA <span
+                                style="color: red">*</span></b></h6>
 
     <input type="text" id="nombreNuevaRuta"
         class="form-control mb-3"
@@ -72,9 +74,9 @@ $(document).ready(async function () {
         setTimeout(() => {
             agregarPunto();
             agregarPunto();
+            activarOrdenamiento();
         }, 100);
     };
-
 });
 
 window.guardarRuta = function () {
@@ -148,11 +150,13 @@ function obtenerOpcionesDisponibles() {
 
 function agregarPunto(valorSeleccionado = null) {
     let options = obtenerOpcionesDisponibles();
-
     let index = $("#contenedorPuntos .punto").length + 1;
 
     let html = `
-        <div class="punto d-flex align-items-center gap-2 mb-2">
+        <div class="punto d-flex align-items-center gap-2 mb-2 border rounded p-2">
+            <span class="drag-handle" style="cursor: grab;">
+                <i data-lucide="grip-vertical"></i>
+            </span>
 
             <span class="badge bg-secondary">${index}</span>
 
@@ -164,7 +168,6 @@ function agregarPunto(valorSeleccionado = null) {
                 onclick="eliminarPunto(this)">
                 <i data-lucide="trash"></i>
             </button>
-
         </div>
     `;
 
@@ -277,7 +280,7 @@ function verRuta(id) {
                     .map(
                         (p, i) => `
                     <li class="list-group-item d-flex justify-content-between">
-                        <span>${i + 1}. ${p.sucursal.nombre_comercial}</span>
+                        <span>${i + 1}. ${p.nombre_comercial}</span>
                     </li>
                 `,
                     )
@@ -324,6 +327,7 @@ function editarRuta(id) {
         });
 
         setTimeout(() => {
+            activarOrdenamiento();
             generarTramos(ruta.tramos);
         }, 100);
 
@@ -377,6 +381,27 @@ $(document).on("click", ".desactivar", function () {
                 _token: $("meta[name=csrf-token]").attr("content"),
             }).done(function () {
                 Swal.fire("Desactivado", "", "success");
+                tablaRutas.ajax.reload();
+            });
+        }
+    });
+});
+
+
+$(document).on("click", ".activar", function () {
+    let id = $(this).data("id");
+
+    Swal.fire({
+        title: "¿Activar ruta?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, activar",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post(route("rutas.activar", id), {
+                _token: $("meta[name=csrf-token]").attr("content"),
+            }).done(function () {
+                Swal.fire("Activado", "", "success");
                 tablaRutas.ajax.reload();
             });
         }
@@ -502,4 +527,25 @@ function generarTramos(tramosData = []) {
     }
 
     $("#contenedorTramos").html(html);
+}
+
+let sortablePuntos = null;
+
+function activarOrdenamiento() {
+    const contenedor = document.getElementById("contenedorPuntos");
+
+    if (!contenedor) return;
+
+    if (sortablePuntos) {
+        sortablePuntos.destroy();
+    }
+
+    sortablePuntos = new Sortable(contenedor, {
+        animation: 150,
+        handle: ".drag-handle",
+        onEnd: function () {
+            reordenarPuntos();
+            generarTramos();
+        },
+    });
 }

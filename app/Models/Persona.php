@@ -18,7 +18,7 @@ class Persona extends Model
         'documento',
         'nombres',
         'apellidos',
-        'razon_social',    
+        'razon_social',
         'telefono',
         'celular',
         'correo',
@@ -35,10 +35,6 @@ class Persona extends Model
         'fecha_nacimiento',
         'deleted_at',
     ];
-
-    // ========================
-    // 🔗 Relaciones
-    // ========================
 
     public function tipoDocumento()
     {
@@ -68,5 +64,14 @@ class Persona extends Model
     public function encomiendasRecibidas()
     {
         return $this->hasMany(Encomienda::class, 'receptor_persona_id');
+    }
+
+    public function getNombreFacturacionAttribute()
+    {
+        if (!empty($this->razon_social)) {
+            return $this->razon_social;
+        }
+
+        return trim(($this->nombres ?? '') . ' ' . ($this->apellidos ?? ''));
     }
 }

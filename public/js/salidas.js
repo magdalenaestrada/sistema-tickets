@@ -54,19 +54,22 @@ function opcionesEstados(selected = "programado") {
 window.modoCrearSalida = function () {
     let html = `
         <div class="mb-2">
-            <label class="form-label">Horario</label>
-            <select id="horario_id" class="form-select">
+            <label class="form-label">Horario <span
+                                style="color: red">*</span></label>
+            <select id="horario_id">
                 ${opcionesHorarios()}
             </select>
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Fecha</label>
+            <label class="form-label">Fecha <span
+                                style="color: red">*</span></label>
             <input type="date" id="fecha_salida" class="form-control">
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Estado</label>
+            <label class="form-label">Estado <span
+                                style="color: red">*</span></label>
             <select id="estado" class="form-select">
                 ${opcionesEstados()}
             </select>
@@ -79,30 +82,40 @@ window.modoCrearSalida = function () {
 
     $("#tituloPanelSalida").text("Crear salida");
     $("#panelSalidaContenido").html(html);
+
+    new TomSelect("#horario_id", {
+        create: false,
+        placeholder: "Seleccione horario...",
+    });
+
     lucide.createIcons();
 };
 
 window.modoGenerarSalidas = function () {
     let html = `
         <div class="mb-2">
-            <label class="form-label">Horario</label>
-            <select id="horario_id_generar" class="form-select">
+            <label class="form-label">Horario <span
+                                style="color: red">*</span></label>
+            <select id="horario_id_generar">
                 ${opcionesHorarios()}
             </select>
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Fecha inicio</label>
+            <label class="form-label">Fecha inicio <span
+                                style="color: red">*</span></label>
             <input type="date" id="fecha_inicio" class="form-control">
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Fecha fin</label>
+            <label class="form-label">Fecha fin <span
+                                style="color: red">*</span></label>
             <input type="date" id="fecha_fin" class="form-control">
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Días</label>
+            <label class="form-label">Días <span
+                                style="color: red">*</span></label>
 
             <div class="d-flex flex-column gap-1">
                 <label><input type="checkbox" class="dia" value="1"> Lunes</label>
@@ -122,6 +135,10 @@ window.modoGenerarSalidas = function () {
 
     $("#tituloPanelSalida").text("Generar salidas");
     $("#panelSalidaContenido").html(html);
+    new TomSelect("#horario_id_generar", {
+        create: false,
+        placeholder: "Seleccione horario...",
+    });
     lucide.createIcons();
 };
 
@@ -214,6 +231,7 @@ window.generarSalidas = function () {
 function verSalida(id) {
     $.get(route("salidas.show", { id: id }), function (salida) {
         let puntos = "";
+        let botones = "";
 
         if (salida.ruta?.puntos?.length) {
             puntos = `
@@ -221,10 +239,10 @@ function verSalida(id) {
                     ${salida.ruta.puntos
                         .map(
                             (p) => `
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>${p.orden}. ${p.nombre}</span>
-                        </li>
-                    `,
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>${p.orden}. ${p.nombre}</span>
+                                </li>
+                            `,
                         )
                         .join("")}
                 </ul>
@@ -240,25 +258,28 @@ function verSalida(id) {
             <div class="mb-2"><strong>Tipo viaje:</strong> ${salida.tipo_viaje ?? "-"}</div>
             <div class="mb-2"><strong>Tipo vehículo:</strong> ${salida.tipo_vehiculo ?? "-"}</div>
             <div class="mb-2"><strong>Estado:</strong> ${salida.estado ?? "-"}</div>
-
-            <div class="d-grid gap-2">
-            <a href="${route("salidas.manifiesto_pasajeros", { salida: salida.id })}" class="btn btn-primary" target="_blank">
-                Manifiesto de pasajeros
-            </a>
-
-            <a href="${route("salidas.manifiesto_encomiendas", { salida: salida.id })}" class="btn btn-warning" target="_blank">
-                Manifiesto de encomiendas
-            </a>
-
-            <a href="${route("salidas.manifiesto_conductores", { salida: salida.id })}" class="btn btn-success" target="_blank">
-                Manifiesto de conductores
-            </a>
-        </div>
-
         `;
 
+        if (salida.estado === "en_ruta") {
+            botones = `
+                <div class="d-grid gap-2 mt-3">
+                    <a href="${route("salidas.manifiesto_pasajeros", { salida: salida.id })}" class="btn btn-primary" target="_blank">
+                        Manifiesto de pasajeros
+                    </a>
+
+                    <a href="${route("salidas.manifiesto_encomiendas", { salida: salida.id })}" class="btn btn-warning" target="_blank">
+                        Manifiesto de encomiendas
+                    </a>
+
+                    <a href="${route("salidas.manifiesto_conductores", { salida: salida.id })}" class="btn btn-success" target="_blank">
+                        Manifiesto de conductores
+                    </a>
+                </div>
+            `;
+        }
+
         $("#tituloPanelSalida").text("Detalle de salida");
-        $("#panelSalidaContenido").html(html);
+        $("#panelSalidaContenido").html(html + puntos + botones);
         lucide.createIcons();
     });
 }
@@ -268,7 +289,7 @@ function editarSalida(id) {
         let html = `
             <div class="mb-2">
                 <label class="form-label">Horario <span class="text-danger">*</span></label>
-                <select id="horario_id" class="form-select">
+                <select id="horario_id" >
                     ${opcionesHorarios(salida.horario_id)}
                 </select>
             </div>
@@ -341,6 +362,34 @@ function editarSalida(id) {
 
         $("#tituloPanelSalida").text("Editar salida");
         $("#panelSalidaContenido").html(html);
+
+        let horario = window.HORARIOS_SALIDA.find(
+            (h) => String(h.id) === String(salida.horario_id),
+        );
+
+        if (horario) {
+            let filtrados = window.VEHICULOS.filter(
+                (v) =>
+                    String(v.tipo_vehiculo_id) ===
+                    String(horario.tipo_vehiculo_id),
+            );
+
+            let options = `<option value="">Seleccione vehículo</option>`;
+
+            filtrados.forEach((v) => {
+                options += `
+            <option value="${v.id}" ${String(v.id) === String(salida.vehiculo_id) ? "selected" : ""}>
+                ${v.tipo_vehiculo.descripcion} - ${v.numero_placa}
+            </option>
+        `;
+            });
+
+            $("#vehiculo_id").html(options);
+        }
+
+        new TomSelect("#horario_id", {
+            create: false,
+        });
 
         $("#estado").on("change", function () {
             if ($(this).val() === "en_ruta") {
@@ -450,4 +499,33 @@ $("#estado_salida").on("change", function () {
     } else {
         $("#bloqueAsignacionRuta").slideUp();
     }
+});
+
+$(document).on("change", "#horario_id", function () {
+    let horario_id = $(this).val();
+
+    let horario = window.HORARIOS_SALIDA.find(
+        (h) => String(h.id) === String(horario_id),
+    );
+
+    if (!horario) {
+        $("#vehiculo_id").html('<option value="">Seleccione vehículo</option>');
+        return;
+    }
+
+    let filtrados = window.VEHICULOS.filter(
+        (v) => String(v.tipo_vehiculo_id) === String(horario.tipo_vehiculo_id),
+    );
+
+    let options = `<option value="">Seleccione vehículo</option>`;
+
+    filtrados.forEach((v) => {
+        options += `
+            <option value="${v.id}">
+                ${v.tipo_vehiculo.descripcion} - ${v.numero_placa}
+            </option>
+        `;
+    });
+
+    $("#vehiculo_id").html(options);
 });

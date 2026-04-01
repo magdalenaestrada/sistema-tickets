@@ -96,7 +96,7 @@ class Salida extends Model
             return [];
         }
 
-        $tramoIds = $tramos->pluck('id');
+        $tramoIds = $tramos->pluck('id')->toArray();
 
         $pasajes = DB::table('pasajes')
             ->join('pasaje_tramos', 'pasajes.id', '=', 'pasaje_tramos.pasaje_id')
@@ -104,18 +104,9 @@ class Salida extends Model
             ->whereIn('pasaje_tramos.tramo_id', $tramoIds)
             ->whereIn('pasajes.estado', ['R', 'V'])
             ->select('pasajes.asiento_numero', 'pasajes.estado')
-            ->get();
-
-        $ocupados = [];
-        $reservados = [];
-
-        foreach ($pasajes as $p) {
-            if ($p->estado === 'V') {
-                $ocupados[] = $p->asiento_numero;
-            } elseif ($p->estado === 'R') {
-                $reservados[] = $p->asiento_numero;
-            }
-        }
+            ->distinct()
+            ->get()
+            ->groupBy('asiento_numero');
 
         $totalAsientos = $this->horario?->tipo_vehiculo?->capacidad
             ?? $this->horario?->tipo_vehiculo?->asientos
@@ -124,9 +115,16 @@ class Salida extends Model
         $asientos = [];
 
         for ($i = 1; $i <= $totalAsientos; $i++) {
-            if (in_array($i, $ocupados)) {
+            if (!isset($pasajes[$i])) {
+                $asientos[$i] = 'libre';
+                continue;
+            }
+
+            $estados = $pasajes[$i]->pluck('estado')->unique();
+
+            if ($estados->contains('V')) {
                 $asientos[$i] = 'ocupado';
-            } elseif (in_array($i, $reservados)) {
+            } elseif ($estados->contains('R')) {
                 $asientos[$i] = 'reservado';
             } else {
                 $asientos[$i] = 'libre';
@@ -135,6 +133,7 @@ class Salida extends Model
 
         return $asientos;
     }
+    
     public function calcularCostoPorTramos($origenSucursalId, $destinoSucursalId)
     {
         return $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)

@@ -6,18 +6,6 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Gestión de salidas</h5>
-
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-success" onclick="modoGenerarSalidas()">
-                            <i class="link-icon" data-lucide="calendar-plus"></i>
-                            Generar salidas
-                        </button>
-
-                        <button class="btn btn-primary" onclick="modoCrearSalida()">
-                            <i class="link-icon" data-lucide="plus"></i>
-                            Añadir salida
-                        </button>
-                    </div>
                 </div>
 
                 <div class="card-body">

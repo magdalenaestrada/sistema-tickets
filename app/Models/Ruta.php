@@ -9,7 +9,8 @@ class Ruta extends Model
     protected $table = "rutas";
     protected $fillable = [
         "nombre",
-        "tipo_viaje_id"
+        "tipo_viaje_id",
+        "estado"
     ];
 
     public function puntos()

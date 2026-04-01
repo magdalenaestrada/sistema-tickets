@@ -21,7 +21,8 @@
 
         $transportesOpen =
             request()->routeIs('vehiculos.*') ||
-            request()->routeIs('horarios.*', 'asignaciones.*', 'rutas.*', 'salidas.*');
+            request()->routeIs('horarios.*', 'asignaciones.*', 'rutas.*') ||
+            (request()->routeIs('salidas.*') && !request()->routeIs('salidas.index-vendedor'));
 
         $gestionOpen = request()->routeIs('clientes.*', 'descuentos.*', 'reportes.*');
 
@@ -33,8 +34,8 @@
     <div class="sidebar-body">
         <ul class="nav" id="sidebarNav">
 
-            <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <a href="{{ route('dashboard') }}" class="nav-link">
+            <li class="nav-item {{ request()->routeIs('dashboard.vendedor') ? 'active' : '' }}">
+                <a href="{{ route('dashboard.vendedor') }}" class="nav-link">
                     <i class="link-icon" data-lucide="home"></i>
                     <span class="link-title">INICIO</span>
                 </a>
@@ -55,8 +56,6 @@
                     <span class="link-title">Vender pasajes</span>
                 </a>
             </li>
-
-            
 
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="collapse" href="#encomiendas"
@@ -91,7 +90,12 @@
                     </ul>
                 </div>
             </li>
-
+            <li class="nav-item {{ request()->routeIs('salidas.index-vendedor') ? 'active' : '' }}">
+                <a href="{{ route('salidas.index-vendedor') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="file-clock"></i>
+                    <span class="link-title">Manifiestos</span>
+                </a>
+            </li>
             <li class="nav-item nav-category">ADMINISTRACIÓN</li>
 
             {{-- Empresa --}}
@@ -154,7 +158,6 @@
                 </div>
             </li>
 
-            {{-- Vehículos --}}
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="collapse" href="#transportes"
                     aria-expanded="{{ $transportesOpen ? 'true' : 'false' }}">
@@ -183,14 +186,8 @@
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('salidas.index') }}"
-                                class="nav-link {{ request()->routeIs('salidas.*') ? 'active' : '' }}">
-                                Programaciones
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('asignaciones.index') }}"
-                                class="nav-link {{ request()->routeIs('asignaciones.*') ? 'active' : '' }}">
-                                Asignar conductor
+                                class="nav-link {{ request()->routeIs('salidas.*') && !request()->routeIs('salidas.index-vendedor') ? 'active' : '' }}">
+                                Salidas programadas
                             </a>
                         </li>
                     </ul>

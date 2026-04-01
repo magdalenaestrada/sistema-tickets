@@ -85,7 +85,7 @@ class SucursalController extends Controller
 
     public function lista()
     {
-        return Sucursal::select('id', 'nombre_comercial')->get();
+        return Sucursal::select('id', 'nombre_comercial')->where("estado", "A")->get();
     }
     public function guardar(Request $request)
     {
