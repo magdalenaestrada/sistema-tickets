@@ -29,7 +29,7 @@ class AuthenticatedSessionController extends Controller
         ]);
 
         $user = User::where('username', $request->username)->first();
-        
+
         if (!$user || $user->estado == "I") {
             throw ValidationException::withMessages([
                 'login' => 'El usuario no existe o está deshabilitado, por favor contacte con el administrador',
@@ -44,7 +44,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        if (Auth::user()->hasRole('Administrador')) {
+            return redirect()->intended(route('dashboard.admin'));
+        } else {
+            return redirect()->intended(route('dashboard.vendedor'));
+        }
     }
 
 

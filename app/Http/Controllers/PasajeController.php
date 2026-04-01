@@ -67,6 +67,120 @@ class PasajeController extends Controller
         return view('pasajes.index', compact('hoy', 'salidas', 'sucursales'));
     }
 
+    public function listarPasajes(Request $request)
+    {
+        $query = Pasaje::with([
+            'salida.horario.ruta',
+            'origen',
+            'destino',
+            'persona',
+            'venta',
+        ]);
+
+        // Solo vendidos / finalizados / no abordó si quieres ver historial
+        $query->whereIn('estado', ['V', 'F', 'X']);
+
+        if ($request->filled('salida_id')) {
+            $query->where('salida_id', $request->salida_id);
+        }
+
+        if ($request->filled('documento')) {
+            $documento = trim($request->documento);
+
+            $query->whereHas('persona', function ($q) use ($documento) {
+                $q->where('documento', 'like', "%{$documento}%");
+            });
+        }
+
+        if ($request->filled('origen_id')) {
+            $query->where('origen_sucursal_id', $request->origen_id);
+        }
+
+        if ($request->filled('destino_id')) {
+            $query->where('destino_sucursal_id', $request->destino_id);
+        }
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $pasajes = $query
+            ->join('salidas', 'pasajes.salida_id', '=', 'salidas.id')
+            ->orderBy('salidas.fecha_salida', 'desc')
+            ->orderBy('pasajes.asiento_numero', 'asc')
+            ->select('pasajes.*')
+            ->paginate(20)
+            ->withQueryString();
+
+        $salidas = Salida::with(['horario.ruta'])
+            ->orderBy('fecha_salida', 'desc')
+            ->get();
+
+        $sucursales = Sucursal::where('estado', 'A')
+            ->orderBy('nombre_comercial')
+            ->get();
+
+        return view('pasajes.busqueda', compact('pasajes', 'salidas', 'sucursales'));
+    }
+
+    public function datatable()
+    {
+        $pasajes = Pasaje::with([
+            'salida.horario.ruta.puntos.sucursal',
+            'salida.horario.tipo_viaje',
+            'salida.horario.tipo_vehiculo',
+            'origen',
+            'destino',
+            'persona',
+            'venta',
+        ])
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($pasaje) {
+                $ruta = $pasaje->salida?->horario?->ruta;
+
+                if (!$ruta) {
+                    $pasaje->puntos_json = json_encode([], JSON_UNESCAPED_UNICODE);
+                    $pasaje->origen_nombre = '—';
+                    $pasaje->destino_nombre = '—';
+                    $pasaje->capacidad_bus = 0;
+                    return $pasaje;
+                }
+
+                $puntos = $ruta->puntos->sortBy('orden')->values();
+
+                $pasaje->puntos_json = json_encode(
+                    $puntos->map(function ($p) {
+                        return [
+                            'sucursal_id' => (string) $p->sucursal_id,
+                            'orden' => (int) $p->orden,
+                            'nombre' => $p->sucursal?->nombre_comercial,
+                        ];
+                    })->values()->toArray(),
+                    JSON_UNESCAPED_UNICODE
+                );
+
+                $pasaje->origen_nombre = $puntos->first()?->sucursal?->nombre_comercial ?? '—';
+                $pasaje->destino_nombre = $puntos->last()?->sucursal?->nombre_comercial ?? '—';
+
+                $origenId = $puntos->first()?->sucursal_id;
+                $destinoId = $puntos->last()?->sucursal_id;
+
+                $asientosMap = $pasaje->salida->asientosDisponibles($origenId, $destinoId);
+                $pasaje->capacidad_bus = collect($asientosMap)
+                    ->filter(fn($estado) => $estado === 'libre')
+                    ->count();
+
+                return $pasaje;
+            });
+
+        $sucursales = Sucursal::where('estado', 'A')
+            ->orderBy('nombre_comercial')
+            ->get();
+
+        return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
+    }
+
     public function asientos(Salida $salida, Request $request)
     {
         $request->validate([

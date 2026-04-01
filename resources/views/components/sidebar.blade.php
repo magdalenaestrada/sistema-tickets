@@ -25,24 +25,20 @@
             (request()->routeIs('salidas.*') && !request()->routeIs('salidas.index-vendedor'));
 
         $gestionOpen = request()->routeIs('clientes.*', 'descuentos.*', 'reportes.*');
-
         $encomiendasOpen = request()->routeIs('encomiendas.*');
-
         $cajaOpen = request()->routeIs('caja.*');
+        $route = Auth::user()->hasRole('Administrador') ? 'dashboard.admin' : 'dashboard.vendedor';
     @endphp
 
     <div class="sidebar-body">
         <ul class="nav" id="sidebarNav">
 
-            <li class="nav-item {{ request()->routeIs('dashboard.vendedor') ? 'active' : '' }}">
-                <a href="{{ route('dashboard.vendedor') }}" class="nav-link">
+            <li class="nav-item {{ request()->routeIs($route) ? 'active' : '' }}">
+                <a href="{{ route($route) }}" class="nav-link">
                     <i class="link-icon" data-lucide="home"></i>
                     <span class="link-title">INICIO</span>
                 </a>
             </li>
-
-            <li class="nav-item nav-category">VENTAS</li>
-
             <li class="nav-item {{ request()->is('caja*') ? 'active' : '' }}">
                 <a href="{{ route('caja.index') }}" class="nav-link">
                     <i class="link-icon" data-lucide="piggy-bank"></i>
@@ -50,10 +46,17 @@
                 </a>
             </li>
 
-            <li class="nav-item {{ request()->is('pasajes*') && !request()->is('pasajes/tabla*') ? 'active' : '' }}">
-                <a href="{{ route('pasajes.index') }}" class="nav-link">
-                    <i class="link-icon" data-lucide="receipt-text"></i>
+            <li class="nav-item {{ request()->routeIs('pasajes.index') ? 'active' : '' }}"> <a
+                    href="{{ route('pasajes.index') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="ticket"></i>
                     <span class="link-title">Vender pasajes</span>
+                </a>
+            </li>
+
+            <li class="nav-item {{ request()->routeIs('pasajes.listar') ? 'active' : '' }}">
+                <a href="{{ route('pasajes.listar') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="receipt-text"></i>
+                    <span class="link-title">Buscar pasajes</span>
                 </a>
             </li>
 

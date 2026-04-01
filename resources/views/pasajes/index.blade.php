@@ -305,12 +305,12 @@
                         <div class="no-results" id="estado-inicial">
                             Usa los filtros para buscar salidas
                         </div>
-
                         @foreach ($salidas as $salida)
                             <div class="horario-row" style="display:none;" data-salida-id="{{ $salida->id }}"
                                 data-tipo-viaje-id="{{ $salida->horario->tipo_viaje_id }}"
                                 data-fecha="{{ optional($salida->fecha_salida)->format('Y-m-d') }}"
-                                data-puntos="{{ $salida->puntos_json }}">
+                                data-puntos="{{ $salida->puntos_json }}" data-origen-nombre="{{ $salida->origen_nombre }}"
+                                data-destino-nombre="{{ $salida->destino_nombre }}">
 
                                 <div class="hr-route">
                                     <div class="hr-route-label">

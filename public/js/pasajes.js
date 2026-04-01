@@ -287,10 +287,29 @@ document.addEventListener("DOMContentLoaded", function () {
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
 
+        const selectOrigen = document.getElementById("filtro_origen");
+        const selectDestino = document.getElementById("filtro_destino");
+
+        const nombreOrigen =
+            selectOrigen.options[selectOrigen.selectedIndex]?.text?.trim() ||
+            "";
+        const nombreDestino =
+            selectDestino.options[selectDestino.selectedIndex]?.text?.trim() ||
+            "";
+
         if (!fecha || !origen || !destino) {
-            document
-                .querySelectorAll(".horario-row")
-                .forEach((r) => (r.style.display = "none"));
+            document.querySelectorAll(".horario-row").forEach((row) => {
+                row.style.display = "none";
+
+                const label = row.querySelector(".hr-route-label");
+                const origenOriginal = row.dataset.origenNombre || "";
+                const destinoOriginal = row.dataset.destinoNombre || "";
+
+                if (label && origenOriginal && destinoOriginal) {
+                    label.textContent = `${origenOriginal} → ${destinoOriginal}`;
+                }
+            });
+
             document.getElementById("estado-inicial").style.display = "block";
             document.getElementById("resultados-info").textContent = "";
             return;
@@ -303,46 +322,66 @@ document.addEventListener("DOMContentLoaded", function () {
 
         rows.forEach((row) => {
             const rowFecha = row.dataset.fecha || "";
+            const tipoViajeId = parseInt(row.dataset.tipoViajeId || "0");
+
             let puntos = [];
-            console.log("fila", {
-                salida: row.dataset.salidaId,
-                rowFecha,
-                puntos,
-            });
             try {
                 puntos = JSON.parse(row.dataset.puntos || "[]");
             } catch (e) {
                 puntos = [];
             }
 
-            const puntoOrigen = origen
-                ? puntos.find((p) => String(p.sucursal_id) === String(origen))
-                : null;
+            const puntoOrigen = puntos.find(
+                (p) => String(p.sucursal_id) === String(origen),
+            );
 
-            const puntoDestino = destino
-                ? puntos.find((p) => String(p.sucursal_id) === String(destino))
-                : null;
+            const puntoDestino = puntos.find(
+                (p) => String(p.sucursal_id) === String(destino),
+            );
 
-            const matchFecha = !fecha || rowFecha === fecha;
-            const matchOrigen = !origen || !!puntoOrigen;
-            const matchDestino = !destino || !!puntoDestino;
+            const matchFecha = rowFecha === fecha;
+            const matchOrigen = !!puntoOrigen;
+            const matchDestino = !!puntoDestino;
 
-            let matchOrden = true;
-            if (origen && destino) {
+            let matchOrden = false;
+            if (puntoOrigen && puntoDestino) {
                 matchOrden =
-                    !!puntoOrigen &&
-                    !!puntoDestino &&
                     Number(puntoOrigen.orden) < Number(puntoDestino.orden);
             }
 
-            const visible =
+            let visible =
                 matchFecha && matchOrigen && matchDestino && matchOrden;
+
+            if (visible && tipoViajeId !== 2) {
+                const primero = puntos[0];
+                const ultimo = puntos[puntos.length - 1];
+
+                const coincideExacto =
+                    primero &&
+                    ultimo &&
+                    String(primero.sucursal_id) === String(origen) &&
+                    String(ultimo.sucursal_id) === String(destino);
+
+                visible = coincideExacto;
+            }
+
+            const label = row.querySelector(".hr-route-label");
+            const origenOriginal = row.dataset.origenNombre || "";
+            const destinoOriginal = row.dataset.destinoNombre || "";
 
             if (visible) {
                 row.style.display = "flex";
                 visibles++;
+
+                if (label) {
+                    label.textContent = `${nombreOrigen} → ${nombreDestino}`;
+                }
             } else {
                 row.style.display = "none";
+
+                if (label && origenOriginal && destinoOriginal) {
+                    label.textContent = `${origenOriginal} → ${destinoOriginal}`;
+                }
             }
         });
 
