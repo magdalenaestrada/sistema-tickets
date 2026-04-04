@@ -13,6 +13,8 @@ use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
 use App\Models\Venta;
+use App\Services\PagoService;
+use App\Services\VentaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -478,93 +480,73 @@ class PasajeController extends Controller
                     'es_promocion' => $esPromocion,
                 ];
             }
+            $detalles = [];
 
-            $venta = null;
+            foreach ($pasajeros as $p) {
+                $detalles[] = [
+                    'costo' => $p['precio_final'],
+                    'descuento' => $p['descuento_monto'],
+                ];
+            }
 
-            if ($accion === 'vender') {
-                $personaFacturacion = null;
+            $personaFacturacion = null;
 
-                if ($request->filled('numero_documento_id')) {
-                    $numeroDocFact = trim($request->numero_documento_id);
-                    $tipoDocFact = (int) ($request->tipo_documento_factura_id ?? 1);
+            if ($request->filled('numero_documento_id')) {
+                $personaFacturacion = Persona::updateOrCreate(
+                    ['documento' => $request->numero_documento_id],
+                    [
+                        'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
+                        'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
+                        'estado' => 'A',
+                        'fecha_creacion' => now(),
+                    ]
+                );
+            } else {
+                $personaFacturacion = $pasajeros[0]['persona'];
+            }
 
-                    $primerPasajero = $pasajeros[0]['persona'] ?? null;
+            $ventaService = app(VentaService::class);
+            $pagoService = app(PagoService::class);
+            $pagos = [];
 
-                    if ($primerPasajero && $primerPasajero->documento === $numeroDocFact) {
-                        $personaFacturacion = $primerPasajero;
-                    } else {
-                        $personaFacturacion = Persona::updateOrCreate(
-                            ['documento' => $numeroDocFact],
-                            [
-                                'tipo_documento_id' => $tipoDocFact,
-                                'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
-                                'apellidos' => null,
-                                'estado' => 'A',
-                                'fecha_creacion' => now(),
-                            ]
-                        );
-                    }
-                } else {
-                    $personaFacturacion = $pasajeros[0]['persona'];
-                }
-
-                $tipoDoc = $request->tipo_documento_factura_id;
-
-                $serie = match ($tipoDoc) {
-                    1 => 'B001',
-                    2 => 'F001',
-                    default => 'B001',
-                };
-
-                $venta = Venta::create([
+            $ventaData = $ventaService->crearVenta(
+                new Request([
                     'tipo_servicio_id' => 1,
-                    'sucursal_id' => Auth::user()->sucursal_id,
-                    'usuario_id' => Auth::id(),
-                    'persona_id' => $personaFacturacion->id,
-                    'tipo_documento_factura_id' => $tipoDoc,
-                    'serie' => $serie,
-                    'numero' => 1,
+                    'tipo_documento_factura_id' => $request->tipo_documento_factura_id ?? 1,
+                    'numero_documento_id' => $personaFacturacion->documento,
+                    'razon_social' => $personaFacturacion->nombres,
                     'total' => $totalVenta,
-                    'fecha_emision' => now(),
-                ]);
+                    'detalles' => $detalles,
+                    'origen_nombre' => $salida->horario->ruta->puntos->first()?->sucursal?->nombre_comercial,
+                    'destino_nombre' => $salida->horario->ruta->puntos->last()?->sucursal?->nombre_comercial,
+                ]),
+                Pasaje::class,
+                null
+            );
 
-                foreach ($pasajeros as $pasajeroData) {
-                    $venta->detalles()->create([
-                        'tipo_servicio_id' => 1,
-                        'descripcion' => $salida->horario->ruta->nombre
-                            . ' - '
-                            . ($salida->horario->ruta->puntos->firstWhere('sucursal_id', $request->origen_id)?->sucursal?->nombre_comercial ?? 'Origen')
-                            . ' → '
-                            . ($salida->horario->ruta->puntos->firstWhere('sucursal_id', $request->destino_id)?->sucursal?->nombre_comercial ?? 'Destino')
-                            . ' - Asiento ' . $pasajeroData['asiento_numero'],
-                        'cantidad' => 1,
-                        'precio_venta' => $precioBase,
-                        'total' => $pasajeroData['precio_final'],
-                        'descuento' => $pasajeroData['descuento_monto'],
-                    ]);
-                }
+            $venta = $ventaData['venta'];
 
-                $pagoEfectivo = (float) ($request->pago_efectivo ?? 0);
-                $pagoBilletera = (float) ($request->pago_billetera ?? 0);
-                $hoy = Carbon::now();
-                if ($pagoEfectivo > 0) {
-                    $venta->pagos()->create([
-                        'metodo_pago_id' => 1,
-                        'billetera_id' => null,
-                        'total' => $pagoEfectivo,
-                        'fecha_creacion' => $hoy,
-                    ]);
-                }
+            $pagoService->registrarPagos(
+                $venta->id,
+                $pagos,
+                Pasaje::class,
+                null
+            );
 
-                if ($pagoBilletera > 0) {
-                    $venta->pagos()->create([
-                        'metodo_pago_id' => 2,
-                        'billetera_id' => $request->billetera_id,
-                        'total' => $pagoBilletera,
-                        'fecha_creacion' => $hoy,
+            $ventaService->emitirVenta($venta);
+            if ($request->pago_efectivo > 0) {
+                $pagos[] = [
+                    'metodo_pago_id' => 1,
+                    'total' => $request->pago_efectivo,
+                ];
+            }
 
-                    ]);
-                }
+            if ($request->pago_billetera > 0) {
+                $pagos[] = [
+                    'metodo_pago_id' => 2,
+                    'billetera_id' => $request->billetera_id,
+                    'total' => $request->pago_billetera,
+                ];
             }
 
             foreach ($pasajeros as $pasajeroData) {
@@ -896,7 +878,7 @@ class PasajeController extends Controller
 
         $precioUnitario = $salida->calcularCostoPorTramos($origen->id, $destino->id);
 
-        $tipos_documentos = TipoDocumentoPersona::all();
+        $tipos_documentos = TipoDocumentoPersona::whereNotIn('id', [2])->get();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $metodos_pago = MetodoPago::all();
         $billeteras_digitales = BilleteraDigital::all();

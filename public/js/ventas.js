@@ -28,6 +28,46 @@ $(function () {
         };
     });
 
+    document.addEventListener("change", function (e) {
+        if (e.target.matches("[id^='tipo_documento_id_']")) {
+            const index = e.target.id.split("_").pop();
+            const input = document.querySelector(`#documento_${index}`);
+            input.value = "";
+            if (!input) return;
+
+            let max = 15;
+
+            if (e.target.value == 1) max = 8;
+            else if (e.target.value == 2) max = 11;
+            else if (e.target.value == 3) max = 9;
+            else if (e.target.value == 6) max = 0;
+
+            input.setAttribute("maxlength", max);
+
+            if (max === 0) {
+                input.value = "";
+                input.disabled = true;
+            } else {
+                input.disabled = false;
+            }
+        }
+    });
+
+    document.addEventListener("input", function (e) {
+        if (e.target.matches(".solo-numeros")) {
+            e.target.value = e.target.value.replace(/\D/g, "");
+        }
+    });
+
+    document.addEventListener("input", function (e) {
+        if (e.target.matches(".solo-letras")) {
+            e.target.value = e.target.value.replace(
+                /[^A-Za-zÁÉÍÓÚáéíóúÑñ ]/g,
+                "",
+            );
+        }
+    });
+
     function actualizarCostoTotal() {
         const total = selectedSeatNumbers.reduce((sum, num) => {
             return sum + (parseFloat(seatPrices[num]) || 0);

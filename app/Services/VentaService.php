@@ -33,6 +33,7 @@ class VentaService
         $user = Auth::user();
 
         return DB::transaction(function () use ($request, $servicio_model, $servicio_id, $user) {
+
             $tipoDocumentoFacturaId = data_get($request, 'tipo_documento_factura_id');
             $tipoServicioId = data_get($request, 'tipo_servicio_id');
             $numeroDocumento = trim((string) data_get($request, 'numero_documento_id'));
@@ -169,7 +170,7 @@ class VentaService
                 'nombre'      => $venta->serie . '-' . $venta->numero,
             ];
         }
-
+ 
         return $this->emitirComprobante($venta);
     }
 

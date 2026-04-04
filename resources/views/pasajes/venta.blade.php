@@ -36,33 +36,33 @@
 
                                         <div class="col-md-2 mb-2">
                                             <label class="form-label">Documento <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control documento-input"
+                                            <input type="text" class="form-control solo-numeros"
                                                 id="documento_{{ $index }}" data-index="{{ $index }}"
                                                 name="documento[]" required>
                                         </div>
 
                                         <div class="col-md-4 mb-2">
                                             <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="nombres_{{ $index }}"
-                                                name="nombres[]" required>
+                                            <input type="text" class="form-control solo-letras"
+                                                id="nombres_{{ $index }}" name="nombres[]" required>
                                         </div>
 
                                         <div class="col-md-4 mb-2">
                                             <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="apellidos_{{ $index }}"
-                                                name="apellidos[]" required>
+                                            <input type="text" class="form-control solo-letras"
+                                                id="apellidos_{{ $index }}" name="apellidos[]" required>
                                         </div>
 
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Celular </label>
-                                            <input type="text" class="form-control" id="celular_{{ $index }}"
-                                                name="celular[]">
+                                            <input type="text" class="form-control solo-numeros"
+                                                id="celular_{{ $index }}" name="celular[]" maxlength="9">
                                         </div>
 
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Teléfono</label>
-                                            <input type="text" class="form-control" id="telefono_{{ $index }}"
-                                                name="telefono[]">
+                                            <input type="text" class="form-control solo-numeros"
+                                                id="telefono_{{ $index }}" name="telefono[]" maxlength="9">
                                         </div>
 
                                         <div class="col-md-4 mb-2">
@@ -127,6 +127,7 @@
                                     <label class="form-label">Tipo de documento</label>
                                     <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
                                         class="form-select">
+                                        <option value="">Seleccionar tipo</option>
                                         @foreach ($tipos_documentos_facturas as $tipo_documento_factura)
                                             <option value="{{ $tipo_documento_factura->id }}">
                                                 {{ $tipo_documento_factura->descripcion }}

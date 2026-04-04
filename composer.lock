@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "19f4928dcfb25fd4969bd6c2be5c1fde",
+    "content-hash": "7735ff6ce8e55ee90e9f01038c80d49e",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -2794,16 +2794,16 @@
         },
         {
             "name": "luecano/numero-a-letras",
-            "version": "v4.0.0",
+            "version": "v4.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lecano/php-numero-a-letras.git",
-                "reference": "bc966735c788f5ea9423157a45f509b988c7163e"
+                "reference": "7de9fae684bd8da14ec295ee618b2893410587fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lecano/php-numero-a-letras/zipball/bc966735c788f5ea9423157a45f509b988c7163e",
-                "reference": "bc966735c788f5ea9423157a45f509b988c7163e",
+                "url": "https://api.github.com/repos/lecano/php-numero-a-letras/zipball/7de9fae684bd8da14ec295ee618b2893410587fb",
+                "reference": "7de9fae684bd8da14ec295ee618b2893410587fb",
                 "shasum": ""
             },
             "require": {
@@ -2839,7 +2839,7 @@
             ],
             "support": {
                 "issues": "https://github.com/lecano/php-numero-a-letras/issues",
-                "source": "https://github.com/lecano/php-numero-a-letras/tree/v4.0.0"
+                "source": "https://github.com/lecano/php-numero-a-letras/tree/v4.0.1"
             },
             "funding": [
                 {
@@ -2847,7 +2847,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-10-05T01:11:08+00:00"
+            "time": "2025-01-29T15:23:56+00:00"
         },
         {
             "name": "maatwebsite/excel",
@@ -12141,5 +12141,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

@@ -58,12 +58,12 @@
                     <td>
                         <div class="gap-1">
                             @if ($pasaje->estado === 'V')
-                                <button type="button" class="btn btn-sm btn-success btn-abordo"
+                                <button type="button" class="btn btn-xs btn-success btn-abordo"
                                     data-id="{{ $pasaje->id }}">
                                     <i class="link-icon" data-lucide="check" style="pointer-events:none;"></i>
                                 </button>
 
-                                <button type="button" class="btn btn-sm btn-danger btn-no-abordo"
+                                <button type="button" class="btn btn-xs btn-danger btn-no-abordo"
                                     data-id="{{ $pasaje->id }}">
                                     <i class="link-icon" data-lucide="x" style="pointer-events:none;"></i>
                                 </button>
@@ -71,14 +71,14 @@
 
                             @if (in_array($pasaje->estado, ['R', 'V']))
                                 <a href="{{ route('pasajes.editar', $pasaje->id) }}"
-                                    class="btn btn-sm btn-warning">
+                                    class="btn btn-xs btn-warning">
                                     <i class="link-icon" data-lucide="pencil" style="pointer-events:none;"></i>
                                 </a>
                             @endif
 
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
                                 <a href="{{ route('ventas.imprimir', $pasaje->venta_id) }}" target="_blank"
-                                    class="btn btn-sm btn-secondary">
+                                    class="btn btn-xs btn-secondary">
                                     <i class="link-icon" data-lucide="printer" style="pointer-events:none;"></i>
                                 </a>
                             @endif
