@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Empresa;
+use Illuminate\Support\Facades\Storage;
+
 return [
 
     /*
@@ -33,6 +36,13 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'greenter' => [
+        'mode'      => env('GREENTER_MODE', 'beta'),
+        'beta_url'  => env('GREENTER_BETA_URL', 'https://demo-ose.nubefact.com/ol-ti-itcpe/billService?wsdl'),
+        'cert_disk' => env('GREENTER_CERT_DISK', 'public'),
+        'cert_path' => env('GREENTER_CERT_PATH', 'certificado/certificate.pem'),
     ],
 
 ];

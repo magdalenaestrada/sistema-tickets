@@ -1,4 +1,5 @@
 let UBIGEO = null;
+let tabla = null;
 
 function initUbigeosReceptor() {
     const $dep = $("#departamento_id");
@@ -110,33 +111,35 @@ $(function () {
         actualizarResumen();
     });
 
-    let tabla = $("#tablaEncomiendas").DataTable({
-        ajax: route("encomiendas.datatable.no-asignadas"),
+    if ($("#tablaEncomiendas").length) {
+        tabla = $("#tablaEncomiendas").DataTable({
+            ajax: route("encomiendas.datatable-no-asignadas"),
 
-        columns: [
-            { data: "checkbox", orderable: false, searchable: false },
-            { data: "id" },
-            { data: "dni_emisor" },
-            { data: "emisor" },
-            { data: "receptor" },
-            { data: "origen" },
-            { data: "destino" },
-            { data: "total" },
-            { data: "estado" },
-            { data: "acciones", orderable: false, searchable: false },
-        ],
-        order: [[1, "desc"]],
-        
-        lengthChange: false,
-        searching: false,
-        language: {
-            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-        },
-        drawCallback: function () {
-            lucide.createIcons();
-            actualizarContador();
-        },
-    });
+            columns: [
+                { data: "checkbox", orderable: false, searchable: false },
+                { data: "id" },
+                { data: "dni_emisor" },
+                { data: "emisor" },
+                { data: "receptor" },
+                { data: "origen" },
+                { data: "destino" },
+                { data: "total" },
+                { data: "estado" },
+                { data: "acciones", orderable: false, searchable: false },
+            ],
+            order: [[1, "desc"]],
+
+            lengthChange: false,
+            searching: false,
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+            },
+            drawCallback: function () {
+                lucide.createIcons();
+                actualizarContador();
+            },
+        });
+    }
 
     $("#filtroOrigen").on("change", function () {
         tabla.column(5).search($(this).val()).draw();
@@ -259,6 +262,7 @@ $(function () {
 
         let data = {
             _token: $("input[name=_token]").val(),
+            _method: encomiendaId ? "PUT" : "POST",
             emisor: {
                 documento: $("#emisor_documento").val(),
                 tipo_documento_id: $("#emisor_tipo_documento_id").val(),
@@ -278,24 +282,21 @@ $(function () {
                 direccion: $("#receptor_direccion").val(),
             },
             origen: $("#origen").val(),
+            distrito_id: $("#distrito_id").val(),
+            destino: $("#destino").val(),
             numero_documento_id: $("#numero_documento_id").val(),
             razon_social: $("#razon_social").val(),
             pago_instantaneo: $("#pago_instantaneo").is(":checked") ? 1 : 0,
-            distrito_id: $("#distrito_id").val(),
-            destino: $("#destino").val(),
             tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
             total: parseFloat($("#costo_total").val()) || 0,
             detalles: detalles,
             tipo_servicio_id: 2,
-            sucursal_id: null,
-            serie: null,
-            numero: null,
             pagos: pagos,
         };
 
         $.ajax({
             url: url,
-            method: method,
+            type: "POST",
             data: data,
             success: function (res) {
                 if (res.success) {
@@ -318,6 +319,16 @@ $(function () {
                         text: res.message,
                     });
                 }
+            },
+            error: function (xhr) {
+                console.log(xhr.responseText);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text:
+                        xhr.responseJSON?.message ||
+                        "Error al guardar la encomienda",
+                });
             },
         });
     });

@@ -175,9 +175,17 @@ $(function () {
 
                 if (parseInt(index) === 0) {
                     $("#numero_documento_id").val(documento);
-                    const nombres = $(`#nombres_${index}`).val();
-                    const apellidos = $(`#apellidos_${index}`).val();
-                    $("#razon_social").val(`${nombres} ${apellidos}`.trim());
+
+                    const nombres = ($(`#nombres_${index}`).val() || "").trim();
+                    const apellidos = (
+                        $(`#apellidos_${index}`).val() || ""
+                    ).trim();
+
+                    if (!$("#razon_social").val().trim()) {
+                        $("#razon_social").val(
+                            `${nombres} ${apellidos}`.trim(),
+                        );
+                    }
                 }
             })
             .always(() => {

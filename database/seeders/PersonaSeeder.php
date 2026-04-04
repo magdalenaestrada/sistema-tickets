@@ -9,7 +9,6 @@ class PersonaSeeder extends Seeder
 {
     public function run(): void
     {
-        // Obtener IDs válidos de tablas relacionadas
         $tipoDocumentoId = DB::table('tipo_documento_personas')->value('id');
         $distritoId = DB::table('distritos')->value('id');
 
@@ -18,7 +17,7 @@ class PersonaSeeder extends Seeder
         }
 
         DB::table('personas')->insert([
-            'tipo_documento_id' => $tipoDocumentoId,
+            'tipo_documento_id' => 1,
             'distrito_id'       => $distritoId,
             'documento'         => '65784889',
             'nombres'           => 'GRETHEL MARITZA',

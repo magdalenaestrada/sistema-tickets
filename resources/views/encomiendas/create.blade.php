@@ -42,9 +42,9 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
-                                <label class="form-label">Celular <span style="color: red">*</span></label>
+                                <label class="form-label">Celular</label>
                                 <input type="text" class="form-control solo-numeros" id="emisor_celular" maxlength="9"
-                                    name="emisor_celular" required>
+                                    name="emisor_celular">
                             </div>
 
                             <div class="col-md-3">
@@ -104,9 +104,9 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
-                                <label class="form-label">Celular <span style="color: red">*</span></label>
+                                <label class="form-label">Celular</label>
                                 <input type="text" class="form-control solo-numeros" id="receptor_celular"
-                                    maxlength="9" name="receptor_celular" required>
+                                    maxlength="9" name="receptor_celular">
                             </div>
 
                             <div class="col-md-3">
@@ -342,5 +342,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/encomiendas.js') }}"></script>
+    <script src="{{ asset('js/encomiendas_create.js') }}"></script>
 @endpush

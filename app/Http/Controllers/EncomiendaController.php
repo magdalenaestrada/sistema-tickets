@@ -8,9 +8,11 @@ use App\Models\Cliente;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Encomienda;
+use App\Models\EncomiendaSalida;
 use App\Models\MetodoPago;
 use App\Models\Persona;
 use App\Models\Provincia;
+use App\Models\Salida;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
@@ -67,35 +69,53 @@ class EncomiendaController extends Controller
         $billeteras_digitales = BilleteraDigital::all();
         return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales'));
     }
-    public function datatable_no_asignadas()
+
+    public function datatable_no_asignadas(Request $request)
     {
         $data = Encomienda::with([
-            'emisor',
-            'receptor',
-            'sucursal_origen',
-            'sucursal_destino'
+            'emisor:id,documento,nombres,apellidos',
+            'receptor:id,documento,nombres,apellidos',
+            'sucursal_origen:id,nombre_comercial',
+            'sucursal_destino:id,nombre_comercial',
         ])
             ->where('estado', 'A')
-            ->orderBy('id', 'desc');
+            ->when($request->filled('documento'), function ($q) use ($request) {
+                $doc = trim($request->documento);
+
+                $q->where(function ($sub) use ($doc) {
+                    $sub->whereHas('emisor', function ($p) use ($doc) {
+                        $p->where('documento', 'like', "%{$doc}%");
+                    })->orWhereHas('receptor', function ($p) use ($doc) {
+                        $p->where('documento', 'like', "%{$doc}%");
+                    });
+                });
+            })
+            ->when($request->filled('fecha'), function ($q) use ($request) {
+                $q->whereDate('fecha_creacion', $request->fecha);
+            })
+            ->when($request->filled('origen_id'), function ($q) use ($request) {
+                $q->where('origen', $request->origen_id);
+            })
+            ->when($request->filled('destino_id'), function ($q) use ($request) {
+                $q->where('destino', $request->destino_id);
+            })
+            ->orderByDesc('id');
 
         return DataTables::of($data)
             ->addColumn('checkbox', function ($e) {
                 return '<input type="checkbox" class="check-encomienda" value="' . $e->id . '">';
             })
-            ->addColumn('emisor', fn($e) => ($e->emisor?->nombres ?? '') . ' ' . ($e->emisor?->apellidos ?? ''))
+            ->addColumn('fecha', function ($e) {
+                return optional($e->fecha_creacion)?->format('d/m/Y H:i');
+            })
+            ->addColumn('emisor', fn($e) => trim(($e->emisor?->nombres ?? '') . ' ' . ($e->emisor?->apellidos ?? '')))
             ->addColumn('dni_emisor', fn($e) => $e->emisor?->documento ?? '-')
-            ->addColumn('receptor', fn($e) => ($e->receptor?->nombres ?? '') . ' ' . ($e->receptor?->apellidos ?? ''))
+            ->addColumn('receptor', fn($e) => trim(($e->receptor?->nombres ?? '') . ' ' . ($e->receptor?->apellidos ?? '')))
+            ->addColumn('dni_receptor', fn($e) => $e->receptor?->documento ?? '-')
             ->addColumn('origen', fn($e) => $e->sucursal_origen?->nombre_comercial ?? '-')
             ->addColumn('destino', fn($e) => $e->sucursal_destino?->nombre_comercial ?? '-')
             ->addColumn('total', fn($e) => 'S/ ' . number_format($e->total ?? 0, 2))
-            ->addColumn('estado', function ($e) {
-                $estados = [
-                    'E' => '<span class="badge bg-success">Entregado</span>',
-                    'P' => '<span class="badge bg-info">Pendiente</span>',
-                    'A' => '<span class="badge bg-danger">Sin asignar</span>',
-                ];
-                return $estados[$e->estado] ?? '<span class="badge bg-secondary">Desconocido</span>';
-            })
+            ->addColumn('estado', fn() => '<span class="badge bg-danger">Sin asignar</span>')
             ->addColumn('acciones', function ($e) {
                 return '
                 <button class="btn btn-xs btn-info imprimir" data-id="' . $e->id . '" title="Imprimir">
@@ -104,73 +124,222 @@ class EncomiendaController extends Controller
                 <button class="btn btn-xs btn-warning editar" data-id="' . $e->id . '" title="Editar">
                     <i class="link-icon" data-lucide="pencil"></i>
                 </button>
-                <button class="btn btn-xs btn-danger anular" data-id="' . $e->id . '" title="Anular">
-                    <i class="link-icon" data-lucide="trash-2"></i>
-                </button>
             ';
             })
             ->rawColumns(['checkbox', 'estado', 'acciones'])
             ->make(true);
     }
-
-    public function datatable_asignadas()
+    public function datatable_asignadas(Request $request)
     {
-        $data = Encomienda::with([
-            'emisor',
-            'receptor',
-            'sucursal_origen',
-            'sucursal_destino'
-        ])
-            ->whereIn('estado', ['P', 'E'])
-            ->orderBy('id', 'desc');
-
-        return DataTables::of($data)
-            ->addColumn('dni_receptor', fn($e) => $e->receptor?->documento ?? '-')
-            ->addColumn('receptor', fn($e) => ($e->receptor?->nombres ?? '') . ' ' . ($e->receptor?->apellidos ?? ''))
-            ->addColumn('emisor', fn($e) => ($e->emisor?->nombres ?? '') . ' ' . ($e->emisor?->apellidos ?? ''))
-            ->addColumn('origen', fn($e) => $e->sucursal_origen?->nombre_comercial ?? '-')
-            ->addColumn('destino', fn($e) => $e->sucursal_destino?->nombre_comercial ?? '-')
-            ->addColumn('total', fn($e) => 'S/ ' . number_format($e->total ?? 0, 2))
-            ->filterColumn('dni_receptor', function ($query, $keyword) {
-                $query->whereHas('receptor', function ($q) use ($keyword) {
-                    $q->where('documento', 'like', "%$keyword%");
+        $query = Encomienda::query()
+            ->with(['receptor', 'emisor', 'sucursal_origen', 'sucursal_destino', 'salidaActual'])
+            ->when($request->documento, function ($q) use ($request) {
+                $q->whereHas('receptor', function ($sub) use ($request) {
+                    $sub->where('nro_documento', 'like', $request->documento . '%');
                 });
             })
-            ->filterColumn('receptor', function ($query, $keyword) {
-                $query->whereHas('receptor', function ($q) use ($keyword) {
-                    $q->where('nombres', 'like', "%$keyword%")
-                        ->orWhere('apellidos', 'like', "%$keyword%");
-                });
-            })
-            ->addColumn('estado', function ($e) {
-                $estados = [
-                    'E' => '<span class="badge bg-success">Entregado</span>',
-                    'P' => '<span class="badge bg-info">Pendiente</span>',
-                    'A' => '<span class="badge bg-danger">Sin asignar</span>',
-                ];
-                return $estados[$e->estado] ?? '<span class="badge bg-secondary">Desconocido</span>';
-            })
-            ->addColumn('acciones', function ($e) {
+            ->when($request->origen_id, fn($q) => $q->where('origen_id', $request->origen_id))
+            ->when($request->destino_id, fn($q) => $q->where('destino_id', $request->destino_id))
+            ->when($request->salida_id, fn($q) => $q->where('salida_id', $request->salida_id));
 
-                $botones = '
-        <button class="btn btn-xs btn-info imprimir" data-id="' . $e->id . '">
-            <i data-lucide="printer"></i>
-        </button>
-    ';
-
-                if ($e->estado !== 'E') {
-                    $botones .= '
-           <button type="button" class="btn btn-xs btn-success entregar" data-id="' . $e->id . '">
-                <i data-lucide="check"></i>
-            </button>
-        ';
+        return datatables()->of($query)
+            ->addColumn('checkbox', function ($row) {
+                if ($row->estado === 'P') {
+                    return '';
                 }
+
+                return '<input type="checkbox" class="check-llegada" value="' . $row->id . '">';
+            })
+            ->addColumn('fecha', function ($row) {
+                return optional($row->created_at)->format('d/m/Y H:i');
+            })
+            ->addColumn('receptor', function ($row) {
+                return $row->receptor->nombre_completo ?? '-';
+            })
+            ->addColumn('dni_receptor', function ($row) {
+                return $row->receptor->documento ?? '-';
+            })
+            ->addColumn('origen', function ($row) {
+                return $row->sucursal_origen->nombre_comercial ?? '-';
+            })
+            ->addColumn('destino', function ($row) {
+                return $row->sucursal_destino->nombre_comercial ?? '-';
+            })
+            ->addColumn('salida', function ($row) {
+                return $row->salidaActual->salida->fecha_salida ?? '-';
+            })
+            ->editColumn('estado', function ($row) {
+                if ($row->estado === 'E') {
+                    return '<span class="badge bg-success">ENTREGADO</span>';
+                }
+
+                if ($row->estado === 'P') {
+                    return '<span class="badge bg-warning text-dark">EN CAMINO</span>';
+                }
+
+                if ($row->estado === 'A') {
+                    return '<span class="badge bg-info text-dark">LLEGÓ</span>';
+                }
+
+                return '<span class="badge bg-secondary">' . e($row->estado) . '</span>';
+            })
+            ->addColumn('acciones', function ($row) {
+                $botones = '<button type="button" class="btn btn-sm btn-info ver" data-id="' . $row->id . '">Ver</button> ';
+                $botones .= '<button type="button" class="btn btn-sm btn-secondary imprimir" data-id="' . $row->id . '">Imprimir</button> ';
+
+                if ($row->estado !== 'ENTREGADO') {
+                    $botones .= '<button type="button" class="btn btn-sm btn-success entregar" data-id="' . $row->id . '">Entregar</button>';
+                }
+
                 return $botones;
             })
-            ->rawColumns(['estado', 'acciones'])
+            ->rawColumns(['checkbox', 'estado', 'acciones'])
             ->make(true);
     }
 
+    public function entregarMasivo(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|exists:encomienda,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $encomiendas = Encomienda::whereIn('id', $request->ids)
+                ->where('estado', 'P')
+                ->get();
+
+            foreach ($encomiendas as $encomienda) {
+                $encomienda->update([
+                    'estado' => 'E',
+                    'fecha_procesado' => now(),
+                ]);
+
+                EncomiendaSalida::where('encomienda_id', $encomienda->id)
+                    ->where('estado', 'A')
+                    ->update([
+                        'estado' => 'L',
+                        'fecha_llegada' => now(),
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Llegada confirmada correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function salidasDisponiblesParaAsignacion(Request $request)
+    {
+        $request->validate([
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
+        ]);
+
+        $salidas = Salida::with([
+            'horario.ruta.puntos.sucursal',
+            'horario.tipo_viaje',
+            'vehiculo',
+        ])
+            ->whereIn('estado', ['activo', 'programado'])
+            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->orderBy('fecha_salida')
+            ->get()
+            ->filter(function ($salida) use ($request) {
+                return $salida->puedeTransportarEncomienda(
+                    $request->origen_id,
+                    $request->destino_id
+                );
+            })
+            ->values()
+            ->map(function ($salida) {
+                $ruta = $salida->horario?->ruta;
+                $puntos = $ruta?->puntos?->sortBy('orden')->values();
+
+                return [
+                    'id' => $salida->id,
+                    'text' => ($salida->fecha_salida?->format('d/m/Y') ?? '-') .
+                        ' - ' .
+                        ($ruta?->nombre ?? 'Ruta') .
+                        ' - ' .
+                        ($puntos->first()?->sucursal?->nombre_comercial ?? 'Origen') .
+                        ' → ' .
+                        ($puntos->last()?->sucursal?->nombre_comercial ?? 'Destino') .
+                        ' - ' .
+                        ($salida->horario?->hora_formateada ?? ''),
+                ];
+            });
+
+        return response()->json($salidas);
+    }
+
+    public function asignarASalida(Request $request)
+    {
+        $request->validate([
+            'encomienda_ids' => 'required|array|min:1',
+            'encomienda_ids.*' => 'required|exists:encomienda,id',
+            'salida_id' => 'required|exists:salidas,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $salida = Salida::with(['horario.ruta.puntos.sucursal', 'horario.tipo_viaje'])->findOrFail($request->salida_id);
+
+            $encomiendas = Encomienda::whereIn('id', $request->encomienda_ids)
+                ->where('estado', 'A')
+                ->get();
+
+            foreach ($encomiendas as $encomienda) {
+                if (!$salida->puedeTransportarEncomienda($encomienda->origen, $encomienda->destino)) {
+                    throw new \Exception("La encomienda {$encomienda->id} no es compatible con la salida seleccionada.");
+                }
+
+                DB::table('encomienda_salida')->insert([
+                    'encomienda_id' => $encomienda->id,
+                    'salida_id' => $salida->id,
+                    'usuario_id' => Auth::id(),
+                    'fecha_asignacion' => now(),
+                    'estado' => 'A',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $encomienda->update([
+                    'estado' => 'P', // pendiente / asignada en tránsito
+                    'fecha_procesado' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Encomiendas asignadas correctamente.'
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+        }
+    }
     public function entregar($id)
     {
         $encomienda = Encomienda::findOrFail($id);
@@ -397,8 +566,6 @@ class EncomiendaController extends Controller
             ], 500);
         }
     }
-
-
     public function mostrar($id)
     {
         $encomienda = Encomienda::with(['emisor', 'receptor', 'detalles'])->findOrFail($id);
@@ -413,12 +580,120 @@ class EncomiendaController extends Controller
 
         return response()->json(['success' => true]);
     }
-
-
     public function ticket($id)
     {
         $encomienda = Encomienda::with(['emisor', 'receptor', 'detalles', 'sucursal_origen', 'sucursal_destino'])->findOrFail($id);
 
         return view('encomiendas.ticket', compact('encomienda'));
+    }
+    public function salidasDisponibles(Request $request)
+    {
+        $request->validate([
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
+        ]);
+
+        $salidas = Salida::with([
+            'horario.ruta.puntos.sucursal',
+            'horario.tipo_viaje',
+            'horario.tipo_vehiculo',
+        ])
+            ->whereIn('estado', ['activo', 'programado'])
+            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->orderBy('fecha_salida')
+            ->get()
+            ->filter(function ($salida) use ($request) {
+                return $salida->puedeTransportarEncomienda(
+                    $request->origen_id,
+                    $request->destino_id
+                );
+            })
+            ->values()
+            ->map(function ($salida) {
+                $ruta = $salida->horario?->ruta;
+                $puntos = $ruta?->puntos?->sortBy('orden')->values();
+
+                return [
+                    'id' => $salida->id,
+                    'text' => ($salida->fecha_salida?->format('d/m/Y') ?? '-') .
+                        ' | ' .
+                        ($salida->horario?->hora_formateada ?? '-') .
+                        ' | ' .
+                        ($ruta?->nombre ?? 'Ruta') .
+                        ' | ' .
+                        ($puntos->first()?->sucursal?->nombre_comercial ?? 'Origen') .
+                        ' → ' .
+                        ($puntos->last()?->sucursal?->nombre_comercial ?? 'Destino'),
+                ];
+            });
+
+        return response()->json($salidas);
+    }
+
+    public function asignarSalida(Request $request)
+    {
+        $request->validate([
+            'salida_id' => 'required|exists:salidas,id',
+            'encomienda_ids' => 'required|array|min:1',
+            'encomienda_ids.*' => 'required|exists:encomienda,id',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $salida = Salida::with([
+                'horario.ruta.puntos.sucursal',
+                'horario.tipo_viaje',
+            ])->findOrFail($request->salida_id);
+
+            $encomiendas = Encomienda::whereIn('id', $request->encomienda_ids)
+                ->where('estado', 'A')
+                ->get();
+
+            if ($encomiendas->isEmpty()) {
+                throw new \Exception('No hay encomiendas válidas para asignar.');
+            }
+
+            foreach ($encomiendas as $encomienda) {
+                $asignacionActiva = EncomiendaSalida::where('encomienda_id', $encomienda->id)
+                    ->where('estado', 'A')
+                    ->exists();
+
+                if ($asignacionActiva) {
+                    throw new \Exception("La encomienda {$encomienda->id} ya tiene una salida asignada.");
+                }
+
+                if (!$salida->puedeTransportarEncomienda($encomienda->origen, $encomienda->destino)) {
+                    throw new \Exception("La encomienda {$encomienda->id} no corresponde a esta salida.");
+                }
+
+                EncomiendaSalida::create([
+                    'encomienda_id' => $encomienda->id,
+                    'salida_id' => $salida->id,
+                    'usuario_id' => Auth::id(),
+                    'fecha_asignacion' => now(),
+                    'estado' => 'A',
+                ]);
+
+                $encomienda->update([
+                    'estado' => 'P',
+                    'fecha_procesado' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Encomiendas asignadas correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

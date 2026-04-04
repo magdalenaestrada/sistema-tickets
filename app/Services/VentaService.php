@@ -2,117 +2,135 @@
 
 namespace App\Services;
 
+use App\Models\CorrelativoVenta;
 use App\Models\Empresa;
 use App\Models\Pasaje;
 use App\Models\Persona;
+use App\Models\TipoDocumentoFactura;
+use App\Models\TipoDocumentoPersona;
 use App\Models\Venta;
 use DateTime;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Greenter\Model\Client\Client;
-use Greenter\Model\Company\Company;
 use Greenter\Model\Company\Address;
+use Greenter\Model\Company\Company;
 use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
 use Greenter\Model\Sale\Invoice;
-use Greenter\Model\Sale\SaleDetail;
 use Greenter\Model\Sale\Legend;
-use Greenter\Ws\Services\SunatEndpoints;
+use Greenter\Model\Sale\SaleDetail;
 use Greenter\See;
-use Illuminate\Support\Facades\Storage;
+use Greenter\Ws\Services\SunatEndpoints;
+use Luecano\NumeroALetras\NumeroALetras;
 
 class VentaService
 {
-    public function crearVenta($request, $servicio_model, $servicio_id)
+    public function crearVenta($request, $servicio_model, $servicio_id): array
     {
         $user = Auth::user();
 
-        $comprobante = $this->generarSerieYNumero($request['tipo_documento_factura_id'], $user->sucursal_id);
-        $request['serie'] = $comprobante['serie'];
-        $request['numero'] = $comprobante['numero'];
+        return DB::transaction(function () use ($request, $servicio_model, $servicio_id, $user) {
+            $tipoDocumentoFacturaId = data_get($request, 'tipo_documento_factura_id');
+            $tipoServicioId = data_get($request, 'tipo_servicio_id');
+            $numeroDocumento = trim((string) data_get($request, 'numero_documento_id'));
+            $razonSocial = data_get($request, 'razon_social');
+            $total = (float) data_get($request, 'total', 0);
+            $detalles = data_get($request, 'detalles', []);
 
-        DB::beginTransaction();
-        try {
+            $comprobante = $this->reservarSerieYNumero(
+                (int) $tipoDocumentoFacturaId,
+                (int) $user->sucursal_id
+            );
+
             $personaVenta = Persona::updateOrCreate(
-                ['documento' => $request->numero_documento_id],
+                ['documento' => $numeroDocumento],
                 [
-                    'tipo_documento_id' => $request->tipo_documento_factura_id,
-                    'nombres' => $request->razon_social,
+                    'tipo_documento_id' => $this->resolverTipoDocumentoCliente(
+                        $numeroDocumento,
+                        $tipoDocumentoFacturaId
+                    ),
+                    'nombres' => $razonSocial,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
-
                 ]
             );
+
             $venta = Venta::create([
-                'tipo_servicio_id'  => $request['tipo_servicio_id'],
-                'sucursal_id'       => $user->sucursal_id,
-                'usuario_id'        => $user->id,
-                'persona_id' => $personaVenta->id,
-                'tipo_documento_factura_id' => $request['tipo_documento_factura_id'],
-                'serie'             => $request['serie'],
-                'numero'            => $request['numero'],
-                'total'             => $request['total'],
-                'fecha_emision'     => now(),
+                'tipo_servicio_id'          => $tipoServicioId,
+                'sucursal_id'               => $user->sucursal_id,
+                'usuario_id'                => $user->id,
+                'persona_id'                => $personaVenta->id,
+                'tipo_documento_factura_id' => $tipoDocumentoFacturaId,
+                'serie'                     => $comprobante['serie'],
+                'numero'                    => $comprobante['numero'],
+                'total'                     => $total,
+                'estado'                    => 'P', // Pendiente de emisión
+                'fecha_emision'             => now(),
             ]);
 
-            foreach ($request['detalles'] as $detalle) {
-
-                if ($request['tipo_servicio_id'] == 1) {
-                    $descripcion = $request['origen_nombre'] . ' → ' . $request['destino_nombre'];
-                    $tipoServicio = 1;
-                } else if ($request['tipo_servicio_id'] == 2) {
-                    $descripcion = 'Encomienda: ' . $detalle['tipo_encomienda_nombre'] . ' - ' . $detalle['peso'] . 'kg';
-                    $tipoServicio = 2;
-                } else if ($request['tipo_servicio_id'] == 3) {
-                    $descripcion = 'Equipaje extra - ' . $detalle['peso'] . 'kg';
-                    $tipoServicio = 3;
+            foreach ($detalles as $detalle) {
+                if ((int) $tipoServicioId === 1) {
+                    $descripcion = data_get($request, 'origen_nombre') . ' → ' . data_get($request, 'destino_nombre');
+                    $tipoServicioDetalle = 1;
+                } elseif ((int) $tipoServicioId === 2) {
+                    $descripcion = 'Encomienda: '
+                        . ($detalle['tipo_encomienda_nombre'] ?? 'Servicio')
+                        . ' - '
+                        . ($detalle['peso'] ?? 0)
+                        . 'kg';
+                    $tipoServicioDetalle = 2;
+                } else {
+                    $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
+                    $tipoServicioDetalle = 3;
                 }
 
                 $venta->detalles()->create([
-                    'tipo_servicio_id' => $tipoServicio,
+                    'tipo_servicio_id' => $tipoServicioDetalle,
                     'descripcion'      => $descripcion,
                     'cantidad'         => 1,
-                    'precio_venta'     => $detalle['costo'],
-                    'total'            => $detalle['costo'],
-                    'descuento'        => $detalle['descuento'] ?? 0,
+                    'precio_venta'     => (float) ($detalle['costo'] ?? 0),
+                    'total'            => (float) ($detalle['costo'] ?? 0),
+                    'descuento'        => (float) ($detalle['descuento'] ?? 0),
                 ]);
             }
 
-            DB::commit();
+            $venta->load(['persona', 'detalles']);
+
             return [
                 'venta'          => $venta,
                 'servicio_model' => $servicio_model,
                 'servicio_id'    => $servicio_id,
             ];
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            throw $th;
-        }
+        });
     }
 
-    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1)
+    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1): array
     {
         $user = Auth::user();
         $precioFinal = $precio - $descuento;
 
-        $comprobante = $this->generarSerieYNumero($tipo_documento_factura_id, $user->sucursal_id);
+        $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user) {
+            $comprobante = $this->reservarSerieYNumero($tipo_documento_factura_id, $user->sucursal_id);
 
-        DB::beginTransaction();
-        try {
             $venta = Venta::create([
-                'tipo_servicio_id'  => 1, // Pasajes
-                'sucursal_id'       => $user->sucursal_id,
-                'usuario_id'        => $user->id,
-                'persona_id'        => $user->persona_id,
+                'tipo_servicio_id'          => 1,
+                'sucursal_id'               => $user->sucursal_id,
+                'usuario_id'                => $user->id,
+                'persona_id'                => $user->persona_id,
                 'tipo_documento_factura_id' => $tipo_documento_factura_id,
-                'serie'             => $comprobante['serie'],
-                'numero'            => $comprobante['numero'],
-                'total'             => $precioFinal,
-                'fecha_emision'     => now(),
+                'serie'                     => $comprobante['serie'],
+                'numero'                    => $comprobante['numero'],
+                'total'                     => $precioFinal,
+                'estado'                    => 'P',
+                'fecha_emision'             => now(),
             ]);
 
-            $descripcion = $horario->punto_origen->nombre_comercial . ' → ' .
-                $horario->punto_destino->nombre_comercial .
-                ' - Asiento ' . $asiento;
+            $descripcion = $horario->punto_origen->nombre_comercial . ' → '
+                . $horario->punto_destino->nombre_comercial
+                . ' - Asiento ' . $asiento;
 
             $venta->detalles()->create([
                 'tipo_servicio_id' => 1,
@@ -123,54 +141,110 @@ class VentaService
                 'descuento'        => $descuento,
             ]);
 
-            DB::commit();
+            $venta->load(['persona', 'detalles']);
 
-            return [
-                'venta' => $venta,
-                'servicio_model' => Pasaje::class,
-                'servicio_id' => null,
-            ];
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            throw $th;
-        }
-    }
-    private function generarSerieYNumero($tipo_documento_factura_id, $sucursal_id)
-    {
-
-        $series = [
-            1 => "B001",
-            2 => "F001",
-        ];
-
-        $prefijoSucursal = str_pad($sucursal_id, 2, "0", STR_PAD_LEFT);
-        $serieBase = $series[$tipo_documento_factura_id] ?? "B001";
-        $serie = $prefijoSucursal . $serieBase;
-
-        $ultimoNumero = Venta::where('tipo_documento_factura_id', $tipo_documento_factura_id)
-            ->where('sucursal_id', $sucursal_id)
-            ->where('serie', $serie)
-            ->max('numero');
-
-        $numero = $ultimoNumero ? $ultimoNumero + 1 : 1;
+            return $venta;
+        });
 
         return [
-            'serie'  => $serie,
-            'numero' => $numero,
+            'venta'          => $venta,
+            'servicio_model' => Pasaje::class,
+            'servicio_id'    => null,
+        ];
+    }
+
+    public function emitirVenta(Venta $venta): array
+    {
+        $venta->refresh();
+
+        if (in_array($venta->estado, ['E', 'O'], true)) {
+            return [
+                'success'     => true,
+                'estado'      => 'YA_EMITIDA',
+                'codigo'      => null,
+                'descripcion' => 'La venta ya fue emitida previamente.',
+                'notas'       => [],
+                'xml_path'    => $venta->ruta_xml,
+                'cdr_path'    => $venta->ruta_cdr,
+                'nombre'      => $venta->serie . '-' . $venta->numero,
+            ];
+        }
+
+        return $this->emitirComprobante($venta);
+    }
+
+    private function mapTipoDocumentoComprobante($tipoDocumentoFacturaId): string
+    {
+        $tipo = TipoDocumentoFactura::find($tipoDocumentoFacturaId);
+
+        if (!$tipo) {
+            throw new Exception('Tipo de documento de factura no válido.');
+        }
+
+        return match ((string) $tipo->codigo) {
+            '01' => '01',
+            '03' => '03',
+            default => throw new Exception('Código SUNAT no soportado: ' . $tipo->codigo),
+        };
+    }
+
+    private function reservarSerieYNumero(int $tipo_documento_factura_id, int $sucursal_id): array
+    {
+        $tipo = TipoDocumentoFactura::find($tipo_documento_factura_id);
+
+        if (!$tipo) {
+            throw new Exception('Tipo de documento de factura no válido.');
+        }
+
+        $serie = match ((string) $tipo->codigo) {
+            '01' => 'F001',
+            '03' => 'B001',
+            default => throw new Exception('Código SUNAT no soportado para serie: ' . $tipo->codigo),
+        };
+
+        $correlativo = CorrelativoVenta::where('tipo_documento_factura_id', $tipo_documento_factura_id)
+            ->where('sucursal_id', $sucursal_id)
+            ->where('serie', $serie)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$correlativo) {
+            $correlativo = CorrelativoVenta::create([
+                'tipo_documento_factura_id' => $tipo_documento_factura_id,
+                'sucursal_id' => $sucursal_id,
+                'serie' => $serie,
+                'ultimo_numero' => 0,
+            ]);
+
+            $correlativo = CorrelativoVenta::whereKey($correlativo->id)
+                ->lockForUpdate()
+                ->first();
+        }
+
+        $nuevoNumero = (int) $correlativo->ultimo_numero + 1;
+
+        $correlativo->update([
+            'ultimo_numero' => $nuevoNumero,
+        ]);
+
+        return [
+            'serie' => $serie,
+            'numero' => $nuevoNumero,
         ];
     }
 
     public function anularVenta(Venta $venta): void
     {
-        $venta->update(['estado' => 'A']);
+        $venta->update([
+            'estado' => 'A',
+            'fecha_anulacion' => now(),
+        ]);
+
         $venta->pagos()->update(['estado' => 'AN']);
     }
-    public function reemplazarVenta(
-        ?Venta $ventaAnterior,
-        $data,
-        $servicio_model,
-        $servicio_id
-    ): array {
+
+    public function reemplazarVenta(?Venta $ventaAnterior, $data, $servicio_model, $servicio_id): array
+    {
         if ($ventaAnterior) {
             $this->anularVenta($ventaAnterior);
         }
@@ -178,180 +252,272 @@ class VentaService
         return $this->crearVenta($data, $servicio_model, $servicio_id);
     }
 
-    public function generar_archivo($request)
+    public function emitirComprobante(Venta $venta): array
     {
+        $venta->loadMissing(['persona', 'detalles']);
+
+        $empresa = Empresa::first();
+        if (!$empresa) {
+            throw new Exception('No existe configuración de empresa.');
+        }
+
+        $see = $this->crearSee();
+        $invoice = $this->buildInvoice($venta, $empresa);
+        $result = $see->send($invoice);
+
+        $folder = 'xml/' . now()->format('d-m-Y');
+        $xmlPath = $folder . '/' . $invoice->getName() . '.xml';
+        $cdrPath = $folder . '/R-' . $invoice->getName() . '.zip';
+
+        Storage::disk('public')->put(
+            $xmlPath,
+            $see->getFactory()->getLastXml()
+        );
+
+        if (!$result->isSuccess()) {
+            $errorCode = optional($result->getError())->getCode();
+            $errorMessage = optional($result->getError())->getMessage();
+
+            Log::error('Error SUNAT/OSE', [
+                'venta_id' => $venta->id,
+                'serie'    => $venta->serie,
+                'numero'   => $venta->numero,
+                'codigo'   => $errorCode,
+                'mensaje'  => $errorMessage,
+            ]);
+
+            $venta->update([
+                'ruta_xml'    => $xmlPath,
+                'ruta_cdr'    => null,
+                'hash'        => null,
+                'estado'      => 'R',
+                'observacion' => trim($errorCode . ' - ' . $errorMessage, ' -'),
+            ]);
+
+            if ((string) $errorCode === '1033') {
+                throw new Exception(
+                    "SUNAT rechazó el comprobante {$venta->serie}-{$venta->numero}: ya fue registrado previamente con otros datos."
+                );
+            }
+
+            throw new Exception(
+                'Error al enviar comprobante: ' . trim($errorCode . ' - ' . $errorMessage, ' -')
+            );
+        }
+
+        Storage::disk('public')->put(
+            $cdrPath,
+            $result->getCdrZip()
+        );
+
+        $cdr = $result->getCdrResponse();
+        $code = (int) $cdr->getCode();
+
+        $estadoSunat = match (true) {
+            $code === 0 => 'ACEPTADA',
+            $code >= 2000 && $code <= 3999 => 'RECHAZADA',
+            default => 'OBSERVADA',
+        };
+
+        $estadoInterno = match (true) {
+            $code === 0 => 'E',
+            $code >= 2000 && $code <= 3999 => 'R',
+            default => 'O',
+        };
+
+        $venta->update([
+            'ruta_xml'    => $xmlPath,
+            'ruta_cdr'    => $cdrPath,
+            'hash'        => method_exists($result, 'getHashCdr') ? $result->getHashCdr() : null,
+            'estado'      => $estadoInterno,
+            'observacion' => $cdr->getDescription(),
+        ]);
+
+        Log::info('Comprobante emitido', [
+            'venta_id'     => $venta->id,
+            'comprobante'  => $invoice->getName(),
+            'estado_sunat' => $estadoSunat,
+            'code'         => $code,
+            'descripcion'  => $cdr->getDescription(),
+            'notas'        => $cdr->getNotes(),
+        ]);
+
+        return [
+            'success'     => true,
+            'estado'      => $estadoSunat,
+            'codigo'      => $code,
+            'descripcion' => $cdr->getDescription(),
+            'notas'       => $cdr->getNotes(),
+            'xml_path'    => $xmlPath,
+            'cdr_path'    => $cdrPath,
+            'nombre'      => $invoice->getName(),
+        ];
+    }
+
+    private function crearSee(): See
+    {
+        $see = new See();
+
         $empresa = Empresa::first();
 
-        $client = (new Client())
-            ->setTipoDoc($request->tipo_documento_factura_id)
-            ->setNumDoc($request->numero_documento_id)
-            ->setRznSocial($request->razon_social);
+        if (!$empresa) {
+            throw new Exception('No existe configuración de empresa.');
+        }
 
-        $address = (new Address())
-            ->setUbigueo('15003')
-            ->setDepartamento('LIMA')
-            ->setProvincia('LIMA')
-            ->setDistrito('LIMA')
-            ->setUrbanizacion('-')
-            ->setDireccion($empresa->razon_social)
-            ->setCodLocal('0000');
+        $certDisk = config('services.greenter.cert_disk', 'public');
+        $certPath = config('services.greenter.cert_path', 'certificado/certificate.pem');
+
+        if (!Storage::disk($certDisk)->exists($certPath)) {
+            throw new Exception("No se encontró el certificado en: {$certPath}");
+        }
+
+        $see->setCertificate(
+            Storage::disk($certDisk)->get($certPath)
+        );
+
+        $modo = config('services.greenter.mode', 'beta');
+
+        if ($modo === 'production') {
+            $see->setService(SunatEndpoints::FE_PRODUCCION);
+        } else {
+            $see->setService(config('services.greenter.beta_url'));
+        }
+
+        $see->setClaveSOL(
+            $empresa->documento,
+            $empresa->usuario_facturacion,
+            $empresa->contrasena_facturacion
+        );
+
+        return $see;
+    }
+
+    private function buildInvoice(Venta $venta, Empresa $empresa): Invoice
+    {
+        $cliente = $venta->persona;
+
+        if (!$cliente) {
+            throw new Exception('La venta no tiene cliente asociado.');
+        }
+
+        $tipoDocComprobante = $this->mapTipoDocumentoComprobante($venta->tipo_documento_factura_id);
+        $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
+
+        $companyAddress = (new Address())
+            ->setUbigueo($empresa->ubigueo ?? '150101')
+            ->setDepartamento($empresa->departamento ?? 'LIMA')
+            ->setProvincia($empresa->provincia ?? 'LIMA')
+            ->setDistrito($empresa->distrito ?? 'LIMA')
+            ->setUrbanizacion($empresa->urbanizacion ?? '-')
+            ->setDireccion($empresa->direccion ?? $empresa->razon_social)
+            ->setCodLocal($empresa->cod_local ?? '0000');
 
         $company = (new Company())
             ->setRuc($empresa->documento)
             ->setRazonSocial($empresa->razon_social)
-            ->setNombreComercial($empresa->nombre_comercial)
-            ->setAddress($address);
+            ->setNombreComercial($empresa->nombre_comercial ?? $empresa->razon_social)
+            ->setAddress($companyAddress);
 
-        // Venta
-        $invoice = (new Invoice())
+        $client = (new Client())
+            ->setTipoDoc($tipoDocCliente)
+            ->setNumDoc($cliente->documento ?: '00000000')
+            ->setRznSocial(trim($cliente->nombres . ' ' . ($cliente->apellidos ?? '')))
+            ->setAddress(
+                (new Address())->setDireccion($cliente->direccion ?? '-')
+            );
+
+        $detalles = [];
+        $mtoOperGravadas = 0;
+        $mtoIGV = 0;
+        $valorVenta = 0;
+        $subTotal = 0;
+        $totalVenta = 0;
+
+        foreach ($venta->detalles as $detalle) {
+            $cantidad = (float) ($detalle->cantidad ?? 1);
+            $totalLinea = (float) ($detalle->total ?? 0);
+
+            if ($cantidad <= 0) {
+                throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
+            }
+
+            $valorUnitario = round($totalLinea / 1.18, 10);
+            $igvLinea = round($totalLinea - $valorUnitario, 2);
+            $valorVentaLinea = round($totalLinea - $igvLinea, 2);
+            $precioUnitario = round($totalLinea / $cantidad, 10);
+            $valorUnitarioSinIgv = round($valorVentaLinea / $cantidad, 10);
+
+            $detalles[] = (new SaleDetail())
+                ->setCodProducto((string) ($detalle->id ?? 'ITEM'))
+                ->setUnidad('NIU')
+                ->setCantidad($cantidad)
+                ->setMtoValorUnitario($valorUnitarioSinIgv)
+                ->setDescripcion($detalle->descripcion)
+                ->setMtoBaseIgv($valorVentaLinea)
+                ->setPorcentajeIgv(18.00)
+                ->setIgv($igvLinea)
+                ->setTipAfeIgv('10')
+                ->setTotalImpuestos($igvLinea)
+                ->setMtoValorVenta($valorVentaLinea)
+                ->setMtoPrecioUnitario($precioUnitario);
+
+            $mtoOperGravadas += $valorVentaLinea;
+            $mtoIGV += $igvLinea;
+            $valorVenta += $valorVentaLinea;
+            $subTotal += $totalLinea;
+            $totalVenta += $totalLinea;
+        }
+
+        $formatter = new NumeroALetras();
+
+        $legend = (new Legend())
+            ->setCode('1000')
+            ->setValue($formatter->toInvoice($totalVenta, 2, 'SOLES'));
+
+        return (new Invoice())
             ->setUblVersion('2.1')
             ->setTipoOperacion('0101')
-            ->setTipoDoc('01')
-            ->setSerie('F001')
-            ->setCorrelativo('1')
-            ->setFechaEmision(new DateTime('2020-08-24 13:05:00-05:00'))
+            ->setTipoDoc($tipoDocComprobante)
+            ->setSerie($venta->serie)
+            ->setCorrelativo((string) $venta->numero)
+            ->setFechaEmision(new DateTime(now()->format('Y-m-d H:i:sP')))
             ->setFormaPago(new FormaPagoContado())
             ->setTipoMoneda('PEN')
             ->setCompany($company)
             ->setClient($client)
-            ->setMtoOperGravadas(100.00)
-            ->setMtoIGV(18.00)
-            ->setTotalImpuestos(18.00)
-            ->setValorVenta(100.00)
-            ->setSubTotal(118.00)
-            ->setMtoImpVenta(118.00);
-
-        $item = (new SaleDetail())
-            ->setCodProducto('P001')
-            ->setUnidad('NIU')
-            ->setCantidad(2)
-            ->setMtoValorUnitario(50.00)
-            ->setDescripcion('PRODUCTO 1')
-            ->setMtoBaseIgv(100)
-            ->setPorcentajeIgv(18.00)
-            ->setIgv(18.00)
-            ->setTipAfeIgv('10')
-            ->setTotalImpuestos(18.00)
-            ->setMtoValorVenta(100.00)
-            ->setMtoPrecioUnitario(59.00);
-
-        $legend = (new Legend())
-            ->setCode('1000')
-            ->setValue('SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES');
-
-        $invoice->setDetails([$item])
+            ->setMtoOperGravadas(round($mtoOperGravadas, 2))
+            ->setMtoIGV(round($mtoIGV, 2))
+            ->setTotalImpuestos(round($mtoIGV, 2))
+            ->setValorVenta(round($valorVenta, 2))
+            ->setSubTotal(round($subTotal, 2))
+            ->setMtoImpVenta(round($totalVenta, 2))
+            ->setDetails($detalles)
             ->setLegends([$legend]);
     }
 
-    public function prueba()
+    private function resolverTipoDocumentoCliente(?string $numeroDocumento, ?int $tipoDocumentoFacturaId): int
     {
-        $see = new See();
-        $see->setCertificate(Storage::disk('public')->get("certificado/certificate.pem"));
-        $see->setService("https://demo-ose.nubefact.com/ol-ti-itcpe/billService?wsdl");
-        $see->setClaveSOL('20605498630MODDATOS', 'MODDATOS', 'MODDATOS');
+        $numeroDocumento = trim((string) $numeroDocumento);
 
-
-        $client = (new Client())
-            ->setTipoDoc('6')
-            ->setNumDoc('20000000001')
-            ->setRznSocial('EMPRESA X')
-            ->setAddress((new Address())->setDireccion("DIRECCION X"));
-
-
-        // Emisor
-        $address = (new Address())
-            ->setUbigueo('150101')
-            ->setDepartamento('LIMA')
-            ->setProvincia('LIMA')
-            ->setDistrito('LIMA')
-            ->setUrbanizacion('-')
-            ->setDireccion('Av. Villa Nueva 221')
-            ->setCodLocal('0000'); // Codigo de establecimiento asignado por SUNAT, 0000 por defecto.
-
-        $company = (new Company())
-            ->setRuc('20605498630')
-            ->setRazonSocial('GREEN SAC')
-            ->setNombreComercial('GREEN')
-            ->setAddress($address);
-
-        // Venta
-        $invoice = (new Invoice())
-            ->setUblVersion('2.1')
-            ->setTipoOperacion('0101') // Venta - Catalog. 51
-            ->setTipoDoc('01') // Factura - Catalog. 01 
-            ->setSerie('F001')
-            ->setCorrelativo('1')
-            ->setFechaEmision(new DateTime()) // Zona horaria: Lima
-            ->setFormaPago(new FormaPagoContado()) // FormaPago: Contado
-            ->setTipoMoneda('PEN') // Sol - Catalog. 02
-            ->setCompany($company)
-            ->setClient($client)
-            ->setMtoOperGravadas(100.00)
-            ->setMtoIGV(18.00)
-            ->setTotalImpuestos(18.00)
-            ->setValorVenta(100.00)
-            ->setSubTotal(118.00)
-            ->setMtoImpVenta(118.00);
-
-        $item = (new SaleDetail())
-            ->setCodProducto('P001')
-            ->setUnidad('NIU') // Unidad - Catalog. 03
-            ->setCantidad(2)
-            ->setMtoValorUnitario(50.00)
-            ->setDescripcion('PRODUCTO 1')
-            ->setMtoBaseIgv(100)
-            ->setPorcentajeIgv(18.00) // 18%
-            ->setIgv(18.00)
-            ->setTipAfeIgv('10') // Gravado Op. Onerosa - Catalog. 07
-            ->setTotalImpuestos(18.00) // Suma de impuestos en el detalle
-            ->setMtoValorVenta(100.00)
-            ->setMtoPrecioUnitario(59.00);
-
-        $legend = (new Legend())
-            ->setCode('1000') // Monto en letras - Catalog. 52
-            ->setValue('SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES');
-
-        $invoice->setDetails([$item])
-            ->setLegends([$legend]);
-
-
-        $result = $see->send($invoice);
-
-        // Guardar XML firmado digitalmente separado por fechas diarias 
-        Storage::disk('public')->put("xml/30-01-2026/" . $invoice->getName() . '.xml', $see->getFactory()->getLastXml());
-
-        // Verificamos que la conexión con SUNAT fue exitosa.
-        if (!$result->isSuccess()) {
-            // Mostrar error al conectarse a SUNAT.
-            echo 'Codigo Error: ' . $result->getError()->getCode();
-            echo 'Mensaje Error: ' . $result->getError()->getMessage();
-            exit();
+        if (strlen($numeroDocumento) === 11) {
+            return 2; // RUC
         }
 
-        // Guardamos el CDR en la mismca carpeta del xml
-
-        Storage::disk('public')->put("xml/30-01-2026/" . 'R-' . $invoice->getName() . '.zip', $result->getCdrZip());
-
-
-        $cdr = $result->getCdrResponse();
-
-        $code = (int)$cdr->getCode();
-
-        if ($code === 0) {
-            echo 'ESTADO: ACEPTADA' . PHP_EOL;
-            if (count($cdr->getNotes()) > 0) {
-                echo 'OBSERVACIONES:' . PHP_EOL;
-                // Corregir estas observaciones en siguientes emisiones.
-                var_dump($cdr->getNotes());
-            }
-        } else if ($code >= 2000 && $code <= 3999) {
-            echo 'ESTADO: RECHAZADA' . PHP_EOL;
-        } else {
-            /* Esto no debería darse, pero si ocurre, es un CDR inválido que debería tratarse como un error-excepción. */
-            /*code: 0100 a 1999 */
-            echo 'Excepción';
+        if (strlen($numeroDocumento) === 8) {
+            return 1; // DNI
         }
 
-        echo $cdr->getDescription() . PHP_EOL;
+        return 6; // SIN DOCUMENTO
+    }
+
+    private function mapTipoDocumentoClienteSunat(?int $tipoDocumentoId, ?string $numeroDocumento): string
+    {
+        $tipo = TipoDocumentoPersona::find($tipoDocumentoId);
+
+        if (!$tipo) {
+            return '0';
+        }
+
+        return (string) $tipo->codigo_sunat;
     }
 }

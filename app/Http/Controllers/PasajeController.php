@@ -9,6 +9,7 @@ use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
 use App\Models\MetodoPago;
 use App\Models\BilleteraDigital;
+use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
 use App\Models\Venta;
@@ -69,58 +70,55 @@ class PasajeController extends Controller
 
     public function listarPasajes(Request $request)
     {
-        $query = Pasaje::with([
-            'salida.horario.ruta',
-            'origen',
-            'destino',
-            'persona',
-            'venta',
-        ]);
-
-        // Solo vendidos / finalizados / no abordó si quieres ver historial
-        $query->whereIn('estado', ['V', 'F', 'X']);
-
-        if ($request->filled('salida_id')) {
-            $query->where('salida_id', $request->salida_id);
-        }
+        $query = Pasaje::query()
+            ->with([
+                'salida.horario.ruta',
+                'origen',
+                'destino',
+                'persona',
+                'venta',
+            ])
+            ->join('salidas', 'pasajes.salida_id', '=', 'salidas.id')
+            ->join('personas', 'pasajes.persona_id', '=', 'personas.id')
+            ->whereIn('pasajes.estado', ['V', 'F', 'X']);
 
         if ($request->filled('documento')) {
             $documento = trim($request->documento);
+            $query->where('personas.documento', 'like', "{$documento}%");
+        }
 
-            $query->whereHas('persona', function ($q) use ($documento) {
-                $q->where('documento', 'like', "%{$documento}%");
-            });
+        if ($request->filled('fecha')) {
+            $query->whereDate('salidas.fecha_salida', $request->fecha);
         }
 
         if ($request->filled('origen_id')) {
-            $query->where('origen_sucursal_id', $request->origen_id);
+            $query->where('pasajes.origen_sucursal_id', $request->origen_id);
         }
 
         if ($request->filled('destino_id')) {
-            $query->where('destino_sucursal_id', $request->destino_id);
+            $query->where('pasajes.destino_sucursal_id', $request->destino_id);
         }
 
         if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
+            $query->where('pasajes.estado', $request->estado);
         }
 
         $pasajes = $query
-            ->join('salidas', 'pasajes.salida_id', '=', 'salidas.id')
             ->orderBy('salidas.fecha_salida', 'desc')
             ->orderBy('pasajes.asiento_numero', 'asc')
             ->select('pasajes.*')
-            ->paginate(20)
+            ->simplePaginate(20)
             ->withQueryString();
-
-        $salidas = Salida::with(['horario.ruta'])
-            ->orderBy('fecha_salida', 'desc')
-            ->get();
 
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
 
-        return view('pasajes.busqueda', compact('pasajes', 'salidas', 'sucursales'));
+        if ($request->ajax()) {
+            return view('pasajes.partials.tabla', compact('pasajes'))->render();
+        }
+
+        return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
     }
 
     public function datatable()
@@ -299,8 +297,8 @@ class PasajeController extends Controller
             'apellidos' => 'required|array',
             'apellidos.*' => 'required|string|max:200',
 
-            'celular' => 'required|array',
-            'celular.*' => 'required|string|max:20',
+            'celular' => 'nullable|array',
+            'celular.*' => 'nullable|string|max:20',
 
             'telefono' => 'nullable|array',
             'correo' => 'nullable|array',
@@ -367,7 +365,7 @@ class PasajeController extends Controller
                 $telefono = $request->telefono[$index] ?? null;
                 $correo = $request->correo[$index] ?? null;
 
-                if (!$documento || !$nombres || !$apellidos || !$celular) {
+                if (!$documento || !$nombres || !$apellidos) {
                     throw ValidationException::withMessages([
                         "documento.$index" => "Faltan datos del pasajero del asiento {$asientoNumero}.",
                     ]);
@@ -399,6 +397,12 @@ class PasajeController extends Controller
                         'fecha_creacion' => now(),
                     ]
                 );
+
+                $cliente = Cliente::updateOrCreate(
+                    ['persona_id' => $persona->id],
+                    ['user_id' => Auth::id()]
+                );
+
 
                 $asientosDisponibles = $salida->asientosDisponibles($request->origen_id, $request->destino_id);
 
@@ -481,18 +485,27 @@ class PasajeController extends Controller
                 $personaFacturacion = null;
 
                 if ($request->filled('numero_documento_id')) {
-                    $personaFacturacion = Persona::updateOrCreate(
-                        ['documento' => $request->numero_documento_id],
-                        [
-                            'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
-                            'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
-                            'estado' => 'A',
-                            'fecha_creacion' => now(),
-                        ]
-                    );
+                    $numeroDocFact = trim($request->numero_documento_id);
+                    $tipoDocFact = (int) ($request->tipo_documento_factura_id ?? 1);
+
+                    $primerPasajero = $pasajeros[0]['persona'] ?? null;
+
+                    if ($primerPasajero && $primerPasajero->documento === $numeroDocFact) {
+                        $personaFacturacion = $primerPasajero;
+                    } else {
+                        $personaFacturacion = Persona::updateOrCreate(
+                            ['documento' => $numeroDocFact],
+                            [
+                                'tipo_documento_id' => $tipoDocFact,
+                                'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
+                                'apellidos' => null,
+                                'estado' => 'A',
+                                'fecha_creacion' => now(),
+                            ]
+                        );
+                    }
                 } else {
-                    $primerPasajero = $pasajeros[0]['persona'];
-                    $personaFacturacion = $primerPasajero;
+                    $personaFacturacion = $pasajeros[0]['persona'];
                 }
 
                 $tipoDoc = $request->tipo_documento_factura_id;
@@ -915,7 +928,7 @@ class PasajeController extends Controller
             'documento' => 'required|string|max:20',
             'nombres' => 'required|string|max:200',
             'apellidos' => 'required|string|max:200',
-            'celular' => 'required|string|max:20',
+            'celular' => 'nullable|string|max:20',
             'telefono' => 'nullable|string|max:20',
             'correo' => 'nullable|email|max:255',
             'pasajero_menor' => 'nullable|boolean',
@@ -1044,7 +1057,7 @@ class PasajeController extends Controller
 
         $pasaje = Pasaje::where('salida_id', $request->salida_id)
             ->where('asiento_numero', $request->asiento)
-            ->whereIn('estado', ['R', 'V', 'F'])
+            ->whereIn('pasajes.estado', ['R', 'V', 'F'])
             ->latest('id')
             ->first();
 

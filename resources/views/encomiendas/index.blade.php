@@ -2,19 +2,26 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header d-flex justify-content-between">
-            <h5 class="mb-0">Asignar Encomiendas</h5>
+        <div class="card-header">
+            <h5 class="mb-0">Encomiendas sin asignar</h5>
         </div>
+
         <div class="card-body">
-
-            <div class="row mb-3">
+            <div class="row g-3 mb-3">
                 <div class="col-md-2">
-                    <input type="text" id="filtroDNI" class="form-control" placeholder="DNI del emisor">
+                    <label class="form-label">Documento</label>
+                    <input type="text" id="filtroDocumento" class="form-control" placeholder="Emisor o receptor">
                 </div>
 
                 <div class="col-md-2">
-                    <select id="filtroOrigen" class="form-select">
-                        <option value="">Filtrar por origen</option>
+                    <label class="form-label">Fecha</label>
+                    <input type="date" id="filtroFecha" class="form-control">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Origen</label>
+                    <select id="filtroOrigen">
+                        <option value="">Todos</option>
                         @foreach ($sucursales as $s)
                             <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
                         @endforeach
@@ -22,65 +29,65 @@
                 </div>
 
                 <div class="col-md-2">
-                    <select id="filtroDestino" class="form-select">
-                        <option value="">Filtrar por destino</option>
+                    <label class="form-label">Destino</label>
+                    <select id="filtroDestino">
+                        <option value="">Todos</option>
                         @foreach ($sucursales as $s)
                             <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-md-5">
-                    <select id="asignacion_id" class="form-select" required>
-                        <option value="">Seleccione una salida</option>
-                        @foreach ($asignaciones as $a)
-                            <option value="{{ $a->id }}">{{ $a->horario->tipo_vehiculo->descripcion }} |
-                                {{ $a->horario->fecha_formateada }} |
-                                {{ $a->horario->hora_formateada }} | {{ $a->horario->punto_origen->nombre_comercial }} ->
-                                {{ $a->horario->punto_destino->nombre_comercial }}</option>
-                        @endforeach
+                <div class="col-md-3">
+                    <label class="form-label">Salida a asignar</label>
+                    <select id="salidaAsignar">
+                        <option value="">Seleccione salida</option>
                     </select>
                 </div>
+                <div class="col-md-1 d-flex justify-content-center align-items-center">
+                    <button type="button" class="btn btn-light" id="btnLimpiar">
+                        Limpiar
+                    </button>
+                </div>
+                <div class="col-12 d-flex justify-content-between">
 
-                <div class="col-md-1 d-flex align-items-end">
-                    <button class="btn btn-success w-100" id="btnAsignar">
-                        Asignar
+                    <button type="button" class="btn btn-primary" id="btnAsignarSeleccionadas">
+                        Asignar seleccionadas
                     </button>
                 </div>
             </div>
 
-            <!-- Tabla -->
-            <table class="table table-bordered table-hover w-100" id="tablaEncomiendas">
-                <thead>
-                    <tr>
-                        <th width="50px">
-                            <input type="checkbox" id="checkAll">
-                        </th>
-                        <th>ID</th>
-                        <th>DNI Emisor</th>
-                        <th>Emisor</th>
-                        <th>Receptor</th>
-                        <th>Origen</th>
-                        <th>Destino</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-
-            <div class="mt-3">
-                <span class="badge bg-info" id="contadorSeleccionados">0 seleccionadas</span>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle" id="tablaEncomiendas">
+                    <thead>
+                        <tr>
+                            <th width="40">
+                                <input type="checkbox" id="checkAll">
+                            </th>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Emisor</th>
+                            <th>DNI Emisor</th>
+                            <th>Receptor</th>
+                            <th>DNI Receptor</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th width="100">Acciones</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
         </div>
     </div>
-    @include('encomiendas.modals.ver')
 @endsection
 
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+@endpush
+
 @push('scripts')
-    <script>
-        const csrf_token = '{{ csrf_token() }}';
-    </script>
-    <script src="{{ asset('js/encomiendas.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <script src="{{ asset('js/encomiendas_no_asignadas.js') }}"></script>
 @endpush

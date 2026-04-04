@@ -71,5 +71,6 @@ require __DIR__ . '/reportes.php';
 require __DIR__ . '/salidas.php';
 require __DIR__ . '/clientes.php';
 require __DIR__ . '/usuarios.php';
+require __DIR__ . '/ventas.php';
 require __DIR__ . '/tipo_cupones.php';
 require __DIR__ . '/encomienda-asignacion.php';

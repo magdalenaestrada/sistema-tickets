@@ -226,7 +226,7 @@
                                 <tbody>
                                     @forelse($resumenSucursales as $item)
                                         <tr>
-                                            <td class="ps-4">{{ $item['nombre'] }}</td>
+                                            <td class="ps-4">{{ $item['nombre_comercial'] }}</td>
                                             <td class="text-center">{{ $item['salidas'] }}</td>
                                             <td class="text-center">{{ $item['tickets'] }}</td>
                                             <td class="text-end pe-4">S/ {{ number_format($item['ventas'], 2) }}</td>

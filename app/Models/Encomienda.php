@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Encomienda extends Model
 {
-    use HasFactory;
+    use SoftDeletes, HasFactory;
 
     protected $table = 'encomienda';
 
@@ -91,5 +91,22 @@ class Encomienda extends Model
         return $this->venta->pagos->sum('total');
     }
 
-    use SoftDeletes;
+    public function asignacionesSalida()
+    {
+        return $this->hasMany(EncomiendaSalida::class, 'encomienda_id');
+    }
+
+    public function salidaActual()
+    {
+        return $this->hasOne(EncomiendaSalida::class, 'encomienda_id')
+            ->whereIn('estado', ['P', 'A'])
+            ->latestOfMany();
+    }
+
+    public function salidas()
+    {
+        return $this->belongsToMany(Salida::class, 'encomienda_salida')
+            ->withPivot(['usuario_id', 'fecha_asignacion', 'fecha_llegada', 'estado'])
+            ->withTimestamps();
+    }
 }

@@ -2,11 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Caja;
-use App\Models\CajaDetalle;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class EncomiendaService
@@ -22,7 +19,7 @@ class EncomiendaService
 
     public function crearEncomienda($request, $emisorId, $receptorId, $user_id)
     {
-        return DB::transaction(function () use ($request, $emisorId, $receptorId, $user_id) {
+        $data = DB::transaction(function () use ($request, $emisorId, $receptorId, $user_id) {
             $encomienda = Encomienda::create([
                 'origen' => $request->origen,
                 'destino' => $request->destino,
@@ -46,12 +43,15 @@ class EncomiendaService
                 ]);
             }
 
+            $ventaData = null;
+
             if ($request->boolean('pago_instantaneo')) {
                 $ventaData = $this->ventaService->crearVenta(
                     $request,
                     Encomienda::class,
                     $encomienda->id
                 );
+
                 $encomienda->venta_id = $ventaData['venta']->id;
                 $encomienda->save();
 
@@ -62,16 +62,28 @@ class EncomiendaService
                     $ventaData['servicio_id']
                 );
             }
-            return $encomienda;
+
+            return [
+                'encomienda' => $encomienda,
+                'ventaData' => $ventaData,
+            ];
         });
+
+        if ($data['ventaData']) {
+            $this->ventaService->emitirVenta($data['ventaData']['venta']);
+        }
+
+        return $data['encomienda']->fresh();
     }
+
     public function actualizarEncomienda(
         $request,
         Encomienda $encomienda,
         int $emisorId,
         int $receptorId
     ) {
-        return DB::transaction(function () use ($request, $encomienda, $emisorId, $receptorId) {
+        $data = DB::transaction(function () use ($request, $encomienda, $emisorId, $receptorId) {
+            $ventaAnterior = $encomienda->venta;
 
             $encomienda->update([
                 'origen' => $request->origen,
@@ -94,49 +106,50 @@ class EncomiendaService
                     'costo' => $detalle['costo'],
                 ]);
             }
-            $antesTeniaPago = $encomienda->venta_id !== null;
-            $registrarPago  = $request->boolean('pago_instantaneo');
+
+            $antesTeniaPago = $ventaAnterior !== null;
+            $registrarPago = $request->boolean('pago_instantaneo');
+            $ventaNuevaData = null;
 
             if ($registrarPago) {
-
                 if ($antesTeniaPago) {
-                    $ventaData = $this->ventaService->reemplazarVenta(
-                        $encomienda->venta,
-                        $request,
-                        Encomienda::class,
-                        $encomienda->id
-                    );
-                } else {
-                    $ventaData = $this->ventaService->crearVenta(
-                        $request,
-                        Encomienda::class,
-                        $encomienda->id
-                    );
+                    $this->ventaService->anularVenta($ventaAnterior);
                 }
 
-                $encomienda->venta_id = $ventaData['venta']->id;
+                $ventaNuevaData = $this->ventaService->crearVenta(
+                    $request,
+                    Encomienda::class,
+                    $encomienda->id
+                );
+
+                $encomienda->venta_id = $ventaNuevaData['venta']->id;
                 $encomienda->save();
 
-                $ventaData['venta']->pagos()->delete();
-
                 $this->pagoService->registrarPagos(
-                    $ventaData['venta']->id,
+                    $ventaNuevaData['venta']->id,
                     $request->pagos ?? [],
-                    $ventaData['servicio_model'],
-                    $ventaData['servicio_id']
+                    $ventaNuevaData['servicio_model'],
+                    $ventaNuevaData['servicio_id']
                 );
             }
 
             if (!$registrarPago && $antesTeniaPago) {
-
-                $encomienda->venta->pagos()->delete();
-                $encomienda->venta->detalles()->delete();
-                $encomienda->venta()->delete();
+                $this->ventaService->anularVenta($ventaAnterior);
 
                 $encomienda->venta_id = null;
                 $encomienda->save();
             }
-            return $encomienda;
+
+            return [
+                'encomienda' => $encomienda,
+                'ventaNuevaData' => $ventaNuevaData,
+            ];
         });
+
+        if ($data['ventaNuevaData']) {
+            $this->ventaService->emitirVenta($data['ventaNuevaData']['venta']);
+        }
+
+        return $data['encomienda']->fresh();
     }
 }

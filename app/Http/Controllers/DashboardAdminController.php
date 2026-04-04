@@ -74,7 +74,7 @@ class DashboardAdminController extends Controller
             ->get()
             ->map(function ($row) use ($desde, $hasta) {
                 return [
-                    'nombre' => $row->nombre,
+                    'nombre_comercial' => $row->nombre_comercial,
                     'salidas' => 0,
                     'tickets' => (int) $row->tickets,
                     'ventas' => (float) $row->ventas,

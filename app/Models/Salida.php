@@ -133,7 +133,7 @@ class Salida extends Model
 
         return $asientos;
     }
-    
+
     public function calcularCostoPorTramos($origenSucursalId, $destinoSucursalId)
     {
         return $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)
@@ -153,5 +153,44 @@ class Salida extends Model
     public function conductorSecundario()
     {
         return $this->belongsTo(Persona::class, 'conductor_secundario_id');
+    }
+
+    public function asignacionesEncomienda()
+    {
+        return $this->hasMany(EncomiendaSalida::class, 'salida_id');
+    }
+
+    public function encomiendas()
+    {
+        return $this->belongsToMany(Encomienda::class, 'encomienda_salida')
+            ->withPivot(['usuario_id', 'fecha_asignacion', 'fecha_llegada', 'estado'])
+            ->withTimestamps();
+    }
+
+    public function puedeTransportarEncomienda($origenSucursalId, $destinoSucursalId)
+    {
+        $ruta = $this->horario?->ruta;
+
+        if (!$ruta) {
+            return false;
+        }
+
+        $puntos = $ruta->puntos()->orderBy('orden')->get();
+
+        if ($puntos->isEmpty()) {
+            return false;
+        }
+
+        $primerPunto = $puntos->first();
+        $ultimoPunto = $puntos->last();
+
+        $tipoViajeId = (int) ($this->horario?->tipo_viaje_id ?? 0);
+
+        if ($tipoViajeId === 1) {
+            return (int) $primerPunto?->sucursal_id === (int) $origenSucursalId
+                && (int) $ultimoPunto?->sucursal_id === (int) $destinoSucursalId;
+        }
+
+        return $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)->isNotEmpty();
     }
 }

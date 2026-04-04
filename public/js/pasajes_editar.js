@@ -1,3 +1,6 @@
+const btnAbordo = document.getElementById("btnAbordo");
+const btnNoAbordo = document.getElementById("btnNoAbordo");
+
 $(function () {
     const csrf = $('meta[name="csrf-token"]').attr("content");
 
@@ -36,6 +39,60 @@ $(function () {
             },
         });
     });
+
+    if (btnAbordo) {
+        btnAbordo.addEventListener("click", function () {
+            Swal.fire({
+                title: "¿Marcar como abordó?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Sí",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                fetch(route("pasajes.abordo", { pasaje: PASAJE_ID }), {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": csrf,
+                        Accept: "application/json",
+                    },
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        Swal.fire("OK", data.message, "success").then(() =>
+                            window.location.route("pasajes.listar"),
+                        );
+                    });
+            });
+        });
+    }
+
+    if (btnNoAbordo) {
+        btnNoAbordo.addEventListener("click", function () {
+            Swal.fire({
+                title: "¿Marcar como no abordó?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Sí",
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                fetch(route("pasajes.noAbordo", { pasaje: PASAJE_ID }), {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": csrf,
+                        Accept: "application/json",
+                    },
+                })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        Swal.fire("OK", data.message, "success").then(() =>
+                            location.reload(),
+                        );
+                    });
+            });
+        });
+    }
 
     $("#btnCambiarViaje").on("click", function () {
         if (!$("#nueva_salida_id").val()) {
@@ -107,42 +164,6 @@ $(function () {
                 );
             },
         });
-    });
-
-    $("#btnAbordo").on("click", function () {
-        $.post(route("pasajes.abordo", { pasaje: PASAJE_ID }), {
-            _token: csrf,
-        })
-            .done(function (res) {
-                Swal.fire("Correcto", res.message, "success").then(() =>
-                    window.location.reload(),
-                );
-            })
-            .fail(function (xhr) {
-                Swal.fire(
-                    "Error",
-                    xhr.responseJSON?.message || "No se pudo actualizar",
-                    "error",
-                );
-            });
-    });
-
-    $("#btnNoAbordo").on("click", function () {
-        $.post(route("pasajes.no_abordo", { pasaje: PASAJE_ID }), {
-            _token: csrf,
-        })
-            .done(function (res) {
-                Swal.fire("Correcto", res.message, "success").then(() =>
-                    window.location.reload(),
-                );
-            })
-            .fail(function (xhr) {
-                Swal.fire(
-                    "Error",
-                    xhr.responseJSON?.message || "No se pudo actualizar",
-                    "error",
-                );
-            });
     });
 
     $("#btnCancelarPasaje").on("click", function () {
@@ -254,4 +275,6 @@ $(function () {
     $("#nueva_salida_id, #origen_id, #destino_id").on("change", function () {
         cargarAsientosCambio();
     });
+
+    enlazarBotonesAccion();
 });

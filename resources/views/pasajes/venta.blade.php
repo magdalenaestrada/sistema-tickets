@@ -54,9 +54,9 @@
                                         </div>
 
                                         <div class="col-md-3 mb-2">
-                                            <label class="form-label">Celular <span class="text-danger">*</span></label>
+                                            <label class="form-label">Celular </label>
                                             <input type="text" class="form-control" id="celular_{{ $index }}"
-                                                name="celular[]" required>
+                                                name="celular[]">
                                         </div>
 
                                         <div class="col-md-3 mb-2">
