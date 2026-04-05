@@ -171,6 +171,18 @@ $(function () {
         actualizarPagosCombinados();
     });
 
+    $("#precio_manual").on("input", function () {
+        let nuevoPrecio = parseFloat($(this).val());
+
+        if (isNaN(nuevoPrecio) || nuevoPrecio < 0) return;
+
+        selectedSeatNumbers.forEach((num) => {
+            seatPrices[num] = nuevoPrecio;
+        });
+
+        actualizarCostoTotal();
+    });
+
     $(".pasajero-menor-check").on("change", function () {
         const index = $(this).data("index");
         const container = $(`#autorizacion_container_${index}`);

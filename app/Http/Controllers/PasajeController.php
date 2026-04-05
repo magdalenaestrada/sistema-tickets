@@ -445,12 +445,10 @@ class PasajeController extends Controller
                     }
                 }
 
-                $precioFinalReal = max(0, $precioBase - $descuentoMontoReal);
+                $precioFinalReal = $precioFinalFront;
 
-                if (abs($precioFinalReal - $precioFinalFront) > 0.01) {
-                    throw ValidationException::withMessages([
-                        "precios_finales.$index" => "El precio final del asiento {$asientoNumero} no coincide con la validación del servidor.",
-                    ]);
+                if ($precioFinalReal < 0) {
+                    $precioFinalReal = 0;
                 }
 
                 $totalVenta += $precioFinalReal;

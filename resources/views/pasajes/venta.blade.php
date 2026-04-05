@@ -78,6 +78,8 @@
                                                 name="descuento_codigo[]" placeholder="Código">
                                             <small class="text-muted" id="descuento_msg_{{ $index }}"></small>
                                         </div>
+
+
                                     </div>
 
                                     <div class="row mt-2">
@@ -114,7 +116,11 @@
                                 <p class="mb-1"><strong>Vehículo:</strong>
                                     {{ $salida->horario->tipo_vehiculo->descripcion }}</p>
                                 <p class="mb-1"><strong>Fecha:</strong> {{ $salida->fecha_salida->format('Y-m-d') }}</p>
-                                <p class="mb-0"><strong>Hora:</strong> {{ $salida->horario->hora_formateada }}</p>
+                                <p class="mb-3"><strong>Hora:</strong> {{ $salida->horario->hora_formateada }}</p>
+                                <div class="mb-3">
+                                    <label class="form-label"><strong>Precio manual </strong>(por asiento)</label>
+                                    <input type="number" step="0.01" id="precio_manual" class="form-control">
+                                </div>
                             </div>
                         </div>
 
