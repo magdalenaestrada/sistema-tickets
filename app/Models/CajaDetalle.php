@@ -10,6 +10,7 @@ class CajaDetalle extends Model
     use HasFactory;
 
     protected $table = 'caja_detalle';
+
     protected $fillable = [
         'caja_id',
         'subtipo_movimiento_caja_id',
@@ -22,9 +23,14 @@ class CajaDetalle extends Model
         'anulado'
     ];
 
+    protected $casts = [
+        'amount'  => 'decimal:2',
+        'anulado' => 'boolean',
+    ];
+
     public function caja()
     {
-        return $this->belongsTo(Caja::class);
+        return $this->belongsTo(Caja::class, 'caja_id');
     }
 
     public function subtipo()
@@ -36,6 +42,7 @@ class CajaDetalle extends Model
     {
         return $this->belongsTo(MetodoPago::class, 'metodo_pago_id');
     }
+
     public function servicio()
     {
         return $this->morphTo(null, 'table_name', 'table_id');
@@ -46,16 +53,19 @@ class CajaDetalle extends Model
         parent::boot();
 
         static::creating(function ($detalle) {
+            if (!empty($detalle->numero_ticket)) {
+                return;
+            }
 
             $prefijo = match ($detalle->table_name) {
-                'App\Models\Pasaje' => 'P',
+                'App\Models\Pasaje'     => 'P',
                 'App\Models\Encomienda' => 'E',
-                default => 'X',
+                default                 => 'X',
             };
 
             $fecha = now()->format('dmy');
 
-            $count = CajaDetalle::where('table_name', $detalle->table_name)
+            $count = self::where('table_name', $detalle->table_name)
                 ->whereDate('created_at', today())
                 ->count();
 

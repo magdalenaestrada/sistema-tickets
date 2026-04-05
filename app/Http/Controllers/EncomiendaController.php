@@ -184,11 +184,10 @@ class EncomiendaController extends Controller
                 return '<span class="badge bg-secondary">' . e($row->estado) . '</span>';
             })
             ->addColumn('acciones', function ($row) {
-                $botones = '<button type="button" class="btn btn-sm btn-info ver" data-id="' . $row->id . '">Ver</button> ';
-                $botones .= '<button type="button" class="btn btn-sm btn-secondary imprimir" data-id="' . $row->id . '">Imprimir</button> ';
+                $botones = '<button type="button" class="btn btn-xs btn-secondary imprimir" data-id="' . $row->id . '"><i class="link-icon" data-lucide="printer"></i></button> </button> ';
 
                 if ($row->estado !== 'ENTREGADO') {
-                    $botones .= '<button type="button" class="btn btn-sm btn-success entregar" data-id="' . $row->id . '">Entregar</button>';
+                    $botones .= '<button type="button" class="btn btn-xs btn-success entregar" data-id="' . $row->id . '"><i class="link-icon" data-lucide="check"></i></button> </button>';
                 }
 
                 return $botones;
@@ -580,12 +579,6 @@ class EncomiendaController extends Controller
 
         return response()->json(['success' => true]);
     }
-    public function ticket($id)
-    {
-        $encomienda = Encomienda::with(['emisor', 'receptor', 'detalles', 'sucursal_origen', 'sucursal_destino'])->findOrFail($id);
-
-        return view('encomiendas.ticket', compact('encomienda'));
-    }
     public function salidasDisponibles(Request $request)
     {
         $request->validate([
@@ -695,5 +688,20 @@ class EncomiendaController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    public function ticket(Encomienda $encomienda)
+    {
+        $encomienda->load([
+            'emisor',
+            'receptor',
+            'usuario.persona',
+            'detalles.tipo_encomienda',
+            'sucursal_origen.empresa',
+            'sucursal_destino',
+            'venta.pagos.metodoPago',
+        ]);
+
+        return view('encomiendas.ticket', compact('encomienda'));
     }
 }

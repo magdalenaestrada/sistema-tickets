@@ -3,18 +3,17 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CajaController;
 
-Route::middleware(['auth', 'can:gestionar caja'])->prefix('caja')->group(function () {
-    Route::get('/', [CajaController::class, 'index'])->name('caja.index');
-    Route::get('/create', [CajaController::class, 'create'])->name('caja.create');
-    Route::post('/', [CajaController::class, 'store'])->name('caja.store');
-    Route::get('/{caja}', [CajaController::class, 'show'])->name('caja.show');
-    Route::post('/{caja}/ingreso', [CajaController::class, 'registrarIngreso'])->name('caja.ingreso');
-    Route::post('/{caja}/salida', [CajaController::class, 'registrarSalida'])->name('caja.salida');
-    Route::post('/{caja}/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
-    Route::get('/ticket/{detalle}/reimprimir', [CajaController::class, 'reimprimir'])
-        ->name('caja.ticket.reimprimir');
-    Route::post('/ticket/{detalle}/anular', [CajaController::class, 'anular'])
-        ->name('caja.ticket.anular');
-    Route::get('/corte/{caja}/imprimir', [CajaController::class, 'print_corte'])
-        ->name('caja.corte.imprimir');
+Route::middleware(['auth', 'can:gestionar caja'])->prefix('cajas')->name('caja.')->group(function () {
+    Route::get('/', [CajaController::class, 'index'])->name('index');
+    Route::post('/', [CajaController::class, 'store'])->name('store');
+    Route::get('/{caja}', [CajaController::class, 'show'])->name('show');
+
+    Route::post('/{caja}/ingreso', [CajaController::class, 'registrarIngreso'])->name('ingreso');
+    Route::post('/{caja}/salida', [CajaController::class, 'registrarSalida'])->name('salida');
+
+    Route::post('/{caja}/cerrar', [CajaController::class, 'cerrar'])->name('cerrar');
+    Route::get('/{caja}/print-corte', [CajaController::class, 'print_corte'])->name('print_corte');
+
+    Route::get('/caja-detalle/{detalle}/reimprimir', [CajaController::class, 'reimprimir'])->name('reimprimir');
+    Route::post('/caja-detalle/{detalle}/anular', [CajaController::class, 'anular'])->name('anular');
 });

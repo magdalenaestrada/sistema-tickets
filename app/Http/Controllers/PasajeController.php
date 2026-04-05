@@ -279,40 +279,29 @@ class PasajeController extends Controller
     {
         $request->validate([
             'accion' => 'required|in:reservar,vender',
-
             'salida_id' => 'required|exists:salidas,id',
             'origen_id' => 'required|exists:sucursales,id',
             'destino_id' => 'required|exists:sucursales,id',
-
             'asientos' => 'required|array|min:1',
             'asientos.*' => 'required|integer|min:1',
-
             'tipo_documento_id' => 'required|array',
             'tipo_documento_id.*' => 'required|integer',
-
             'documento' => 'required|array',
             'documento.*' => 'required|string|max:20',
-
             'nombres' => 'required|array',
             'nombres.*' => 'required|string|max:200',
-
             'apellidos' => 'required|array',
             'apellidos.*' => 'required|string|max:200',
-
             'celular' => 'nullable|array',
             'celular.*' => 'nullable|string|max:20',
-
             'telefono' => 'nullable|array',
             'correo' => 'nullable|array',
-
             'descuento_ids' => 'nullable|array',
             'descuento_montos' => 'nullable|array',
             'precios_finales' => 'nullable|array',
-
             'tipo_documento_factura_id' => 'nullable|integer',
             'numero_documento_id' => 'nullable|string|max:20',
             'razon_social' => 'nullable|string|max:255',
-
             'metodo_pago_id' => 'nullable|integer',
             'billetera_id' => 'nullable|integer',
             'pago_efectivo' => 'nullable|numeric|min:0',
@@ -400,11 +389,10 @@ class PasajeController extends Controller
                     ]
                 );
 
-                $cliente = Cliente::updateOrCreate(
+                Cliente::updateOrCreate(
                     ['persona_id' => $persona->id],
                     ['user_id' => Auth::id()]
                 );
-
 
                 $asientosDisponibles = $salida->asientosDisponibles($request->origen_id, $request->destino_id);
 
@@ -415,7 +403,6 @@ class PasajeController extends Controller
                 }
 
                 $descuentoId = $request->descuento_ids[$index] ?? null;
-                $descuentoMontoFront = (float) ($request->descuento_montos[$index] ?? 0);
                 $precioFinalFront = (float) ($request->precios_finales[$index] ?? $precioBase);
 
                 $descuentoMontoReal = 0;
@@ -480,6 +467,7 @@ class PasajeController extends Controller
                     'es_promocion' => $esPromocion,
                 ];
             }
+
             $detalles = [];
 
             foreach ($pasajeros as $p) {
@@ -488,8 +476,6 @@ class PasajeController extends Controller
                     'descuento' => $p['descuento_monto'],
                 ];
             }
-
-            $personaFacturacion = null;
 
             if ($request->filled('numero_documento_id')) {
                 $personaFacturacion = Persona::updateOrCreate(
@@ -507,12 +493,20 @@ class PasajeController extends Controller
 
             $ventaService = app(VentaService::class);
             $pagoService = app(PagoService::class);
-            $pagos = [];
+
+            $tipoDocumentoFacturaId = $request->tipo_documento_factura_id ?: 2;
+            $numeroDocFact = trim((string) ($request->numero_documento_id ?: $personaFacturacion->documento));
+
+            if ((int) $tipoDocumentoFacturaId === 1 && strlen($numeroDocFact) !== 11) {
+                throw ValidationException::withMessages([
+                    'numero_documento_id' => 'La factura requiere RUC de 11 dígitos.',
+                ]);
+            }
 
             $ventaData = $ventaService->crearVenta(
                 new Request([
                     'tipo_servicio_id' => 1,
-                    'tipo_documento_factura_id' => $request->tipo_documento_factura_id ?? 1,
+                    'tipo_documento_factura_id' => $tipoDocumentoFacturaId,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,
                     'total' => $totalVenta,
@@ -526,27 +520,40 @@ class PasajeController extends Controller
 
             $venta = $ventaData['venta'];
 
-            $pagoService->registrarPagos(
-                $venta->id,
-                $pagos,
-                Pasaje::class,
-                null
-            );
+            $pagos = [];
 
-            $ventaService->emitirVenta($venta);
-            if ($request->pago_efectivo > 0) {
+            if ((float) $request->pago_efectivo > 0) {
                 $pagos[] = [
                     'metodo_pago_id' => 1,
-                    'total' => $request->pago_efectivo,
+                    'total' => (float) $request->pago_efectivo,
                 ];
             }
 
-            if ($request->pago_billetera > 0) {
+            if ((float) $request->pago_billetera > 0) {
                 $pagos[] = [
                     'metodo_pago_id' => 2,
                     'billetera_id' => $request->billetera_id,
-                    'total' => $request->pago_billetera,
+                    'total' => (float) $request->pago_billetera,
                 ];
+            }
+
+            $sumaPagos = collect($pagos)->sum('total');
+
+            if (round($sumaPagos, 2) !== round($totalVenta, 2) && $accion === 'vender') {
+                throw ValidationException::withMessages([
+                    'pago_efectivo' => 'La suma de pagos no coincide con el total de la venta.',
+                ]);
+            }
+
+            if ($accion === 'vender') {
+                $pagoService->registrarPagos(
+                    $venta->id,
+                    $pagos,
+                    Venta::class,
+                    $venta->id
+                );
+
+                $emision = $ventaService->emitirVenta($venta);
             }
 
             foreach ($pasajeros as $pasajeroData) {
@@ -577,6 +584,10 @@ class PasajeController extends Controller
                 'message' => $accion === 'reservar'
                     ? 'Reserva realizada correctamente.'
                     : 'Venta realizada correctamente.',
+                'venta_id' => $venta->id,
+                'comprobante' => $emision['nombre'] ?? null,
+                'xml_path' => $emision['xml_path'] ?? null,
+                'cdr_path' => $emision['cdr_path'] ?? null,
                 'redirect' => route('pasajes.index'),
             ]);
         } catch (ValidationException $e) {
@@ -642,14 +653,24 @@ class PasajeController extends Controller
         $metodos_pago = MetodoPago::all();
         $billeteras_digitales = BilleteraDigital::all();
         $sucursales = Sucursal::where('estado', 'A')->orderBy('nombre_comercial')->get();
-
+        $salidas = Salida::with([
+            'horario.ruta',
+            'horario.tipo_vehiculo',
+        ])
+            ->whereHas('horario', function ($q) use ($pasaje) {
+                $q->where('ruta_id', $pasaje->salida->horario->ruta_id);
+            })
+            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->orderBy('fecha_salida')
+            ->get();
         return view('pasajes.editar', compact(
             'pasaje',
             'tipos_documentos',
             'tipos_documentos_facturas',
             'metodos_pago',
             'billeteras_digitales',
-            'sucursales'
+            'sucursales',
+            'salidas'
         ));
     }
 
@@ -1055,5 +1076,19 @@ class PasajeController extends Controller
             'pasaje_id' => $pasaje->id,
             'estado' => $pasaje->estado,
         ]);
+    }
+
+    public function ticket(Pasaje $pasaje)
+    {
+        $pasaje->load([
+            'persona',
+            'usuario.persona',
+            'origen.empresa',
+            'destino',
+            'venta.pagos.metodoPago',
+            'salida.horario.ruta',
+        ]);
+
+        return view('pasajes.ticket', compact('pasaje'));
     }
 }

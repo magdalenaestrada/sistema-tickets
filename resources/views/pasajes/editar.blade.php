@@ -25,6 +25,16 @@
     .seat.seat-actual .seat-base {
         fill: #a31616 !important;
     }
+
+    #svgContainerCambio {
+        text-align: center;
+    }
+
+    #svgContainerCambio svg {
+        width: 100%;
+        max-width: 450px;
+        height: auto;
+    }
 </style>
 
 @section('content')
@@ -69,7 +79,7 @@
 
                             <div class="row">
                                 <div class="col-md-2 mb-3">
-                                    <label class="form-label">Tipo documento</label>
+                                    <label class="form-label">Tipo documento <span class="text-danger">*</span></label>
                                     <select class="form-select" name="tipo_documento_id" required>
                                         @foreach ($tipos_documentos as $tipo)
                                             <option value="{{ $tipo->id }}"
@@ -81,19 +91,19 @@
                                 </div>
 
                                 <div class="col-md-3 mb-3">
-                                    <label class="form-label">Documento</label>
+                                    <label class="form-label">Documento <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="documento"
                                         value="{{ $pasaje->persona?->documento }}" required>
                                 </div>
 
                                 <div class="col-md-3 mb-3">
-                                    <label class="form-label">Nombres</label>
+                                    <label class="form-label">Nombres <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="nombres"
                                         value="{{ $pasaje->persona?->nombres }}" required>
                                 </div>
 
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label">Apellidos</label>
+                                    <label class="form-label">Apellidos <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="apellidos"
                                         value="{{ $pasaje->persona?->apellidos }}" required>
                                 </div>
@@ -131,7 +141,7 @@
 
                                 <div class="col-md-8 mb-3" id="contenedorAutorizacion"
                                     style="{{ $pasaje->pasajero_menor ? '' : 'display:none;' }}">
-                                    <label class="form-label">Autorización PDF</label>
+                                    <label class="form-label">Autorización PDF <span class="text-danger">*</span></label>
                                     <input type="file" class="form-control" name="autorizacion_pdf" accept=".pdf">
 
                                     @if ($pasaje->autorizacion_pdf)
@@ -373,6 +383,7 @@
 @push('scripts')
     <script>
         const PASAJE_ID = @json($pasaje->id);
+        const SALIDA_ACTUAL_ID = @json($pasaje->salida_id);
         let asientoActual = @json($pasaje->asiento_numero);
         let pasajeId = PASAJE_ID;
         let nuevoAsientoSeleccionado = null;

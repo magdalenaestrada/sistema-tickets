@@ -70,17 +70,15 @@
                             @endif
 
                             @if (in_array($pasaje->estado, ['R', 'V']))
-                                <a href="{{ route('pasajes.editar', $pasaje->id) }}"
-                                    class="btn btn-xs btn-warning">
+                                <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-warning">
                                     <i class="link-icon" data-lucide="pencil" style="pointer-events:none;"></i>
                                 </a>
                             @endif
 
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
-                                <a href="{{ route('ventas.imprimir', $pasaje->venta_id) }}" target="_blank"
-                                    class="btn btn-xs btn-secondary">
-                                    <i class="link-icon" data-lucide="printer" style="pointer-events:none;"></i>
-                                </a>
+                                <button class="btn btn-sm btn-secondary imprimir-pasaje" data-id="{{ $pasaje->id }}">
+                                    <i data-lucide="printer"></i>
+                                </button>
                             @endif
                         </div>
                     </td>

@@ -237,14 +237,60 @@ $(function () {
                     );
                     seat.classList.add("seat");
 
-                    if (parseInt(numero) === parseInt(asientoActual)) {
+                    seat.onclick = null;
+
+                    const salidaSeleccionadaId = parseInt(
+                        $("#nueva_salida_id").val(),
+                    );
+
+                    if (
+                        salidaSeleccionadaId === parseInt(SALIDA_ACTUAL_ID) &&
+                        parseInt(numero) === parseInt(asientoActual)
+                    ) {
                         seat.classList.add("seat-actual");
                         seat.style.cursor = "pointer";
                         seat.style.opacity = "1";
+
+                        seat.onclick = (e) => {
+                            e.stopPropagation();
+                            document
+                                .querySelectorAll(
+                                    "#svgContainerCambio .selected-seat",
+                                )
+                                .forEach((s) =>
+                                    s.classList.remove("selected-seat"),
+                                );
+
+                            seat.classList.add("selected-seat");
+                            nuevoAsientoSeleccionado = numero;
+                            $("#nuevo_asiento_numero").val(numero);
+                            $("#nuevo_asiento_texto").val(numero);
+                        };
                     } else {
                         seat.classList.add(estado);
-                        seat.style.cursor = "pointer";
                         seat.style.opacity = "1";
+
+                        if (estado === "libre") {
+                            seat.style.cursor = "pointer";
+                            seat.onclick = (e) => {
+                                e.stopPropagation();
+
+                                document
+                                    .querySelectorAll(
+                                        "#svgContainerCambio .selected-seat",
+                                    )
+                                    .forEach((s) =>
+                                        s.classList.remove("selected-seat"),
+                                    );
+
+                                seat.classList.add("selected-seat");
+                                nuevoAsientoSeleccionado = numero;
+                                $("#nuevo_asiento_numero").val(numero);
+                                $("#nuevo_asiento_texto").val(numero);
+                            };
+                        } else {
+                            seat.style.cursor = "not-allowed";
+                        }
                     }
 
                     seat.onclick = (e) => {
@@ -275,6 +321,4 @@ $(function () {
     $("#nueva_salida_id, #origen_id, #destino_id").on("change", function () {
         cargarAsientosCambio();
     });
-
-    enlazarBotonesAccion();
 });

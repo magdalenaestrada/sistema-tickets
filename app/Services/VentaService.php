@@ -2,13 +2,17 @@
 
 namespace App\Services;
 
+use App\Models\Caja;
+use App\Models\CajaDetalle;
 use App\Models\CorrelativoVenta;
 use App\Models\Empresa;
 use App\Models\Pasaje;
 use App\Models\Persona;
+use App\Models\SubtipoMovimientoCaja;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
 use App\Models\Venta;
+use App\Models\VentaPago;
 use DateTime;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -170,7 +174,7 @@ class VentaService
                 'nombre'      => $venta->serie . '-' . $venta->numero,
             ];
         }
- 
+
         return $this->emitirComprobante($venta);
     }
 
@@ -241,7 +245,15 @@ class VentaService
             'fecha_anulacion' => now(),
         ]);
 
-        $venta->pagos()->update(['estado' => 'AN']);
+        $venta->pagos()->update([
+            'estado' => 'AN',
+        ]);
+
+        CajaDetalle::where('table_name', Venta::class)
+            ->where('table_id', $venta->id)
+            ->update([
+                'anulado' => true,
+            ]);
     }
 
     public function reemplazarVenta(?Venta $ventaAnterior, $data, $servicio_model, $servicio_id): array

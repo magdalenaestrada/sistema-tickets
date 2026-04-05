@@ -26,21 +26,16 @@ return new class extends Migration {
 
             $table->foreignId('salida_id')->constrained('salidas')->cascadeOnDelete();
 
-            $table->enum("estado", ["R", "V", "F", "X"])
-                ->default("R")
-                ->index();
+            $table->string("estado")->index();
             $table->dateTime("fecha_creacion");
             $table->dateTime("fecha_inactivacion")->nullable();
-            $table->foreignId('origen_sucursal_id')
-                ->nullable()
-                ->constrained('sucursales');
-            $table->foreignId('destino_sucursal_id')
-                ->nullable()
-                ->constrained('sucursales');
-            $table->boolean('es_promocion')
-                ->default(false);
-            $table->decimal('precio_cobrado', 8, 2)
-                ->default(0);
+            $table->foreignId('origen_sucursal_id')->nullable()->constrained('sucursales');
+            $table->foreignId('destino_sucursal_id')->nullable()->constrained('sucursales');
+            $table->boolean('es_promocion')->default(false);
+            $table->decimal('precio_cobrado', 8, 2)->default(0);
+            $table->date('fecha_cambio_estado')->nullable();
+            $table->time('hora_cambio_estado')->nullable();
+            $table->text('motivo_cambio_estado')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

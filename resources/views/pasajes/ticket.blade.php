@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Ticket Encomienda</title>
+    <title>Ticket Pasaje</title>
     <style>
         body {
             font-family: monospace;
@@ -81,11 +81,12 @@
 
 <body onload="window.print()">
     @php
-        $empresa = $encomienda->sucursal_origen?->empresa;
-        $venta = $encomienda->venta;
+        $empresa = $pasaje->origen?->empresa;
+        $venta = $pasaje->venta;
     @endphp
 
     <div class="center">
+        {{-- Si luego agregas logo en empresa --}}
         {{-- @if ($empresa?->logo)
             <img src="{{ asset('storage/' . $empresa->logo) }}" class="logo" alt="Logo">
         @endif --}}
@@ -94,11 +95,11 @@
     <div class="center bold">{{ $empresa->razon_social ?? 'EMPRESA' }}</div>
     <div class="center small">RUC: {{ $empresa->documento ?? '-' }}</div>
     <div class="center small">{{ $empresa->direccion ?? '-' }}</div>
-    <div class="center small">Sucursal: {{ $encomienda->sucursal_origen?->nombre_comercial ?? '-' }}</div>
+    <div class="center small">Sucursal: {{ $pasaje->origen?->nombre_comercial ?? '-' }}</div>
 
     <div class="line"></div>
 
-    <div class="center bold">TICKET DE ENCOMIENDA</div>
+    <div class="center bold">TICKET DE PASAJE</div>
     <div class="center small">
         {{ $venta?->serie ? $venta->serie . '-' . $venta->numero : 'Sin comprobante' }}
     </div>
@@ -108,60 +109,58 @@
     <table>
         <tr>
             <td><strong>Fecha emisión:</strong></td>
-            <td class="right">
-                {{ optional($venta?->fecha_emision)->format('d/m/Y H:i') ?? (optional($encomienda->fecha_creacion)->format('d/m/Y H:i') ?? '-') }}
-            </td>
+            <td class="right">{{ optional($venta?->fecha_emision)->format('d/m/Y H:i') ?? '-' }}</td>
         </tr>
         <tr>
             <td><strong>Estado:</strong></td>
-            <td class="right">{{ $encomienda->estado ?? '-' }}</td>
+            @if ($pasaje->estado === 'V')
+                <td class="right">Vendido</td>
+            @endif
         </tr>
         <tr>
             <td><strong>Cajero:</strong></td>
-            <td class="right">{{ $encomienda->usuario?->persona?->nombres ?? ($encomienda->usuario?->username ?? '-') }}
-            </td>
+            <td class="right">{{ $pasaje->usuario?->persona?->nombres ?? ($pasaje->usuario?->username ?? '-') }}</td>
         </tr>
     </table>
 
     <div class="line"></div>
 
-    <div><strong>Remitente:</strong></div>
-    <div>{{ $encomienda->emisor?->nombres }} {{ $encomienda->emisor?->apellidos }}</div>
-    <div><strong>Doc:</strong> {{ $encomienda->emisor?->documento ?? '-' }}</div>
-
-    <div class="mt-2"><strong>Destinatario:</strong></div>
-    <div>{{ $encomienda->receptor?->nombres }} {{ $encomienda->receptor?->apellidos }}</div>
-    <div><strong>Doc:</strong> {{ $encomienda->receptor?->documento ?? '-' }}</div>
+    <div><strong>Pasajero:</strong></div>
+    <div>{{ $pasaje->persona?->nombres }} {{ $pasaje->persona?->apellidos }}</div>
+    <div><strong>Documento:</strong> {{ $pasaje->persona?->documento ?? '-' }}</div>
 
     <div class="line"></div>
 
     <table>
         <tr>
             <td><strong>Origen:</strong></td>
-            <td class="right">{{ $encomienda->sucursal_origen?->nombre_comercial ?? '-' }}</td>
+            <td class="right">{{ $pasaje->origen?->nombre_comercial ?? '-' }}</td>
         </tr>
         <tr>
             <td><strong>Destino:</strong></td>
-            <td class="right">{{ $encomienda->sucursal_destino?->nombre_comercial ?? '-' }}</td>
+            <td class="right">{{ $pasaje->destino?->nombre_comercial ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Fecha viaje:</strong></td>
+            <td class="right">{{ optional($pasaje->salida?->fecha_salida)->format('d/m/Y H:i') ?? '-' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Asiento:</strong></td>
+            <td class="right">{{ $pasaje->asiento_numero ?? '-' }}</td>
         </tr>
     </table>
 
     <div class="line"></div>
 
     <div class="bold">DETALLE</div>
-    @foreach ($encomienda->detalles as $detalle)
-        <div class="mt-1">
-            <div><strong>Tipo:</strong> {{ $detalle->tipo_encomienda?->descripcion ?? '-' }}</div>
-            <div><strong>Descripción:</strong> {{ $detalle->descripcion ?? '-' }}</div>
-            <table>
-                <tr>
-                    <td>Peso: {{ number_format($detalle->peso ?? 0, 2) }} kg</td>
-                    <td class="right">S/ {{ number_format($detalle->costo ?? 0, 2) }}</td>
-                </tr>
-            </table>
-        </div>
-        <div class="line"></div>
-    @endforeach
+    <table>
+        <tr>
+            <td>Pasaje</td>
+            <td class="right">S/ {{ number_format($pasaje->precio_cobrado ?? 0, 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="line"></div>
 
     <div class="bold">PAGOS</div>
     @forelse($venta?->pagos ?? [] as $pago)
@@ -180,7 +179,7 @@
     <table>
         <tr>
             <td class="bold">TOTAL</td>
-            <td class="right bold">S/ {{ number_format($encomienda->total ?? 0, 2) }}</td>
+            <td class="right bold">S/ {{ number_format($pasaje->precio_cobrado ?? 0, 2) }}</td>
         </tr>
     </table>
 

@@ -39,7 +39,7 @@
                     <span class="link-title">INICIO</span>
                 </a>
             </li>
-            <li class="nav-item {{ request()->is('caja*') ? 'active' : '' }}">
+            <li class="nav-item {{ request()->is('cajas*') ? 'active' : '' }}">
                 <a href="{{ route('caja.index') }}" class="nav-link">
                     <i class="link-icon" data-lucide="piggy-bank"></i>
                     <span class="link-title">Caja</span>

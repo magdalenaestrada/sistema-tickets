@@ -8,7 +8,7 @@ Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(
         Route::post('/guardar', [EncomiendaController::class, 'guardar'])->name('guardar');
         Route::get('/mostrar/{id}', [EncomiendaController::class, 'mostrar'])->name('mostrar');
         Route::get('/crear-encomienda', [EncomiendaController::class, 'formulario'])->name('crear-encomienda');
-        Route::get('/ticket/{id}', [EncomiendaController::class, 'ticket'])->name('ticket');
+        Route::get('/{encomienda}/ticket', [EncomiendaController::class, 'ticket'])->name('ticket');
         Route::get('/editar/{id}', [EncomiendaController::class, 'editar'])->name('editar');
         Route::put('/actualizar/{encomienda}', [EncomiendaController::class, 'actualizar'])->name('actualizar');
         Route::get('/no-asignadas', [EncomiendaController::class, 'index_no_asignadas'])->name('index-no-asignadas');

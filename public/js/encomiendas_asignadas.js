@@ -1,4 +1,3 @@
-
 $(function () {
     if (!$("#tablaEncomiendas").length) return;
 
@@ -220,19 +219,26 @@ $(function () {
             });
         });
     });
+    
 
     $(document).on("click", ".imprimir", function () {
         const id = $(this).data("id");
         const url = route("encomiendas.ticket", id);
-        const ventana = window.open(url, "_blank", "width=420,height=650");
 
-        const interval = setInterval(function () {
-            try {
-                if (ventana.document.readyState === "complete") {
-                    ventana.print();
-                    clearInterval(interval);
-                }
-            } catch (e) {}
-        }, 200);
+        let iframe = document.getElementById("printFrame");
+
+        if (!iframe) {
+            iframe = document.createElement("iframe");
+            iframe.id = "printFrame";
+            iframe.style.display = "none";
+            document.body.appendChild(iframe);
+        }
+
+        iframe.src = url;
+
+        iframe.onload = function () {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        };
     });
 });

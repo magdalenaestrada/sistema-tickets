@@ -8,6 +8,7 @@ use App\Models\MetodoPago;
 use App\Models\SubtipoMovimientoCaja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CajaController extends Controller
 {
@@ -15,57 +16,82 @@ class CajaController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->rol == 'Super Administrador') {
-            $cajas = Caja::with('sucursal', 'usuario')
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
-            return view('caja.index', compact('cajas'));
-        } else {
-            $cajas = Caja::with('sucursal', 'usuario')
-                ->where('sucursal_id', $user->sucursal_id)
-                ->orderBy('created_at', 'desc')
-                ->paginate(10);
-            return view('caja.index', compact('cajas'));
+        if ($this->esAdmin($user)) {
+            $cajas = Caja::with(['sucursal', 'usuario'])
+                ->orderByDesc('fecha_creacion')
+                ->paginate(15);
+
+            return view('caja.index_admin', compact('cajas'));
         }
+
+        $cajaAbierta = Caja::with(['sucursal', 'usuario'])
+            ->where('usuario_id', $user->id)
+            ->whereIn('estado', ['A', 'abierta'])
+            ->orderByDesc('fecha_creacion')
+            ->first();
+
+        if ($cajaAbierta) {
+            return redirect()->route('caja.show', $cajaAbierta->id);
+        }
+
+        $cajas = Caja::with(['sucursal', 'usuario'])
+            ->where('usuario_id', $user->id)
+            ->orderByDesc('fecha_creacion')
+            ->paginate(15);
+
+        return view('caja.index_cajero', compact('cajas'));
     }
     public function store(Request $request)
     {
         $request->validate([
-            'monto_apertura' => 'required|numeric|min:0'
-        ]);
-        $user = Auth::user();
-        $caja = Caja::create([
-            'usuario_id' => $user->id,
-            'sucursal_id' => $user->sucursal_id,
-            'monto_apertura' => $request->monto_apertura,
-            'fecha_creacion' => now()
+            'monto_apertura' => 'required|numeric|min:0',
         ]);
 
-        return redirect()->route('caja.index')->with('success', 'Caja creada correctamente');
+        $user = Auth::user();
+
+        $cajaAbierta = Caja::where('usuario_id', $user->id)
+            ->whereIn('estado', ['A', 'abierta'])
+            ->first();
+
+        if ($cajaAbierta) {
+            return redirect()
+                ->route('caja.show', $cajaAbierta->id)
+                ->with('error', 'Ya tienes una caja abierta.');
+        }
+
+        $caja = Caja::create([
+            'usuario_id'      => $user->id,
+            'sucursal_id'     => $user->sucursal_id,
+            'monto_apertura'  => $request->monto_apertura,
+            'estado'          => 'A',
+            'fecha_creacion'  => now(),
+        ]);
+
+        return redirect()
+            ->route('caja.show', $caja->id)
+            ->with('success', 'Caja abierta correctamente.');
     }
 
     public function show(Caja $caja)
     {
-        $caja->load('detalles.subtipo', 'detalles.metodoPago');
+        $this->autorizarCaja($caja);
+
+        $caja->load([
+            'usuario',
+            'sucursal',
+            'detalles' => function ($q) {
+                $q->with(['subtipo.tipo_movimiento', 'metodoPago'])
+                    ->orderByDesc('created_at');
+            }
+        ]);
 
         $subtiposIngreso = SubtipoMovimientoCaja::whereHas('tipo_movimiento', function ($q) {
-            $q->where('id', '1');
+            $q->where('id', 1);
         })->get();
 
         $subtiposSalida = SubtipoMovimientoCaja::whereHas('tipo_movimiento', function ($q) {
-            $q->where('id', '2');
+            $q->where('id', 2);
         })->get();
-
-        $totalIngresos = $caja->detalles()
-            ->where('amount', '>', 0)
-            ->sum('amount');
-
-        $totalSalidas = $caja->detalles()
-            ->where('amount', '<', 0)
-            ->sum('amount');
-
-        $montoActual = $caja->monto_apertura + $totalIngresos + $totalSalidas;
-
 
         $metodosPago = MetodoPago::all();
 
@@ -73,71 +99,135 @@ class CajaController extends Controller
             'caja',
             'subtiposIngreso',
             'subtiposSalida',
-            'metodosPago',
-            'totalIngresos',
-            'totalSalidas',
-            'montoActual'
+            'metodosPago'
         ));
-    }
-
-
-    public function cerrar(Caja $caja)
-    {
-        $caja->update([
-            'monto_cierre' => $caja->monto_actual,
-            'estado' => 'C',
-            'fecha_cierre' => now()
-        ]);
-        return redirect()->route('caja.index')->with('success', 'Caja cerrada correctamente');
     }
 
     public function registrarIngreso(Caja $caja, Request $request)
     {
+        $this->autorizarCaja($caja);
+        $this->validarCajaAbierta($caja);
+
         $request->validate([
             'subtipo_movimiento_caja_id' => 'required|exists:subtipo_movimiento_caja,id',
-            'metodo_pago_id' => 'required|exists:metodo_pago,id',
-            'amount' => 'required|numeric|min:0'
+            'metodo_pago_id'             => 'required|exists:metodo_pago,id',
+            'amount'                     => 'required|numeric|min:0.01',
+            'description'                => 'nullable|string|max:500',
+            'table_name'                 => 'nullable|string|max:255',
+            'table_id'                   => 'nullable|integer',
         ]);
 
-        CajaDetalle::create([
-            'caja_id' => $caja->id,
-            'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
-            'metodo_pago_id' => $request->metodo_pago_id,
-            'amount' => $request->amount,
-            'description' => $request->description
-        ]);
+        DB::transaction(function () use ($request, $caja) {
+            CajaDetalle::create([
+                'caja_id'                     => $caja->id,
+                'subtipo_movimiento_caja_id'  => $request->subtipo_movimiento_caja_id,
+                'metodo_pago_id'              => $request->metodo_pago_id,
+                'table_name'                  => $request->table_name,
+                'table_id'                    => $request->table_id,
+                'amount'                      => abs($request->amount),
+                'description'                 => $request->description,
+                'anulado'                     => false,
+            ]);
+        });
 
-        return redirect()->back()->with('success', 'Ingreso registrado');
+        return back()->with('success', 'Ingreso registrado correctamente.');
     }
 
     public function registrarSalida(Caja $caja, Request $request)
     {
+        $this->autorizarCaja($caja);
+        $this->validarCajaAbierta($caja);
+
         $request->validate([
             'subtipo_movimiento_caja_id' => 'required|exists:subtipo_movimiento_caja,id',
-            'metodo_pago_id' => 'required|exists:metodo_pago,id',
-            'amount' => 'required|numeric|min:0'
+            'metodo_pago_id'             => 'required|exists:metodo_pago,id',
+            'amount'                     => 'required|numeric|min:0.01',
+            'description'                => 'nullable|string|max:500',
+            'table_name'                 => 'nullable|string|max:255',
+            'table_id'                   => 'nullable|integer',
         ]);
 
-        CajaDetalle::create([
-            'caja_id' => $caja->id,
-            'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
-            'metodo_pago_id' => $request->metodo_pago_id,
-            'amount' => -1 * $request->amount,
-            'description' => $request->description
+        DB::transaction(function () use ($request, $caja) {
+            CajaDetalle::create([
+                'caja_id'                     => $caja->id,
+                'subtipo_movimiento_caja_id'  => $request->subtipo_movimiento_caja_id,
+                'metodo_pago_id'              => $request->metodo_pago_id,
+                'table_name'                  => $request->table_name,
+                'table_id'                    => $request->table_id,
+                'amount'                      => -1 * abs($request->amount),
+                'description'                 => $request->description,
+                'anulado'                     => false,
+            ]);
+        });
+
+        return back()->with('success', 'Salida registrada correctamente.');
+    }
+
+    public function cerrar(Caja $caja)
+    {
+        $this->autorizarCaja($caja);
+
+        if ($this->cajaCerrada($caja)) {
+            return back()->with('error', 'La caja ya está cerrada.');
+        }
+
+        $caja->refresh();
+
+        $caja->update([
+            'monto_cierre' => $caja->efectivo_esperado,
+            'estado'       => 'C',
+            'fecha_cierre' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Salida registrada');
+        return redirect()
+            ->route('caja.show', $caja->id)
+            ->with('success', 'Caja cerrada correctamente.');
+    }
+
+    public function print_corte(int $cajaId)
+    {
+        $usuario = auth()->user();
+
+        $caja = Caja::with([
+            'usuario',
+            'sucursal.empresa',
+            'detalles' => function ($q) {
+                $q->with(['subtipo.tipo_movimiento', 'metodoPago'])
+                    ->orderBy('created_at');
+            }
+        ])->findOrFail($cajaId);
+
+        if (!$this->esAdmin($usuario) && $caja->usuario_id !== $usuario->id) {
+            abort(403, 'No tienes permiso para imprimir este corte.');
+        }
+
+        return view('caja.corte_ticket', compact('caja', 'usuario'));
     }
 
     public function reimprimir(CajaDetalle $detalle)
     {
-        $detalle->load('caja.usuario.sucursal.empresa', 'subtipo.tipo_movimiento', 'metodoPago');
+        $detalle->load([
+            'caja.usuario.sucursal.empresa',
+            'subtipo.tipo_movimiento',
+            'metodoPago'
+        ]);
+
+        $user = auth()->user();
+
+        if (!$this->esAdmin($user) && $detalle->caja->usuario_id !== $user->id) {
+            abort(403, 'No tienes permiso para reimprimir este ticket.');
+        }
 
         return view('caja.ticket', compact('detalle'));
     }
 
     public function anular(CajaDetalle $detalle)
     {
+        $detalle->load('caja');
+
+        $this->autorizarCaja($detalle->caja);
+        $this->validarCajaAbierta($detalle->caja);
+
         if ($detalle->anulado) {
             return back()->with('error', 'El ticket ya está anulado.');
         }
@@ -149,10 +239,39 @@ class CajaController extends Controller
         return back()->with('success', 'Ticket anulado correctamente.');
     }
 
-    public function print_corte(int $caja)
+    /*
+    |--------------------------------------------------------------------------
+    | Métodos privados
+    |--------------------------------------------------------------------------
+    */
+
+    private function esAdmin($user): bool
     {
-        $usuario = Auth::user();
-        $caja = Caja::findOrFail($caja);
-        return view('caja.corte_ticket', compact('caja', 'usuario'));
+        return $user->hasAnyRole(['Administrador', 'Super Administrador']);
+    }
+
+    private function autorizarCaja(Caja $caja): void
+    {
+        $user = auth()->user();
+
+        if ($this->esAdmin($user)) {
+            return;
+        }
+
+        if ((int) $caja->usuario_id !== (int) $user->id) {
+            abort(403, 'No tienes permiso para acceder a esta caja.');
+        }
+    }
+
+    private function validarCajaAbierta(Caja $caja): void
+    {
+        if ($this->cajaCerrada($caja)) {
+            abort(422, 'La caja está cerrada y no admite más movimientos.');
+        }
+    }
+
+    private function cajaCerrada(Caja $caja): bool
+    {
+        return in_array($caja->estado, ['C', 'cerrada']);
     }
 }

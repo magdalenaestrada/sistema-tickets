@@ -11,6 +11,8 @@ use App\Services\PdfService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class SalidaController extends Controller
@@ -89,6 +91,9 @@ class SalidaController extends Controller
                 }
                 if ($salida->estado == 'cancelado') {
                     return '<span class="badge bg-danger">CANCELADO</span>';
+                }
+                if ($salida->estado == 'reprogramado') {
+                    return '<span class="badge bg-info">REPROGRAMADO</span>';
                 }
             })
             ->addColumn('acciones', function ($salida) {
@@ -214,9 +219,15 @@ class SalidaController extends Controller
             'vehiculo_id' => $salida->vehiculo_id,
             'conductor_principal_id' => $salida->conductor_principal_id,
             'conductor_secundario_id' => $salida->conductor_secundario_id,
+
             'fecha_salida' => $salida->fecha_salida?->format('Y-m-d'),
             'fecha_formateada' => $salida->fecha_formateada,
             'estado' => $salida->estado,
+
+            'fecha_cambio_estado' => $salida->fecha_cambio_estado?->format('Y-m-d'),
+            'hora_cambio_estado' => $salida->hora_cambio_estado?->format('H:i'),
+            'motivo_cambio_estado' => $salida->motivo_cambio_estado,
+
             'hora_salida' => $salida->horario?->hora_formateada,
             'hora_llegada' => $salida->horario?->hora_llegada,
             'tipo_viaje' => $salida->horario?->tipo_viaje?->descripcion,
@@ -238,7 +249,7 @@ class SalidaController extends Controller
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
             'fecha_salida' => 'required|date',
-            'estado' => 'required|in:programado,en_ruta,finalizado,cancelado',
+            'estado' => 'required|in:programado,reprogramado,en_ruta,finalizado,cancelado',
             'vehiculo_id' => 'nullable|exists:vehiculos,id',
             'conductor_principal_id' => 'nullable|exists:personas,id',
             'conductor_secundario_id' => 'nullable|exists:personas,id',
@@ -343,17 +354,31 @@ class SalidaController extends Controller
 
     public function update(Request $request, $id)
     {
+        $user = Auth::id();
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
+            'fecha_cambio_estado' => 'nullable|date|after_or_equal:today',
             'fecha_salida' => 'required|date',
-            'estado' => 'required|in:programado,en_ruta,finalizado,cancelado',
+            'estado' => 'required|in:programado,reprogramado,en_ruta,finalizado,cancelado',
             'vehiculo_id' => 'nullable|exists:vehiculos,id',
             'conductor_principal_id' => 'nullable|exists:personas,id',
             'conductor_secundario_id' => 'nullable|exists:personas,id',
+            'hora_cambio_estado' => 'nullable|date_format:H:i',
+            'motivo_cambio_estado' => 'nullable|string|max:500',
+            'aplicar_a_pasajes' => 'nullable|boolean',
         ]);
 
+        if (in_array($request->estado, ['reprogramado', 'cancelado'])) {
+            if (!$request->fecha_cambio_estado || !$request->hora_cambio_estado || !$request->motivo_cambio_estado) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Debe registrar fecha, hora y motivo.'
+                ], 422);
+            }
+        }
+
         try {
-            $salida = Salida::findOrFail($id);
+            $salida = Salida::with('pasajes')->findOrFail($id);
 
             $existe = Salida::where('horario_id', $request->horario_id)
                 ->where('fecha_salida', $request->fecha_salida)
@@ -366,7 +391,6 @@ class SalidaController extends Controller
                     'message' => 'Ya existe otra salida para ese horario y fecha.'
                 ], 422);
             }
-
 
             if ($request->estado === 'en_ruta') {
                 if (!$request->vehiculo_id || !$request->conductor_principal_id) {
@@ -388,11 +412,25 @@ class SalidaController extends Controller
                 'horario_id' => $request->horario_id,
                 'fecha_salida' => $request->fecha_salida,
                 'estado' => $request->estado,
+                'usuario_cambio_estado_id' => $user,
                 'vehiculo_id' => $request->vehiculo_id,
                 'conductor_principal_id' => $request->conductor_principal_id,
                 'conductor_secundario_id' => $request->conductor_secundario_id,
+                'fecha_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->fecha_cambio_estado : null,
+                'hora_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->hora_cambio_estado : null,
+                'motivo_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->motivo_cambio_estado : null,
             ]);
 
+            if (in_array($request->estado, ['reprogramado', 'cancelado'])) {
+                foreach ($salida->pasajes as $pasaje) {
+                    $pasaje->update([
+                        'estado' => $request->estado,
+                        'fecha_cambio_estado' => $request->fecha_cambio_estado,
+                        'hora_cambio_estado' => $request->hora_cambio_estado,
+                        'motivo_cambio_estado' => $request->motivo_cambio_estado,
+                    ]);
+                }
+            }
             return response()->json([
                 'ok' => true,
                 'mensaje' => 'Salida actualizada correctamente'
@@ -404,7 +442,6 @@ class SalidaController extends Controller
             ], 500);
         }
     }
-
     public function destroy($id)
     {
         try {

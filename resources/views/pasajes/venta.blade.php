@@ -36,7 +36,7 @@
 
                                         <div class="col-md-2 mb-2">
                                             <label class="form-label">Documento <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control solo-numeros"
+                                            <input type="text" class="form-control solo-numeros documento-input"
                                                 id="documento_{{ $index }}" data-index="{{ $index }}"
                                                 name="documento[]" required>
                                         </div>
@@ -124,9 +124,10 @@
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <label class="form-label">Tipo de documento</label>
+                                    <label class="form-label">Tipo de documento <span
+                                            class="text-danger">*</span></label></label>
                                     <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
-                                        class="form-select">
+                                        class="form-select" required>
                                         <option value="">Seleccionar tipo</option>
                                         @foreach ($tipos_documentos_facturas as $tipo_documento_factura)
                                             <option value="{{ $tipo_documento_factura->id }}">
@@ -137,14 +138,17 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Número documento</label>
+                                    <label class="form-label">Número documento <span
+                                            class="text-danger">*</span></label></label>
                                     <input type="text" id="numero_documento_id" name="numero_documento_id"
-                                        class="form-control">
+                                        class="form-control" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Razón social</label>
-                                    <input type="text" id="razon_social" name="razon_social" class="form-control">
+                                    <label class="form-label">Razón social <span
+                                            class="text-danger">*</span></label></label>
+                                    <input type="text" id="razon_social" name="razon_social" class="form-control"
+                                        required>
                                 </div>
                             </div>
                         </div>
@@ -157,7 +161,7 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label class="form-label">Método</label>
-                                    <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
+                                    <select name="metodo_pago_id" id="metodo_pago_id" class="form-select" required>
                                         <option value="1">Efectivo</option>
                                         <option value="2">Digital</option>
                                         <option value="3">Mixto</option>

@@ -17,10 +17,16 @@ class Salida extends Model
         'vehiculo_id',
         'conductor_principal_id',
         'conductor_secundario_id',
+        'fecha_cambio_estado',
+        'hora_cambio_estado',
+        'motivo_cambio_estado',
+        'usuario_cambio_estado_id'
     ];
 
     protected $casts = [
-        'fecha_salida' => 'date:Y-m-d',
+        'fecha_salida' => 'date',
+        'fecha_cambio_estado' => 'date',
+        'hora_cambio_estado' => 'datetime:H:i',
     ];
 
     public function horario()

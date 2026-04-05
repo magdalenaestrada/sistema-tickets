@@ -222,6 +222,29 @@ document.addEventListener("DOMContentLoaded", function () {
         cargarResultados();
     });
 
+    $(document).on("click", ".imprimir-pasaje", function () {
+        const id = $(this).data("id");
+        const url = route("pasajes.ticket", id);
+
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = url;
+
+        document.body.appendChild(iframe);
+
+        iframe.onload = function () {
+            iframe.contentWindow.print();
+        };
+    });
+
+    function debounceBuscar() {
+        clearTimeout(debounceTimer);
+
+        debounceTimer = setTimeout(() => {
+            cargarResultados();
+        }, 150); 
+    }
+
     enlazarBotonesAccion();
     enlazarPaginacionAjax();
 });

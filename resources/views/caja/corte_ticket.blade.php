@@ -1,313 +1,213 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <title>Corte de Caja #{{ $caja->id }}</title>
-
     <style>
         body {
-            font-family: 'Courier New', monospace;
-            width: 260px;
-            /* 80mm */
-            margin: auto;
-            font-size: 11px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+            margin: 20px;
         }
 
-        .center {
+        .text-center {
             text-align: center;
         }
 
-        .bold {
-            font-weight: bold;
-        }
-
-        .line {
-            border-top: 1px dashed #000;
-            margin: 8px 0;
-        }
-
-        .anulado {
-            color: red;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .tabla-simple {
-            width: 100%;
-            margin: 5px 0;
-        }
-
-        .tabla-simple tr td {
-            padding: 2px 0;
-            vertical-align: top;
-        }
-
-        .tabla-simple tr td:first-child {
-            width: 30%;
-        }
-
-        .tabla-simple tr td:nth-child(2) {
-            width: 40%;
-        }
-
-        .tabla-simple tr td:last-child {
-            width: 30%;
-            text-align: right;
-        }
-
-        .seccion-titulo {
-            font-weight: bold;
-            margin-top: 10px;
+        .mb-1 {
             margin-bottom: 5px;
-            font-size: 12px;
+        }
+
+        .mb-2 {
+            margin-bottom: 10px;
+        }
+
+        .mb-3 {
+            margin-bottom: 15px;
+        }
+
+        .mt-3 {
+            margin-top: 15px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 6px;
+            font-size: 11px;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .no-border td {
+            border: none;
+            padding: 2px 0;
+        }
+
+        .totales td {
+            font-weight: bold;
         }
 
         @media print {
-            button {
+            .no-print {
                 display: none;
+            }
+
+            body {
+                margin: 0;
             }
         }
     </style>
-
-    <script>
-        window.onload = function() {
-            window.print();
-        };
-    </script>
 </head>
 
 <body>
 
-    <div class="center bold" style="font-size:16px;">
-        CORTE DE CAJA
-    </div>
-    <div class="center">Caja {{ $caja->sucursal->nombre_comercial }}</div>
-
-    <div class="line"></div>
-
-    <p><strong>Usuario:</strong> {{ $usuario->persona->nombres }}</p>
-    <p><strong>Apertura:</strong> {{ $caja->fecha_creacion }}</p>
-    <p><strong>Cierre:</strong> {{ $caja->fecha_cierre }}</p>
-
-    <div class="line"></div>
-    <div class="bold center" style="font-size: 14px;">ENTRADAS</div>
-    <div class="line"></div>
-
-    @php
-        $entradas = $caja->detalles->filter(function ($d) {
-            return isset($d->subtipo->tipo_movimiento->id) && $d->subtipo->tipo_movimiento->id === 1 && !$d->anulado;
-        });
-
-        // Agrupar por método de pago
-        $entradasEfectivo = $entradas->filter(function ($d) {
-            return $d->metodoPago && strtolower($d->metodoPago->descripcion) === 'efectivo';
-        });
-
-        $entradasBilletera = $entradas->filter(function ($d) {
-            return $d->metodoPago && strtolower($d->metodoPago->descripcion) !== 'efectivo';
-        });
-    @endphp
-
-    {{-- EFECTIVO --}}
-    @if ($entradasEfectivo->count() > 0)
-        <div class="seccion-titulo">EFECTIVO</div>
-        <table class="tabla-simple">
-            @foreach ($entradasEfectivo as $detalle)
-                @php
-                    $ticket = '';
-                    $descripcion = '';
-
-                    // Verificar el tipo de servicio
-                    if ($detalle->servicio) {
-                        // ENCOMIENDA
-                        if ($detalle->servicio instanceof \App\Models\Encomienda) {
-                            $ticket = 'E-' . $detalle->servicio->id;
-                            $descripcion = 'Encomienda';
-                        }
-                        // VENTA (ajusta según tu modelo)
-                        elseif ($detalle->servicio instanceof \App\Models\Venta) {
-                            $ticket = 'V-' . $detalle->servicio->id;
-                            $descripcion = 'Venta';
-                        }
-                        // PASAJE (si lo tienes)
-                        elseif ($detalle->servicio instanceof \App\Models\Pasaje) {
-                            $ticket = 'P-' . $detalle->servicio->id;
-                            $descripcion = 'Pasaje';
-                        }
-                        // Otros servicios
-                        else {
-                            $ticket = 'S-' . $detalle->servicio->id;
-                            $descripcion = 'Servicio';
-                        }
-                    } else {
-                        // Entrada directa de caja (sin servicio asociado)
-                        $ticket = 'C-' . $detalle->id;
-                        $descripcion = $detalle->description ?? 'Entrada Caja';
-                    }
-                @endphp
-                <tr>
-                    <td>{{ $ticket }}</td>
-                    <td>{{ $descripcion }}</td>
-                    <td>S/ {{ number_format($detalle->amount, 2) }}</td>
-                </tr>
-            @endforeach
-        </table>
-    @endif
-
-    {{-- BILLETERA / DIGITAL --}}
-    @if ($entradasBilletera->count() > 0)
-        <div class="seccion-titulo">BILLETERA</div>
-        <table class="tabla-simple">
-            @foreach ($entradasBilletera as $detalle)
-                @php
-                    $ticket = '';
-                    $descripcion = '';
-
-                    // Verificar el tipo de servicio
-                    if ($detalle->servicio) {
-                        // ENCOMIENDA
-                        if ($detalle->servicio instanceof \App\Models\Encomienda) {
-                            $ticket = 'E-' . $detalle->servicio->id;
-                            $descripcion = 'Encomienda';
-                        }
-                        // VENTA
-                        elseif ($detalle->servicio instanceof \App\Models\Venta) {
-                            $ticket = 'V-' . $detalle->servicio->id;
-                            $descripcion = 'Venta';
-                        }
-                        // PASAJE
-                        elseif ($detalle->servicio instanceof \App\Models\Pasaje) {
-                            $ticket = 'P-' . $detalle->servicio->id;
-                            $descripcion = 'Pasaje';
-                        }
-                        // Otros servicios
-                        else {
-                            $ticket = 'S-' . $detalle->servicio->id;
-                            $descripcion = 'Servicio';
-                        }
-                    } else {
-                        // Entrada directa de caja
-                        $ticket = 'C-' . $detalle->id;
-                        $descripcion = $detalle->description ?? 'Entrada Caja';
-                    }
-                @endphp
-                <tr>
-                    <td>{{ $ticket }}</td>
-                    <td>{{ $descripcion }}</td>
-                    <td>S/ {{ number_format($detalle->amount, 2) }}</td>
-                </tr>
-            @endforeach
-        </table>
-    @endif
-
-    @if ($entradasEfectivo->count() === 0 && $entradasBilletera->count() === 0)
-        <div class="center" style="margin: 10px 0;">-- Sin entradas --</div>
-    @endif
-
-    <div class="line"></div>
-
-    <div class="bold center" style="font-size: 14px;">SALIDAS </div>
-    <div class="line"></div>
-
-    @php
-        $salidas = $caja->detalles->filter(function ($d) {
-            return isset($d->subtipo->tipo_movimiento->id) && $d->subtipo->tipo_movimiento->id === 2 && !$d->anulado;
-        });
-
-        $salidasEfectivo = $salidas->filter(function ($d) {
-            return $d->metodoPago && strtolower($d->metodoPago->descripcion) === 'efectivo';
-        });
-
-        $salidasBilletera = $salidas->filter(function ($d) {
-            return $d->metodoPago && strtolower($d->metodoPago->descripcion) !== 'efectivo';
-        });
-    @endphp
-
-    @if ($salidasEfectivo->count() > 0)
-        <div class="seccion-titulo">EFECTIVO</div>
-        <table class="tabla-simple">
-            @foreach ($salidasEfectivo as $detalle)
-                @php
-                    $motivo = $detalle->subtipo->descripcion;
-                    $descripcion = $detalle->description;
-
-                    if ($detalle->servicio && $detalle->servicio instanceof \App\Models\Encomienda) {
-                        $encomienda = $detalle->servicio;
-                    }
-                @endphp
-                <tr>
-                    <td>{{ $motivo }}</td>
-                    <td>{{ $descripcion }}</td>
-                    <td>S/ {{ number_format($detalle->amount, 2) }}</td>
-                </tr>
-            @endforeach
-        </table>
-    @endif
-
-    {{-- BILLETERA / DIGITAL --}}
-    @if ($entradasBilletera->count() > 0)
-        <div class="seccion-titulo">BILLETERA</div>
-        <table class="tabla-simple">
-            @foreach ($salidasBilletera as $detalle)
-                @php
-                    $motivo = $detalle->subtipo->descripcion;
-                    $descripcion = $detalle->description;
-
-                    if ($detalle->servicio && $detalle->servicio instanceof \App\Models\Encomienda) {
-                        $encomienda = $detalle->servicio;
-                    }
-                @endphp
-                <tr>
-                    <td>{{ $motivo }}</td>
-                    <td>{{ $descripcion }}</td>
-                    <td>S/ {{ number_format($detalle->amount, 2) }}</td>
-                </tr>
-            @endforeach
-        </table>
-    @endif
-    {{-- ========================== ANULADOS ============================ --}}
-    <div class="bold center" style="font-size: 14px;">ANULADOS</div>
-    <div class="line"></div>
-
-    @php
-        $anulados = $caja->detalles->filter(fn($d) => $d->anulado);
-    @endphp
-
-    @if ($anulados->count() > 0)
-        <table class="tabla-simple">
-            @foreach ($anulados as $d)
-                @php
-                    $ticket = $d->numero_ticket ?? 'E-' . ($d->servicio_id ?? $d->id);
-                @endphp
-                <tr style="color: red;">
-                    <td>{{ $ticket }}</td>
-                    <td>{{ $d->description ?? 'Movimiento' }}</td>
-                    <td>S/ {{ number_format($d->amount, 2) }}</td>
-                </tr>
-            @endforeach
-        </table>
-    @else
-        <div class="center" style="margin: 10px 0;">-- Sin anulados --</div>
-    @endif
-
-    <div class="line"></div>
-
-    {{-- ========================== RESUMEN ============================ --}}
-    <div class="bold center" style="font-size: 14px;">RESUMEN</div>
-    <div class="line"></div>
-
-    <p>Total Entradas: <strong>S/ {{ number_format($caja->total_ingresos, 2) }}</strong></p>
-    <p>Total Salidas: <strong>S/ {{ number_format($caja->total_salidas, 2) }}</strong></p>
-    <p>Monto Actual: <strong>S/ {{ number_format($caja->monto_actual, 2) }}</strong></p>
-
-    <div class="line"></div>
-
-    <div class="center">
-        ¡Gracias por su trabajo!
+    <div class="text-center mb-3">
+        <div class="title">{{ $caja->sucursal->empresa->razon_social ?? 'EMPRESA' }}</div>
+        <div class="subtitle">{{ $caja->sucursal->nombre ?? 'Sucursal' }}</div>
+        <div>CORTE DE CAJA</div>
     </div>
 
-    <button onclick="window.print()">Reimprimir</button>
+    <table class="no-border mb-3">
+        <tr>
+            <td><strong>Caja:</strong> #{{ $caja->id }}</td>
+            <td><strong>Estado:</strong> {{ in_array($caja->estado, ['C', 'cerrada']) ? 'CERRADA' : 'ABIERTA' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Cajero:</strong> {{ $caja->usuario->name ?? '---' }}</td>
+            <td><strong>Fecha apertura:</strong> {{ optional($caja->fecha_creacion)->format('d/m/Y h:i A') }}</td>
+        </tr>
+        <tr>
+            <td><strong>Sucursal:</strong> {{ $caja->sucursal->nombre ?? '---' }}</td>
+            <td><strong>Fecha cierre:</strong> {{ optional($caja->fecha_cierre)->format('d/m/Y h:i A') ?? '---' }}</td>
+        </tr>
+    </table>
+
+    <table class="mb-3">
+        <thead>
+            <tr>
+                <th colspan="2">Resumen general</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Monto apertura</td>
+                <td>S/ {{ number_format($caja->monto_apertura, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Ingreso por Yape</td>
+                <td>S/ {{ number_format($caja->ingresos_yape, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Ingreso por Transferencia</td>
+                <td>S/ {{ number_format($caja->ingresos_transferencia, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Ingreso por Tarjeta</td>
+                <td>S/ {{ number_format($caja->ingresos_tarjeta, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Ingreso por Efectivo</td>
+                <td>S/ {{ number_format($caja->ingresos_efectivo, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total ingresos</td>
+                <td>S/ {{ number_format($caja->total_ingresos, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total egresos</td>
+                <td>S/ {{ number_format($caja->total_salidas, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Saldo sistema</td>
+                <td>S/ {{ number_format($caja->monto_actual, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Egresos efectivo</td>
+                <td>S/ {{ number_format($caja->egresos_efectivo, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Efectivo esperado</td>
+                <td>S/ {{ number_format($caja->efectivo_esperado, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="mb-3">
+        <thead>
+            <tr>
+                <th colspan="7">Detalle de movimientos</th>
+            </tr>
+            <tr>
+                <th>Fecha</th>
+                <th>Ticket</th>
+                <th>Tipo</th>
+                <th>Subtipo</th>
+                <th>Método</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($caja->detalles as $detalle)
+                <tr>
+                    <td>{{ $detalle->created_at?->format('d/m/Y h:i A') }}</td>
+                    <td>{{ $detalle->numero_ticket }}</td>
+                    <td>{{ $detalle->amount > 0 ? 'Ingreso' : 'Egreso' }}</td>
+                    <td>{{ $detalle->subtipo->descripcion ?? '---' }}</td>
+                    <td>{{ $detalle->metodoPago->descripcion ?? '---' }}</td>
+                    <td>
+                        {{ $detalle->description ?? '---' }}
+                        @if ($detalle->anulado)
+                            <br><strong>(ANULADO)</strong>
+                        @endif
+                    </td>
+                    <td>S/ {{ number_format(abs($detalle->amount), 2) }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="7" class="text-center">No hay movimientos registrados.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="mt-3">
+        <table class="no-border">
+            <tr>
+                <td class="text-center" style="padding-top: 30px;">
+                    ___________________________<br>
+                    Firma cajero
+                </td>
+                <td class="text-center" style="padding-top: 30px;">
+                    ___________________________<br>
+                    Firma supervisor
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="text-center mt-3 no-print">
+        <button onclick="window.print()">Imprimir</button>
+    </div>
 
 </body>
 

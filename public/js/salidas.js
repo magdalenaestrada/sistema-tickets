@@ -24,6 +24,16 @@ $(document).ready(function () {
     });
 });
 
+function hoy() {
+    let fecha = new Date();
+    return fecha.toISOString().split("T")[0];
+}
+
+function ahora() {
+    let fecha = new Date();
+    return fecha.toTimeString().split(" ")[0].substring(0, 5);
+}
+
 function opcionesHorarios(selected = "") {
     let html = `<option value="">Seleccione horario</option>`;
 
@@ -37,6 +47,7 @@ function opcionesHorarios(selected = "") {
 function opcionesEstados(selected = "programado") {
     let estados = [
         { value: "programado", label: "Programado" },
+        { value: "reprogramado", label: "Reprogramado" },
         { value: "en_ruta", label: "En ruta" },
         { value: "finalizado", label: "Finalizado" },
         { value: "cancelado", label: "Cancelado" },
@@ -284,6 +295,37 @@ function verSalida(id) {
     });
 }
 
+function bloqueCambioEstado(salida = {}) {
+    let visible = ["reprogramado", "cancelado"].includes(salida.estado)
+        ? ""
+        : "display:none;";
+
+    return `
+        <div id="bloqueCambioEstado" style="${visible}">
+            <hr>
+
+            <div class="mb-2">
+                <label class="form-label">Fecha <span class="text-danger">*</span></label>
+<input 
+    type="date" 
+    id="fecha_cambio_estado" 
+    class="form-control" 
+    min="${hoy()}"
+    value="${salida.fecha_cambio_estado ?? hoy()}">            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Hora <span class="text-danger">*</span></label>
+                <input type="time" id="hora_cambio_estado" class="form-control" value="${salida.hora_cambio_estado ?? ahora()}">
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label">Motivo <span class="text-danger">*</span></label>
+                <textarea id="motivo_cambio_estado" class="form-control" rows="3">${salida.motivo_cambio_estado ?? ""}</textarea>
+            </div>
+        </div>
+    `;
+}
+
 function editarSalida(id) {
     $.get(route("salidas.show", { id: id }), function (salida) {
         let html = `
@@ -305,7 +347,7 @@ function editarSalida(id) {
                     ${opcionesEstados(salida.estado)}
                 </select>
             </div>
-
+${bloqueCambioEstado(salida)}
             <!-- BLOQUE NUEVO -->
             <div id="bloqueAsignacionRuta" style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
 
@@ -392,10 +434,18 @@ function editarSalida(id) {
         });
 
         $("#estado").on("change", function () {
-            if ($(this).val() === "en_ruta") {
+            let estado = $(this).val();
+
+            if (estado === "en_ruta") {
                 $("#bloqueAsignacionRuta").slideDown();
             } else {
                 $("#bloqueAsignacionRuta").slideUp();
+            }
+
+            if (estado === "reprogramado" || estado === "cancelado") {
+                $("#bloqueCambioEstado").slideDown();
+            } else {
+                $("#bloqueCambioEstado").slideUp();
             }
         });
 
@@ -407,7 +457,9 @@ window.guardarEdicionSalida = function (id) {
     let horario_id = $("#horario_id").val();
     let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
-
+    let fecha_cambio_estado = $("#fecha_cambio_estado").val();
+    let hora_cambio_estado = $("#hora_cambio_estado").val();
+    let motivo_cambio_estado = $("#motivo_cambio_estado").val();
     let vehiculo_id = $("#vehiculo_id").val();
     let conductor_principal_id = $("#conductor_principal_id").val();
     let conductor_secundario_id = $("#conductor_secundario_id").val();
@@ -417,6 +469,16 @@ window.guardarEdicionSalida = function (id) {
         return;
     }
 
+    if (estado === "reprogramado" || estado === "cancelado") {
+        if (
+            !fecha_cambio_estado ||
+            !hora_cambio_estado ||
+            !motivo_cambio_estado
+        ) {
+            Swal.fire("Error", "Debe ingresar fecha, hora y motivo", "error");
+            return;
+        }
+    }
     if (estado === "en_ruta") {
         if (!vehiculo_id || !conductor_principal_id) {
             Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
@@ -436,6 +498,9 @@ window.guardarEdicionSalida = function (id) {
             vehiculo_id,
             conductor_principal_id,
             conductor_secundario_id,
+            fecha_cambio_estado,
+            hora_cambio_estado,
+            motivo_cambio_estado,
         },
         success: function () {
             Swal.fire("Actualizado", "", "success");

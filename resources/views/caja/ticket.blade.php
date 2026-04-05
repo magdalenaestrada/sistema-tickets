@@ -112,8 +112,8 @@
         {{-- SI ES ENCOMIENDA --}}
         @if ($servicio instanceof \App\Models\Encomienda)
             <p><strong>Tipo servicio:</strong> Encomienda</p>
-            <p><strong>Origen:</strong> {{ $servicio->origen }}</p>
-            <p><strong>Destino:</strong> {{ $servicio->destino }}</p>
+            <p><strong>Origen:</strong> {{ $servicio->sucursal_origen->nombre_comercial }}</p>
+            <p><strong>Destino:</strong> {{ $servicio->sucursal_destino->nombre_comercial }}</p>
 
             <div class="bold" style="margin-top:5px;">DETALLES</div>
 

@@ -7,6 +7,7 @@ Route::middleware(['auth', 'can:gestionar empresa'])->prefix('empresas')->name('
     Route::get('/', [EmpresaController::class, 'index'])->name('index');
     Route::get('/datatable', [EmpresaController::class, 'datatable'])->name('datatable');
     Route::get('/{empresa}', [EmpresaController::class, 'mostrar'])->name('mostrar');
+    
     Route::post('/', [EmpresaController::class, 'guardar'])->name('guardar');
     Route::post('/{empresa}', [EmpresaController::class, 'actualizar'])->name('actualizar');
     Route::post('/{empresa}/activar', [EmpresaController::class, 'activar'])->name('activar');
