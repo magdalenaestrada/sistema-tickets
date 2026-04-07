@@ -112,6 +112,13 @@ class TipoMovimientoCajaSeeder extends Seeder
             ],
             [
                 'tipo_movimiento_caja_id' => 1,
+                'descripcion' => 'Apertura de caja',
+                'estado' => 'A',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'tipo_movimiento_caja_id' => 1,
                 'descripcion' => 'Otros ingresos',
                 'estado' => 'A',
                 'created_at' => $now,

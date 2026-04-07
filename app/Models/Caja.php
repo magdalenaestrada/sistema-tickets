@@ -41,11 +41,6 @@ class Caja extends Model
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
-    public function detalles()
-    {
-        return $this->hasMany(CajaDetalle::class, 'caja_id');
-    }
-
     public function detallesActivos()
     {
         return $this->hasMany(CajaDetalle::class, 'caja_id')
@@ -93,26 +88,6 @@ class Caja extends Model
             ->sum('amount'));
     }
 
-    public function getIngresosYapeAttribute(): float
-    {
-        return $this->ingresosPorMetodoNombre('Yape');
-    }
-
-    public function getIngresosTransferenciaAttribute(): float
-    {
-        return $this->ingresosPorMetodoNombre('Transferencia');
-    }
-
-    public function getIngresosTarjetaAttribute(): float
-    {
-        return $this->ingresosPorMetodoNombre('Tarjeta');
-    }
-
-    public function getIngresosEfectivoAttribute(): float
-    {
-        return $this->ingresosPorMetodoNombre('Efectivo');
-    }
-
     public function getEgresosEfectivoAttribute(): float
     {
         return $this->egresosPorMetodoNombre('Efectivo');
@@ -121,5 +96,50 @@ class Caja extends Model
     public function getEfectivoEsperadoAttribute(): float
     {
         return (float) $this->monto_apertura + $this->ingresos_efectivo - $this->egresos_efectivo;
+    }
+
+    public function detalles()
+    {
+        return $this->hasMany(CajaDetalle::class, 'caja_id');
+    }
+
+    public function getIngresosYapeAttribute()
+    {
+        return $this->detalles
+            ->where('amount', '>', 0)
+            ->where('billetera_digital_id', 1)
+            ->sum('amount');
+    }
+
+    public function getIngresosPlinAttribute()
+    {
+        return $this->detalles
+            ->where('amount', '>', 0)
+            ->where('billetera_digital_id', 2)
+            ->sum('amount');
+    }
+
+    public function getIngresosTarjetaAttribute()
+    {
+        return $this->detalles
+            ->where('amount', '>', 0)
+            ->where('billetera_digital_id', 3)
+            ->sum('amount');
+    }
+
+    public function getIngresosTransferenciaAttribute()
+    {
+        return $this->detalles
+            ->where('amount', '>', 0)
+            ->where('billetera_digital_id', 4)
+            ->sum('amount');
+    }
+
+    public function getIngresosEfectivoAttribute()
+    {
+        return $this->detalles
+            ->where('amount', '>', 0)
+            ->where('metodo_pago_id', 1)
+            ->sum('amount');
     }
 }

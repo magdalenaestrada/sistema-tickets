@@ -2,29 +2,55 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BilleteraDigital;
 use App\Models\Caja;
 use App\Models\CajaDetalle;
 use App\Models\MetodoPago;
 use App\Models\SubtipoMovimientoCaja;
+use App\Models\Sucursal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CajaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
         if ($this->esAdmin($user)) {
-            $cajas = Caja::with(['sucursal', 'usuario'])
-                ->orderByDesc('fecha_creacion')
-                ->paginate(15);
+            $query = Caja::with(['sucursal', 'usuario.persona']);
 
-            return view('caja.index_admin', compact('cajas'));
+            if ($request->filled('sucursal_id')) {
+                $query->where('sucursal_id', $request->sucursal_id);
+            }
+
+            if ($request->filled('estado')) {
+                if ($request->estado === 'abierta') {
+                    $query->whereIn('estado', ['A', 'abierta']);
+                } elseif ($request->estado === 'cerrada') {
+                    $query->whereIn('estado', ['C', 'cerrada']);
+                }
+            }
+
+            $cajas = $query
+                ->orderByDesc('fecha_creacion')
+                ->paginate(15)
+                ->appends($request->query());
+
+            $totalEfectivo = (clone $query)->sum('monto_apertura');
+
+            // sumar solo cajas abiertas:
+            // $totalEfectivo = (clone $query)
+            //     ->whereIn('estado', ['A', 'abierta'])
+            //     ->sum('monto_apertura');
+
+            $sucursales = Sucursal::orderBy('nombre_comercial')->get();
+
+            return view('caja.index_admin', compact('cajas', 'sucursales', 'totalEfectivo'));
         }
 
-        $cajaAbierta = Caja::with(['sucursal', 'usuario'])
+        $cajaAbierta = Caja::with(['sucursal', 'usuario.persona'])
             ->where('usuario_id', $user->id)
             ->whereIn('estado', ['A', 'abierta'])
             ->orderByDesc('fecha_creacion')
@@ -34,42 +60,86 @@ class CajaController extends Controller
             return redirect()->route('caja.show', $cajaAbierta->id);
         }
 
-        $cajas = Caja::with(['sucursal', 'usuario'])
+        $cajas = Caja::with(['sucursal', 'usuario.persona'])
             ->where('usuario_id', $user->id)
             ->orderByDesc('fecha_creacion')
             ->paginate(15);
 
         return view('caja.index_cajero', compact('cajas'));
     }
+
     public function store(Request $request)
     {
-        $request->validate([
-            'monto_apertura' => 'required|numeric|min:0',
-        ]);
-
         $user = Auth::user();
 
-        $cajaAbierta = Caja::where('usuario_id', $user->id)
-            ->whereIn('estado', ['A', 'abierta'])
-            ->first();
+        $rules = [
+            'monto_apertura' => 'required|numeric|min:0',
+        ];
 
-        if ($cajaAbierta) {
-            return redirect()
-                ->route('caja.show', $cajaAbierta->id)
-                ->with('error', 'Ya tienes una caja abierta.');
+        if ($this->esAdmin($user)) {
+            $rules['sucursal_id'] = 'required|exists:sucursales,id';
         }
 
-        $caja = Caja::create([
-            'usuario_id'      => $user->id,
-            'sucursal_id'     => $user->sucursal_id,
-            'monto_apertura'  => $request->monto_apertura,
-            'estado'          => 'A',
-            'fecha_creacion'  => now(),
-        ]);
+        $request->validate($rules);
 
-        return redirect()
-            ->route('caja.show', $caja->id)
-            ->with('success', 'Caja abierta correctamente.');
+        $sucursalId = $this->esAdmin($user)
+            ? (int) $request->sucursal_id
+            : (int) $user->sucursal_id;
+
+        if ($this->esAdmin($user)) {
+            $cajaAbierta = Caja::where('sucursal_id', $sucursalId)
+                ->whereIn('estado', ['A', 'abierta'])
+                ->first();
+
+            if ($cajaAbierta) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Ya existe una caja abierta en esa sucursal.');
+            }
+        } else {
+            $cajaAbierta = Caja::where('usuario_id', $user->id)
+                ->whereIn('estado', ['A', 'abierta'])
+                ->first();
+
+            if ($cajaAbierta) {
+                return redirect()
+                    ->route('caja.show', $cajaAbierta->id)
+                    ->with('error', 'Ya tienes una caja abierta.');
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $caja = Caja::create([
+                'usuario_id'      => $user->id,
+                'sucursal_id'     => $sucursalId,
+                'monto_apertura'  => $request->monto_apertura,
+                'estado'          => 'A',
+                'fecha_creacion'  => now(),
+            ]);
+
+            CajaDetalle::create([
+                'caja_id'                    => $caja->id,
+                'subtipo_movimiento_caja_id' => 10,
+                'metodo_pago_id'             => 1,
+                'amount'                     => abs($request->monto_apertura),
+                'description'                => 'Apertura de caja',
+                'anulado'                    => false,
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('caja.show', $caja->id)
+                ->with('success', 'Caja abierta correctamente.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with('error', 'No se pudo abrir la caja.');
+        }
     }
 
     public function show(Caja $caja)
@@ -95,11 +165,14 @@ class CajaController extends Controller
 
         $metodosPago = MetodoPago::all();
 
+        $billeterasDigitales = BilleteraDigital::all();
+
         return view('caja.show', compact(
             'caja',
             'subtiposIngreso',
             'subtiposSalida',
-            'metodosPago'
+            'metodosPago',
+            'billeterasDigitales'
         ));
     }
 
@@ -111,26 +184,86 @@ class CajaController extends Controller
         $request->validate([
             'subtipo_movimiento_caja_id' => 'required|exists:subtipo_movimiento_caja,id',
             'metodo_pago_id'             => 'required|exists:metodo_pago,id',
-            'amount'                     => 'required|numeric|min:0.01',
+            'amount'                     => 'nullable|numeric|min:0.01',
+            'monto_efectivo'             => 'nullable|numeric|min:0.01',
+            'monto_digital'              => 'nullable|numeric|min:0.01',
             'description'                => 'nullable|string|max:500',
             'table_name'                 => 'nullable|string|max:255',
             'table_id'                   => 'nullable|integer',
+            'billetera_digital_id'       => 'nullable|integer',
         ]);
 
-        DB::transaction(function () use ($request, $caja) {
-            CajaDetalle::create([
-                'caja_id'                     => $caja->id,
-                'subtipo_movimiento_caja_id'  => $request->subtipo_movimiento_caja_id,
-                'metodo_pago_id'              => $request->metodo_pago_id,
-                'table_name'                  => $request->table_name,
-                'table_id'                    => $request->table_id,
-                'amount'                      => abs($request->amount),
-                'description'                 => $request->description,
-                'anulado'                     => false,
-            ]);
-        });
+        try {
+            DB::transaction(function () use ($request, $caja) {
+                if ($request->metodo_pago_id != '3') {
+                    CajaDetalle::create([
+                        'caja_id'                    => $caja->id,
+                        'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
+                        'metodo_pago_id'             => $request->metodo_pago_id,
+                        'table_name'                 => $request->table_name,
+                        'table_id'                   => $request->table_id,
+                        'billetera_digital_id'       => $request->billetera_digital_id,
+                        'amount'                     => abs($request->amount),
+                        'description'                => $request->description,
+                        'anulado'                    => false,
+                    ]);
+                } else {
+                    if ((float) $request->monto_efectivo > 0) {
+                        CajaDetalle::create([
+                            'caja_id'                    => $caja->id,
+                            'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
+                            'metodo_pago_id'             => 1, // efectivo
+                            'table_name'                 => $request->table_name,
+                            'table_id'                   => $request->table_id,
+                            'billetera_digital_id'       => null,
+                            'amount'                     => abs($request->monto_efectivo),
+                            'description'                => $request->description,
+                            'anulado'                    => false,
+                        ]);
+                    }
 
-        return back()->with('success', 'Ingreso registrado correctamente.');
+                    if ((float) $request->monto_digital > 0) {
+                        CajaDetalle::create([
+                            'caja_id'                    => $caja->id,
+                            'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
+                            'metodo_pago_id'             => 2, // digital o el id que corresponda
+                            'table_name'                 => $request->table_name,
+                            'table_id'                   => $request->table_id,
+                            'billetera_digital_id'       => $request->billetera_digital_id,
+                            'amount'                     => abs($request->monto_digital),
+                            'description'                => $request->description,
+                            'anulado'                    => false,
+                        ]);
+                    }
+                }
+            });
+
+            if ($request->ajax() || $request->wantsJson()) {
+                $caja->load([
+                    'detalles.subtipo',
+                    'detalles.metodoPago'
+                ]);
+
+                $tabla = view('caja.partials.tabla_movimientos', compact('caja'))->render();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Ingreso registrado correctamente.',
+                    'tabla'   => $tabla,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Ingreso registrado correctamente.');
+        } catch (\Throwable $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
     public function registrarSalida(Caja $caja, Request $request)
@@ -141,27 +274,89 @@ class CajaController extends Controller
         $request->validate([
             'subtipo_movimiento_caja_id' => 'required|exists:subtipo_movimiento_caja,id',
             'metodo_pago_id'             => 'required|exists:metodo_pago,id',
-            'amount'                     => 'required|numeric|min:0.01',
+            'amount'                     => 'nullable|numeric|min:0.01',
+            'monto_efectivo'             => 'nullable|numeric|min:0.01',
+            'monto_digital'              => 'nullable|numeric|min:0.01',
             'description'                => 'nullable|string|max:500',
             'table_name'                 => 'nullable|string|max:255',
             'table_id'                   => 'nullable|integer',
+            'billetera_digital_id'       => 'nullable|integer',
         ]);
 
-        DB::transaction(function () use ($request, $caja) {
-            CajaDetalle::create([
-                'caja_id'                     => $caja->id,
-                'subtipo_movimiento_caja_id'  => $request->subtipo_movimiento_caja_id,
-                'metodo_pago_id'              => $request->metodo_pago_id,
-                'table_name'                  => $request->table_name,
-                'table_id'                    => $request->table_id,
-                'amount'                      => -1 * abs($request->amount),
-                'description'                 => $request->description,
-                'anulado'                     => false,
-            ]);
-        });
+        try {
+            DB::transaction(function () use ($request, $caja) {
+                if ($request->metodo_pago_id != '3') {
+                    CajaDetalle::create([
+                        'caja_id'                    => $caja->id,
+                        'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
+                        'metodo_pago_id'             => $request->metodo_pago_id,
+                        'table_name'                 => $request->table_name,
+                        'table_id'                   => $request->table_id,
+                        'billetera_digital_id'       => $request->billetera_digital_id,
+                        'amount'                     => -abs($request->amount),
+                        'description'                => $request->description,
+                        'anulado'                    => false,
+                    ]);
+                } else {
+                    if ((float) $request->monto_efectivo > 0) {
+                        CajaDetalle::create([
+                            'caja_id'                    => $caja->id,
+                            'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
+                            'metodo_pago_id'             => 1, // efectivo
+                            'table_name'                 => $request->table_name,
+                            'table_id'                   => $request->table_id,
+                            'billetera_digital_id'       => null,
+                            'amount'                     => -abs($request->monto_efectivo),
+                            'description'                => $request->description,
+                            'anulado'                    => false,
+                        ]);
+                    }
 
-        return back()->with('success', 'Salida registrada correctamente.');
+                    if ((float) $request->monto_digital > 0) {
+                        CajaDetalle::create([
+                            'caja_id'                    => $caja->id,
+                            'subtipo_movimiento_caja_id' => $request->subtipo_movimiento_caja_id,
+                            'metodo_pago_id'             => 2, // digital o el id que corresponda
+                            'table_name'                 => $request->table_name,
+                            'table_id'                   => $request->table_id,
+                            'billetera_digital_id'       => $request->billetera_digital_id,
+                            'amount'                     => -abs($request->monto_digital),
+                            'description'                => $request->description,
+                            'anulado'                    => false,
+                        ]);
+                    }
+                }
+            });
+
+            if ($request->ajax() || $request->wantsJson()) {
+                $caja->load([
+                    'detalles.subtipo',
+                    'detalles.metodoPago'
+                ]);
+
+                $tabla = view('caja.partials.tabla_movimientos', compact('caja'))->render();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Ingreso registrado correctamente.',
+                    'tabla'   => $tabla,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Ingreso registrado correctamente.');
+        } catch (\Throwable $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
+
+
 
     public function cerrar(Caja $caja)
     {

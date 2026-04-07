@@ -13,6 +13,7 @@ Route::middleware(['auth', 'can:gestionar caja'])->prefix('cajas')->name('caja.'
 
     Route::post('/{caja}/cerrar', [CajaController::class, 'cerrar'])->name('cerrar');
     Route::get('/{caja}/print-corte', [CajaController::class, 'print_corte'])->name('print_corte');
+    Route::get('/{caja}/print-corte-masivo', [CajaController::class, 'print_corte_masivo'])->name('print_corte_masivo');
 
     Route::get('/caja-detalle/{detalle}/reimprimir', [CajaController::class, 'reimprimir'])->name('reimprimir');
     Route::post('/caja-detalle/{detalle}/anular', [CajaController::class, 'anular'])->name('anular');

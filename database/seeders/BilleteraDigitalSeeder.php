@@ -19,7 +19,8 @@ class BilleteraDigitalSeeder extends Seeder
         $billeteras = [
             ['descripcion' => 'Yape'],
             ['descripcion' => 'Plin'],
-            ['descripcion' => 'POS'],
+            ['descripcion' => 'Tarjeta'],
+            ['descripcion' => 'Transferencia'],
         ];
 
         foreach ($billeteras as $billeta) {

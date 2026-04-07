@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->string('numero_ticket')->nullable();
             $table->boolean('anulado')->default(false);
             $table->foreignId("caja_id")->constrained("caja");
+            $table->foreignId("billetera_digital_id")->nullable()->constrained("billeteras_digitales");
             $table
                 ->foreignId("subtipo_movimiento_caja_id")
                 ->constrained("subtipo_movimiento_caja");
