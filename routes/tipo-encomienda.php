@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TipoEncomiendaController;
 
-Route::middleware(['auth', 'can:gestionar tipo encomiendas'])->prefix('tipo-encomienda')->group(function () {
+Route::middleware(['auth'])->prefix('tipo-encomienda')->group(function () {
 
     Route::get('/datatable', [TipoEncomiendaController::class, 'datatable'])
         ->name('tipo-encomienda.datatable');

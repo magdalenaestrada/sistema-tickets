@@ -163,9 +163,12 @@ class SalidaController extends Controller
             'vehiculo',
             'conductorPrincipal',
             'conductorSecundario',
+            'encomiendas',
         ]);
 
-        $encomiendas = collect();
+        $encomiendas = $salida->encomiendas()
+            ->wherePivot('estado', 'A')
+            ->get();
 
         $html = view('salidas.manifiestos.encomiendas', compact(
             'salida',
@@ -178,7 +181,6 @@ class SalidaController extends Controller
             'P'
         );
     }
-
     public function manifiestoConductores(Salida $salida, PdfService $pdfService)
     {
         $salida->load([

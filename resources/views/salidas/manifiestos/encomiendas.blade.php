@@ -90,13 +90,13 @@
             @forelse ($encomiendas as $i => $encomienda)
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ $encomienda->remitente?->nombres ?? '-' }}</td>
-                    <td>{{ $encomienda->destinatario?->nombres ?? '-' }}</td>
-                    <td>{{ $encomienda->origen?->nombre_comercial ?? '-' }}</td>
-                    <td>{{ $encomienda->destino?->nombre_comercial ?? '-' }}</td>
-                    <td>{{ $encomienda->descripcion ?? '-' }}</td>
-                    <td>{{ $encomienda->peso ?? '-' }}</td>
-                    <td>{{ number_format((float) ($encomienda->precio ?? 0), 2) }}</td>
+                    <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
+                    <td>{{ $encomienda->receptor?->nombre_completo ?? '-' }}</td>
+                    <td>{{ $encomienda->sucursal_origen?->nombre_comercial ?? '-' }}</td>
+                    <td>{{ $encomienda->sucursal_destino?->nombre_comercial ?? '-' }}</td>
+                    <td>{{ $encomienda->detalles->first()?->descripcion ?? '-' }}</td>
+                    <td>{{ $encomienda->detalles->first()?->peso ?? '-' }}</td>
+                    <td>{{ number_format((float) ($encomienda->venta?->importe ?? 0), 2) }}</td>
                 </tr>
             @empty
                 <tr>

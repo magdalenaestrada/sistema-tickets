@@ -69,10 +69,6 @@ class EncomiendaService
             ];
         });
 
-        if ($data['ventaData']) {
-            $this->ventaService->emitirVenta($data['ventaData']['venta']);
-        }
-
         return $data['encomienda']->fresh();
     }
 
