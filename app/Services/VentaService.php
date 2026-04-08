@@ -38,16 +38,18 @@ class VentaService
 
         return DB::transaction(function () use ($request, $servicio_model, $servicio_id, $user) {
 
-            $tipoDocumentoFacturaId = data_get($request, 'tipo_documento_factura_id');
-            $tipoServicioId = data_get($request, 'tipo_servicio_id');
+            $tipoDocumentoFacturaId = (int) data_get($request, 'tipo_documento_factura_id');
+            $tipoServicioId = (int) data_get($request, 'tipo_servicio_id');
             $numeroDocumento = trim((string) data_get($request, 'numero_documento_id'));
             $razonSocial = data_get($request, 'razon_social');
             $total = (float) data_get($request, 'total', 0);
             $detalles = data_get($request, 'detalles', []);
 
+            $sucursalId = $this->resolverSucursalVenta($request, $user);
+
             $comprobante = $this->reservarSerieYNumero(
-                (int) $tipoDocumentoFacturaId,
-                (int) $user->sucursal_id
+                $tipoDocumentoFacturaId,
+                $sucursalId
             );
 
             $personaVenta = Persona::updateOrCreate(
@@ -65,14 +67,14 @@ class VentaService
 
             $venta = Venta::create([
                 'tipo_servicio_id'          => $tipoServicioId,
-                'sucursal_id'               => $user->sucursal_id,
+                'sucursal_id'               => $sucursalId,
                 'usuario_id'                => $user->id,
                 'persona_id'                => $personaVenta->id,
                 'tipo_documento_factura_id' => $tipoDocumentoFacturaId,
                 'serie'                     => $comprobante['serie'],
                 'numero'                    => $comprobante['numero'],
                 'total'                     => $total,
-                'estado'                    => 'P', // Pendiente de emisión
+                'estado'                    => 'P',
                 'fecha_emision'             => now(),
             ]);
 
@@ -112,17 +114,40 @@ class VentaService
         });
     }
 
-    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1): array
+    private function resolverSucursalVenta($request, $user): int
+    {
+        if (!empty($user->is_admin) || !empty($user->es_admin)) {
+            $sucursalId = (int) data_get($request, 'sucursal_id');
+
+            if ($sucursalId <= 0) {
+                throw new Exception('Debe seleccionar una sucursal para la venta.');
+            }
+
+            return $sucursalId;
+        }
+
+        if (empty($user->sucursal_id)) {
+            throw new Exception('El usuario no tiene una sucursal asignada.');
+        }
+
+        return (int) $user->sucursal_id;
+    }
+
+    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1, $sucursal_id = null): array
     {
         $user = Auth::user();
         $precioFinal = $precio - $descuento;
 
-        $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user) {
-            $comprobante = $this->reservarSerieYNumero($tipo_documento_factura_id, $user->sucursal_id);
+        $sucursalId = (!empty($user->is_admin) || !empty($user->es_admin))
+            ? ((int) $sucursal_id ?: (int) $user->sucursal_id)
+            : (int) $user->sucursal_id;
+
+        $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user, $sucursalId) {
+            $comprobante = $this->reservarSerieYNumero((int) $tipo_documento_factura_id, $sucursalId);
 
             $venta = Venta::create([
                 'tipo_servicio_id'          => 1,
-                'sucursal_id'               => $user->sucursal_id,
+                'sucursal_id'               => $sucursalId,
                 'usuario_id'                => $user->id,
                 'persona_id'                => $user->persona_id,
                 'tipo_documento_factura_id' => $tipo_documento_factura_id,
@@ -161,6 +186,11 @@ class VentaService
     public function emitirVenta(Venta $venta): array
     {
         $venta->refresh();
+        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
+
+        if (!$tipo) {
+            throw new Exception('Tipo de documento no válido.');
+        }
 
         if (in_array($venta->estado, ['E', 'O'], true)) {
             return [
@@ -171,6 +201,24 @@ class VentaService
                 'notas'       => [],
                 'xml_path'    => $venta->ruta_xml,
                 'cdr_path'    => $venta->ruta_cdr,
+                'nombre'      => $venta->serie . '-' . $venta->numero,
+            ];
+        }
+
+        if ((string) $tipo->codigo === 'NV') {
+            $venta->update([
+                'estado' => 'E',
+                'observacion' => 'Nota de venta emitida internamente.',
+            ]);
+
+            return [
+                'success'     => true,
+                'estado'      => 'EMITIDA_INTERNA',
+                'codigo'      => null,
+                'descripcion' => 'La nota de venta fue emitida internamente y no se envía a SUNAT.',
+                'notas'       => [],
+                'xml_path'    => null,
+                'cdr_path'    => null,
                 'nombre'      => $venta->serie . '-' . $venta->numero,
             ];
         }
@@ -189,7 +237,21 @@ class VentaService
         return match ((string) $tipo->codigo) {
             '01' => '01',
             '03' => '03',
+            '07' => '07',
             default => throw new Exception('Código SUNAT no soportado: ' . $tipo->codigo),
+        };
+    }
+
+    private function resolverSeriePorTipoYSucursal(string $codigoTipoDocumento, int $sucursalId): string
+    {
+        $numeroSucursal = str_pad((string) $sucursalId, 3, '0', STR_PAD_LEFT);
+
+        return match ($codigoTipoDocumento) {
+            '01' => 'F' . $numeroSucursal,
+            '03' => 'B' . $numeroSucursal,
+            '07' => 'FC' . str_pad((string) $sucursalId, 2, '0', STR_PAD_LEFT),
+            'NV' => 'NV' . str_pad((string) $sucursalId, 2, '0', STR_PAD_LEFT),
+            default => throw new Exception('Código no soportado para serie: ' . $codigoTipoDocumento),
         };
     }
 
@@ -201,11 +263,7 @@ class VentaService
             throw new Exception('Tipo de documento de factura no válido.');
         }
 
-        $serie = match ((string) $tipo->codigo) {
-            '01' => 'F001',
-            '03' => 'B001',
-            default => throw new Exception('Código SUNAT no soportado para serie: ' . $tipo->codigo),
-        };
+        $serie = $this->resolverSeriePorTipoYSucursal((string) $tipo->codigo, $sucursal_id);
 
         $correlativo = CorrelativoVenta::where('tipo_documento_factura_id', $tipo_documento_factura_id)
             ->where('sucursal_id', $sucursal_id)
@@ -216,9 +274,9 @@ class VentaService
         if (!$correlativo) {
             $correlativo = CorrelativoVenta::create([
                 'tipo_documento_factura_id' => $tipo_documento_factura_id,
-                'sucursal_id' => $sucursal_id,
-                'serie' => $serie,
-                'ultimo_numero' => 0,
+                'sucursal_id'               => $sucursal_id,
+                'serie'                     => $serie,
+                'ultimo_numero'             => 0,
             ]);
 
             $correlativo = CorrelativoVenta::whereKey($correlativo->id)
@@ -233,7 +291,7 @@ class VentaService
         ]);
 
         return [
-            'serie' => $serie,
+            'serie'  => $serie,
             'numero' => $nuevoNumero,
         ];
     }

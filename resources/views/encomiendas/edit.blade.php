@@ -316,6 +316,8 @@
                             </select>
                         </div>
 
+                        
+
                         <div class="mb-3">
                             <label for="numero_documento_id" class="form-label">Número documento</label>
                             <input type="number"

@@ -16,7 +16,8 @@ class Sucursal extends Model
         'direccion',
         'telefono',
         'estado',
-        'venta_otras'
+        'venta_otras', 
+        'codigo_emision'
     ];
 
     public function empresa()

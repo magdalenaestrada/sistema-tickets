@@ -19,6 +19,7 @@ $(document).ready(async function () {
         },
         columns: [
             { data: "id" },
+            { data: "codigo_emision" },
             { data: "nombre_comercial" },
             { data: "direccion" },
             { data: "telefono" },
@@ -175,6 +176,7 @@ $(document).ready(async function () {
             $("#nombre_comercial_sucursal").val(data.nombre_comercial);
             $("#direccion_sucursal").val(data.direccion);
             $("#telefono").val(data.telefono);
+            $("#codigo_emision").val(data.codigo_emision);
             $("#venta_otras").prop("checked", data.venta_otras == 1);
             $("#modalTitulo").text("Editar Sucursal");
 

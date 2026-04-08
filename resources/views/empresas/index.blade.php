@@ -129,6 +129,7 @@
                     <thead class="table-primary">
                         <tr>
                             <th>ID</th>
+                            <th>Código</th>
                             <th>Nombre Sucursal</th>
                             <th>Dirección</th>
                             <th>Teléfono</th>

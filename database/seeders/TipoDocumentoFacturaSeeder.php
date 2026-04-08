@@ -25,6 +25,18 @@ class TipoDocumentoFacturaSeeder extends Seeder
                 'codigo_sunat' => '2',
                 'estado' => 'A',
             ],
+            [
+                'codigo' => 'NV',
+                'descripcion' => 'Nota de venta',
+                'codigo_sunat' => null, 
+                'estado' => 'A',
+            ],
+            [
+                'codigo' => '07',
+                'descripcion' => 'Nota de crédito',
+                'codigo_sunat' => '7',
+                'estado' => 'A',
+            ],
         ];
 
         foreach ($documentos as $doc) {

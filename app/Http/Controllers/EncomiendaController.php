@@ -62,7 +62,8 @@ class EncomiendaController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
-            ->get();;
+            ->get();
+        
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();

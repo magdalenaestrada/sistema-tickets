@@ -105,8 +105,8 @@
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control solo-numeros" id="receptor_celular"
-                                    maxlength="9" name="receptor_celular">
+                                <input type="text" class="form-control solo-numeros" id="receptor_celular" maxlength="9"
+                                    name="receptor_celular">
                             </div>
 
                             <div class="col-md-3">
@@ -241,6 +241,19 @@
 
                 <div class="card mb-3">
                     <div class="card-body">
+                        @if ($user->hasRole('Administrador'))
+                            <div class="mb-3">
+                                <label for="sucursal_id" class="col-12 col-form-label">Sucursal de emisión</label>
+                                <select name="sucursal_id" id="sucursal_id" class="form-select">
+                                    @foreach ($sucursales as $sucursal)
+                                        <option value="{{ $sucursal->id }}">
+                                            {{ $sucursal->nombre_comercial }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+            
                         <div class="mb-3">
                             <label for="tipo_documento_factura_id" class="col-6 col-form-label">Tipo de documento</label>
                             <select name="tipo_documento_factura_id" id="tipo_documento_factura_id" class="form-select">
