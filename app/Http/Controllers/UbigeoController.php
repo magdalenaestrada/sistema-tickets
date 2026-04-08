@@ -45,8 +45,7 @@ class UbigeoController extends Controller
                 ->get()
         );
     }
-    // Devuelve departamentos, provincias y distritos que tengan al menos 1 sucursal
-    // UbigeoController
+   
     public function getUbigeosConSucursales()
     {
         $departamentos = Departamento::whereHas('provincias.distritos.sucursales')

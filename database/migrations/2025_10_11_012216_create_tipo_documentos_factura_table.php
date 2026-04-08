@@ -14,11 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->string("codigo", 100)->unique()->index();
             $table->string("descripcion", 100)->index();
-            $table->string("codigo_sunat", 1)->unique()->index();
-            $table
-                ->enum("estado", ["A", "I"])
-                ->default("A")
-                ->index();
+            $table->string("codigo_sunat", 1)->unique()->index()->nullable();
+            $table->enum("estado", ["A", "I"])->default("A")->index();
             $table->timestamps();
             $table->softDeletes();
         });

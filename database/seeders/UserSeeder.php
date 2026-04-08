@@ -15,7 +15,6 @@ class UserSeeder extends Seeder
             ['documento' => '71043591'],
             [
                 'persona_id'        => 1,
-                'sucursal_id'       => 1,
                 'numero_licencia'   => null,
                 'username'          => 'superadministrador@edimsa.com',
                 'email_verified_at' => now(),

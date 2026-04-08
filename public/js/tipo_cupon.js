@@ -146,6 +146,7 @@ $(function () {
                         timer: 1500,
                         showConfirmButton: false,
                     });
+                    $btn.prop("disabled", false);
                 } else {
                     $btn.prop("disabled", false);
                     console.error(xhr.responseText);

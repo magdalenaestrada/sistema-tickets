@@ -103,7 +103,14 @@ $(async function () {
         if (origen && destino && origen === destino) {
             $("#destino").val("");
         }
+
+        const ubigeo = $("#origen option:selected").data("ubigeo") || "";
+        $("#emisor_ubigeo").val(ubigeo);
     }
+
+    $("#origen").on("change", function () {
+        filtrarOrigenDestino();
+    });
 
     function actualizarResumen() {
         let totalPeso = 0;
@@ -149,31 +156,31 @@ $(async function () {
         const total = parseFloat($("#costo_total").val()) || 0;
         const sinVenta = $("#tiene_venta").val() !== "1";
 
-        $("#pago_efectivo").closest(".row").hide();
-        $("#billetera_id").closest(".row").hide();
-        $("#pago_billetera").closest(".row").hide();
+        $("#pago_efectivo").closest(".row").attr("hidden", true);
+        $("#billetera_id").closest(".row").attr("hidden", true);
+        $("#pago_billetera").closest(".row").attr("hidden", true);
         $("#pago_efectivo").prop("readonly", false);
         $("#pago_billetera").prop("readonly", false);
 
         if (metodo === 1) {
-            $("#pago_efectivo").closest(".row").show();
+            $("#pago_efectivo").closest(".row").removeAttr("hidden");
             $("#pago_efectivo").val(total.toFixed(2)).prop("readonly", true);
             $("#pago_billetera").val("0");
             sinVenta
                 ? $(".grupo_costo_total").removeAttr("hidden")
                 : $(".grupo_costo_total").attr("hidden", true);
         } else if (metodo === 2) {
-            $("#billetera_id").closest(".row").show();
-            $("#pago_billetera").closest(".row").show();
+            $("#billetera_id").closest(".row").removeAttr("hidden");
+            $("#pago_billetera").closest(".row").removeAttr("hidden");
             $("#pago_billetera").val(total.toFixed(2)).prop("readonly", true);
             $("#pago_efectivo").val("0");
             sinVenta
                 ? $(".grupo_costo_total").removeAttr("hidden")
                 : $(".grupo_costo_total").attr("hidden", true);
         } else if (metodo === 3) {
-            $("#pago_efectivo").closest(".row").show();
-            $("#billetera_id").closest(".row").show();
-            $("#pago_billetera").closest(".row").show();
+            $("#pago_efectivo").closest(".row").removeAttr("hidden");
+            $("#billetera_id").closest(".row").removeAttr("hidden");
+            $("#pago_billetera").closest(".row").removeAttr("hidden");
             $(".grupo_costo_total").removeAttr("hidden");
 
             if (!window.IS_EDIT) {
@@ -290,7 +297,10 @@ $(async function () {
                 $(`#${tipo}_direccion`).val(res.direccion || "");
             }
 
-            if (tipo === "emisor") updateRazonSocial();
+            if (tipo === "emisor") {
+                updateRazonSocial();
+                sincronizarFacturacionDesdeEmisor();
+            }
 
             if (campoDocumento) {
                 $("#numero_documento_id").val(doc);
@@ -314,18 +324,14 @@ $(async function () {
         }
     }
 
-    // ubigeo
     UBIGEO = await $.get(route("ubigeos.todo"));
     initUbigeosReceptor();
 
-    // inicio
     filtrarOrigenDestino();
     actualizarResumen();
     recalcularTotal();
-    refrescarPagos();
     sinDocumento();
 
-    // tipos
     $.get(route("tipo-encomienda.listar-todos"), function (res) {
         tiposEncomienda = res;
 
@@ -414,8 +420,12 @@ $(async function () {
     );
 
     $("#numero_documento_id").on("blur", function () {
-        const numero = $(this).val();
-        if (!numero) return;
+        const numero = ($(this).val() || "").trim();
+
+        if (!numero) {
+            $("#razon_social").val("");
+            return;
+        }
 
         $.get(route("buscar.buscar") + `?documento=${numero}`, function (res) {
             if (res.error) {
@@ -423,11 +433,21 @@ $(async function () {
                 return;
             }
 
-            if (res.tipo === "DNI" || res.tipo === "RUC") {
-                $("#razon_social").val(
-                    res.razon_social ||
-                        `${res.nombres || ""} ${res.apellido_paterno || ""} ${res.apellido_materno || ""}`.trim(),
-                );
+            if (numero.length === 8) {
+                const nombreCompleto = [
+                    res.nombres || "",
+                    res.apellido_paterno || "",
+                    res.apellido_materno || "",
+                ]
+                    .join(" ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                $("#razon_social").val(nombreCompleto);
+            } else if (numero.length === 11) {
+                $("#razon_social").val((res.razon_social || "").trim());
+            } else {
+                $("#razon_social").val("");
             }
         }).fail(function (err) {
             Swal.fire(
@@ -438,10 +458,19 @@ $(async function () {
         });
     });
 
-    const tieneVenta = $("#tiene_venta").val() === "1";
-    const $checkbox = $("#pago_instantaneo");
     const $container = $("#container_pago");
+    const $metodo = $("#metodo_pago_id");
 
+    $container.prop("hidden", true);
+
+    $metodo.on("change", function () {
+        if ($(this).val()) {
+            $container.prop("hidden", false);
+            refrescarPagos();
+        } else {
+            $container.prop("hidden", true);
+        }
+    });
     function ocultarPago() {
         $container.prop("hidden", true);
         $container.find("input, select").prop("disabled", true).val("");
@@ -450,20 +479,6 @@ $(async function () {
     function mostrarPago() {
         $container.prop("hidden", false);
         $container.find("input, select").prop("disabled", false);
-    }
-
-    if ($checkbox.length && $container.length) {
-        if (tieneVenta) {
-            $checkbox.prop({ checked: true, disabled: true });
-            mostrarPago();
-        } else {
-            $checkbox.prop("checked", false);
-            ocultarPago();
-        }
-
-        $checkbox.on("change", function () {
-            this.checked ? mostrarPago() : ocultarPago();
-        });
     }
 
     const encomiendaId = $("#encomienda_id").val();
@@ -619,4 +634,30 @@ $(async function () {
             },
         });
     });
+
+    function sincronizarFacturacionDesdeEmisor() {
+        const docEmisor = ($("#emisor_documento").val() || "").trim();
+        const nombresEmisor = ($("#emisor_nombres").val() || "").trim();
+        const apellidosEmisor = ($("#emisor_apellidos").val() || "").trim();
+
+        const docFact = ($("#numero_documento_id").val() || "").trim();
+        const razonFact = ($("#razon_social").val() || "").trim();
+
+        if (!docFact && docEmisor) {
+            $("#numero_documento_id").val(docEmisor);
+        }
+
+        if (!razonFact) {
+            if (docEmisor.length === 8) {
+                $("#razon_social").val(
+                    [nombresEmisor, apellidosEmisor]
+                        .join(" ")
+                        .replace(/\s+/g, " ")
+                        .trim(),
+                );
+            } else if (docEmisor.length === 11) {
+                $("#razon_social").val(nombresEmisor);
+            }
+        }
+    }
 });

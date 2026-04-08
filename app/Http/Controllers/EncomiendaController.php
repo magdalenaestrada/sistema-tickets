@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AsignarHorario;
 use App\Models\BilleteraDigital;
+use App\Models\Caja;
 use App\Models\Cliente;
 use App\Models\Departamento;
 use App\Models\Distrito;
@@ -59,16 +60,20 @@ class EncomiendaController extends Controller
         Carbon::now();
         $user = Auth::user();
         $metodos_pago = MetodoPago::all();
-        $sucursales = Sucursal::where('estado', 'A')
-            ->select('id', 'nombre_comercial')
+        $sucursales = Sucursal::with('distrito')
+            ->where('estado', 'A')
+            ->select('id', 'nombre_comercial', 'distrito_id')
             ->orderBy('nombre_comercial')
             ->get();
-        
+        $cajas_emision = Caja::with('sucursal')
+            ->where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->get();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
-        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales'));
+        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales', 'cajas_emision'));
     }
 
     public function datatable_no_asignadas(Request $request)

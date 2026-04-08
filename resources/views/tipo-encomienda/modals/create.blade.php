@@ -4,7 +4,6 @@
         <div class="modal-content" id="modalContent">
             <div class="modal-header">
                 <h5 class="modal-title">Nuevo Tipo de Encomienda</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formTipoEncomienda" action="/tipo-encomienda" method="POST">
                 @csrf

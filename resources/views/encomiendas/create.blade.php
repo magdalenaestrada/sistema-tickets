@@ -61,7 +61,7 @@
                             <div class="col-md-2">
                                 <label class="form-label">Ubigeo</label>
                                 <input type="text" class="form-control" id="emisor_ubigeo" name="emisor_ubigeo"
-                                    value="{{ $user->sucursal->distrito->ubigeo }}"readonly>
+                                    value="{{ $user->sucursal->distrito->ubigeo ?? '' }}" readonly>
                             </div>
                         </div>
                     </div>
@@ -167,7 +167,7 @@
                                 <select id="origen" class="form-select" name="origen">
                                     <option value="" disabled>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
-                                        <option value="{{ $s->id }}"
+                                        <option value="{{ $s->id }}" data-ubigeo="{{ $s->distrito->ubigeo ?? '' }}"
                                             @if ($s->id == $user->sucursal_id) selected @endif>
                                             {{ $s->nombre_comercial }}
                                         </option>
@@ -214,49 +214,51 @@
 
                     </div>
                 </div>
-
             </div>
 
             <div class="col-md-3">
-
-                <div class="card mb-3">
+                <div class="card mb-1">
                     <div class="card-body">
                         <h6 class="mb-3">Tipo de servicio: Encomienda</h6>
 
-                        <div class="row mb-2">
+                        <div class="row mb-1">
                             <label for="peso_total" class="col-6 col-form-label">Peso total <b>(KG)</b></label>
                             <div class="col-6">
-                                <input type="number" id="peso_total" class="form-control" readonly>
+                                <input type="number" id="peso_total" class="form-control form-control-xs" readonly>
                             </div>
                         </div>
 
-                        <div class="row mb-2">
+                        <div class="row mb-1">
                             <label for="cantidad_bultos" class="col-6 col-form-label">Cantidad Bultos</label>
                             <div class="col-6">
-                                <input type="number" id="cantidad_bultos" class="form-control" readonly>
+                                <input type="number" id="cantidad_bultos" class="form-control form-control-xs" readonly>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="card mb-3">
+                <div class="card mb-1">
                     <div class="card-body">
                         @if ($user->hasRole('Administrador'))
-                            <div class="mb-3">
-                                <label for="sucursal_id" class="col-12 col-form-label">Sucursal de emisión</label>
-                                <select name="sucursal_id" id="sucursal_id" class="form-select">
-                                    @foreach ($sucursales as $sucursal)
-                                        <option value="{{ $sucursal->id }}">
-                                            {{ $sucursal->nombre_comercial }}
+                            <div class="mb-1">
+                                <label for="sucursal_id" class="col-12 col-form-label">Sucursal de emisión <span
+                                        style="color: red">*</span></label>
+                                <select name="sucursal_id" id="sucursal_id" class="form-select form-select-sm" required>
+                                    <option value="">Seleccionar una caja</option>
+                                    @foreach ($cajas_emision as $caja)
+                                        <option value="{{ $caja->sucursal_id }}"
+                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
+                                            {{ $caja->sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                         @endif
-            
-                        <div class="mb-3">
-                            <label for="tipo_documento_factura_id" class="col-6 col-form-label">Tipo de documento</label>
-                            <select name="tipo_documento_factura_id" id="tipo_documento_factura_id" class="form-select">
+
+                        <div class="mb-1">
+                            <label for="tipo_documento_factura_id" class="col-6 col-form-label">Tipo de
+                                documento <span style="color: red">*</span></label>
+                            <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
+                                class="form-select form-select-sm">
                                 @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
                                     <option value="{{ $tipo_documento_factura->id }}"
                                         @if ($index === 1) selected @endif>
@@ -266,47 +268,49 @@
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="numero_documento_id" class="form-label">Número documento</label>
+                        <div class="mb-1">
+                            <label for="numero_documento_id" class="form-label">Número documento <span
+                                    style="color: red">*</span></label>
                             <input type="number" id="numero_documento_id" name="numero_documento_id"
-                                class="form-control solo-numeros">
+                                class="form-control solo-numeros form-control-xs">
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-1">
                             <label for="razon_social" class="form-label">Razón social</label>
-                            <input type="text" id="razon_social" name="razon_social" class="form-control">
+                            <input type="text" id="razon_social" name="razon_social"
+                                class="form-control form-control-xs">
                         </div>
                     </div>
                 </div>
-
-                <div class="card mb-3">
+                <div class="card mb-1">
                     <div class="card-body">
-                        <div class="form-check mb-3">
+                        <div class="form-check mb-1">
                             <input class="form-check-input" type="checkbox" id="pago_instantaneo"
-                                name="pago_instantaneo" value="1">
+                                name="pago_instantaneo" value="1" checked>
                             <label class="form-check-label" for="pago_instantaneo">
                                 Registrar pago
                             </label>
                         </div>
-                        <div id="container_pago">
-                            <div class="row mb-2">
-                                <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
-                                <div class="col-6">
-                                    <select name="metodo_pago_id" id="metodo_pago_id" class="form-select">
-                                        @foreach ($metodos_pago as $metodo_pago)
-                                            <option value="{{ $metodo_pago->id }}">
-                                                {{ $metodo_pago->descripcion }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                        <div class="row mb-1">
+                            <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
+                            <div class="col-6">
+                                <select name="metodo_pago_id" id="metodo_pago_id" class="form-select form-select-sm">
+                                    <option value="">Seleccione</option>
+                                    @foreach ($metodos_pago as $metodo_pago)
+                                        <option value="{{ $metodo_pago->id }}">
+                                            {{ $metodo_pago->descripcion }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
+                        </div>
+                        <div id="container_pago" hidden>
 
                             <div class="row mb-2 grupo_costo_total" hidden>
                                 <label for="costo_total" class="col-6 col-form-label">Costo total <b>(S/)</b></label>
                                 <div class="col-6">
                                     <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control" readonly>
+                                        class="form-control form-control-xs" readonly>
                                 </div>
                             </div>
 
@@ -314,14 +318,15 @@
                                 <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo <b>(S/)</b></label>
                                 <div class="col-6">
                                     <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
-                                        class="form-control">
+                                        class="form-control form-control-xs">
                                 </div>
                             </div>
 
                             <div class="row mb-2">
                                 <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
                                 <div class="col-6">
-                                    <select name="billetera_id" id="billetera_id" class="form-select">
+                                    <select name="billetera_id" id="billetera_id" class="form-select form-select-sm">
+                                        <option value="">Seleccione</option>
                                         @foreach ($billeteras_digitales as $billetera_digital)
                                             <option value="{{ $billetera_digital->id }}">
                                                 {{ $billetera_digital->descripcion }}
@@ -335,13 +340,12 @@
                                 <label for="pago_billetera" class="col-6 col-form-label">Pago digital <b>(S/)</b></label>
                                 <div class="col-6">
                                     <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
-                                        class="form-control">
+                                        class="form-control form-control-xs">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
         <div class="row mt-3">
