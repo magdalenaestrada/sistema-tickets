@@ -13,7 +13,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table id="tablaPermisos" class="table table-striped table-hover align-middle w-100">
+                <table id="tablaPermisos" class="table table-hover align-middle w-100">
                     <thead>
                         <tr>
                             <th>ID</th>

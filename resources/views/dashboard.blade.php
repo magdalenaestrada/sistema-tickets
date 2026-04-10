@@ -27,7 +27,7 @@
                         Horarios disponibles hoy
                     </div>
                     <div class="card-body table-responsive">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>Tipo de viaje</th>
@@ -39,7 +39,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                              
+
                             </tbody>
                         </table>
                     </div>

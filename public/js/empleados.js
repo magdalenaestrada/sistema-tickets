@@ -155,17 +155,26 @@ $(document).ready(async function () {
     $("#telefono").on("input", function () {
         this.value = this.value.replace(/\D/g, "");
     });
+
     $("#celular").on("input", function () {
         this.value = this.value.replace(/\D/g, "").slice(0, 9);
     });
+
     $("#apellidos").on("input", function () {
         this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
     });
+
     $("#nombres").on("input", function () {
         this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
     });
+
     $("#licencia_conducir").on("input", function () {
-        this.value = this.value.replace(/\D/g, "").slice(0, 8);
+        let value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+        let letra = value.charAt(0).replace(/[^A-Z]/g, "");
+        let numeros = value.slice(1).replace(/\D/g, "");
+
+        this.value = (letra + numeros).slice(0, 9);
     });
 
     $("#tipo_documento_id").on("change", function () {

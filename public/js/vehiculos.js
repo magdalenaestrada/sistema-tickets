@@ -58,7 +58,7 @@ $(document).ready(function () {
 
     $("#btnNuevaVehiculo").click(async function () {
         $("#formVehiculo")[0].reset();
-        $("#Vehiculo_id").val("");
+        $("#vehiculo_id").val("");
         await cargarTiposVehiculo();
         modal.show();
     });
@@ -66,7 +66,7 @@ $(document).ready(function () {
     $("#formVehiculo").on("submit", async function (e) {
         e.preventDefault();
         const formData = $(this).serialize();
-        const id = $("#Vehiculo_id").val();
+        const id = $("#vehiculo_id").val();
 
         try {
             if (id) {
@@ -157,8 +157,10 @@ $(document).ready(function () {
 
         try {
             const res = await $.get(route("vehiculos.mostrar", id));
-            $("#Vehiculo_id").val(res.id);
+            $("#vehiculo_id").val(res.id);
             $("#numero_placa").val(res.numero_placa);
+            $("#marca").val(res.marca);
+            $("#habilitacion_vehicular").val(res.habilitacion_vehicular);
             await cargarTiposVehiculo(res.tipo_vehiculo_id);
             modal.show();
         } catch (err) {

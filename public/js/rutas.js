@@ -94,8 +94,14 @@ window.guardarRuta = function () {
         puntos.push($(this).val());
     });
 
-    $("input[name='duracion[]']").each(function () {
-        duracion.push($(this).val());
+    $("input[name='horas[]']").each(function (index) {
+        let horas = parseInt($(this).val()) || 0;
+        let minutos =
+            parseInt($("input[name='minutos[]']").eq(index).val()) || 0;
+
+        let total = horas * 60 + minutos;
+
+        duracion.push(total);
     });
 
     $("input[name='costo[]']").each(function () {
@@ -387,7 +393,6 @@ $(document).on("click", ".desactivar", function () {
     });
 });
 
-
 $(document).on("click", ".activar", function () {
     let id = $(this).data("id");
 
@@ -421,8 +426,14 @@ window.guardarEdicion = function (id) {
         }
     });
 
-    $("input[name='duracion[]']").each(function () {
-        duracion.push($(this).val());
+    $("input[name='horas[]']").each(function (index) {
+        let horas = parseInt($(this).val()) || 0;
+        let minutos =
+            parseInt($("input[name='minutos[]']").eq(index).val()) || 0;
+
+        let total = horas * 60 + minutos;
+
+        duracion.push(total);
     });
 
     $("input[name='costo[]']").each(function () {
@@ -457,7 +468,11 @@ window.guardarEdicion = function (id) {
             costo: costo,
         },
         success: function () {
-            Swal.fire("Actualizado", "", "success");
+            Swal.fire(
+                "Actualizado",
+                "Todas la rutas asociadas será modificadas",
+                "success",
+            );
 
             tablaRutas.ajax.reload();
 
@@ -476,6 +491,27 @@ window.guardarEdicion = function (id) {
         },
     });
 };
+
+function minutosAHorasMinutos(total) {
+    total = parseInt(total) || 0;
+
+    return {
+        horas: Math.floor(total / 60),
+        minutos: total % 60,
+    };
+}
+
+$(document).on("input", "input[name='minutos[]']", function () {
+    let valor = parseInt($(this).val()) || 0;
+
+    if (valor > 59) {
+        $(this).val(59);
+    }
+
+    if (valor < 0) {
+        $(this).val(0);
+    }
+});
 
 function generarTramos(tramosData = []) {
     let puntos = [];
@@ -497,33 +533,42 @@ function generarTramos(tramosData = []) {
     for (let i = 0; i < puntos.length - 1; i++) {
         let duracion = tramosData[i]?.duracion ?? "";
         let costo = tramosData[i]?.costo ?? "";
+        let data = minutosAHorasMinutos(duracion);
 
         html += `
-            <div class="mb-2 border p-3 rounded">
+<div class="mb-2 border p-3 rounded">
 
-                <strong>${puntos[i].nombre} → ${puntos[i + 1].nombre}</strong>
+    <strong>${puntos[i].nombre} → ${puntos[i + 1].nombre}</strong>
 
-                <div class="row mt-2">
+    <div class="row mt-2">
 
-                    <div class="col-6">
-                        <input type="number"
-                            name="duracion[]"
-                            class="form-control"
-                            value="${duracion}"
-                            placeholder="Minutos">
-                    </div>
+        <div class="col-3">
+            <input type="number"
+                name="horas[]"
+                class="form-control"
+                value="${duracion ? data.horas : ""}"
+                placeholder="Horas" min="0">
+        </div>
 
-                    <div class="col-6">
-                        <input type="number"
-                            name="costo[]"
-                            class="form-control"
-                            value="${costo}"
-                            placeholder="Costo">
-                    </div>
+        <div class="col-3">
+            <input type="number"
+                name="minutos[]"
+                class="form-control"
+                value="${duracion ? data.minutos : ''}"
+                placeholder="Min" min="0" max="59">
+        </div>
 
-                </div>
-            </div>
-        `;
+        <div class="col-6">
+            <input type="number"
+                name="costo[]"
+                class="form-control"
+                value="${costo}"
+                placeholder="S/ Costo">
+        </div>
+
+    </div>
+</div>
+`;
     }
 
     $("#contenedorTramos").html(html);

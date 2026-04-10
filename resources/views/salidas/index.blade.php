@@ -10,12 +10,12 @@
                     <div class="d-flex gap-2">
                         <button class="btn btn-success" onclick="modoGenerarSalidas()">
                             <i class="link-icon" data-lucide="calendar-plus"></i>
-                            Generar salidas
+                            Programar varias salidas
                         </button>
 
                         <button class="btn btn-primary" onclick="modoCrearSalida()">
                             <i class="link-icon" data-lucide="plus"></i>
-                            Añadir salida
+                            Crear salida única
                         </button>
                     </div>
                 </div>

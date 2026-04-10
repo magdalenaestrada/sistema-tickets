@@ -15,7 +15,7 @@
                         @foreach ($asientos as $index => $asiento)
                             <div class="card shadow-sm mb-3">
                                 <div class="card-header">
-                                    <strong>Asiento {{ $asiento }}</strong>
+                                    <strong>Asiento número: {{ $asiento }}</strong>
                                 </div>
 
                                 <div class="card-body">
@@ -108,7 +108,7 @@
                     <div class="col-md-3">
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h6 class="mb-3"><strong>ASIENTOS: {{ implode(', ', $asientos) }}</strong></h6>
+                                <h6 class="mb-3"><strong>ASIENTO(S) NUMERO: {{ implode(', ', $asientos) }}</strong></h6>
                                 <p class="mb-1"><strong>Precio C/U:</strong> <span
                                         id="precio_unitario">{{ number_format($precioUnitario, 2) }}</span></p>
                                 <p class="mb-1"><strong>Origen:</strong> {{ $origen->nombre_comercial }}</p>
@@ -118,7 +118,7 @@
                                 <p class="mb-1"><strong>Fecha:</strong> {{ $salida->fecha_salida->format('Y-m-d') }}</p>
                                 <p class="mb-3"><strong>Hora:</strong> {{ $salida->horario->hora_formateada }}</p>
                                 <div class="mb-3">
-                                    <label class="form-label"><strong>Precio manual </strong>(por asiento)</label>
+                                    <label class="form-label"><strong>Costo por asiento (S/.) </strong>(por asiento)</label>
                                     <input type="number" step="0.01" id="precio_manual" class="form-control">
                                 </div>
                             </div>

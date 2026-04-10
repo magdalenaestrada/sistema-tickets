@@ -11,7 +11,7 @@
 
         <div class="row">
             <div class="table-responsive">
-                <table class="table table-striped table-hover" id="tablaAsignaciones">
+                <table class="table table-hover" id="tablaAsignaciones">
                     <thead>
                         <tr>
                             <th>Horario</th>
