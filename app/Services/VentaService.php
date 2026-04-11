@@ -116,7 +116,7 @@ class VentaService
 
     private function resolverSucursalVenta($request, $user): int
     {
-        if (!empty($user->is_admin) || !empty($user->es_admin)) {
+        if ($user->hasRole('Administrador')) {
             $sucursalId = (int) data_get($request, 'sucursal_id');
 
             if ($sucursalId <= 0) {
@@ -138,9 +138,20 @@ class VentaService
         $user = Auth::user();
         $precioFinal = $precio - $descuento;
 
-        $sucursalId = (!empty($user->is_admin) || !empty($user->es_admin))
-            ? ((int) $sucursal_id ?: (int) $user->sucursal_id)
-            : (int) $user->sucursal_id;
+        if ($user->hasRole('Administrador')) {
+            $sucursalId = (int) $sucursal_id;
+
+            if ($sucursalId <= 0) {
+                throw new Exception('Debe seleccionar una sucursal para la venta.');
+            }
+        } else {
+            $sucursalId = (int) $user->sucursal_id;
+
+            if ($sucursalId <= 0) {
+                throw new Exception('El usuario no tiene una sucursal asignada.');
+            }
+        }
+
 
         $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user, $sucursalId) {
             $comprobante = $this->reservarSerieYNumero((int) $tipo_documento_factura_id, $sucursalId);

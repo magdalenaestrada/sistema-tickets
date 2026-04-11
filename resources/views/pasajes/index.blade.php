@@ -273,7 +273,7 @@
             <div class="filtros-bar">
                 <div class="filtro-group">
                     <label>Fecha</label>
-                    <input type="date" id="filtro_fecha" min="{{ $hoy }}" class="form-control">
+                    <input type="date" id="filtro_fecha" min="{{ $ayer }}" class="form-control" value="{{ $hoy }}">
                 </div>
 
                 <div class="filtro-group">

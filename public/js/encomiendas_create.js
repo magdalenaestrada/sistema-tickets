@@ -592,7 +592,7 @@ $(async function () {
             total: parseFloat($("#costo_total").val()) || 0,
             detalles: detalles,
             tipo_servicio_id: 2,
-            sucursal_id: null,
+            sucursal_id: $("#sucursal_id").val(),
             serie: null,
             numero: null,
             pagos: pagos,

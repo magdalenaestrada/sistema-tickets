@@ -29,13 +29,14 @@ class PasajeController extends Controller
     {
         $hoy = now('America/Lima')->format('Y-m-d');
 
+        $ayer = now('America/Lima')->subDay()->format('Y-m-d');
+
         $salidas = Salida::with([
             'horario.ruta.puntos.sucursal',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
             ->whereIn('estado', ['activo', 'programado'])
-            ->whereDate('fecha_salida', '>=', now()->toDateString())
             ->orderBy('fecha_salida')
             ->get()
             ->map(function ($salida) {
@@ -67,7 +68,7 @@ class PasajeController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
-        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales'));
+        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer'));
     }
 
     public function listarPasajes(Request $request)
@@ -658,7 +659,6 @@ class PasajeController extends Controller
             ->whereHas('horario', function ($q) use ($pasaje) {
                 $q->where('ruta_id', $pasaje->salida->horario->ruta_id);
             })
-            ->whereDate('fecha_salida', '>=', now()->toDateString())
             ->orderBy('fecha_salida')
             ->get();
         return view('pasajes.editar', compact(
@@ -731,7 +731,6 @@ class PasajeController extends Controller
             ->whereHas('horario', function ($q) use ($pasaje) {
                 $q->where('ruta_id', $pasaje->salida->horario->ruta_id);
             })
-            ->whereDate('fecha_salida', '>=', now()->toDateString())
             ->orderBy('fecha_salida')
             ->get();
 
