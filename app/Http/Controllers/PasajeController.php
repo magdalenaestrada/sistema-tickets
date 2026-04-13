@@ -9,6 +9,7 @@ use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
 use App\Models\MetodoPago;
 use App\Models\BilleteraDigital;
+use App\Models\Caja;
 use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
@@ -851,6 +852,8 @@ class PasajeController extends Controller
 
     public function vender(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
             'salida' => 'required|exists:salidas,id',
             'asientos' => 'required|string',
@@ -863,6 +866,11 @@ class PasajeController extends Controller
             'horario.tipo_vehiculo',
             'horario.tipo_viaje',
         ])->findOrFail($request->salida);
+
+        $cajas_emision = Caja::with('sucursal')
+            ->where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->get();
 
         $asientos = collect(explode(',', $request->asientos))
             ->map(fn($a) => (int) trim($a))
@@ -910,7 +918,9 @@ class PasajeController extends Controller
             'tipos_documentos',
             'tipos_documentos_facturas',
             'metodos_pago',
-            'billeteras_digitales'
+            'billeteras_digitales',
+            'cajas_emision', 
+            'user'
         ));
     }
 

@@ -1,89 +1,142 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container mt-4">
-        <div class="row mt-3">
-            <form method="POST" enctype="multipart/form-data" id="formVenta">
-                @csrf
+    <div class="container-fluid mt-3">
+        <form method="POST" enctype="multipart/form-data" id="formVenta">
+            @csrf
 
-                <input type="hidden" name="salida_id" value="{{ $salida->id }}">
-                <input type="hidden" name="origen_id" value="{{ $origen->id }}">
-                <input type="hidden" name="destino_id" value="{{ $destino->id }}">
+            <input type="hidden" name="salida_id" value="{{ $salida->id }}">
+            <input type="hidden" name="origen_id" value="{{ $origen->id }}">
+            <input type="hidden" name="destino_id" value="{{ $destino->id }}">
 
-                <div class="row">
-                    <div class="col-md-9 mb-3">
-                        @foreach ($asientos as $index => $asiento)
-                            <div class="card shadow-sm mb-3">
-                                <div class="card-header">
+            <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat" value="nota_venta">
+            <input type="hidden" name="metodo_pago_id" id="metodo_pago_id_hidden">
+            <input type="hidden" name="pago_efectivo" id="pago_efectivo_hidden">
+            <input type="hidden" name="pago_tarjeta" id="pago_tarjeta_hidden">
+            <input type="hidden" name="pago_yape" id="pago_yape_hidden">
+            <input type="hidden" name="pago_plin" id="pago_plin_hidden">
+            <input type="hidden" name="pago_transferencia" id="pago_transferencia_hidden">
+            <input type="hidden" name="costo_total" id="costo_total" value="0">
+
+            <div class="card shadow-sm border-0 mb-3 resumen-top-card">
+                <div class="card-body p-2">
+                    <div class="d-flex flex-wrap align-items-stretch resumen-top">
+                        <div class="resumen-item">
+                            <div class="resumen-label">Salida:</div>
+                            <div class="resumen-value">{{ $origen->nombre_comercial }}</div>
+                        </div>
+
+                        <div class="resumen-item">
+                            <div class="resumen-label">Llegada:</div>
+                            <div class="resumen-value">{{ $destino->nombre_comercial }}</div>
+                        </div>
+
+                        <div class="resumen-item">
+                            <div class="resumen-label">Fecha y hora:</div>
+                            <div class="resumen-value">
+                                {{ $salida->fecha_salida->format('d-m-Y') }} {{ $salida->horario->hora_formateada }}
+                            </div>
+                        </div>
+
+                        <div class="resumen-item">
+                            <div class="resumen-label">Asientos seleccionados:</div>
+                            <div class="resumen-value">{{ implode(' ', $asientos) }}</div>
+                        </div>
+
+                        <div class="resumen-item resumen-item-precio">
+                            <div class="resumen-label">Costo por asiento:</div>
+                            <div class="resumen-value">
+                                <input type="number" step="0.01" id="precio_manual" class="form-control form-control-sm"
+                                    value="{{ number_format($precioUnitario, 2, '.', '') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-lg-9">
+                    @foreach ($asientos as $index => $asiento)
+                        <div class="card shadow-sm border-0 mb-3 asiento-card">
+                            <div class="card-header bg-white border-0 pb-0">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                     <strong>Asiento número: {{ $asiento }}</strong>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div>
+                                            <strong>Costo asiento:</strong>
+                                            <span id="precio_asiento_{{ $index }}">S/
+                                                {{ number_format($precioUnitario, 2) }}</span>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
 
-                                <div class="card-body">
-                                    <input type="hidden" name="asientos[]" value="{{ $asiento }}">
+                            <div class="card-body pt-3">
+                                <input type="hidden" name="asientos[]" value="{{ $asiento }}">
 
-                                    <div class="row">
-                                        <div class="col-md-2 mb-2">
-                                            <label class="form-label">Tipo <span class="text-danger">*</span></label>
-                                            <select class="form-select" name="tipo_documento_id[]"
-                                                id="tipo_documento_id_{{ $index }}" required>
-                                                @foreach ($tipos_documentos as $tipo_documento)
-                                                    <option value="{{ $tipo_documento->id }}">
-                                                        {{ $tipo_documento->codigo }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-
-                                        <div class="col-md-2 mb-2">
-                                            <label class="form-label">Documento <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control solo-numeros documento-input"
-                                                id="documento_{{ $index }}" data-index="{{ $index }}"
-                                                name="documento[]" required>
-                                        </div>
-
-                                        <div class="col-md-4 mb-2">
-                                            <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control solo-letras"
-                                                id="nombres_{{ $index }}" name="nombres[]" required>
-                                        </div>
-
-                                        <div class="col-md-4 mb-2">
-                                            <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control solo-letras"
-                                                id="apellidos_{{ $index }}" name="apellidos[]" required>
-                                        </div>
-
-                                        <div class="col-md-3 mb-2">
-                                            <label class="form-label">Celular </label>
-                                            <input type="text" class="form-control solo-numeros"
-                                                id="celular_{{ $index }}" name="celular[]" maxlength="9">
-                                        </div>
-
-                                        <div class="col-md-3 mb-2">
-                                            <label class="form-label">Teléfono</label>
-                                            <input type="text" class="form-control solo-numeros"
-                                                id="telefono_{{ $index }}" name="telefono[]" maxlength="9">
-                                        </div>
-
-                                        <div class="col-md-4 mb-2">
-                                            <label class="form-label">Correo</label>
-                                            <input type="email" class="form-control" id="correo_{{ $index }}"
-                                                name="correo[]">
-                                        </div>
-
-                                        <div class="col-md-2 mb-2">
-                                            <label class="form-label">Descuento</label>
-                                            <input type="text" class="form-control descuento-input"
-                                                data-index="{{ $index }}" id="descuento_{{ $index }}"
-                                                name="descuento_codigo[]" placeholder="Código">
-                                            <small class="text-muted" id="descuento_msg_{{ $index }}"></small>
-                                        </div>
-
-
+                                <div class="row g-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label">Tipo <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="tipo_documento_id[]"
+                                            id="tipo_documento_id_{{ $index }}" required>
+                                            @foreach ($tipos_documentos as $tipo_documento)
+                                                <option value="{{ $tipo_documento->id }}">
+                                                    {{ $tipo_documento->codigo }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
 
-                                    <div class="row mt-2">
-                                        <div class="col-md-6 form-check">
+                                    <div class="col-md-2">
+                                        <label class="form-label">Documento <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control solo-numeros documento-input"
+                                            id="documento_{{ $index }}" data-index="{{ $index }}"
+                                            name="documento[]" required>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nombres <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control solo-letras"
+                                            id="nombres_{{ $index }}" name="nombres[]" required>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control solo-letras"
+                                            id="apellidos_{{ $index }}" name="apellidos[]" required>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Celular</label>
+                                        <input type="text" class="form-control solo-numeros"
+                                            id="celular_{{ $index }}" name="celular[]" maxlength="9">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Teléfono</label>
+                                        <input type="text" class="form-control solo-numeros"
+                                            id="telefono_{{ $index }}" name="telefono[]" maxlength="9">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Correo</label>
+                                        <input type="email" class="form-control" id="correo_{{ $index }}"
+                                            name="correo[]">
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label class="form-label">Descuento</label>
+                                        <input type="text" class="form-control descuento-input"
+                                            data-index="{{ $index }}" id="descuento_{{ $index }}"
+                                            name="descuento_codigo[]" placeholder="Código">
+                                        <small class="text-muted d-block mt-1"
+                                            id="descuento_msg_{{ $index }}"></small>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
                                             <input type="checkbox" class="form-check-input pasajero-menor-check"
                                                 id="pasajero_menor_{{ $index }}" data-index="{{ $index }}"
                                                 name="pasajero_menor[{{ $index }}]" value="1">
@@ -91,136 +144,315 @@
                                                 ¿Pasajero menor de edad?
                                             </label>
                                         </div>
+                                    </div>
 
-                                        <div class="col-md-6 autorizacion-container"
-                                            id="autorizacion_container_{{ $index }}" style="display:none;">
-                                            <label class="form-label">Autorización PDF <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="file" accept=".pdf" class="form-control"
-                                                id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
-                                        </div>
+                                    <div class="col-md-6 autorizacion-container"
+                                        id="autorizacion_container_{{ $index }}" style="display:none;">
+                                        <label class="form-label">Autorización PDF <span
+                                                class="text-danger">*</span></label>
+                                        <input type="file" accept=".pdf" class="form-control"
+                                            id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
-                    </div>
-
-                    <div class="col-md-3">
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h6 class="mb-3"><strong>ASIENTO(S) NUMERO: {{ implode(', ', $asientos) }}</strong></h6>
-                                <p class="mb-1"><strong>Precio C/U:</strong> <span
-                                        id="precio_unitario">{{ number_format($precioUnitario, 2) }}</span></p>
-                                <p class="mb-1"><strong>Origen:</strong> {{ $origen->nombre_comercial }}</p>
-                                <p class="mb-1"><strong>Destino:</strong> {{ $destino->nombre_comercial }}</p>
-                                <p class="mb-1"><strong>Vehículo:</strong>
-                                    {{ $salida->horario->tipo_vehiculo->descripcion }}</p>
-                                <p class="mb-1"><strong>Fecha:</strong> {{ $salida->fecha_salida->format('Y-m-d') }}</p>
-                                <p class="mb-3"><strong>Hora:</strong> {{ $salida->horario->hora_formateada }}</p>
-                                <div class="mb-3">
-                                    <label class="form-label"><strong>Costo por asiento (S/.) </strong>(por asiento)</label>
-                                    <input type="number" step="0.01" id="precio_manual" class="form-control">
-                                </div>
-                            </div>
                         </div>
+                    @endforeach
+                </div>
 
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <strong>Facturación</strong>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Tipo de documento <span
-                                            class="text-danger">*</span></label></label>
-                                    <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
-                                        class="form-select" required>
-                                        <option value="">Seleccionar tipo</option>
-                                        @foreach ($tipos_documentos_facturas as $tipo_documento_factura)
-                                            <option value="{{ $tipo_documento_factura->id }}">
-                                                {{ $tipo_documento_factura->descripcion }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                <div class="col-lg-3">
+                    <div class="card shadow-sm border-0 panel-venta">
+                        <div class="card-body">
+                            <div class="mb-2 text-center fw-semibold">Sucursal de venta:</div>
 
-                                <div class="mb-3">
-                                    <label class="form-label">Número documento <span
-                                            class="text-danger">*</span></label></label>
-                                    <input type="text" id="numero_documento_id" name="numero_documento_id"
-                                        class="form-control" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Razón social <span
-                                            class="text-danger">*</span></label></label>
-                                    <input type="text" id="razon_social" name="razon_social" class="form-control"
-                                        required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <strong>Método de Pago</strong>
+                            <div class="mb-3">
+                                <select name="sucursal_venta_id" id="sucursal_venta_id" class="form-select">
+                                    <option value="">Seleccionar una caja</option>
+                                    @foreach ($cajas_emision as $caja)
+                                        <option value="{{ $caja->sucursal_id }}"
+                                            data-codigo-sucursal="{{ str_pad($caja->sucursal->codigo_emision, 3, '0', STR_PAD_LEFT) }}"
+                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
+                                            {{ $caja->sucursal->nombre_comercial }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
 
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Método</label>
-                                    <select name="metodo_pago_id" id="metodo_pago_id" class="form-select" required>
-                                        <option value="1">Efectivo</option>
-                                        <option value="2">Digital</option>
-                                        <option value="3">Mixto</option>
-                                    </select>
-                                </div>
+                            <div class="mb-2 fw-semibold">Serie sucursal:</div>
+                            <div class="panel-box mb-3 text-center" id="serie_doc">N001</div>
 
-                                <div class="mb-3 grupo_costo_total" hidden>
-                                    <label class="form-label">Costo total</label>
-                                    <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control" readonly>
+                            <div class="resumen-totales">
+                                <div class="d-flex justify-content-between">
+                                    <span>Sub total:</span>
+                                    <strong>S/ <span id="subtotal">0.00</span></strong>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Pago efectivo</label>
-                                    <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
-                                        class="form-control">
+                                <div class="d-flex justify-content-between">
+                                    <span>Descuentos:</span>
+                                    <strong>S/ <span id="total_descuento">0.00</span></strong>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Yape/Plin/POS</label>
-                                    <select name="billetera_id" id="billetera_id" class="form-select">
-                                        <option value="">Seleccionar...</option>
-                                        @foreach ($billeteras_digitales as $billetera)
-                                            <option value="{{ $billetera->id }}">{{ $billetera->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Pago digital</label>
-                                    <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
-                                        class="form-control">
+                                <div class="d-flex justify-content-between text-primary">
+                                    <span>Total a pagar:</span>
+                                    <strong>S/ <span id="total_pagar">0.00</span></strong>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="card mb-3">
-                            <div class="card-body text-center">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold">EMITIR SUNAT:</span>
+
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" id="emitir_sunat" checked>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
+                                        data-doc="boleta">
+                                        Boleta
+                                    </button>
+
+                                    <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
+                                        data-doc="factura">
+                                        Factura
+                                    </button>
+
+                                    <button type="button" class="btn btn-sm btn-success doc-btn active"
+                                        data-doc="nota_venta">
+                                        N. Venta
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat" value="nota_venta">
+                            <input type="hidden" name="emitir_sunat_estado" id="emitir_sunat_estado" value="0">
+
+                            <div class="mb-2">
+                                <label class="form-label">Documento cliente:</label>
+                                <input type="text" id="doc_cliente" name="numero_documento_id"
+                                    class="form-control solo-numeros">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Razón social:</label>
+                                <input type="text" id="razon_social" name="razon_social" class="form-control">
+                            </div>
+
+                            <div class="d-grid gap-2">
                                 <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
                                     Reservar
                                 </button>
-
-                                <button type="button" class="btn btn-primary w-100" id="btnTerminarVenta">
-                                    Terminar venta
+                                <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
+                                    Terminar Venta
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" id="btnCancelarVenta">
+                                    Cancelar Venta
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </form>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal fade" id="modalPago" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <h2 class="modal-total-title">Total a pagar:</h2>
+                        <div class="modal-total-amount">S/. <span id="modal_total_pagar">0.00</span></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <label class="form-label fw-semibold text-center w-100">Agregar método de pago</label>
+
+                            <select id="modal_metodo_pago" class="form-select mb-2">
+                                <option value="1">Pago Efectivo</option>
+                                <option value="2">Pago Digital</option>
+                                <option value="3">Pago Mixto</option>
+                            </select>
+
+                            <div class="alert alert-warning text-center py-2 d-none" id="alerta_pago">
+                                ⚠ No coincide con el total a pagar
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <div class="metodo-label">💵 Contado</div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="modal_pago_efectivo"
+                                        class="form-control text-center" value="0">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <div class="metodo-label">💳 Tarjeta</div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="modal_pago_tarjeta"
+                                        class="form-control text-center" value="0">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <div class="metodo-label">📱 Yape</div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="modal_pago_yape"
+                                        class="form-control text-center" value="0">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <div class="metodo-label">📲 Plin</div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="modal_pago_plin"
+                                        class="form-control text-center" value="0">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-4">
+                                <div class="col-6">
+                                    <div class="metodo-label">🏦 Transferencia</div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="modal_pago_transferencia"
+                                        class="form-control text-center" value="0">
+                                </div>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-success w-100" id="btnConfirmarVenta">
+                                        Terminar Venta
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    @include('pasajes.modals.metodos_pago')
 @endsection
+
+@push('styles')
+    <style>
+        .resumen-top-card,
+        .asiento-card,
+        .panel-venta,
+        #modalPago .modal-content {
+            border-radius: 14px;
+        }
+
+        .resumen-top {
+            width: 100%;
+        }
+
+        .resumen-item {
+            flex: 1 1 180px;
+            padding: 10px 16px;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .resumen-item:last-child {
+            border-right: none;
+        }
+
+        .resumen-item-precio {
+            max-width: 180px;
+        }
+
+        .resumen-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .resumen-value {
+            font-size: 14px;
+            color: #111827;
+        }
+
+        .panel-box {
+            border: 1px solid #cfd4dc;
+            border-radius: 9px;
+            min-height: 38px;
+            padding: 8px 10px;
+            background: #fff;
+        }
+
+        .resumen-totales {
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .asiento-card .card-header {
+            font-size: 13px;
+        }
+
+        .asiento-card .form-label,
+        .panel-venta .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .asiento-card .form-control,
+        .asiento-card .form-select,
+        .panel-venta .form-control {
+            font-size: 13px;
+            border-radius: 8px;
+        }
+
+        .modal-total-title {
+            color: #7f87ff;
+            font-weight: 800;
+        }
+
+        .modal-total-amount {
+            font-size: 40px;
+            font-weight: 800;
+        }
+
+        .metodo-label {
+            background: #eef2f7;
+            border-radius: 8px;
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .doc-btn.active {
+            color: #fff !important;
+        }
+
+        @media (max-width: 991px) {
+            .resumen-item {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .resumen-item:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+@endpush
 
 @push('scripts')
     <script>

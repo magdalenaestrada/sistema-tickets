@@ -75,6 +75,14 @@ $(function () {
 
         costoTotalInput.val(total.toFixed(2));
         refrescarPagos();
+
+        selectedSeatNumbers.forEach((num, i) => {
+            const precioFinal = seatPrices[num] || 0;
+            const descuento = descuentosAplicados[num]?.monto || 0;
+
+            $(`#precio_asiento_${i}`).text(`S/ ${precioFinal.toFixed(2)}`);
+            $(`#descuento_asiento_${i}`).text(`S/ ${descuento.toFixed(2)}`);
+        });
     }
 
     function refrescarPagos() {
@@ -183,6 +191,124 @@ $(function () {
         actualizarCostoTotal();
     });
 
+    function obtenerSeriesSucursal() {
+        const option = $("#sucursal_venta_id option:selected");
+
+        return {
+            boleta: option.data("serie-boleta") || "B001",
+            factura: option.data("serie-factura") || "F001",
+            nota_venta: option.data("serie-nota") || "N001",
+        };
+    }
+
+    function marcarTipoDocumento(tipo) {
+        $(".doc-btn")
+            .removeClass("active btn-primary btn-success btn-dark")
+            .addClass("btn-outline-secondary");
+
+        const serie = generarSeriePorTipo(tipo);
+
+        if (tipo === "boleta") {
+            $("#tipo_doc_sunat").val("boleta");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11).val("");
+            $("#btn_boleta")
+                .removeClass("btn-outline-secondary")
+                .addClass("btn-primary active");
+        } else if (tipo === "factura") {
+            $("#tipo_doc_sunat").val("factura");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11).val("");
+            $("#btn_factura")
+                .removeClass("btn-outline-secondary")
+                .addClass("btn-success active");
+        } else {
+            $("#tipo_doc_sunat").val("nota_venta");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11).val("");
+            $("#btn_nota_venta")
+                .removeClass("btn-outline-secondary")
+                .addClass("btn-success active");
+        }
+    }
+
+    $("#doc_cliente").on("blur", function () {
+        const valor = $(this).val().trim();
+        const tipo = $("#tipo_doc_sunat").val();
+
+        if (!valor) return;
+
+        if (tipo === "factura" && valor.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "Para factura el RUC debe tener 11 dígitos.",
+                "warning",
+            );
+            return;
+        }
+
+        if (tipo === "boleta" && !(valor.length === 8 || valor.length === 11)) {
+            Swal.fire(
+                "Atención",
+                "Para boleta usa DNI de 8 dígitos o RUC de 11.",
+                "warning",
+            );
+            return;
+        }
+    });
+
+    function actualizarEstadoSunat() {
+        const sunatActivo = $("#emitir_sunat").is(":checked");
+        $("#emitir_sunat_estado").val(sunatActivo ? "1" : "0");
+
+        if (sunatActivo) {
+            $("#btn_boleta").prop("disabled", false);
+            $("#btn_factura").prop("disabled", false);
+
+            $("#btn_nota_venta")
+                .prop("disabled", true)
+                .removeClass("active btn-success btn-dark")
+                .addClass("btn-outline-secondary");
+
+            const actual = $("#tipo_doc_sunat").val();
+            if (actual === "factura") {
+                marcarTipoDocumento("factura");
+            } else {
+                marcarTipoDocumento("boleta");
+            }
+        } else {
+            $("#btn_boleta")
+                .prop("disabled", true)
+                .removeClass("active btn-primary")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_factura")
+                .prop("disabled", true)
+                .removeClass("active btn-success")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_nota_venta").prop("disabled", false);
+
+            marcarTipoDocumento("nota_venta");
+        }
+    }
+
+    $("#emitir_sunat").on("change", function () {
+        actualizarEstadoSunat();
+    });
+
+    $("#sucursal_venta_id").on("change", function () {
+        const tipoActual = $("#tipo_doc_sunat").val() || "nota_venta";
+        marcarTipoDocumento(tipoActual);
+    });
+
+    $(".doc-btn").on("click", function () {
+        if ($(this).prop("disabled")) return;
+
+        const tipo = $(this).data("doc");
+        marcarTipoDocumento(tipo);
+    });
+
     $(".pasajero-menor-check").on("change", function () {
         const index = $(this).data("index");
         const container = $(`#autorizacion_container_${index}`);
@@ -226,7 +352,7 @@ $(function () {
                 }
 
                 if (parseInt(index) === 0) {
-                    $("#numero_documento_id").val(documento);
+                    $("#doc_cliente").val(documento);
 
                     const nombres = ($(`#nombres_${index}`).val() || "").trim();
                     const apellidos = (
@@ -244,6 +370,19 @@ $(function () {
                 input.prop("disabled", false);
             });
     });
+
+    function obtenerCodigoSucursal() {
+        const option = $("#sucursal_venta_id option:selected");
+        return option.data("codigo-sucursal") || "001";
+    }
+
+    function generarSeriePorTipo(tipo) {
+        const codigoSucursal = String(obtenerCodigoSucursal()).padStart(3, "0");
+
+        if (tipo === "boleta") return `B${codigoSucursal}`;
+        if (tipo === "factura") return `F${codigoSucursal}`;
+        return `N${codigoSucursal}`;
+    }
 
     async function verificarPromo10(index, codigo, dni) {
         const asiento = selectedSeatNumbers[index];
