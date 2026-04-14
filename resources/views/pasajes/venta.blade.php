@@ -206,23 +206,19 @@
 
                                 <div class="d-flex gap-2 mb-3">
                                     <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
-                                        data-doc="boleta">
+                                        id="btn_boleta" data-doc="boleta">
                                         Boleta
                                     </button>
-
                                     <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
-                                        data-doc="factura">
+                                        id="btn_factura" data-doc="factura">
                                         Factura
                                     </button>
-
                                     <button type="button" class="btn btn-sm btn-success doc-btn active"
-                                        data-doc="nota_venta">
+                                        id="btn_nota_venta" data-doc="nota_venta">
                                         N. Venta
                                     </button>
                                 </div>
                             </div>
-
-                            <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat" value="nota_venta">
                             <input type="hidden" name="emitir_sunat_estado" id="emitir_sunat_estado" value="0">
 
                             <div class="mb-2">
@@ -252,98 +248,6 @@
                 </div>
             </div>
         </form>
-    </div>
-
-    <div class="modal fade" id="modalPago" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-body p-4 p-md-5">
-                    <div class="text-center mb-4">
-                        <h2 class="modal-total-title">Total a pagar:</h2>
-                        <div class="modal-total-amount">S/. <span id="modal_total_pagar">0.00</span></div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-8 mx-auto">
-                            <label class="form-label fw-semibold text-center w-100">Agregar método de pago</label>
-
-                            <select id="modal_metodo_pago" class="form-select mb-2">
-                                <option value="1">Pago Efectivo</option>
-                                <option value="2">Pago Digital</option>
-                                <option value="3">Pago Mixto</option>
-                            </select>
-
-                            <div class="alert alert-warning text-center py-2 d-none" id="alerta_pago">
-                                ⚠ No coincide con el total a pagar
-                            </div>
-
-                            <div class="row g-2 mb-2">
-                                <div class="col-6">
-                                    <div class="metodo-label">💵 Contado</div>
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="modal_pago_efectivo"
-                                        class="form-control text-center" value="0">
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-2">
-                                <div class="col-6">
-                                    <div class="metodo-label">💳 Tarjeta</div>
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="modal_pago_tarjeta"
-                                        class="form-control text-center" value="0">
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-2">
-                                <div class="col-6">
-                                    <div class="metodo-label">📱 Yape</div>
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="modal_pago_yape"
-                                        class="form-control text-center" value="0">
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-2">
-                                <div class="col-6">
-                                    <div class="metodo-label">📲 Plin</div>
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="modal_pago_plin"
-                                        class="form-control text-center" value="0">
-                                </div>
-                            </div>
-
-                            <div class="row g-2 mb-4">
-                                <div class="col-6">
-                                    <div class="metodo-label">🏦 Transferencia</div>
-                                </div>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="modal_pago_transferencia"
-                                        class="form-control text-center" value="0">
-                                </div>
-                            </div>
-
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <button type="button" class="btn btn-success w-100" id="btnConfirmarVenta">
-                                        Terminar Venta
-                                    </button>
-                                </div>
-                                <div class="col-6">
-                                    <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     @include('pasajes.modals.metodos_pago')
 @endsection
