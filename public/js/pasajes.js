@@ -259,6 +259,62 @@ document.addEventListener("DOMContentLoaded", function () {
         actualizarBotones();
     }
 
+    const origen = document.getElementById("filtro_origen");
+    const destino = document.getElementById("filtro_destino");
+
+    const opcionesOrigenOriginal = origen.innerHTML;
+    const opcionesDestinoOriginal = destino.innerHTML;
+
+    origen.addEventListener("change", function () {
+        const valorOrigen = this.value;
+        const valorDestinoActual = destino.value;
+
+        destino.innerHTML = opcionesDestinoOriginal;
+
+        if (valorOrigen) {
+            for (let option of [...destino.options]) {
+                if (option.value === valorOrigen) {
+                    option.remove();
+                }
+            }
+        }
+
+        if (
+            [...destino.options].some(
+                (option) => option.value === valorDestinoActual,
+            )
+        ) {
+            destino.value = valorDestinoActual;
+        } else {
+            destino.value = "";
+        }
+    });
+
+    destino.addEventListener("change", function () {
+        const valorDestino = this.value;
+        const valorOrigenActual = origen.value;
+
+        origen.innerHTML = opcionesOrigenOriginal;
+
+        if (valorDestino) {
+            for (let option of [...origen.options]) {
+                if (option.value === valorDestino) {
+                    option.remove();
+                }
+            }
+        }
+
+        if (
+            [...origen.options].some(
+                (option) => option.value === valorOrigenActual,
+            )
+        ) {
+            origen.value = valorOrigenActual;
+        } else {
+            origen.value = "";
+        }
+    });
+
     sellButton.addEventListener("click", function () {
         if (!selectedSeats.length || !currentSalidaId) return;
 
