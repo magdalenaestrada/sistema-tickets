@@ -1,0 +1,46 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Empresa;
+use App\Models\TipoLicencia;
+use App\Models\User;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+
+class DatabaseSeeder extends Seeder
+{
+    /**
+     * Seed the application's database.
+     */
+    public function run(): void
+    {
+        $this->call([
+            PaisSeeder::class,
+            DepartamentosSeeder::class,
+            ProvinciasSeeder::class,
+            DistritosSeeder::class,
+            RoleSeeder::class,
+            AreasSeeder::class,
+            CargosSeeder::class,
+            TiposLicenciaSeeder::class,
+            TipoDocumentoSeeder::class,
+            TipoVehiculoSeeder::class,
+            TipoViajeSeeder::class,
+            TipoEventoSeeder::class,
+            BilleteraDigitalSeeder::class,
+            MetodoPagoSeeder::class,
+            TipoDocumentoFacturaSeeder::class,
+            PersonaSeeder::class,
+            EmpresaSeeder::class,
+            SucursalesSeeder::class,
+            UserSeeder::class,
+            TipoServicioSeeder::class,
+            TipoMovimientoCajaSeeder::class,
+            AreasSeeder::class,
+            EmpleadoSeeder::class,
+            RazonesMantenimientoSeeder::class,
+        ]);
+    }
+}

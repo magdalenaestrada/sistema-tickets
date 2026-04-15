@@ -47,6 +47,9 @@ class SucursalController extends Controller
             ->addColumn('distrito', function ($row) {
                 return '<span class="badge bg-success-subtle text-dark">' . $row->distrito->nombre . '</span>';
             })
+            ->addColumn('serie', function ($row) {
+                return '<span class="badge bg-primary-subtle text-primary">' . ($row->serie->descripcion ?? 'N.A') . '</span>';
+            })
             ->addColumn('venta_otras', function ($row) {
                 if ($row->venta_otras == 1) {
                     return '<span class="badge bg-success-subtle text-success"> PERMITIR </span>';
@@ -79,7 +82,7 @@ class SucursalController extends Controller
 
                 return $acciones;
             })
-            ->rawColumns(['acciones', 'distrito', 'venta_otras'])
+            ->rawColumns(['acciones', 'distrito', 'venta_otras', 'serie'])
             ->make(true);
     }
 
@@ -98,10 +101,7 @@ class SucursalController extends Controller
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
             'venta_otras'         => 'nullable|boolean',
-            'codigo_emision'         => 'required|unique:sucursales,codigo_emision|max:50',
-        ],
-        [
-            'codigo_emision.unique' => 'El código de emisión ya está en uso por otra sucursal.',
+            'serie_id'         => 'required|exists:series_sucursal,id',
         ]);
 
         $existe = Sucursal::where('empresa_id', $request->empresa_id)
@@ -135,7 +135,7 @@ class SucursalController extends Controller
         return response()->json([
             'id' => $sucursal->id,
             'nombre_comercial' => $sucursal->nombre_comercial,
-            'codigo_emision' => $sucursal->codigo_emision,
+            'serie_id' => $sucursal->serie_id,
             'direccion' => $sucursal->direccion,
             'telefono' => $sucursal->telefono,
             'venta_otras' => $sucursal->venta_otras,
@@ -171,13 +171,10 @@ class SucursalController extends Controller
             'empresa_id'       => 'required|exists:empresas,id',
             'distrito_id'      => 'required|exists:distritos,id',
             'nombre_comercial' => 'required|string|max:255',
-            'codigo_emision' => ['required', 'max:50', Rule::unique('sucursales', 'codigo_emision')->ignore($sucursal->id)],
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
             'venta_otras' => 'nullable|boolean',
-        ],
-        [
-            'codigo_emision.unique' => 'El código de emisión ya está en uso por otra sucursal.',
+            'serie_id' => 'required|exists:series_sucursal,id',
         ]);
 
         $existe = Sucursal::where('empresa_id', $request->empresa_id)

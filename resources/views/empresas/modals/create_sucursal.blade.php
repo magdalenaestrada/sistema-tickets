@@ -43,10 +43,13 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label>Codigo emisión <span style="color: red">*</span></label>
-                            <input type="text" name="codigo_emision" id="codigo_emision" class="form-control"
-                                maxlength="4" pattern="[A-Za-z0-9]+"
-                                oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, '').slice(0,4);" required>
+                            <label>Serie <span style="color: red">*</span></label>
+                            <select name="serie_id" id="serie_id" class="form-select" required>
+                                <option value="">Seleccione</option>
+                                @foreach ($series as $serie)
+                                    <option value="{{ $serie->id }}">{{ $serie->descripcion }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label>Teléfono</label>
