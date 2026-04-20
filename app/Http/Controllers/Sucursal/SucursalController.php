@@ -17,7 +17,7 @@ class SucursalController extends Controller
 {
     public function datatable(Request $request, $empresa_id)
     {
-        $query = Sucursal::with(['empresa', 'distrito.provincia.departamento'])
+        $query = Sucursal::with(['empresa', 'distrito.provincia.departamento', 'serie'])
             ->where('empresa_id', $empresa_id);
 
         if ($request->departamento_id) {
@@ -34,6 +34,10 @@ class SucursalController extends Controller
 
         if ($request->distrito_id) {
             $query->where('distrito_id', $request->distrito_id);
+        }
+
+        if ($request->serie_id) {
+            $query->where('serie_id', $request->serie_id);
         }
 
         if ($request->nombre_sucursal) {

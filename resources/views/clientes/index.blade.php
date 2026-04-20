@@ -15,11 +15,23 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-3">
-                    <input type="text" id="filtroDocumento" class="form-control" placeholder="Buscar documento">
+                    <select id="filtroTipoDocumento" class="form-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="1">DNI</option>
+                        <option value="2">RUC</option>
+                        <option value="3">PASAPORTE</option>
+                        <option value="4">CARNET DE EXTRANJERÍA</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <input type="text" id="filtroDocumento" class="form-control"
+                        placeholder="Buscar número de documento">
                 </div>
 
                 <div class="col-md-4">
-                    <input type="text" id="filtroNombres" class="form-control" placeholder="Buscar razón social">
+                    <input type="text" id="filtroNombres" class="form-control"
+                        placeholder="Buscar razón social / nombres">
                 </div>
             </div>
 
@@ -35,16 +47,15 @@
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
-                <tbody>
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
     </div>
+
     @include('clientes.modals.create')
 @endsection
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
     <script src="{{ asset('js/clientes.js') }}"></script>
 @endpush

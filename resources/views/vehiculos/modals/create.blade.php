@@ -19,15 +19,17 @@
                             <option value="">Seleccione</option>
                         </select>
                     </div>
-
                     <div class="mb-3">
-                        <label class="form-label">Placa <span style="color: red">*</span></label></label>
+                        <label class="form-label">Placa <span style="color: red">*</span></label>
                         <input type="text" name="numero_placa" id="numero_placa" class="form-control"
-                            placeholder="ABC-123" maxlength="7" pattern="[A-Za-z]{3}-[0-9]{3}" required>
+                            placeholder="ABC-123 / 12A-ABC / D0M-1T3" maxlength="7"
+                            pattern="^(?=.{7}$)[A-Za-z0-9]{3}-[A-Za-z0-9]{3}$"
+                            title="Ingrese una placa válida en formato XXX-XXX, por ejemplo: ABC-123, 12A-ABC o D0M-1T3"
+                            required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Marca <span style="color: red">*</span></label></label>
-                        <input type="text" name="marca" id="marca" class="form-control" required>
+                        <label class="form-label">Marca</label></label>
+                        <input type="text" name="marca" id="marca" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Habilitación vehicular <span

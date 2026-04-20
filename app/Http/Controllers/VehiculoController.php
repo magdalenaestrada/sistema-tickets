@@ -34,11 +34,11 @@ class VehiculoController extends Controller
                     : '';
             })
             ->addColumn('habilitacion_vehicular', function ($vehiculo) {
-                return $vehiculo->habilitacion_vehicular;
+                return $vehiculo->habilitacion_vehicular ?? '-';
             })
 
             ->addColumn('marca', function ($vehiculo) {
-                return $vehiculo->marca;
+                return $vehiculo->marca ?? '-';
             })
 
             ->addColumn('estado_badge', function ($vehiculo) {

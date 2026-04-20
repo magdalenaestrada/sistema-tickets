@@ -9,7 +9,7 @@
                 @if ($caja->detalles->count())
                     <div class="table-responsive">
                         <table class="table table-sm table-hover align-middle mb-0">
-                            <thead class="table-light">
+                            <thead class="table-primary">
                                 <tr>
                                     <th>Fecha</th>
                                     <th>Ticket</th>
@@ -56,7 +56,7 @@
                                                     <form action="{{ route('caja.anular', $detalle->id) }}"
                                                         method="POST" class="d-inline">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-outline-danger btn-xs"
+                                                        <button type="submit" class="btn btn-danger btn-xs"
                                                             onclick="return confirm('¿Seguro que deseas anular este ticket?')">
                                                             <i data-lucide="trash"></i>
                                                         </button>

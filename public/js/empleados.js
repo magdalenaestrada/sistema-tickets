@@ -91,11 +91,18 @@ $(document).ready(async function () {
 
     function toggleConductor(cargoVal, cargoDesc = "") {
         const $conductor = $(".conductor");
-        if (cargoVal == 16 || cargoDesc.toLowerCase().includes("conductor")) {
+        const esConductor =
+            cargoVal == 16 || cargoDesc.toLowerCase().includes("conductor");
+
+        $("#reqSucursal").toggle(!esConductor);
+
+        if (esConductor) {
             $conductor.removeAttr("hidden").show();
-            $(
-                "#tipo_licencia_id, #licencia_conducir, #fecha_vencimiento_licencia",
-            ).attr("required", "required");
+            $("#tipo_licencia_id, #licencia_conducir").attr(
+                "required",
+                "required",
+            );
+            $("#sucursal_id").removeAttr("required").val("").trigger("change");
         } else {
             $conductor.attr("hidden", true).hide();
             $(
@@ -103,6 +110,7 @@ $(document).ready(async function () {
             )
                 .removeAttr("required")
                 .val("");
+            $("#sucursal_id").attr("required", "required");
         }
     }
 
@@ -314,12 +322,20 @@ $(document).ready(async function () {
                 res.fecha_ingreso ? res.fecha_ingreso.substring(0, 10) : "",
             );
 
-            if (persona.distrito) {
+            if (persona.distrito && persona.distrito.provincia) {
                 cargarUbicacionPorIds(
                     persona.distrito.provincia.departamento.id,
                     persona.distrito.provincia.id,
                     persona.distrito.id,
                 );
+            } else {
+                $("#departamento_id").val("");
+                $("#provincia_id")
+                    .empty()
+                    .append('<option value="">Seleccione</option>');
+                $("#distrito_id")
+                    .empty()
+                    .append('<option value="">Seleccione</option>');
             }
 
             $("#sucursal_id").val(res.sucursal_id).trigger("change");

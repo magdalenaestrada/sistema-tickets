@@ -5,7 +5,6 @@
                 <h5 id="modalTitulo">Registrar Sucursal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
             <form id="formSucursal">
                 <div class="modal-body">
                     <input type="hidden" id="sucursal_id" name="sucursal_id">

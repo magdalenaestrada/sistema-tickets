@@ -24,15 +24,13 @@ $(document).ready(function () {
     });
 
     $("#numero_placa").on("input", function () {
-        let valor = $(this)
-            .val()
-            .toUpperCase()
-            .replace(/[^A-Z0-9]/g, "");
+        let valor = $(this).val().toUpperCase();
 
+        valor = valor.replace(/[^A-Z0-9]/g, "");
         valor = valor.substring(0, 6);
 
         if (valor.length > 3) {
-            valor = valor.substring(0, 3) + "-" + valor.substring(3);
+            valor = valor.slice(0, 3) + "-" + valor.slice(3);
         }
 
         $(this).val(valor);

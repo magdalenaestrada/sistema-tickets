@@ -12,9 +12,9 @@ $(document).ready(async function () {
         ajax: {
             url: route("clientes.datatable"),
             data: function (d) {
+                d.tipo_documento_id = $("#filtroTipoDocumento").val();
                 d.documento = $("#filtroDocumento").val();
                 d.nombres = $("#filtroNombres").val();
-                d.apellidos = $("#filtroApellidos").val();
             },
         },
         columns: [
@@ -31,7 +31,6 @@ $(document).ready(async function () {
                 searchable: false,
             },
         ],
-
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
@@ -44,30 +43,27 @@ $(document).ready(async function () {
         if (tipo == 2) {
             $(".persona").hide();
             $(".empresa").show();
-            $("#nombres").prop("required", false);
-            $("#apellidos").prop("required", false);
-            $("#fecha_nacimiento").prop("required", false);
 
-            $("#nombres").val("");
-            $("#apellidos").val("");
-            $("#fecha_nacimiento").val("");
+            $("#nombres").prop("required", false).val("");
+            $("#apellidos").prop("required", false).val("");
+            $("#fecha_nacimiento").prop("required", false).val("");
 
             $("#razon_social").prop("required", true);
-            $("#razon_social").prop("hidden", false);
         } else {
             $(".persona").show();
             $(".empresa").hide();
+
             $("#nombres").prop("required", true);
             $("#apellidos").prop("required", true);
-            $("#razon_social").prop("required", false);
-            $("#razon_social").val("");
+
+            $("#razon_social").prop("required", false).val("");
         }
     }
 
     $("#tipo_documento_id").on("change", toggleTipoDocumento);
 
     let searchTimeout;
-    $("#filtroDocumento, #filtroNombres, #filtroApellidos").on(
+    $("#filtroTipoDocumento, #filtroDocumento, #filtroNombres").on(
         "keyup change",
         function () {
             clearTimeout(searchTimeout);
@@ -81,11 +77,7 @@ $(document).ready(async function () {
             this.setCustomValidity("");
             return;
         }
-        if (!regex.test(this.value)) {
-            this.setCustomValidity("Correo inválido");
-        } else {
-            this.setCustomValidity("");
-        }
+        this.setCustomValidity(regex.test(this.value) ? "" : "Correo inválido");
     });
 
     document
@@ -105,38 +97,8 @@ $(document).ready(async function () {
     document
         .getElementById("filtroNombres")
         .addEventListener("input", function () {
-            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g, "");
         });
-
-    function toggleConductor(cargoVal, cargoDesc = "") {
-        const $conductor = $(".conductor");
-        if (cargoVal == 16 || cargoDesc.toLowerCase().includes("conductor")) {
-            $conductor.removeAttr("hidden").show();
-        } else {
-            $conductor.attr("hidden", true).hide();
-            $("#tipo_licencia_id, #licencia_conducir").val("");
-        }
-    }
-
-    $(document).on("click", ".editar", function () {
-        const id = $(this).data("id");
-
-        $.get(route("clientes.edit", id), function (data) {
-            $("#cliente_id").val(data.id);
-
-            $("#documento").val(data.persona.documento);
-            $("#nombres").val(data.persona.nombres);
-            $("#apellidos").val(data.persona.apellidos);
-            $("#razon_social").val(data.persona.razon_social);
-            $("#telefono").val(data.persona.telefono);
-            $("#celular").val(data.persona.celular);
-            $("#correo").val(data.persona.correo);
-            $("#direccion").val(data.persona.direccion);
-            $("#fecha_nacimiento").val(data.persona.fecha_nacimiento);
-
-            $("#modalCliente").modal("show");
-        });
-    });
 
     function cargarListasCliente(callback = null) {
         $.get(route("listas.all"), function (res) {
@@ -169,17 +131,12 @@ $(document).ready(async function () {
                 "codigo",
             );
             fillSelect("#tipo_licencia_id", res.tipos_licencia, "Seleccione");
+
             $("#tipo_documento_id").val(1).trigger("change");
 
             if (callback) callback();
         }).fail(() => alert("Error al cargar las listas."));
     }
-
-    $("#filtroEmpleado").on("input", function () {
-        this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
-    });
-
-    $("#filtroDocumento").attr("maxlength", 11);
 
     $("#documento").on("input", function () {
         const tipo = $("#tipo_documento_id").val();
@@ -200,71 +157,13 @@ $(document).ready(async function () {
         this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, "");
     });
 
-    $("#btnBuscarDocumento").on("click", function () {
-        const documento = $("#documento").val().trim();
-        if (!documento)
-            return Swal.fire(
-                "Atención",
-                "Por favor ingrese un número de documento",
-                "warning",
-            );
-
-        $("#btnBuscarDocumento")
-            .prop("disabled", true)
-            .html('<i data-lucide="search"></i>');
-        lucide.createIcons();
-
-        $.getJSON(route("buscar.buscar", { documento }))
-            .done((data) => {
-                if (data.error)
-                    return Swal.fire(
-                        "Error",
-                        "No se encontró información: " + data.error,
-                        "error",
-                    );
-
-                if (data.razon_social) {
-                    $('input[name="razon_social"]').val(
-                        data.razon_social || "",
-                    );
-                    $('input[name="direccion"]').val(data.direccion || "");
-                } else {
-                    $('input[name="nombres"]').val(data.nombres || "");
-                    $('input[name="apellidos"]').val(
-                        `${data.apellido_paterno || ""} ${
-                            data.apellido_materno || ""
-                        }`.trim(),
-                    );
-                }
-            })
-            .fail(() =>
-                Swal.fire(
-                    "Error",
-                    "Ingrese un numero de documento válido.",
-                    "error",
-                ),
-            )
-            .always(() => {
-                $("#btnBuscarDocumento")
-                    .prop("disabled", false)
-                    .html('<i data-lucide="search"></i>');
-                lucide.createIcons();
-            });
-    });
-
     $("#celular, #telefono").on("input", function () {
         this.value = this.value.replace(/\D/g, "").slice(0, 9);
     });
 
-    // Nuevo empleado
     $("#btnNuevoCliente").click(() => {
         $("#formCliente")[0].reset();
-        $("#empleado_id, #usuario, #password").val("");
-        $("#seccionUsuario").hide();
-        $("#tipo_documento_id").val(1).trigger("change");
-        $("#chkUsuario").prop("checked", false);
-        $(".conductor").attr("hidden", true).hide();
-        $("#cargo_id, #sucursal_id").val(null).trigger("change");
+        $("#cliente_id").val("");
 
         cargarSelectDepartamentos();
         $("#provincia_id")
@@ -274,7 +173,10 @@ $(document).ready(async function () {
             .empty()
             .append('<option value="">Seleccione</option>');
 
-        cargarListasCliente(() => modal.show());
+        cargarListasCliente(() => {
+            habilitarModoEdicion();
+            modal.show();
+        });
 
         toggleTipoDocumento();
     });
@@ -284,7 +186,7 @@ $(document).ready(async function () {
             $.get(url, (res) => {
                 const p = res.persona ?? {};
 
-                $("#empleado_id").val(res.id);
+                $("#cliente_id").val(res.id);
                 $("#correo").val(p.correo ?? "");
                 $("#telefono").val(p.telefono ?? "");
                 $("#celular").val(p.celular ?? "");
@@ -307,10 +209,41 @@ $(document).ready(async function () {
 
                 setUbigeo(p.departamento_id, p.provincia_id, p.distrito_id);
 
+                if (viewOnly) {
+                    habilitarModoVista();
+                } else {
+                    habilitarModoEdicion();
+                }
+
                 modal.show();
                 lucide.createIcons();
             });
         });
+    }
+
+    function habilitarModoVista() {
+        $("#formCliente")
+            .find("input, select, textarea, button")
+            .not('[type="hidden"], .btn-close, #btnCerrarModal')
+            .prop("disabled", true);
+
+        $("#btnGuardar").addClass("d-none");
+        $("#modalCliente .modal-title").html(
+            '<i data-lucide="info"></i> Información del Cliente',
+        );
+    }
+
+    function habilitarModoEdicion() {
+        $("#formCliente")
+            .find("input, select, textarea")
+            .not('[type="hidden"]')
+            .prop("disabled", false);
+
+        $("#btnBuscarDocumento").prop("disabled", false);
+        $("#btnGuardar").removeClass("d-none");
+        $("#modalCliente .modal-title").html(
+            '<i data-lucide="user"></i> Registrar / Editar Cliente',
+        );
     }
 
     function cargarSelectDepartamentos() {
@@ -321,6 +254,7 @@ $(document).ready(async function () {
             $dep.append(`<option value="${dep.id}">${dep.nombre}</option>`);
         });
     }
+
     function cargarSelectProvincias(depId) {
         const $prov = $("#provincia_id");
         $prov.empty().append('<option value="">Seleccione</option>');
@@ -332,6 +266,7 @@ $(document).ready(async function () {
             $prov.append(`<option value="${p.id}">${p.nombre}</option>`);
         });
     }
+
     function cargarSelectDistritos(depId, provId) {
         const $dist = $("#distrito_id");
         $dist.empty().append('<option value="">Seleccione</option>');
@@ -362,14 +297,37 @@ $(document).ready(async function () {
         $("#distrito_id").val(distId);
     }
 
-    $(document).on("click", ".editar", function () {
+    $(document).on("click", ".ver", function () {
         let id = $(this).data("id");
         let url = route("clientes.edit", id);
-
-        cargarCliente(url);
+        cargarCliente(url, true);
     });
+
+    $(document).on("click", ".editar", function () {
+        let id = $(this).data("id");
+        if (parseInt(id) === 3) {
+            Swal.fire(
+                "Bloqueado",
+                "El cliente con ID 3 no se puede modificar.",
+                "warning",
+            );
+            return;
+        }
+        let url = route("clientes.edit", id);
+        cargarCliente(url, false);
+    });
+
     $(document).on("click", ".eliminar", function () {
         let id = $(this).data("id");
+
+        if (parseInt(id) === 3) {
+            Swal.fire(
+                "Bloqueado",
+                "El cliente con ID 3 no se puede eliminar.",
+                "warning",
+            );
+            return;
+        }
 
         Swal.fire({
             title: "¿Estás seguro?",
@@ -399,10 +357,11 @@ $(document).ready(async function () {
 
                         tabla.ajax.reload();
                     },
-                    error: function () {
+                    error: function (xhr) {
                         Swal.fire(
                             "Error",
-                            "No se pudo eliminar el cliente",
+                            xhr.responseJSON?.message ||
+                                "No se pudo eliminar el cliente",
                             "error",
                         );
                     },
@@ -413,9 +372,19 @@ $(document).ready(async function () {
 
     $("#formCliente").on("submit", function (e) {
         e.preventDefault();
+
         const id = $("#cliente_id").val();
+
+        if (parseInt(id) === 3) {
+            Swal.fire(
+                "Bloqueado",
+                "El cliente con ID 3 no se puede modificar.",
+                "warning",
+            );
+            return;
+        }
+
         let url = id ? route("clientes.update", id) : route("clientes.store");
-        let method = id ? "PUT" : "POST";
         let formData = $(this).serialize();
         if (id) formData += "&_method=PUT";
 
@@ -455,7 +424,6 @@ $(document).ready(async function () {
             },
             error: function (err) {
                 let mensaje = "Ocurrió un error.";
-
                 if (err.responseJSON?.message) {
                     mensaje = err.responseJSON.message;
                 }
@@ -470,17 +438,7 @@ $(document).ready(async function () {
     });
 
     $("#modalCliente").on("hidden.bs.modal", () => {
-        $("#formCliente")
-            .find("input, select, textarea")
-            .not('[type="hidden"]')
-            .prop("disabled", false);
-        $("#btnGuardar").removeClass("d-none");
-        $("#btnCerrarModal").addClass("d-none").hide();
-        $(".campo-ubicacion").show();
-        $("#seccionUsuario").hide().attr("hidden", true);
-        $(".conductor").attr("hidden", true).hide();
-        $("#modalCliente .modal-title").html(
-            '<i data-lucide="user"></i> Registrar / Editar Cliente',
-        );
+        habilitarModoEdicion();
     });
+
 });

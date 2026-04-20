@@ -80,7 +80,7 @@
                         <div class="col-md-4 mb-3">
                             <label>Departamento</label>
                             <select name="departamento_id" id="departamento_id" class="form-select">
-                                <option value="">Espere...</option>
+                                <option value="">Seleccione</option>
                                 @foreach ($departamentos as $departamento)
                                     <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
                                 @endforeach
@@ -90,7 +90,7 @@
                         <div class="col-md-4 mb-3">
                             <label>Provincia</label>
                             <select name="provincia_id" id="provincia_id" class="form-select">
-                                <option value="">Espere...</option>
+                                <option value="">Seleccione</option>
                                 @foreach ($provincias as $provincia)
                                     <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
                                 @endforeach
@@ -100,7 +100,7 @@
                         <div class="col-md-4 mb-3">
                             <label>Distrito</label>
                             <select name="distrito_id" id="distrito_id" class="form-select">
-                                <option value="">Espere...</option>
+                                <option value="">Seleccione</option>
                                 @foreach ($distritos as $distrito)
                                     <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
                                 @endforeach

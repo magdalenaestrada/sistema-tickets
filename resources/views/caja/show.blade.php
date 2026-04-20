@@ -3,12 +3,10 @@
 @section('content')
     <div class="container py-3">
 
-        {{-- Cabecera --}}
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body py-2 px-3">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
 
-                    {{-- Info --}}
                     <div>
                         <h5 class="mb-0">Caja #{{ $caja->id }}</h5>
                         <small class="text-muted">
@@ -18,7 +16,6 @@
                         </small>
                     </div>
 
-                    {{-- Acciones --}}
                     <div class="d-flex flex-wrap gap-1">
 
                         @if (auth()->user()->hasAnyRole(['Administrador', 'Super Administrador']))
@@ -33,9 +30,18 @@
                         </a>
 
                         @if (!in_array($caja->estado, ['C', 'cerrada']))
+                            <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalIngreso">
+                                <i data-lucide="banknote-arrow-up"></i> Registrar ingreso
+                            </button>
+
+                            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalSalida">
+                                <i data-lucide="banknote-arrow-down"></i> Registrar egreso
+                            </button>
+
+
                             <form action="{{ route('caja.cerrar', $caja->id) }}" method="POST" class="d-inline">
                                 @csrf
-                                <button type="submit" class="btn btn-danger btn-sm px-2"
+                                <button type="submit" class="btn btn-primary btn-sm px-2"
                                     onclick="return confirm('¿Cerrar caja?')">
                                     Cerrar
                                 </button>
@@ -55,7 +61,6 @@
             <div class="alert alert-danger py-2 small">{{ session('error') }}</div>
         @endif
 
-        {{-- Resumen general --}}
         <div class="row g-2 mb-3">
             <div class="col-6 col-md-3">
                 <div class="card border-danger shadow-sm h-100">
@@ -100,7 +105,6 @@
         </div>
 
 
-        {{-- Resumen rápido --}}
         <div class="row g-2 mb-3">
             <div class="col-6 col-md-2">
                 <div class="card border-0 shadow-sm h-100">
@@ -157,166 +161,13 @@
             </div>
         </div>
 
-        @if (!in_array($caja->estado, ['C', 'cerrada']))
-            <div class="row g-2 mb-3">
-                <div class="col-lg-6">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-white py-2">
-                            <strong class="small">Registrar ingreso</strong>
-                        </div>
-                        <div class="card-body py-2">
-                            <form id="form-ingreso" action="{{ route('caja.ingreso', $caja->id) }}" method="POST"
-                                class="row g-2">
-                                @csrf
-
-                                <div class="col-md-6">
-                                    <label class="form-label small mb-1">Subtipo</label>
-                                    <select name="subtipo_movimiento_caja_id" class="form-select form-select-sm" required>
-                                        <option value="">Seleccione</option>
-                                        @foreach ($subtiposIngreso as $subtipo)
-                                            <option value="{{ $subtipo->id }}">{{ $subtipo->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label small mb-1">Tipo de ingreso</label>
-                                    <select name="metodo_pago_id" id="tipo_ingreso" class="form-select form-select-sm"
-                                        required>
-                                        <option value="">Seleccione</option>
-                                        @foreach ($metodosPago as $metodo)
-                                            <option value="{{ $metodo->id }}">{{ $metodo->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                {{-- MONTO SIMPLE --}}
-                                <div class="col-md-4 ingreso-campo d-none" id="ingreso_monto_simple">
-                                    <label class="form-label small mb-1">Monto</label>
-                                    <input type="number" step="0.01" min="0.01" name="amount"
-                                        class="form-control form-control-sm">
-                                </div>
-
-                                {{-- MIXTO --}}
-                                <div class="col-md-4 ingreso-campo d-none" id="ingreso_monto_efectivo">
-                                    <label class="form-label small mb-1">Monto efectivo</label>
-                                    <input type="number" step="0.01" min="0.01" name="monto_efectivo"
-                                        class="form-control form-control-sm">
-                                </div>
-
-                                <div class="col-md-4 ingreso-campo d-none" id="ingreso_monto_digital">
-                                    <label class="form-label small mb-1">Monto digital</label>
-                                    <input type="number" step="0.01" min="0.01" name="monto_digital"
-                                        class="form-control form-control-sm">
-                                </div>
-
-                                <div class="col-md-4 ingreso-campo d-none" id="ingreso_billetera">
-                                    <label class="form-label small mb-1">Billetera</label>
-                                    <select name="billetera_digital_id" class="form-select form-select-sm">
-                                        <option value="">Seleccione</option>
-                                        @foreach ($billeterasDigitales as $billetera)
-                                            <option value="{{ $billetera->id }}">{{ $billetera->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-8">
-                                    <label class="form-label small mb-1">Descripción</label>
-                                    <input type="text" name="description" class="form-control form-control-sm">
-                                </div>
-
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-success btn-sm w-100">
-                                        Registrar ingreso
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header bg-white py-2">
-                            <strong class="small">Registrar egreso</strong>
-                        </div>
-                        <div class="card-body py-2">
-                            <form action="{{ route('caja.salida', $caja->id) }}" method="POST" class="row g-2">
-                                @csrf
-
-                                <div class="col-md-6">
-                                    <label class="form-label small mb-1">Subtipo</label>
-                                    <select name="subtipo_movimiento_caja_id" class="form-select form-select-sm" required>
-                                        <option value="">Seleccione</option>
-                                        @foreach ($subtiposSalida as $subtipo)
-                                            <option value="{{ $subtipo->id }}">{{ $subtipo->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label small mb-1">Tipo de salida</label>
-                                    <select name="metodo_pago_id" id="tipo_salida" class="form-select form-select-sm"
-                                        required>
-                                        <option value="">Seleccione</option>
-                                        @foreach ($metodosPago as $metodo)
-                                            <option value="{{ $metodo->id }}">{{ $metodo->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                {{-- EFECTIVO --}}
-                                <div class="col-md-4 salida-campo d-none" id="campo_monto_efectivo">
-                                    <label class="form-label small mb-1">Monto efectivo</label>
-                                    <input type="number" step="0.01" min="0.01" name="monto_efectivo"
-                                        class="form-control form-control-sm">
-                                </div>
-
-                                {{-- DIGITAL --}}
-                                <div class="col-md-4 salida-campo d-none" id="campo_monto_digital">
-                                    <label class="form-label small mb-1">Monto digital</label>
-                                    <input type="number" step="0.01" min="0.01" name="monto_digital"
-                                        class="form-control form-control-sm">
-                                </div>
-
-                                <div class="col-md-4 salida-campo d-none" id="campo_billetera">
-                                    <label class="form-label small mb-1">Billetera</label>
-                                    <select name="billetera_digital_id" class="form-select form-select-sm">
-                                        <option value="">Seleccione</option>
-                                        @foreach ($billeterasDigitales as $billetera)
-                                            <option value="{{ $billetera->id }}">{{ $billetera->descripcion }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4 salida-campo d-none" id="campo_monto_simple">
-                                    <label class="form-label small mb-1">Monto</label>
-                                    <input type="number" step="0.01" min="0.01" name="amount"
-                                        class="form-control form-control-sm">
-                                </div>
-
-                                <div class="col-md-8">
-                                    <label class="form-label small mb-1">Descripción</label>
-                                    <input type="text" name="description" class="form-control form-control-sm">
-                                </div>
-
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-danger btn-sm w-100">
-                                        Registrar egreso
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- Movimientos --}}
         <div id="contenedor-tabla-movimientos">
             @include('caja.partials.tabla_movimientos', ['caja' => $caja])
         </div>
 
     </div>
+    @include('caja.modals.egreso')
+    @include('caja.modals.ingreso')
 @endsection
 @push('scripts')
     <script src="{{ asset('js/caja_detalle.js') }}"></script>

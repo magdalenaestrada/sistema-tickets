@@ -73,7 +73,7 @@
                         <div class="col-md-4 mb-3">
                             <label>Departamento</label>
                             <select name="departamento_id" id="departamento_id" class="form-select">
-                                <option value="">Espere...</option>
+                                <option value="">Seleccione</option>
                                 @foreach ($departamentos as $departamento)
                                     <option value="{{ $departamento->id }}">{{ $departamento->nombre }}</option>
                                 @endforeach
@@ -83,7 +83,7 @@
                         <div class="col-md-4 mb-3">
                             <label>Provincia</label>
                             <select name="provincia_id" id="provincia_id" class="form-select">
-                                <option value="">Espere...</option>
+                                <option value="">Seleccione</option>
                                 @foreach ($provincias as $provincia)
                                     <option value="{{ $provincia->id }}">{{ $provincia->nombre }}</option>
                                 @endforeach
@@ -93,7 +93,7 @@
                         <div class="col-md-4 mb-3">
                             <label>Distrito</label>
                             <select name="distrito_id" id="distrito_id" class="form-select">
-                                <option value="">Espere...</option>
+                                <option value="">Seleccione</option>
                                 @foreach ($distritos as $distrito)
                                     <option value="{{ $distrito->id }}">{{ $distrito->nombre }}</option>
                                 @endforeach
@@ -107,18 +107,20 @@
                         <hr class="border-gray-300 my-1">
                         <br>
                         <div class="col-md-4 mb-3">
-                            <label for="sucursal_id" class="form-label">Sucursal <span
-                                    style="color: red">*</span></label>
-                            <select name="sucursal_id" id="sucursal_id" class="form-select" required>
-                                <option value="">Seleccione una sucursal</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-3">
                             <label for="cargo_id" class="form-label">Cargo <span style="color: red">*</span></label>
                             <select name="cargo_id" id="cargo_id" class="form-select" required>
                                 <option value="">Seleccione un cargo</option>
                             </select>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="sucursal_id" class="form-label">
+                                Sucursal <span id="reqSucursal" style="color:red">*</span>
+                            </label>
+                            <select name="sucursal_id" id="sucursal_id" class="form-select" required>
+                                <option value="">Seleccione una sucursal</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-4">
                             <label class="form-label">Fecha de ingreso <span style="color: red">*</span></label>
                             <input type="date" name="fecha_ingreso" id="fecha_ingreso" class="form-control"
@@ -138,8 +140,7 @@
                                 class="form-control">
                         </div>
                         <div class="col-md-3 mb-3 conductor" hidden>
-                            <label class="form-label">Fecha de vencimiento licencia <span
-                                    style="color: red">*</span></label>
+                            <label class="form-label">Fecha de vencimiento licencia </label>
                             <input type="date" name="fecha_vencimiento_licencia" id="fecha_vencimiento_licencia"
                                 class="form-control">
                         </div>

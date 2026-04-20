@@ -116,8 +116,12 @@
                         </select>
                     </div>
                     <div class="col-md-2 mb-3">
-                        <input type="text" id="nombre_sucursal" name="nombre_sucursal" class="form-control"
-                            placeholder="Filtrar por sucursal">
+                        <select id="filtro_serie_id" class="form-select">
+                            <option value="">Filtrar por serie</option>
+                            @foreach ($series as $serie)
+                                <option value="{{ $serie->id }}">{{ $serie->descripcion }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-1 mb-3 d-flex align-items-end">
                         <button class="btn btn-secondary" id="btnLimpiarFiltros">
