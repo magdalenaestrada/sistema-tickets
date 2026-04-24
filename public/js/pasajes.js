@@ -468,4 +468,29 @@ document.addEventListener("DOMContentLoaded", function () {
     ["filtro_fecha", "filtro_origen", "filtro_destino"].forEach((id) => {
         document.getElementById(id)?.addEventListener("change", filtrarSalidas);
     });
+
+    function precargarDesdeUrl() {
+        const params = new URLSearchParams(window.location.search);
+
+        const salidaId = params.get("salida_id");
+        const origenId = params.get("origen_id");
+        const destinoId = params.get("destino_id");
+
+        if (!salidaId || !origenId || !destinoId) return;
+
+        document.getElementById("filtro_origen").value = origenId;
+        document.getElementById("filtro_destino").value = destinoId;
+
+        filtrarSalidas();
+
+        const row = document.querySelector(
+            `.horario-row[data-salida-id="${salidaId}"]`,
+        );
+
+        if (row) {
+            row.click();
+        }
+    }
+
+    precargarDesdeUrl();
 });

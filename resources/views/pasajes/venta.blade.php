@@ -233,6 +233,9 @@
                             </div>
 
                             <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnRegresarAsientos">
+                                    Regresar a escoger asientos
+                                </button>
                                 <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
                                     Reservar
                                 </button>
@@ -366,7 +369,8 @@
             destinoId: @json($destino->id),
             asientos: @json($asientos),
             precioUnitario: @json((float) $precioUnitario),
-            descuentoPromoId: 1
+            descuentoPromoId: 1,
+            volverAsientosUrl: @json(url()->previous()) 
         };
     </script>
     <script src="{{ asset('js/ventas.js') }}"></script>

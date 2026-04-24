@@ -99,8 +99,8 @@
                                     <th>Sucursal</th>
                                     <th>Apertura</th>
                                     <th>Cierre</th>
-                                    <th>Monto apertura</th>
-                                    <th>Monto cierre</th>
+                                    <th>Apertura</th>
+                                    <th> cierre</th>
                                     <th>Estado</th>
                                     <th width="140">Acciones</th>
                                 </tr>

@@ -104,6 +104,90 @@ $(function () {
         costoTotalInput.val(totalPagar.toFixed(2));
     }
 
+    const volverAsientosUrl = route("pasajes.index", {
+        salida_id: salidaId,
+        origen_id: origenId,
+        destino_id: destinoId,
+    });
+
+    function limpiarClienteFacturacion() {
+        $("#doc_cliente").val("").prop("readonly", false);
+        $("#razon_social").val("").prop("readonly", false);
+    }
+
+    function ponerClienteVariosNotaVenta() {
+        $("#doc_cliente").val("00000000").prop("readonly", true);
+        $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
+    }
+
+    function datosPasajerosCompletos() {
+        const form = document.getElementById("formVenta");
+
+        for (let i = 0; i < selectedSeatNumbers.length; i++) {
+            const documento = $(`#documento_${i}`).val().trim();
+            const nombres = $(`#nombres_${i}`).val().trim();
+            const apellidos = $(`#apellidos_${i}`).val().trim();
+
+            if (!documento || !nombres || !apellidos) {
+                form.reportValidity();
+                Swal.fire(
+                    "Atención",
+                    `Completa los datos del pasajero del asiento ${selectedSeatNumbers[i]}.`,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function validarClienteFacturacion() {
+        const tipo = $("#tipo_doc_sunat").val();
+        const doc = $("#doc_cliente").val().trim();
+        const razon = $("#razon_social").val().trim();
+
+        if (tipo === "nota_venta") return true;
+
+        if (!doc || !razon) {
+            Swal.fire(
+                "Atención",
+                "Ingresa y busca el cliente a quien se va a boletear o facturar.",
+                "warning",
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    function buscarClienteFacturacion() {
+        const documento = $("#doc_cliente").val().trim();
+        const tipo = $("#tipo_doc_sunat").val();
+
+        if (!documento || tipo === "nota_venta") return;
+
+        $.getJSON(route("buscar.buscar") + `?documento=${documento}`).done(
+            (data) => {
+                if (data.error) {
+                    $("#razon_social").val("");
+                    Swal.fire("Atención", data.error, "warning");
+                    return;
+                }
+
+                if (data.razon_social) {
+                    $("#razon_social").val(data.razon_social);
+                } else {
+                    const apellidos =
+                        `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
+                    $("#razon_social").val(
+                        `${data.nombres || ""} ${apellidos}`.trim(),
+                    );
+                }
+            },
+        );
+    }
+
     function actualizarCostoTotal() {
         actualizarResumenTotales();
     }
@@ -189,24 +273,18 @@ $(function () {
         if (tipo === "boleta") {
             $("#tipo_doc_sunat").val("boleta");
             $("#serie_doc").text(serie);
-            $("#doc_cliente").attr("maxlength", 11).val("");
-            $("#btn_boleta")
-                .removeClass("btn-outline-secondary")
-                .addClass("btn-primary active");
+            $("#doc_cliente").attr("maxlength", 11);
+            limpiarClienteFacturacion();
         } else if (tipo === "factura") {
             $("#tipo_doc_sunat").val("factura");
             $("#serie_doc").text(serie);
-            $("#doc_cliente").attr("maxlength", 11).val("");
-            $("#btn_factura")
-                .removeClass("btn-outline-secondary")
-                .addClass("btn-success active");
+            $("#doc_cliente").attr("maxlength", 11);
+            limpiarClienteFacturacion();
         } else {
             $("#tipo_doc_sunat").val("nota_venta");
             $("#serie_doc").text(serie);
-            $("#doc_cliente").attr("maxlength", 11).val("");
-            $("#btn_nota_venta")
-                .removeClass("btn-outline-secondary")
-                .addClass("btn-success active");
+            $("#doc_cliente").attr("maxlength", 8);
+            ponerClienteVariosNotaVenta();
         }
     }
 
@@ -259,11 +337,17 @@ $(function () {
         marcarTipoDocumento(tipo);
     });
 
+    $("#doc_cliente").on("input", function () {
+        if ($("#tipo_doc_sunat").val() !== "nota_venta") {
+            $("#razon_social").val("");
+        }
+    });
+
     $("#doc_cliente").on("blur", function () {
         const valor = $(this).val().trim();
         const tipo = $("#tipo_doc_sunat").val();
 
-        if (!valor) return;
+        if (!valor || tipo === "nota_venta") return;
 
         if (tipo === "factura" && valor.length !== 11) {
             Swal.fire(
@@ -282,6 +366,27 @@ $(function () {
             );
             return;
         }
+
+        buscarClienteFacturacion();
+    });
+
+    $("#btnRegresarAsientos").on("click", function () {
+        window.location.href = volverAsientosUrl;
+    });
+
+    $("#btnCancelarVenta").on("click", function () {
+        Swal.fire({
+            title: "Cancelar venta",
+            text: "Se liberarán los asientos seleccionados y volverás a escoger asientos.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, cancelar",
+            cancelButtonText: "No",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = volverAsientosUrl;
+            }
+        });
     });
 
     $("#precio_manual").on("input", function () {
@@ -333,21 +438,6 @@ $(function () {
                         `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
                     $(`#apellidos_${index}`).val(apellidos);
                     $(`#correo_${index}`).val(data.direccion || "");
-                }
-
-                if (parseInt(index) === 0) {
-                    $("#doc_cliente").val(documento);
-
-                    const nombres = ($(`#nombres_${index}`).val() || "").trim();
-                    const apellidos = (
-                        $(`#apellidos_${index}`).val() || ""
-                    ).trim();
-
-                    if (!$("#razon_social").val().trim()) {
-                        $("#razon_social").val(
-                            `${nombres} ${apellidos}`.trim(),
-                        );
-                    }
                 }
             })
             .always(() => {
@@ -500,7 +590,7 @@ $(function () {
 
     $("#btnReservar").on("click", function (e) {
         e.preventDefault();
-
+        if (!datosPasajerosCompletos()) return;
         if (!validarMenores()) {
             Swal.fire(
                 "Atención",
@@ -573,7 +663,8 @@ $(function () {
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
-
+        if (!datosPasajerosCompletos()) return;
+        if (!validarClienteFacturacion()) return;
         if (!validarMenores()) {
             Swal.fire(
                 "Atención",
