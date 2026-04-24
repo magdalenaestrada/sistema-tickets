@@ -27,45 +27,8 @@
             </div>
         @endif
 
-        {{-- Abrir caja --}}
-        <div class="card shadow-sm border-0 mb-3">
-            <div class="card-header bg-white">
-                <strong>Abrir nueva caja</strong>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('caja.store') }}" method="POST" class="row g-3">
-                    @csrf
-
-                    <div class="col-md-5">
-                        <label for="sucursal_id_open" class="form-label">Sucursal</label>
-                        <select name="sucursal_id" id="sucursal_id_open" class="form-select" required>
-                            <option value="">Seleccione una sucursal</option>
-                            @foreach ($sucursales as $sucursal)
-                                <option value="{{ $sucursal->id }}">
-                                    {{ $sucursal->nombre_comercial }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-5">
-                        <label for="monto_apertura" class="form-label">Monto de apertura</label>
-                        <input type="number" step="0.01" min="0" name="monto_apertura" id="monto_apertura"
-                            class="form-control" required>
-                    </div>
-
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success w-100">
-                            Abrir caja
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        {{-- Filtros + tarjeta resumen --}}
         <div class="row g-3 mb-3">
-            <div class="col-lg-9">
+            <div class="col-lg-10">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3">
                         <form id="form-filtros-caja" method="GET" action="{{ route('caja.index') }}"
@@ -83,7 +46,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="filtro_estado" class="form-label mb-1">Estado</label>
                                 <select name="estado" id="filtro_estado" class="form-select form-select-sm">
                                     <option value="">Todas</option>
@@ -94,7 +57,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3 d-flex gap-2">
+                            <div class="col-md-4 d-flex gap-2 align-items-end">
                                 <button type="submit" class="btn btn-primary btn-sm w-100">
                                     Filtrar
                                 </button>
@@ -102,13 +65,17 @@
                                     class="btn btn-outline-secondary btn-sm w-100">
                                     Limpiar
                                 </button>
+                                <button type="button" class="btn btn-success btn-sm w-100" data-bs-toggle="modal"
+                                    data-bs-target="#modalAbrirCaja">
+                                    Abrir caja
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-body py-3 px-3 d-flex flex-column justify-content-center">
                         <span class="text-muted small">Total efectivo</span>
@@ -141,7 +108,7 @@
                             <tbody>
                                 @foreach ($cajas as $caja)
                                     <tr>
-                                        <td>{{ $caja->id }}</td>
+                                        <td>Caja {{ $caja->numero_visual }}</td>
                                         <td>{{ $caja->usuario->persona->nombre_completo ?? ($caja->usuario->name ?? '---') }}
                                         </td>
                                         <td>{{ $caja->sucursal->nombre_comercial ?? '---' }}</td>
@@ -186,4 +153,17 @@
             </div>
         </div>
     </div>
+    @include('caja.modals.abrir_caja_admin')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnLimpiar = document.getElementById('btn-limpiar-filtros');
+
+            if (btnLimpiar) {
+                btnLimpiar.addEventListener('click', function() {
+                    window.location.href = "{{ route('caja.index') }}";
+                });
+            }
+        });
+    </script>
 @endsection

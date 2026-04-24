@@ -19,7 +19,9 @@ class CajaController extends Controller
         $user = auth()->user();
 
         if ($this->esAdmin($user)) {
-            $query = Caja::with(['sucursal', 'usuario.persona']);
+
+            $query = Caja::with(['sucursal', 'usuario.persona'])
+                ->whereIn('estado', ['A', 'abierta']);
 
             if ($request->filled('sucursal_id')) {
                 $query->where('sucursal_id', $request->sucursal_id);
@@ -34,9 +36,24 @@ class CajaController extends Controller
             }
 
             $cajas = $query
-                ->orderByDesc('fecha_creacion')
+                ->orderBy('sucursal_id')
+                ->orderBy('fecha_creacion')
                 ->paginate(15)
                 ->appends($request->query());
+
+            $contadorPorSucursal = [];
+
+            foreach ($cajas as $caja) {
+                $sucursalId = $caja->sucursal_id;
+
+                if (!isset($contadorPorSucursal[$sucursalId])) {
+                    $contadorPorSucursal[$sucursalId] = 1;
+                }
+
+                $caja->numero_visual = $contadorPorSucursal[$sucursalId];
+
+                $contadorPorSucursal[$sucursalId]++;
+            }
 
             $totalEfectivo = (clone $query)->sum('monto_apertura');
 

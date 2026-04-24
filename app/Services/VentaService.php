@@ -25,6 +25,7 @@ use Greenter\Model\Company\Company;
 use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
 use Greenter\Model\Sale\Invoice;
 use Greenter\Model\Sale\Legend;
+use Greenter\Model\Sale\Note;
 use Greenter\Model\Sale\SaleDetail;
 use Greenter\See;
 use Greenter\Ws\Services\SunatEndpoints;
@@ -307,28 +308,111 @@ class VentaService
         ];
     }
 
-    public function anularVenta(Venta $venta): void
+    public function anularVentaSunat(Venta $venta): array
     {
-        $venta->update([
-            'estado' => 'A',
-            'fecha_anulacion' => now(),
-        ]);
+        $venta->loadMissing(['persona', 'detalles']);
 
-        $venta->pagos()->update([
-            'estado' => 'AN',
-        ]);
+        if (!in_array($venta->estado, ['E', 'O'], true)) {
+            throw new Exception('Solo se puede anular en SUNAT una venta emitida.');
+        }
 
-        CajaDetalle::where('table_name', Venta::class)
-            ->where('table_id', $venta->id)
-            ->update([
-                'anulado' => true,
+        $tipoNotaCredito = TipoDocumentoFactura::where('codigo', '07')->first();
+
+        if (!$tipoNotaCredito) {
+            throw new Exception('No existe configurado el tipo de documento Nota de Crédito código 07.');
+        }
+
+        $empresa = Empresa::first();
+
+        if (!$empresa) {
+            throw new Exception('No existe configuración de empresa.');
+        }
+
+        $comprobanteNC = $this->reservarSerieYNumero(
+            (int) $tipoNotaCredito->id,
+            (int) $venta->sucursal_id
+        );
+
+        $see = $this->crearSee();
+
+        $note = $this->buildNotaCreditoAnulacion(
+            $venta,
+            $empresa,
+            $comprobanteNC['serie'],
+            $comprobanteNC['numero']
+        );
+
+        $result = $see->send($note);
+
+        $folder = 'xml/' . now()->format('d-m-Y');
+        $xmlPath = $folder . '/' . $note->getName() . '.xml';
+        $cdrPath = $folder . '/R-' . $note->getName() . '.zip';
+
+        Storage::disk('public')->put(
+            $xmlPath,
+            $see->getFactory()->getLastXml()
+        );
+
+        if (!$result->isSuccess()) {
+            $errorCode = optional($result->getError())->getCode();
+            $errorMessage = optional($result->getError())->getMessage();
+
+            Log::error('Error al anular venta en SUNAT', [
+                'venta_id' => $venta->id,
+                'codigo' => $errorCode,
+                'mensaje' => $errorMessage,
             ]);
+
+            throw new Exception(
+                'SUNAT rechazó la anulación: ' . trim($errorCode . ' - ' . $errorMessage, ' -')
+            );
+        }
+
+        Storage::disk('public')->put(
+            $cdrPath,
+            $result->getCdrZip()
+        );
+
+        $cdr = $result->getCdrResponse();
+
+        if ((int) $cdr->getCode() !== 0) {
+            throw new Exception('SUNAT no aceptó la nota de crédito: ' . $cdr->getDescription());
+        }
+
+        DB::transaction(function () use ($venta, $xmlPath, $cdrPath, $cdr) {
+            $venta->update([
+                'estado' => 'A',
+                'fecha_anulacion' => now(),
+                'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
+            ]);
+
+            $venta->pagos()->update([
+                'estado' => 'AN',
+            ]);
+
+            CajaDetalle::where('table_name', Venta::class)
+                ->where('table_id', $venta->id)
+                ->update([
+                    'anulado' => true,
+                ]);
+        });
+
+        return [
+            'success' => true,
+            'estado' => 'ANULADA_SUNAT',
+            'codigo' => $cdr->getCode(),
+            'descripcion' => $cdr->getDescription(),
+            'notas' => $cdr->getNotes(),
+            'xml_path' => $xmlPath,
+            'cdr_path' => $cdrPath,
+            'nombre' => $note->getName(),
+        ];
     }
 
     public function reemplazarVenta(?Venta $ventaAnterior, $data, $servicio_model, $servicio_id): array
     {
         if ($ventaAnterior) {
-            $this->anularVenta($ventaAnterior);
+            $this->anularVentaSunat($ventaAnterior);
         }
 
         return $this->crearVenta($data, $servicio_model, $servicio_id);
@@ -601,5 +685,114 @@ class VentaService
         }
 
         return (string) $tipo->codigo_sunat;
+    }
+
+    private function buildNotaCreditoAnulacion(
+        Venta $venta,
+        Empresa $empresa,
+        string $serieNC,
+        int $numeroNC
+    ): Note {
+        $cliente = $venta->persona;
+
+        if (!$cliente) {
+            throw new Exception('La venta no tiene cliente asociado.');
+        }
+
+        $tipoDocAfectado = $this->mapTipoDocumentoComprobante($venta->tipo_documento_factura_id);
+        $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
+
+        $companyAddress = (new Address())
+            ->setUbigueo($empresa->ubigueo ?? '150101')
+            ->setDepartamento($empresa->departamento ?? 'LIMA')
+            ->setProvincia($empresa->provincia ?? 'LIMA')
+            ->setDistrito($empresa->distrito ?? 'LIMA')
+            ->setUrbanizacion($empresa->urbanizacion ?? '-')
+            ->setDireccion($empresa->direccion ?? $empresa->razon_social)
+            ->setCodLocal($empresa->cod_local ?? '0000');
+
+        $company = (new Company())
+            ->setRuc($empresa->documento)
+            ->setRazonSocial($empresa->razon_social)
+            ->setNombreComercial($empresa->nombre_comercial ?? $empresa->razon_social)
+            ->setAddress($companyAddress);
+
+        $client = (new Client())
+            ->setTipoDoc($tipoDocCliente)
+            ->setNumDoc($cliente->documento ?: '00000000')
+            ->setRznSocial(trim($cliente->nombres . ' ' . ($cliente->apellidos ?? '')))
+            ->setAddress(
+                (new Address())->setDireccion($cliente->direccion ?? '-')
+            );
+
+        $detalles = [];
+        $mtoOperGravadas = 0;
+        $mtoIGV = 0;
+        $valorVenta = 0;
+        $subTotal = 0;
+        $totalVenta = 0;
+
+        foreach ($venta->detalles as $detalle) {
+            $cantidad = (float) ($detalle->cantidad ?? 1);
+            $totalLinea = (float) ($detalle->total ?? 0);
+
+            if ($cantidad <= 0) {
+                throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
+            }
+
+            $valorUnitario = round($totalLinea / 1.18, 10);
+            $igvLinea = round($totalLinea - $valorUnitario, 2);
+            $valorVentaLinea = round($totalLinea - $igvLinea, 2);
+            $precioUnitario = round($totalLinea / $cantidad, 10);
+            $valorUnitarioSinIgv = round($valorVentaLinea / $cantidad, 10);
+
+            $detalles[] = (new SaleDetail())
+                ->setCodProducto((string) ($detalle->id ?? 'ITEM'))
+                ->setUnidad('NIU')
+                ->setCantidad($cantidad)
+                ->setMtoValorUnitario($valorUnitarioSinIgv)
+                ->setDescripcion($detalle->descripcion)
+                ->setMtoBaseIgv($valorVentaLinea)
+                ->setPorcentajeIgv(18.00)
+                ->setIgv($igvLinea)
+                ->setTipAfeIgv('10')
+                ->setTotalImpuestos($igvLinea)
+                ->setMtoValorVenta($valorVentaLinea)
+                ->setMtoPrecioUnitario($precioUnitario);
+
+            $mtoOperGravadas += $valorVentaLinea;
+            $mtoIGV += $igvLinea;
+            $valorVenta += $valorVentaLinea;
+            $subTotal += $totalLinea;
+            $totalVenta += $totalLinea;
+        }
+
+        $formatter = new NumeroALetras();
+
+        $legend = (new Legend())
+            ->setCode('1000')
+            ->setValue($formatter->toInvoice($totalVenta, 2, 'SOLES'));
+
+        return (new Note())
+            ->setUblVersion('2.1')
+            ->setTipoDoc('07')
+            ->setSerie($serieNC)
+            ->setCorrelativo((string) $numeroNC)
+            ->setFechaEmision(new DateTime(now()->format('Y-m-d H:i:sP')))
+            ->setTipDocAfectado($tipoDocAfectado)
+            ->setNumDocfectado($venta->serie . '-' . $venta->numero)
+            ->setCodMotivo('01')
+            ->setDesMotivo('ANULACION DE LA OPERACION')
+            ->setTipoMoneda('PEN')
+            ->setCompany($company)
+            ->setClient($client)
+            ->setMtoOperGravadas(round($mtoOperGravadas, 2))
+            ->setMtoIGV(round($mtoIGV, 2))
+            ->setTotalImpuestos(round($mtoIGV, 2))
+            ->setValorVenta(round($valorVenta, 2))
+            ->setSubTotal(round($subTotal, 2))
+            ->setMtoImpVenta(round($totalVenta, 2))
+            ->setDetails($detalles)
+            ->setLegends([$legend]);
     }
 }

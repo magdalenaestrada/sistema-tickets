@@ -12,8 +12,6 @@ class GreenterService
     public function getSee(Empresa $empresa): See
     {
         $see = new See();
-
-        // 🔥 CERTIFICADO GLOBAL (NO BD)
         $path = 'certificado/certificate.pem';
 
         if (!Storage::disk('public')->exists($path)) {
