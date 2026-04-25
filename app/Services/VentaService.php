@@ -46,7 +46,10 @@ class VentaService
             $total = (float) data_get($request, 'total', 0);
             $detalles = data_get($request, 'detalles', []);
 
-            $sucursalId = $this->resolverSucursalVenta($request, $user);
+            $cajaSucursal = $this->resolverCajaYSucursalVenta($request, $user);
+
+            $cajaId = $cajaSucursal['caja_id'];
+            $sucursalId = $cajaSucursal['sucursal_id'];
 
             $comprobante = $this->reservarSerieYNumero(
                 $tipoDocumentoFacturaId,
@@ -75,6 +78,7 @@ class VentaService
                 'serie'                     => $comprobante['serie'],
                 'numero'                    => $comprobante['numero'],
                 'total'                     => $total,
+                'caja_id'                   => $cajaId,
                 'estado'                    => 'P',
                 'fecha_emision'             => now(),
             ]);
@@ -115,46 +119,72 @@ class VentaService
         });
     }
 
-    private function resolverSucursalVenta($request, $user): int
+    private function resolverCajaYSucursalVenta($request, $user): array
     {
         if ($user->hasRole('Administrador')) {
-            $sucursalId = (int) data_get($request, 'sucursal_id');
+            $caja = Caja::with('sucursal.serie')
+                ->where('id', data_get($request, 'caja_id'))
+                ->where('estado', 'A')
+                ->first();
 
-            if ($sucursalId <= 0) {
-                throw new Exception('Debe seleccionar una sucursal para la venta.');
+            if (!$caja) {
+                throw new Exception('Debe seleccionar una caja abierta para la venta.');
             }
 
-            return $sucursalId;
+            return [
+                'caja_id' => $caja->id,
+                'sucursal_id' => $caja->sucursal_id,
+            ];
         }
 
-        if (empty($user->sucursal_id)) {
-            throw new Exception('El usuario no tiene una sucursal asignada.');
+        $caja = Caja::with('sucursal.serie')
+            ->where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->first();
+
+        if (!$caja) {
+            throw new Exception('El usuario no tiene una caja abierta asignada.');
         }
 
-        return (int) $user->sucursal_id;
+        return [
+            'caja_id' => $caja->id,
+            'sucursal_id' => $caja->sucursal_id,
+        ];
     }
 
-    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1, $sucursal_id = null): array
+    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1, $request, $sucursal_id = null): array
     {
         $user = Auth::user();
         $precioFinal = $precio - $descuento;
 
+        $cajaId = data_get($request, 'caja_id');
+
         if ($user->hasRole('Administrador')) {
-            $sucursalId = (int) $sucursal_id;
+            $caja = Caja::with('sucursal')
+                ->where('id', $cajaId)
+                ->where('estado', 'A')
+                ->first();
 
-            if ($sucursalId <= 0) {
-                throw new Exception('Debe seleccionar una sucursal para la venta.');
+            if (!$caja) {
+                throw new \Exception('Debe seleccionar una caja válida.');
             }
+
+            $sucursalId = $caja->sucursal_id;
         } else {
-            $sucursalId = (int) $user->sucursal_id;
+            $caja = Caja::with('sucursal')
+                ->where('usuario_id', $user->id)
+                ->where('estado', 'A')
+                ->first();
 
-            if ($sucursalId <= 0) {
-                throw new Exception('El usuario no tiene una sucursal asignada.');
+            if (!$caja) {
+                throw new \Exception('El usuario no tiene caja abierta.');
             }
+
+            $cajaId = $caja->id;
+            $sucursalId = $caja->sucursal_id;
         }
 
-
-        $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user, $sucursalId) {
+        $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user, $sucursalId, $cajaId) {
             $comprobante = $this->reservarSerieYNumero((int) $tipo_documento_factura_id, $sucursalId);
 
             $venta = Venta::create([
@@ -163,6 +193,7 @@ class VentaService
                 'usuario_id'                => $user->id,
                 'persona_id'                => $user->persona_id,
                 'tipo_documento_factura_id' => $tipo_documento_factura_id,
+                'caja_id' => $cajaId,
                 'serie'                     => $comprobante['serie'],
                 'numero'                    => $comprobante['numero'],
                 'total'                     => $precioFinal,

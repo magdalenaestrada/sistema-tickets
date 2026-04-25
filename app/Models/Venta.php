@@ -35,6 +35,7 @@ class Venta extends Model
         'estado',
         'fecha_emision',
         'fecha_anulacion',
+        'caja_id'
     ];
 
     protected $casts = [
@@ -75,5 +76,9 @@ class Venta extends Model
     public function tipoDocumentoFactura()
     {
         return $this->belongsTo(TipoDocumentoFactura::class, 'tipo_documento_factura_id');
+    }
+    public function caja()
+    {
+        return $this->belongsTo(Caja::class, 'caja_id');
     }
 }

@@ -308,6 +308,9 @@ class PasajeController extends Controller
             'billetera_id' => 'nullable|integer',
             'pago_efectivo' => 'nullable|numeric|min:0',
             'pago_billetera' => 'nullable|numeric|min:0',
+            'caja_id' => Auth::user()->hasRole('Administrador')
+                ? 'required|exists:cajas,id'
+                : 'nullable|exists:cajas,id',
         ]);
 
         try {
@@ -510,6 +513,7 @@ class PasajeController extends Controller
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,
                     'total' => $totalVenta,
+                    'caja_id' => $request->caja_id,
                     'detalles' => $detalles,
                     'origen_nombre' => $salida->horario->ruta->puntos->first()?->sucursal?->nombre_comercial,
                     'destino_nombre' => $salida->horario->ruta->puntos->last()?->sucursal?->nombre_comercial,
