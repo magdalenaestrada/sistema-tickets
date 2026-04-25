@@ -8,6 +8,8 @@ Route::middleware(['auth'])->prefix('descuentos')->name('descuentos.')->group(fu
         Route::get('/', [DescuentoController::class, 'index'])->name('index');
         Route::get('/datatable', [DescuentoController::class, 'datatable'])->name('datatable');
         Route::get('/buscar', [DescuentoController::class, 'buscar'])->name('buscar');
+        Route::get('/persona', [DescuentoController::class, 'cuponesPersona'])
+            ->name('persona');
         Route::get('/{descuento}', [DescuentoController::class, 'mostrar'])->name('mostrar');
     });
     Route::middleware('can:gestionar descuentos')->group(function () {

@@ -126,9 +126,10 @@
 
                                     <div class="col-md-2">
                                         <label class="form-label">Descuento</label>
-                                        <input type="text" class="form-control descuento-input"
-                                            data-index="{{ $index }}" id="descuento_{{ $index }}"
-                                            name="descuento_codigo[]" placeholder="Código">
+                                        <select class="form-select descuento-input" data-index="{{ $index }}"
+                                            id="descuento_{{ $index }}" name="descuento_codigo[]">
+                                            <option value="">Sin cupón</option>
+                                        </select>
                                         <small class="text-muted d-block mt-1"
                                             id="descuento_msg_{{ $index }}"></small>
                                     </div>
@@ -162,39 +163,6 @@
                 <div class="col-lg-3">
                     <div class="card shadow-sm border-0 panel-venta">
                         <div class="card-body">
-                            <div class="mb-2 text-center fw-semibold">Sucursal de venta:</div>
-
-                            <div class="mb-3">
-                                <select name="sucursal_venta_id" id="sucursal_venta_id" class="form-select">
-                                    <option value="">Seleccionar una caja</option>
-                                    @foreach ($cajas_emision as $caja)
-                                        <option value="{{ $caja->sucursal_id }}"
-                                            data-codigo-sucursal="{{ str_pad($caja->sucursal->codigo_emision, 3, '0', STR_PAD_LEFT) }}"
-                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
-                                            {{ $caja->sucursal->nombre_comercial }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="mb-2 fw-semibold">Serie sucursal:</div>
-                            <div class="panel-box mb-3 text-center" id="serie_doc">N001</div>
-
-                            <div class="resumen-totales">
-                                <div class="d-flex justify-content-between">
-                                    <span>Sub total:</span>
-                                    <strong>S/ <span id="subtotal">0.00</span></strong>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Descuentos:</span>
-                                    <strong>S/ <span id="total_descuento">0.00</span></strong>
-                                </div>
-                                <div class="d-flex justify-content-between text-primary">
-                                    <span>Total a pagar:</span>
-                                    <strong>S/ <span id="total_pagar">0.00</span></strong>
-                                </div>
-                            </div>
-
                             <div class="mt-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="fw-semibold">EMITIR SUNAT:</span>
@@ -219,6 +187,41 @@
                                     </button>
                                 </div>
                             </div>
+                            
+                            <div class="mb-2 text-center fw-semibold">Sucursal de venta:</div>
+
+                            <div class="mb-3">
+                                <select name="sucursal_venta_id" id="sucursal_venta_id" class="form-select">
+                                    <option value="">Seleccionar sucursal</option>
+                                    @foreach ($cajas_emision as $caja)
+                                        <option value="{{ $caja->sucursal_id }}"
+                                            data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
+                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
+                                            {{ $caja->sucursal->nombre_comercial }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="mb-2 fw-semibold">Serie sucursal:</div>
+                            <div class="panel-box mb-3 text-center" id="serie_doc">Seleccionar sucursal</div>
+
+                            <div class="resumen-totales">
+                                <div class="d-flex justify-content-between">
+                                    <span>Sub total:</span>
+                                    <strong>S/ <span id="subtotal">0.00</span></strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Descuentos:</span>
+                                    <strong>S/ <span id="total_descuento">0.00</span></strong>
+                                </div>
+                                <div class="d-flex justify-content-between text-primary">
+                                    <span>Total a pagar:</span>
+                                    <strong>S/ <span id="total_pagar">0.00</span></strong>
+                                </div>
+                            </div>
+
+
                             <input type="hidden" name="emitir_sunat_estado" id="emitir_sunat_estado" value="0">
 
                             <div class="mb-2">
@@ -230,6 +233,12 @@
                             <div class="mb-3">
                                 <label class="form-label">Razón social:</label>
                                 <input type="text" id="razon_social" name="razon_social" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="direccion_cliente" class="form-label">Dirección</label>
+                                <input type="text" id="direccion_cliente" name="direccion_cliente"
+                                    class="form-control" readonly>
                             </div>
 
                             <div class="d-grid gap-2">
@@ -370,7 +379,7 @@
             asientos: @json($asientos),
             precioUnitario: @json((float) $precioUnitario),
             descuentoPromoId: 1,
-            volverAsientosUrl: @json(url()->previous()) 
+            volverAsientosUrl: @json(url()->previous())
         };
     </script>
     <script src="{{ asset('js/ventas.js') }}"></script>

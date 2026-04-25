@@ -210,4 +210,50 @@ class DescuentoController extends Controller
             'message' => 'Descuento desactivado correctamente'
         ]);
     }
+
+    public function cuponesPersona(Request $request)
+    {
+        $documento = $request->documento;
+
+        if (!$documento) {
+            return response()->json([]);
+        }
+
+        $empleado = Empleado::with(['persona', 'cargo'])
+            ->whereHas('persona', function ($q) use ($documento) {
+                $q->where('documento', $documento);
+            })
+            ->first();
+
+        if (!$empleado) {
+            return response()->json([]);
+        }
+
+        $cargoId = $empleado->cargo_id;
+
+        $descuentos = Descuento::query()
+            ->where('activo', 1)
+            ->where(function ($q) {
+                $q->whereNull('fecha_maxima')
+                    ->orWhereDate('fecha_maxima', '>=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('cantidad_usos')
+                    ->orWhere('cantidad_usos', '>', 0);
+            })
+            ->where(function ($q) use ($empleado, $cargoId) {
+                $q->where('tipo_asignacion_id', 'T');
+                $q->orWhereHas('empleados', function ($sub) use ($empleado) {
+                    $sub->where('empleado_id', $empleado->id);
+                });
+                if ($cargoId) {
+                    $q->orWhereHas('cargos', function ($sub) use ($cargoId) {
+                        $sub->where('cargo_id', $cargoId);
+                    });
+                }
+            })
+            ->get();
+
+        return response()->json($descuentos);
+    }
 }

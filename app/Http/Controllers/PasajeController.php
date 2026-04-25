@@ -867,7 +867,7 @@ class PasajeController extends Controller
             'horario.tipo_viaje',
         ])->findOrFail($request->salida);
 
-        $cajas_emision = Caja::with('sucursal')
+        $cajas_emision = Caja::with('sucursal.serie')
             ->where('usuario_id', $user->id)
             ->where('estado', 'A')
             ->get();
@@ -919,7 +919,7 @@ class PasajeController extends Controller
             'tipos_documentos_facturas',
             'metodos_pago',
             'billeteras_digitales',
-            'cajas_emision', 
+            'cajas_emision',
             'user'
         ));
     }

@@ -66,15 +66,21 @@ $(function () {
 
     function obtenerCodigoSucursal() {
         const option = $("#sucursal_venta_id option:selected");
-        return option.data("codigo-sucursal") || "001";
+        return String(option.data("serie") || "").trim();
     }
 
     function generarSeriePorTipo(tipo) {
-        const codigoSucursal = String(obtenerCodigoSucursal()).padStart(3, "0");
+        const codigo = obtenerCodigoSucursal();
 
-        if (tipo === "boleta") return `B${codigoSucursal}`;
-        if (tipo === "factura") return `F${codigoSucursal}`;
-        return `N${codigoSucursal}`;
+        if (!codigo || isNaN(Number(codigo))) {
+            return "Seleccione una sucursal";
+        }
+
+        const numero = Number(codigo);
+
+        if (tipo === "boleta") return `BBB${numero}`;
+        if (tipo === "factura") return `FFF${numero}`;
+        return `NNN${numero}`;
     }
 
     function actualizarResumenTotales() {
@@ -113,11 +119,14 @@ $(function () {
     function limpiarClienteFacturacion() {
         $("#doc_cliente").val("").prop("readonly", false);
         $("#razon_social").val("").prop("readonly", false);
+        $("#direccion_cliente").val("");
     }
 
     function ponerClienteVariosNotaVenta() {
         $("#doc_cliente").val("00000000").prop("readonly", true);
+        buscarClienteFacturacion;
         $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
+        $("#direccion_cliente").val("-");
     }
 
     function datosPasajerosCompletos() {
@@ -177,12 +186,16 @@ $(function () {
 
                 if (data.razon_social) {
                     $("#razon_social").val(data.razon_social);
+                    $("#direccion_cliente").val(data.direccion || "-");
                 } else {
                     const apellidos =
                         `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
+
                     $("#razon_social").val(
                         `${data.nombres || ""} ${apellidos}`.trim(),
                     );
+
+                    $("#direccion_cliente").val(data.direccion || "-");
                 }
             },
         );
@@ -265,7 +278,7 @@ $(function () {
 
     function marcarTipoDocumento(tipo) {
         $(".doc-btn")
-            .removeClass("active btn-primary btn-success btn-dark")
+            .removeClass("active btn-primary btn-success btn-warning")
             .addClass("btn-outline-secondary");
 
         const serie = generarSeriePorTipo(tipo);
@@ -275,16 +288,28 @@ $(function () {
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 11);
             limpiarClienteFacturacion();
+
+            $("#btn_boleta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-primary");
         } else if (tipo === "factura") {
             $("#tipo_doc_sunat").val("factura");
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 11);
             limpiarClienteFacturacion();
+
+            $("#btn_factura")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-success");
         } else {
             $("#tipo_doc_sunat").val("nota_venta");
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 8);
             ponerClienteVariosNotaVenta();
+
+            $("#btn_nota_venta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-warning");
         }
     }
 
@@ -439,6 +464,7 @@ $(function () {
                     $(`#apellidos_${index}`).val(apellidos);
                     $(`#correo_${index}`).val(data.direccion || "");
                 }
+                cargarCuponesPersona(index, documento);
             })
             .always(() => {
                 input.prop("disabled", false);
@@ -464,7 +490,7 @@ $(function () {
         return { asiento, ...res };
     }
 
-    $(".descuento-input").on("blur", async function () {
+    $(".descuento-input").on("change", async function () {
         const input = $(this);
         const index = parseInt(input.data("index"));
         const codigo = input.val().trim();
@@ -729,4 +755,34 @@ $(function () {
 
     actualizarCostoTotal();
     actualizarEstadoSunat();
+
+    function cargarCuponesPersona(index, documento) {
+        const select = $(`#descuento_${index}`);
+
+        select.html(`<option value="">Cargando cupones...</option>`);
+
+        $.getJSON(route("descuentos.persona", { documento }))
+            .done((cupones) => {
+                select.html(`<option value="">Sin cupón</option>`);
+
+                cupones.forEach((cupon) => {
+                    let texto = cupon.codigo;
+
+                    if (cupon.monto_efectivo) {
+                        texto += ` - S/ ${parseFloat(cupon.monto_efectivo).toFixed(2)}`;
+                    }
+
+                    if (cupon.porcentaje) {
+                        texto += ` - ${cupon.porcentaje}%`;
+                    }
+
+                    select.append(
+                        `<option value="${cupon.codigo}">${texto}</option>`,
+                    );
+                });
+            })
+            .fail(() => {
+                select.html(`<option value="">Sin cupón</option>`);
+            });
+    }
 });

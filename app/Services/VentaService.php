@@ -256,14 +256,16 @@ class VentaService
 
     private function resolverSeriePorTipoYSucursal(string $codigoTipoDocumento, int $sucursalId): string
     {
-        $numeroSucursal = str_pad((string) $sucursalId, 3, '0', STR_PAD_LEFT);
+        $sucursal = \App\Models\Sucursal::with('serie')->findOrFail($sucursalId);
+
+        $codigo = $sucursal->serie->codigo ?? '001';
+        $numero = (int) $codigo;
 
         return match ($codigoTipoDocumento) {
-            '01' => 'F' . $numeroSucursal,
-            '03' => 'B' . $numeroSucursal,
-            '07' => 'FC' . str_pad((string) $sucursalId, 2, '0', STR_PAD_LEFT),
-            'NV' => 'NV' . str_pad((string) $sucursalId, 2, '0', STR_PAD_LEFT),
-            default => throw new Exception('Código no soportado para serie: ' . $codigoTipoDocumento),
+            '01' => 'FFF' . $numero,
+            '03' => 'BBB' . $numero,
+            '07' => 'NC' . $numero,
+            default => throw new \Exception('Código no soportado: ' . $codigoTipoDocumento),
         };
     }
 
