@@ -309,8 +309,12 @@ class PasajeController extends Controller
             'pago_efectivo' => 'nullable|numeric|min:0',
             'pago_billetera' => 'nullable|numeric|min:0',
             'caja_id' => Auth::user()->hasRole('Administrador')
-                ? 'required|exists:cajas,id'
-                : 'nullable|exists:cajas,id',
+                ? 'required|exists:caja,id'
+                : 'nullable|exists:caja,id',
+            'pago_tarjeta' => 'nullable|numeric|min:0',
+            'pago_yape' => 'nullable|numeric|min:0',
+            'pago_plin' => 'nullable|numeric|min:0',
+            'pago_transferencia' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -533,11 +537,17 @@ class PasajeController extends Controller
                 ];
             }
 
-            if ((float) $request->pago_billetera > 0) {
+            $pagoCuentaDigital =
+                (float) $request->pago_yape +
+                (float) $request->pago_plin +
+                (float) $request->pago_transferencia +
+                (float) $request->pago_tarjeta;
+
+            if ($pagoCuentaDigital > 0) {
                 $pagos[] = [
                     'metodo_pago_id' => 2,
                     'billetera_id' => $request->billetera_id,
-                    'total' => (float) $request->pago_billetera,
+                    'total' => $pagoCuentaDigital,
                 ];
             }
 

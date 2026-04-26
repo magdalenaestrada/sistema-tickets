@@ -187,14 +187,14 @@
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div class="mb-2 text-center fw-semibold">Sucursal de venta:</div>
 
                             <div class="mb-3">
-                                <select name="sucursal_venta_id" id="sucursal_venta_id" class="form-select">
+                                <select name="caja_id" id="caja_id" class="form-select">
                                     <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
-                                        <option value="{{ $caja->sucursal_id }}"
+                                        <option value="{{ $caja->id }}"
                                             data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
                                             @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
                                             {{ $caja->sucursal->nombre_comercial }}

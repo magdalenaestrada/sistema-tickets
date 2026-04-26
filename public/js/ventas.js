@@ -65,7 +65,7 @@ $(function () {
     });
 
     function obtenerCodigoSucursal() {
-        const option = $("#sucursal_venta_id option:selected");
+        const option = $("#caja_id option:selected");
         return String(option.data("serie") || "").trim();
     }
 
@@ -103,7 +103,7 @@ $(function () {
             }
         });
 
-        $("#subtotal").text(subtotalOriginal.toFixed(2));
+        $("#subtotal").text(totalPagar.toFixed(2));
         $("#total_descuento").text(totalDescuento.toFixed(2));
         $("#total_pagar").text(totalPagar.toFixed(2));
         $("#modal_total_pagar").text(totalPagar.toFixed(2));
@@ -351,7 +351,7 @@ $(function () {
         actualizarEstadoSunat();
     });
 
-    $("#sucursal_venta_id").on("change", function () {
+    $("#caja_id").on("change", function () {
         const tipoActual = $("#tipo_doc_sunat").val() || "nota_venta";
         marcarTipoDocumento(tipoActual);
     });
@@ -763,7 +763,7 @@ $(function () {
 
         $.getJSON(route("descuentos.persona", { documento }))
             .done((cupones) => {
-                select.html(`<option value="">Sin cupón</option>`);
+                select.html(`<option value="">Seleccionar</option>`);
 
                 cupones.forEach((cupon) => {
                     let texto = cupon.codigo;
