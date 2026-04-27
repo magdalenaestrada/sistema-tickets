@@ -8,6 +8,7 @@ use App\Models\CajaDetalle;
 use App\Models\MetodoPago;
 use App\Models\SubtipoMovimientoCaja;
 use App\Models\Sucursal;
+use App\Models\Venta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -433,7 +434,7 @@ class CajaController extends Controller
         return view('caja.ticket', compact('detalle'));
     }
 
-    public function anular(CajaDetalle $detalle)
+    public function anular(CajaDetalle $detalle, VentaService $ventaService)
     {
         $detalle->load('caja');
 
@@ -444,11 +445,35 @@ class CajaController extends Controller
             return back()->with('error', 'El ticket ya está anulado.');
         }
 
-        $detalle->update([
-            'anulado' => true,
-        ]);
+        try {
+            DB::transaction(function () use ($detalle, $ventaService) {
+                if ($detalle->table_name === Venta::class && $detalle->table_id) {
+                    $venta = Venta::findOrFail($detalle->table_id);
 
-        return back()->with('success', 'Ticket anulado correctamente.');
+                    if (in_array($venta->estado, ['E', 'O'], true)) {
+                        $ventaService->anularVentaSunat($venta);
+                    } else {
+                        $venta->update([
+                            'estado' => 'A',
+                            'fecha_anulacion' => now(),
+                            'observacion' => 'Venta anulada desde caja.',
+                        ]);
+
+                        $venta->pagos()->update([
+                            'estado' => 'AN',
+                        ]);
+                    }
+                }
+
+                $detalle->update([
+                    'anulado' => true,
+                ]);
+            });
+
+            return back()->with('success', 'Venta anulada correctamente.');
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     /*

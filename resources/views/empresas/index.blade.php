@@ -45,7 +45,7 @@
                             value="{{ $empresa->nombre_comercial ?? '' }}">
                     </div>
 
-                    <div class="col-md-8">
+                    <div class="col-md-4">
                         <label class="form-label">Dirección</label>
                         <input type="text" class="form-control" id="direccion" name="direccion"
                             value="{{ $empresa->direccion ?? '' }}">
@@ -57,6 +57,40 @@
                         @if (isset($empresa) && $empresa->logo)
                             <div class="mt-2">
                                 <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo" style="max-height:80px">
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Subir icon</label>
+                        <input type="file" class="form-control" id="favicon" name="favicon" accept="image/*,.ico">
+
+                        @if (isset($empresa) && $empresa->icon)
+                            <div class="mt-2">
+                                <img src="{{ asset('storage/' . $empresa->icon) }}" alt="Favicon" style="max-height:40px">
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Usuario SOL (SUNAT)</label>
+                        <input type="text" class="form-control" name="usuario_facturacion" id="usuario_facturacion"
+                            value="{{ $empresa->usuario_facturacion ?? '' }}">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Contraseña SOL</label>
+                        <input type="password" class="form-control" name="contrasena_facturacion"
+                            id="contrasena_facturacion" value="{{ $empresa->contrasena_facturacion ?? '' }}">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Certificado (.pem)</label>
+                        <input type="file" class="form-control" id="certificado" name="certificado" accept=".pem">
+
+                        @if (isset($empresa) && $empresa->certificado_path)
+                            <div class="mt-2">
+                                <span class="badge bg-success">Certificado cargado</span>
                             </div>
                         @endif
                     </div>

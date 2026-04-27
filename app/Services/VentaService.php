@@ -66,6 +66,7 @@ class VentaService
                     'nombres' => $razonSocial,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
+                
                 ]
             );
 

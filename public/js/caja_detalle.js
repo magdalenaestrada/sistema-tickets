@@ -43,6 +43,27 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    document.querySelectorAll(".btn-anular-ticket").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const form = this.closest("form");
+
+            Swal.fire({
+                title: "¿Anular venta?",
+                text: "Esta acción anulará el ticket y la venta asociada.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, anular",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
     if (tipoSalida) {
         tipoSalida.addEventListener("change", actualizarSalida);
         actualizarSalida();
