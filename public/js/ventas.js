@@ -611,6 +611,33 @@ $(function () {
             );
         });
 
+        $(".tabla-sobre-equipaje").each(function () {
+            const index = $(this).data("index");
+
+            $(this)
+                .find("tbody tr")
+                .each(function (i) {
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][tipo_encomienda_id]`,
+                        $(this).find(".sobre-tipo").val(),
+                    );
+
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][descripcion]`,
+                        $(this).find(".sobre-desc").val(),
+                    );
+
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][peso]`,
+                        $(this).find(".sobre-peso").val(),
+                    );
+
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][costo]`,
+                        $(this).find(".sobre-costo").val(),
+                    );
+                });
+        });
         return formData;
     }
 
@@ -785,4 +812,116 @@ $(function () {
                 select.html(`<option value="">Sin cupón</option>`);
             });
     }
+
+    function agregarFilaSobreEquipaje(index) {
+        const fila = $("<tr>");
+        const tipoSelect = $(
+            '<select class="form-select form-select-sm sobre-tipo"></select>',
+        );
+
+        tipoSelect.append('<option value="" disabled selected>Tipo</option>');
+
+        tiposEncomienda.forEach((t) => {
+            tipoSelect.append(`
+            <option value="${t.id}"
+                data-precio="${t.precio_base}"
+                data-peso-limite="${t.peso_limite}"
+                data-costo-extra="${t.costo_kilo_extra}">
+                ${t.descripcion}
+            </option>
+        `);
+        });
+
+        fila.append($("<td>").append(tipoSelect));
+        fila.append(
+            $("<td>").append(
+                '<input type="text" class="form-control form-control-sm sobre-desc">',
+            ),
+        );
+        fila.append(
+            $("<td>").append(
+                '<input type="number" step="0.01" class="form-control form-control-sm sobre-peso">',
+            ),
+        );
+        fila.append(
+            $("<td>").append(
+                '<input type="number" step="0.01" class="form-control form-control-sm sobre-costo">',
+            ),
+        );
+        fila.append(
+            $("<td>").append(
+                '<button type="button" class="btn btn-danger btn-sm btnQuitarSobre">X</button>',
+            ),
+        );
+
+        $(`#tablaSobreEquipaje_${index} tbody`).append(fila);
+    }
+
+    $(document).on("change", ".toggle-sobre-equipaje", function () {
+        const index = $(this).data("index");
+
+        $(`#card_sobre_equipaje_${index}`).toggle(this.checked);
+
+        if (
+            this.checked &&
+            $(`#tablaSobreEquipaje_${index} tbody tr`).length === 0
+        ) {
+            agregarFilaSobreEquipaje(index);
+        }
+    });
+
+    $(document).on("click", ".btn-agregar-sobre", function () {
+        const index = $(this).data("index");
+        agregarFilaSobreEquipaje(index);
+    });
+
+    function calcularCostoFila(tr) {
+        const option = tr.find(".sobre-tipo option:selected");
+
+        const peso = parseFloat(tr.find(".sobre-peso").val()) || 0;
+        const precioBase = parseFloat(option.data("precio")) || 0;
+        const pesoLimite = parseFloat(option.data("peso-limite")) || 0;
+        const costoExtra = parseFloat(option.data("costo-extra")) || 0;
+
+        let costo = precioBase;
+
+        if (pesoLimite && peso > pesoLimite && costoExtra) {
+            costo += (peso - pesoLimite) * costoExtra;
+        }
+
+        tr.find(".sobre-costo").val(costo.toFixed(2));
+    }
+
+    $(document).on("change", ".sobre-tipo", function () {
+        calcularCostoFila($(this).closest("tr"));
+    });
+
+    $(document).on("input", ".sobre-peso", function () {
+        calcularCostoFila($(this).closest("tr"));
+    });
+
+    $(document).on("click", ".btnQuitarSobre", function () {
+        const tr = $(this).closest("tr");
+        const table = tr.closest("table");
+        tr.remove();
+        recalcularTotalSobre(table);
+    });
+
+    function recalcularTotalSobre(table) {
+        let total = 0;
+
+        table.find("tbody tr").each(function () {
+            total += parseFloat($(this).find(".sobre-costo").val()) || 0;
+        });
+
+        const index = table.data("index");
+        $(`#total_sobre_equipaje_${index}`).text(total.toFixed(2));
+
+        actualizarCostoTotal();
+    }
+
+    $(document).on("input", ".sobre-costo", function () {
+        const table = $(this).closest("table");
+        recalcularTotalSobre(table);
+    });
 });

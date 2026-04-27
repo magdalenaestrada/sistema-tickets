@@ -8,6 +8,7 @@ function guardarEstadoOriginal() {
         direccion: $("#direccion").val(),
         usuario_facturacion: $("#usuario_facturacion").val(),
         contrasena_facturacion: $("#contrasena_facturacion").val(),
+        igv: $("#igv").val(),
     };
 }
 
@@ -22,7 +23,7 @@ $(document).ready(function () {
     const empresaId = $("#empresa_id").val();
 
     const inputs = $(
-        "#formEmpresa input[type='text'], #formEmpresa input[type='password'], #formEmpresa input[type='file']",
+        "#formEmpresa input[type='text'], #formEmpresa input[type='password'], #formEmpresa input[type='file'], #formEmpresa input[type='number']",
     );
 
     const btnGuardar = $("#btnGuardar");
@@ -63,6 +64,9 @@ $(document).ready(function () {
                 );
                 $("#contrasena_facturacion").val(
                     empresaOriginal.contrasena_facturacion,
+                );
+                $("#igv").val(
+                    empresaOriginal.igv,
                 );
                 disableInputs();
                 $("#btnCancelar").addClass("d-none");

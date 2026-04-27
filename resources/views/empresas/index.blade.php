@@ -71,17 +71,24 @@
                             </div>
                         @endif
                     </div>
-
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Usuario SOL (SUNAT)</label>
                         <input type="text" class="form-control" name="usuario_facturacion" id="usuario_facturacion"
                             value="{{ $empresa->usuario_facturacion ?? '' }}">
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Contraseña SOL</label>
                         <input type="password" class="form-control" name="contrasena_facturacion"
                             id="contrasena_facturacion" value="{{ $empresa->contrasena_facturacion ?? '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">IGV (%)</label>
+                        <div class="input-group">
+                            <input type="text" name="igv" id="igv"
+                                value={{ $empresa->igv ?? '' }} class="form-control">
+                            <span class="input-group-text">%</span>
+                        </div>
                     </div>
 
                     <div class="col-md-4">

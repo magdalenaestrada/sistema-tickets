@@ -65,7 +65,7 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button"
                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i data-lucide="user"></i>
+                        <i data-lucide="user"></i> HOLA, {{ auth()->user()->persona->nombres . ' ' }}
                     </a>
 
                     <div class="dropdown-menu p-0" aria-labelledby="profileDropdown">
@@ -161,7 +161,7 @@
                 if (result.isConfirmed) {
                     $("#logout-form").submit();
                 } else {
-                    window.location.href = route("caja.index"); 
+                    window.location.href = route("caja.index");
                 }
             });
         });
