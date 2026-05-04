@@ -9,9 +9,14 @@ use App\Services\VentaService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return auth()->user()->hasRole('Administrador')
+            ? redirect()->route('dashboard.admin')
+            : redirect()->route('dashboard.vendedor');
+    }
+
     return redirect()->route('login');
 });
-
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/vendedor', DashboardVendedorController::class)
@@ -40,7 +45,7 @@ Route::get('/caja/verificar', function () {
         ->exists();
 
     return response()->json(['abierta' => $tieneCaja]);
-})->name('caja.verificar');
+})->middleware('auth')->name('caja.verificar');
 
 
 

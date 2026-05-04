@@ -134,7 +134,6 @@
                                             id="descuento_msg_{{ $index }}"></small>
                                     </div>
                                 </div>
-
                                 <div class="row mt-3 align-items-center">
                                     <div class="col-md-6">
                                         <div class="form-check">
@@ -153,6 +152,60 @@
                                                 class="text-danger">*</span></label>
                                         <input type="file" accept=".pdf" class="form-control"
                                             id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input toggle-sobre-equipaje" type="checkbox"
+                                        id="toggle_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
+                                        name="registrar_sobre_equipaje[{{ $index }}]" value="1">
+
+                                    <label class="form-check-label fw-semibold"
+                                        for="toggle_sobre_equipaje_{{ $index }}">
+                                        Registrar sobre equipaje para este pasajero
+                                    </label>
+                                </div>
+
+                                <div class="card border-warning sobre-equipaje-card"
+                                    id="card_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
+                                    style="display:none;">
+
+                                    <div class="card-body p-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold mb-0">Sobre equipaje</h6>
+
+                                            <button type="button" class="btn btn-sm btn-success btn-agregar-sobre"
+                                                data-index="{{ $index }}">
+                                                Agregar maleta
+                                            </button>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            Pasajero:
+                                            <strong id="sobre_pasajero_nombre_{{ $index }}">—</strong>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered tabla-sobre-equipaje"
+                                                id="tablaSobreEquipaje_{{ $index }}"
+                                                data-index="{{ $index }}">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tipo</th>
+                                                        <th>Descripción</th>
+                                                        <th>Peso KG</th>
+                                                        <th>Costo S/</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+
+                                        <div class="text-end fw-bold">
+                                            Total sobre equipaje: S/
+                                            <span id="total_sobre_equipaje_{{ $index }}">0.00</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -236,9 +289,8 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="direccion_cliente" class="form-label">Dirección</label>
-                                <input type="text" id="direccion_cliente" name="direccion_cliente"
-                                    class="form-control" readonly>
+                                <label for="direccion" class="form-label">Dirección</label>
+                                <input type="text" id="direccion" name="direccion" class="form-control" readonly>
                             </div>
 
                             <div class="d-grid gap-2">

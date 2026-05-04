@@ -42,6 +42,7 @@ class VentaService
             $tipoDocumentoFacturaId = (int) data_get($request, 'tipo_documento_factura_id');
             $tipoServicioId = (int) data_get($request, 'tipo_servicio_id');
             $numeroDocumento = trim((string) data_get($request, 'numero_documento_id'));
+            $direccion = trim((string) data_get($request, 'direccion'));
             $razonSocial = data_get($request, 'razon_social');
             $total = (float) data_get($request, 'total', 0);
             $detalles = data_get($request, 'detalles', []);
@@ -64,9 +65,10 @@ class VentaService
                         $tipoDocumentoFacturaId
                     ),
                     'nombres' => $razonSocial,
+                    'direccion' => $direccion,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
-                
+
                 ]
             );
 
@@ -641,7 +643,8 @@ class VentaService
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
             }
 
-            $valorUnitario = round($totalLinea / 1.18, 10);
+            $igv = $empresa->igv;
+            $valorUnitario = round($totalLinea / (1 + $igv), 10);
             $igvLinea = round($totalLinea - $valorUnitario, 2);
             $valorVentaLinea = round($totalLinea - $igvLinea, 2);
             $precioUnitario = round($totalLinea / $cantidad, 10);

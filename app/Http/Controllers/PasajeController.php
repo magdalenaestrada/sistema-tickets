@@ -84,7 +84,7 @@ class PasajeController extends Controller
             ])
             ->join('salidas', 'pasajes.salida_id', '=', 'salidas.id')
             ->join('personas', 'pasajes.persona_id', '=', 'personas.id')
-            ->whereIn('pasajes.estado', ['V', 'F', 'X']);
+            ->whereIn('pasajes.estado', ['V', 'F', 'X', 'R']);
 
         if ($request->filled('documento')) {
             $documento = trim($request->documento);
@@ -390,6 +390,7 @@ class PasajeController extends Controller
                         'tipo_documento_id' => $request->tipo_documento_id[$index],
                         'nombres' => $nombres,
                         'apellidos' => $apellidos,
+                        'direccion' => $request->direccion,
                         'celular' => $celular,
                         'telefono' => $telefono,
                         'correo' => $correo,
@@ -490,6 +491,7 @@ class PasajeController extends Controller
                     [
                         'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
                         'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
+                        'direccion' => $request->direccion,
                         'estado' => 'A',
                         'fecha_creacion' => now(),
                     ]
@@ -970,6 +972,7 @@ class PasajeController extends Controller
                     'apellidos' => $request->apellidos,
                     'celular' => $request->celular,
                     'telefono' => $request->telefono,
+                    'direccion' => $request->direccion,
                     'correo' => $request->correo,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
@@ -1046,6 +1049,7 @@ class PasajeController extends Controller
                 [
                     'tipo_documento_id' => $request->tipo_documento_factura_id,
                     'nombres' => $request->razon_social ?: 'CLIENTE',
+                    'direccion' => $request->direccion,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
                 ]

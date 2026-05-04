@@ -34,6 +34,7 @@ class EmpresaController extends Controller
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             'certificado' => 'nullable|file|mimes:pem,txt|max:2048',
             'favicon' => 'nullable|image|mimes:png,jpg,jpeg,ico,svg|max:1024',
+            'igv' => 'required'
         ]);
 
         $logoPath = null;
@@ -60,6 +61,7 @@ class EmpresaController extends Controller
             'direccion' => $request->direccion,
             'usuario_facturacion' => $request->usuario_facturacion,
             'contrasena_facturacion' => $request->contrasena_facturacion,
+            'igv' => $request->igv,
             'logo' => $logoPath,
             'certificado_path' => $certificadoPath,
             'icon' => $faviconPath,
@@ -117,6 +119,8 @@ class EmpresaController extends Controller
             'logo' => $empresa->logo,
             'certificado_path' => $empresa->certificado_path,
             'icon' => $empresa->icon,
+            'igv' => $request->igv,
+
         ]);
 
         return response()->json(['success' => true]);
