@@ -26,9 +26,9 @@
                 <div class="col-md-3 mb-3 mt-3">
                     <select id="filtroPersona">
                         <option value="">Buscar por persona</option>
-                        @foreach ($empleados as $empleado)
-                            <option value="{{ $empleado->persona->nombre_completo }}">
-                                {{ $empleado->persona->nombre_completo }}
+                        @foreach ($personas as $persona)
+                            <option value="{{ $persona->nombre_completo }}">
+                                {{ $persona->nombre_completo }}
                             </option>
                         @endforeach
                     </select>
@@ -55,6 +55,7 @@
                             <th>Cantidad Usos</th>
                             <th>Fecha Máxima</th>
                             <th>Descuento</th>
+                            <th>Asignado a</th>
                             <th>Estado</th>
                             <th class="text-center" style="width: 120px;">Acciones</th>
                         </tr>
