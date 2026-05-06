@@ -111,7 +111,7 @@ class VehiculoController extends Controller
         $request->validate([
             'tipo_vehiculo_id' => 'required',
             'numero_placa' => 'required|unique:vehiculos,numero_placa',
-            'habilitacion_vehicular' => 'required|unique:vehiculos,habilitacion_vehicular',
+            'habilitacion_vehicular' => 'nullable|unique:vehiculos,habilitacion_vehicular',
         ], [
             'numero_placa.unique' => 'La placa ya está registrada',
             'habilitacion_vehicular.unique' => 'La habilitación vehicular ya está registrada'
@@ -138,7 +138,7 @@ class VehiculoController extends Controller
                 Rule::unique('vehiculos', 'numero_placa')->ignore($vehiculo->id),
             ],
             'habilitacion_vehicular' => [
-                'required',
+                'nullable',
                 Rule::unique('vehiculos', 'habilitacion_vehicular')->ignore($vehiculo->id),
             ]
         ], [

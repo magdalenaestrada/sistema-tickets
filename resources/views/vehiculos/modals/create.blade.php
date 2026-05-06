@@ -32,8 +32,10 @@
                         <input type="text" name="marca" id="marca" class="form-control">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Habilitación vehicular <span
-                                style="color: red">*</span></label></label>
+                        <label class="form-label" id="label_habilitacion">
+                            Habilitación vehicular
+                            <span id="asterisco_habilitacion" style="color: red">*</span>
+                        </label>
                         <input type="text" name="habilitacion_vehicular" id="habilitacion_vehicular"
                             class="form-control" required>
                     </div>

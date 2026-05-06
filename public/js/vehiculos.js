@@ -36,6 +36,24 @@ $(document).ready(function () {
         $(this).val(valor);
     });
 
+    function toggleHabilitacion() {
+        let tipo = $("#tipo_vehiculo_id").val();
+        let input = $("#habilitacion_vehicular");
+        let asterisco = $("#asterisco_habilitacion");
+
+        if (tipo == "1") {
+            input.prop("required", false);
+            asterisco.hide();
+        } else if (tipo == "2") {
+            input.prop("required", true);
+            asterisco.show();
+        }
+    }
+
+    $("#tipo_vehiculo_id").on("change", function () {
+        toggleHabilitacion();
+    });
+
     async function cargarTiposVehiculo(selectedId = null) {
         const tipoSelect = $("#tipo_vehiculo_id");
         tipoSelect.empty().append('<option value="">Seleccione</option>');
@@ -58,6 +76,7 @@ $(document).ready(function () {
         $("#formVehiculo")[0].reset();
         $("#vehiculo_id").val("");
         await cargarTiposVehiculo();
+        toggleHabilitacion();
         modal.show();
     });
 
@@ -160,6 +179,7 @@ $(document).ready(function () {
             $("#marca").val(res.marca);
             $("#habilitacion_vehicular").val(res.habilitacion_vehicular);
             await cargarTiposVehiculo(res.tipo_vehiculo_id);
+            toggleHabilitacion();
             modal.show();
         } catch (err) {
             console.error(err);
