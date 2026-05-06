@@ -7,7 +7,7 @@ $(document).ready(function () {
         dom: "rtip",
         info: false,
         columns: [
-            { data: "id" },
+            { data: "DT_RowIndex" },
             { data: "tipo_vehiculo" },
             { data: "numero_placa" },
             { data: "marca" },

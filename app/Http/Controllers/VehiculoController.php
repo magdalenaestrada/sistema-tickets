@@ -27,7 +27,7 @@ class VehiculoController extends Controller
             ->select(['id', 'tipo_vehiculo_id', 'numero_placa', 'estado', 'marca', 'habilitacion_vehicular']);
 
         return DataTables::of($vehiculos)
-
+            ->addIndexColumn()
             ->addColumn('tipo_vehiculo', function ($vehiculo) {
                 return $vehiculo->tipo_vehiculo
                     ? $vehiculo->tipo_vehiculo->descripcion
@@ -110,8 +110,8 @@ class VehiculoController extends Controller
     {
         $request->validate([
             'tipo_vehiculo_id' => 'required',
-            'numero_placa' => 'required|unique:vehiculos,numero_placa',
-            'habilitacion_vehicular' => 'nullable|unique:vehiculos,habilitacion_vehicular',
+            'numero_placa' => 'required|unique:vehiculos,numero_placa,NULL,id,deleted_at,NULL',
+            'habilitacion_vehicular' => 'nullable|unique:vehiculos,habilitacion_vehicular,NULL,id,deleted_at,NULL',
         ], [
             'numero_placa.unique' => 'La placa ya está registrada',
             'habilitacion_vehicular.unique' => 'La habilitación vehicular ya está registrada'
@@ -133,14 +133,21 @@ class VehiculoController extends Controller
     {
         $request->validate([
             'tipo_vehiculo_id' => 'required',
+
             'numero_placa' => [
                 'required',
-                Rule::unique('vehiculos', 'numero_placa')->ignore($vehiculo->id),
+                Rule::unique('vehiculos', 'numero_placa')
+                    ->ignore($vehiculo->id)
+                    ->whereNull('deleted_at'),
             ],
+
             'habilitacion_vehicular' => [
                 'nullable',
-                Rule::unique('vehiculos', 'habilitacion_vehicular')->ignore($vehiculo->id),
+                Rule::unique('vehiculos', 'habilitacion_vehicular')
+                    ->ignore($vehiculo->id)
+                    ->whereNull('deleted_at'),
             ]
+
         ], [
             'numero_placa.unique' => 'La placa ya está registrada'
         ]);
