@@ -15,6 +15,10 @@ class TiposLicenciaSeeder extends Seeder
     {
         $licencias = [
             ['codigo' => 'AIIc', 'descripcion' => 'AIIc - Licencia de Clase AIIc'],
+            ['codigo' => 'AIIIc', 'descripcion' => 'AIIIc - Licencia de Clase AIIIc'],
+            ['codigo' => 'BIIIc', 'descripcion' => 'BIIIc - Licencia de Clase BIIIc'],
+            ['codigo' => 'AIV', 'descripcion' => 'AIV - Licencia de Clase AIV'],
+
         ];
 
         DB::table('tipo_licencias')->insert($licencias);
