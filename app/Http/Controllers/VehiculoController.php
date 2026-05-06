@@ -228,4 +228,21 @@ class VehiculoController extends Controller
             ]);
         }
     }
+
+    public function eliminar(Vehiculo $vehiculo)
+    {
+        if ($vehiculo->estado === 'V') {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede eliminar un vehículo asignado'
+            ], 422);
+        }
+
+        $vehiculo->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Vehículo eliminado correctamente'
+        ]);
+    }
 }
