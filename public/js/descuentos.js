@@ -17,6 +17,7 @@ $(document).ready(function () {
             { data: "cantidad_usos" },
             { data: "fecha_maxima" },
             { data: "descuento" },
+            { data: "asignado_a" },
             { data: "activo" },
             { data: "acciones", orderable: false, searchable: false },
         ],
@@ -84,38 +85,10 @@ $(document).ready(function () {
     $("#btnNuevoDescuento").click(function () {
         $("#formDescuento")[0].reset();
         $("#descuento_id").val("");
-        document.querySelector(".empleados_asignados")?.tomselect?.clear();
-        document.querySelector(".cargos_asignados")?.tomselect?.clear();
+        document.getElementById("contenedor_reglas").innerHTML = "";
         $("#modalTitulo").text("Registrar Descuento");
         $("#modalDescuento").modal("show");
     });
-
-    $("#tipo_asignacion_id")
-        .on("change", function () {
-            let empleados = document.querySelector(
-                ".empleados_asignados",
-            )?.tomselect;
-            let cargos = document.querySelector(".cargos_asignados")?.tomselect;
-
-            if ($(this).val() === "P") {
-                $(".empleados_asignados").closest(".col-md-9").show();
-                $(".cargos_asignados").closest(".col-md-9").hide();
-
-                cargos?.clear();
-            } else if ($(this).val() === "G") {
-                $(".empleados_asignados").closest(".col-md-9").hide();
-                $(".cargos_asignados").closest(".col-md-9").show();
-
-                empleados?.clear();
-            } else {
-                $(".empleados_asignados").closest(".col-md-9").hide();
-                $(".cargos_asignados").closest(".col-md-9").hide();
-
-                empleados?.clear();
-                cargos?.clear();
-            }
-        })
-        .trigger("change");
 
     $("#filtroCodigo").on("keyup change", function () {
         let valor = this.value;
@@ -157,11 +130,13 @@ $(document).ready(function () {
     });
 
     $("#filtroPersona").on("change", function () {
-        tabla.column(3).search(this.value, false, true).draw();
+        tabla.column(6).search(this.value, false, true).draw();
     });
 
     $("#tablaDescuentos").on("click", ".editar", function () {
         let id = $(this).data("id");
+
+        document.getElementById("contenedor_reglas").innerHTML = "";
 
         $.get(route("descuentos.mostrar", id), function (data) {
             $("#descuento_id").val(data.id);
@@ -171,32 +146,32 @@ $(document).ready(function () {
             $("#fecha_maxima").val(data.fecha_maxima);
             $("#monto_efectivo").val(data.monto_efectivo);
             $("#porcentaje").val(data.porcentaje);
-            $("#activo").prop("checked", data.activo);
-            $("#tipo_asignacion_id")
-                .val(data.tipo_asignacion_id)
-                .trigger("change");
 
             $("#tipo_descuento_id")
                 .val(data.tipo_descuento_id)
                 .trigger("change");
 
-            let empleadosTS = document.querySelector(
-                ".empleados_asignados",
-            )?.tomselect;
-            empleadosTS?.clear();
+            if (data.reglas && data.reglas.length > 0) {
+                data.reglas.forEach((regla) => {
+                    agregarRegla(regla.tipo);
 
-            if (data.empleados) {
-                data.empleados.forEach((p) => {
-                    empleadosTS?.addItem(p.empleado_id);
-                });
-            }
-            let cargosTS =
-                document.querySelector(".cargos_asignados")?.tomselect;
-            cargosTS?.clear();
+                    const contenedor =
+                        document.getElementById("contenedor_reglas");
+                    const reglaEl = contenedor.lastElementChild;
 
-            if (data.cargos) {
-                data.cargos.forEach((c) => {
-                    cargosTS?.addItem(c.cargo_id);
+                    if (regla.tipo === "G" && regla.cargos) {
+                        const select =
+                            reglaEl.querySelector(".select-cargos")?.tomselect;
+                        regla.cargos.forEach((id) => select?.addItem(id));
+                    }
+
+                    if (regla.tipo === "P" && regla.personas) {
+                        const select =
+                            reglaEl.querySelector(
+                                ".select-personas",
+                            )?.tomselect;
+                        regla.personas.forEach((id) => select?.addItem(id));
+                    }
                 });
             }
 
@@ -222,6 +197,8 @@ $(document).ready(function () {
                     });
 
                     $("#modalDescuento").modal("hide");
+                    $btn.prop("disabled", false);
+
                     tabla.ajax.reload();
                 }
             },
@@ -234,50 +211,6 @@ $(document).ready(function () {
         $("#filtroPersona")[0].tomselect.clear();
         $("#filtroCargo")[0].tomselect.clear();
         tabla.ajax.reload();
-    });
-
-    document.querySelectorAll(".empleados_asignados").forEach((el) => {
-        new TomSelect(el, {
-            placeholder: "Selecciona empleados",
-            plugins: ["remove_button"],
-            maxItems: null,
-            hidePlaceholder: true,
-            closeAfterSelect: false,
-            render: {
-                option: function (data, escape) {
-                    return `<div>
-            👤 ${escape(data.text)}
-        </div>`;
-                },
-                item: function (data, escape) {
-                    return `<div>
-            ${escape(data.text)}
-        </div>`;
-                },
-            },
-        });
-    });
-
-    document.querySelectorAll(".cargos_asignados").forEach((el) => {
-        new TomSelect(el, {
-            placeholder: "Selecciona los cargos",
-            plugins: ["remove_button"],
-            maxItems: null,
-            hidePlaceholder: true,
-            closeAfterSelect: false,
-            render: {
-                option: function (data, escape) {
-                    return `<div>
-            👤 ${escape(data.text)}
-        </div>`;
-                },
-                item: function (data, escape) {
-                    return `<div>
-            ${escape(data.text)}
-        </div>`;
-                },
-            },
-        });
     });
 
     $("#tablaDescuentos").on("click", ".eliminar", function () {
@@ -322,6 +255,75 @@ $(document).ready(function () {
                 });
             }
         });
+    });
+
+    function inicializarRegla(reglaEl) {
+        const selectTipo = reglaEl.querySelector(".select-tipo-regla");
+
+        function actualizarDetalle() {
+            if (!selectTipo) return;
+
+            const tipo = selectTipo.value;
+
+            reglaEl
+                .querySelectorAll(".detalle-T, .detalle-G, .detalle-P")
+                .forEach((d) => {
+                    if (d) d.style.display = "none";
+                });
+
+            const target = reglaEl.querySelector(".detalle-" + tipo);
+
+            if (target) {
+                target.style.display = "";
+            }
+        }
+
+        selectTipo?.addEventListener("change", actualizarDetalle);
+        actualizarDetalle();
+
+        reglaEl
+            .querySelector(".btnEliminarRegla")
+            ?.addEventListener("click", function () {
+                reglaEl.remove();
+            });
+
+        const selectCargos = reglaEl.querySelector(".select-cargos");
+        if (selectCargos) {
+            new TomSelect(selectCargos, {
+                plugins: ["remove_button"],
+                maxItems: null,
+                closeAfterSelect: false,
+            });
+        }
+
+        const selectPersonas = reglaEl.querySelector(".select-personas");
+        if (selectPersonas) {
+            new TomSelect(selectPersonas, {
+                plugins: ["remove_button"],
+                maxItems: null,
+                closeAfterSelect: false,
+            });
+        }
+    }
+
+    function agregarRegla(tipoInicial) {
+        const template = document.getElementById("templateRegla");
+        const clone = template.content.cloneNode(true);
+        const reglaEl = clone.querySelector(".regla-item");
+
+        document.getElementById("contenedor_reglas").appendChild(reglaEl);
+
+        inicializarRegla(reglaEl);
+
+        if (tipoInicial) {
+            const sel = reglaEl.querySelector(".select-tipo-regla");
+            sel.value = tipoInicial;
+            sel.dispatchEvent(new Event("change"));
+        }
+    }
+
+    $("#btnAgregarRegla").on("click", function () {
+        agregarRegla();
     });
 
     $("#btnBuscarPersona").on("click", function () {

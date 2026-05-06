@@ -35,7 +35,7 @@ class Descuento extends Model
             (is_null($this->fecha_maxima) || $this->fecha_maxima >= now());
     }
 
-    public function empleados()
+    public function personas()
     {
         return $this->hasMany(DescuentoPersona::class, "descuento_id");
     }
