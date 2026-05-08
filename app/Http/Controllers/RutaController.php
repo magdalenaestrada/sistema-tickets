@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Distrito;
 use App\Models\Ruta;
 use App\Models\RutaPunto;
 use App\Models\RutaTramo;
@@ -16,13 +17,13 @@ class RutaController extends Controller
 
     public function index()
     {
-        $rutas = Ruta::with('puntos.sucursal')->get();
+        $rutas = Ruta::with('puntos.distrito', 'puntos.sucursal')->get();
         return view('rutas.index', compact('rutas'));
     }
 
     public function datatable()
     {
-        $rutas = Ruta::with('puntos.sucursal');
+        $rutas = Ruta::with('puntos.distrito', 'puntos.sucursal');
 
         return DataTables::of($rutas)
 
@@ -64,8 +65,9 @@ class RutaController extends Controller
 
     public function create()
     {
+        $distritos = Distrito::all();
         $sucursales = Sucursal::all();
-        return view('rutas.create', compact('sucursales'));
+        return view('rutas.create', compact('sucursales', 'distritos'));
     }
 
 
@@ -73,7 +75,9 @@ class RutaController extends Controller
     {
         $request->validate([
             'nombre' => 'required',
-            'puntos' => 'required|array|min:2'
+            'puntos.*.distrito_id' => 'required|exists:distritos,id',
+            'puntos.*.sucursal_id' => 'nullable|exists:sucursales,id',
+            'puntos' => 'required|array|min:2',
         ]);
 
         DB::beginTransaction();
@@ -86,10 +90,11 @@ class RutaController extends Controller
 
             $puntosData = [];
 
-            foreach ($request->puntos as $index => $sucursalId) {
+            foreach ($request->puntos as $index => $punto) {
                 $puntosData[] = [
                     'ruta_id' => $ruta->id,
-                    'sucursal_id' => $sucursalId,
+                    'distrito_id' => $punto['distrito_id'],
+                    'sucursal_id' => $punto['sucursal_id'] ?? null,
                     'orden' => $index + 1
                 ];
             }
@@ -124,69 +129,68 @@ class RutaController extends Controller
 
     public function edit($id)
     {
-        $ruta = Ruta::with('puntos')->findOrFail($id);
-        $sucursales = Sucursal::where("estado", "A");
+        $ruta = Ruta::with('puntos.distrito', 'puntos.sucursal')->findOrFail($id);
+        $sucursales = Sucursal::where("estado", "A")->get();
+        $distritos = Distrito::all();
 
-        return view('rutas.edit', compact('ruta', 'sucursales'));
+        return view('rutas.edit', compact('ruta', 'sucursales', 'distritos'));
     }
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'nombre' => 'required',
+            'puntos' => 'required|array|min:2',
+            'puntos.*.distrito_id' => 'required|exists:distritos,id',
+            'puntos.*.sucursal_id' => 'nullable|exists:sucursales,id',
+        ]);
 
         $ruta = Ruta::findOrFail($id);
 
-        DB::beginTransaction();
+        $ruta->update([
+            'nombre' => $request->nombre
+        ]);
 
-        try {
+        RutaTramo::where('ruta_id', $ruta->id)->delete();
 
-            $ruta->update([
-                'nombre' => $request->nombre
+        RutaPunto::where('ruta_id', $ruta->id)->delete();
+
+        $nuevosPuntos = [];
+
+        foreach ($request->puntos as $index => $punto) {
+
+            $nuevoPunto = RutaPunto::create([
+                'ruta_id' => $ruta->id,
+                'orden' => $index + 1,
+                'distrito_id' => $punto['distrito_id'],
+                'sucursal_id' => $punto['sucursal_id'] ?? null,
             ]);
-            $ruta->tramos()->delete();
 
-            $ruta->puntos()->delete();
-
-            foreach ($request->puntos as $index => $sucursalId) {
-                RutaPunto::create([
-                    'ruta_id' => $ruta->id,
-                    'sucursal_id' => $sucursalId,
-                    'orden' => $index + 1
-                ]);
-            }
-
-            $puntos = RutaPunto::where('ruta_id', $ruta->id)
-                ->orderBy('orden')
-                ->get();
-
-            foreach ($puntos as $i => $punto) {
-                if (!isset($puntos[$i + 1])) continue;
-
-                RutaTramo::create([
-                    'ruta_id' => $ruta->id,
-                    'punto_origen_id' => $punto->id,
-                    'punto_destino_id' => $puntos[$i + 1]->id,
-                    'duracion_minutos' => $request->duracion[$i] ?? 0,
-                    'costo_tramo' => $request->costo[$i] ?? 0,
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'ok' => true,
-                'mensaje' => 'Ruta actualizada'
-            ]);
-        } catch (Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'ok' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            $nuevosPuntos[] = $nuevoPunto;
         }
-    }
 
+        foreach ($request->duracion as $i => $duracion) {
+
+            $origen = $nuevosPuntos[$i] ?? null;
+            $destino = $nuevosPuntos[$i + 1] ?? null;
+
+            if (!$origen || !$destino) {
+                continue;
+            }
+
+            RutaTramo::create([
+                'ruta_id' => $ruta->id,
+                'punto_origen_id' => $origen->id,
+                'punto_destino_id' => $destino->id,
+                'duracion_minutos' => $duracion,
+                'costo_tramo' => $request->costo[$i] ?? 0,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
     public function destroy($id)
     {
         $ruta = Ruta::findOrFail($id);
@@ -198,34 +202,46 @@ class RutaController extends Controller
     public function show($id)
     {
         $ruta = Ruta::with([
+            'puntos.distrito',
             'puntos.sucursal',
             'tramos.origen.sucursal',
-            'tramos.destino.sucursal'
+            'tramos.destino.sucursal',
+            'tramos.origen.distrito',
+            'tramos.destino.distrito'
         ])->findOrFail($id);
 
         return response()->json([
             'id' => $ruta->id,
+
             'nombre' => $ruta->nombre,
 
-            'puntos' => $ruta->puntos->sortBy('orden')->values()->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'sucursal_id' => $p->sucursal_id,
-                    'nombre_comercial' => $p->sucursal->nombre_comercial
-                ];
-            }),
+            'puntos' => $ruta->puntos
+                ->sortBy('orden')
+                ->values()
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'sucursal_id' => $p->sucursal_id,
+                        'distrito_id' => $p->distrito_id,
+                        'distrito' => $p->distrito->nombre,
+                        'sucursal' => $p->sucursal?->nombre_comercial,
+                    ];
+                }),
 
-            'tramos' => $ruta->tramos->map(function ($t) {
-                return [
-                    'origen_id' => $t->punto_origen_id,
-                    'destino_id' => $t->punto_destino_id,
-                    'duracion' => $t->duracion_minutos,
-                    'costo' => $t->costo_tramo
-                ];
-            })
+            'tramos' => $ruta->tramos
+                ->sortBy('punto_origen_id')
+                ->values()
+                ->map(function ($t) {
+                    return [
+                        'origen_id' => $t->punto_origen_id,
+                        'destino_id' => $t->punto_destino_id,
+                        'duracion' => $t->duracion_minutos,
+                        'costo' => $t->costo_tramo,
+                    ];
+                }),
         ]);
     }
-
+    
     public function guardarTramos(Request $request, $rutaId)
     {
         $ruta = Ruta::findOrFail($rutaId);

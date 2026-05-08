@@ -15,6 +15,7 @@ $(document).ready(function () {
             { data: "estado_badge" },
             { data: "acciones" },
         ],
+        order: [[2, "asc"]],
         responsive: true,
         info: false,
         dom: "rtip",

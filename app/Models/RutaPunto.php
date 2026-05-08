@@ -10,6 +10,7 @@ class RutaPunto extends Model
     protected $fillable = [
         'ruta_id',
         'sucursal_id',
+        'distrito_id',
         'orden'
     ];
 
@@ -21,5 +22,10 @@ class RutaPunto extends Model
     public function ruta()
     {
         return $this->belongsTo(Ruta::class, "ruta_id");
+    }
+
+    public function distrito()
+    {
+        return $this->belongsTo(Distrito::class, "distrito_id");
     }
 }

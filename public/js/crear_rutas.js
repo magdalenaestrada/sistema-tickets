@@ -31,26 +31,63 @@ function agregarPunto() {
     let index = $("#contenedorPuntos .punto").length + 1;
 
     let html = `
-        <div class="punto d-flex align-items-center gap-2 mb-2">
+<div class="punto border rounded p-3 mb-3">
 
-            <span class="badge bg-secondary">${index}</span>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge bg-secondary">${index}</span>
 
-            <select name="puntos[]" class="form-select" required>
-                ${options}
+        <button type="button"
+            class="btn btn-danger btn-sm"
+            onclick="eliminarPunto(this)">
+            <i data-lucide="trash"></i>
+        </button>
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-3">
+            <label>Departamento</label>
+            <select class="form-select departamento"
+                name="puntos[${index - 1}][departamento_id]"
+                required>
+                <option value="">Seleccione</option>
             </select>
-
-            <button type="button" class="btn btn-danger btn-sm"
-                onclick="eliminarPunto(this)">
-                <i data-lucide="trash"></i>
-            </button>
-
         </div>
-    `;
+
+        <div class="col-md-3">
+            <label>Provincia</label>
+            <select class="form-select provincia"
+                name="puntos[${index - 1}][provincia_id]"
+                required>
+                <option value="">Seleccione</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>Distrito</label>
+            <select class="form-select distrito"
+                name="puntos[${index - 1}][distrito_id]"
+                required>
+                <option value="">Seleccione</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label>Sucursal (opcional)</label>
+            <select class="form-select sucursal"
+                name="puntos[${index - 1}][sucursal_id]">
+                <option value="">Sin sucursal</option>
+            </select>
+        </div>
+
+    </div>
+</div>
+`;
 
     $("#contenedorPuntos").append(html);
     lucide.createIcons();
 
-    actualizarOpciones(); 
+    actualizarOpciones();
 }
 
 function eliminarPunto(btn) {
@@ -77,7 +114,7 @@ $("#formRuta").submit(function (e) {
     e.preventDefault();
 
     if (!validarPuntos()) {
-        Swal.fire("Error", "No puedes repetir sucursales", "error");
+        Swal.fire("Error", "No puedes repetir distritos", "error");
         return;
     }
 

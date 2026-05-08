@@ -64,8 +64,11 @@ class SalidaController extends Controller
             'horario.ruta',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
-        ]);
-
+        ])
+            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->orderBy('fecha_salida', 'asc')
+            ->get();
+            
         return DataTables::of($salidas)
             ->addColumn('ruta', function ($salida) {
                 return $salida->horario?->ruta?->nombre ?? '-';

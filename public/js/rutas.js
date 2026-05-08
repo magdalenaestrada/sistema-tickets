@@ -1,5 +1,7 @@
 let tablaRutas;
+let UBIGEO = [];
 let sucursales = [];
+let tramosActuales = [];
 
 $(document).ready(async function () {
     tablaRutas = $("#tablaRutas").DataTable({
@@ -27,10 +29,8 @@ $(document).ready(async function () {
         },
     });
 
+    UBIGEO = await $.get(route("ubigeos.todo"));
     sucursales = await $.get(route("sucursales.lista"));
-    agregarPunto();
-    agregarPunto();
-
     window.modoCrear = function () {
         let html = `
        <form id="formRuta">
@@ -38,7 +38,7 @@ $(document).ready(async function () {
                                 style="color: red">*</span></b></h6>
 
     <input type="text" id="nombreNuevaRuta"
-        class="form-control mb-3"
+        class="form-control form-control-sm mb-3"
         placeholder="Nombre de la ruta" required>
 
     <div id="contenedorPuntos"></div>
@@ -90,8 +90,11 @@ window.guardarRuta = function () {
     let duracion = [];
     let costo = [];
 
-    $("#contenedorPuntos select").each(function () {
-        puntos.push($(this).val());
+    $("#contenedorPuntos .punto").each(function () {
+        puntos.push({
+            distrito_id: $(this).find(".distrito").val(),
+            sucursal_id: $(this).find(".sucursal").val(),
+        });
     });
 
     $("input[name='horas[]']").each(function (index) {
@@ -135,60 +138,206 @@ window.guardarRuta = function () {
         });
 };
 
-function obtenerOpcionesDisponibles() {
-    let seleccionados = [];
-
-    $("#contenedorPuntos select").each(function () {
-        let val = $(this).val();
-        if (val) seleccionados.push(val);
-    });
-
-    let options = `<option value="">Seleccione sucursal</option>`;
-
-    sucursales.forEach((s) => {
-        if (!seleccionados.includes(String(s.id))) {
-            options += `<option value="${s.id}">${s.nombre_comercial}</option>`;
-        }
-    });
-
-    return options;
-}
-
-function agregarPunto(valorSeleccionado = null) {
-    let options = obtenerOpcionesDisponibles();
-    let index = $("#contenedorPuntos .punto").length + 1;
+function agregarPunto(data = null) {
+    let index = $("#contenedorPuntos .punto").length;
 
     let html = `
-        <div class="punto d-flex align-items-center gap-2 mb-2 border rounded p-2">
-            <span class="drag-handle" style="cursor: grab;">
-                <i data-lucide="grip-vertical"></i>
+    <div class="punto border rounded p-3 mb-2">
+
+        <div class="d-flex justify-content-between mb-2">
+
+            <span class="badge bg-secondary">
+                Punto ${index + 1}
             </span>
 
-            <span class="badge bg-secondary">${index}</span>
-
-            <select name="puntos[]" class="form-select" required>
-                ${options}
-            </select>
-
-            <button type="button" class="btn btn-danger btn-sm"
+            <button type="button"
+                class="btn btn-danger btn-xs"
                 onclick="eliminarPunto(this)">
                 <i data-lucide="trash"></i>
             </button>
+
         </div>
+
+        <div class="row">
+
+            <div class="col-md-3">
+                <label>Departamento</label>
+
+                <select class="form-select departamento"
+                    data-index="${index}">
+
+                    <option value="">Seleccione</option>
+
+                    ${generarOpcionesDepartamentos()}
+
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label>Provincia</label>
+
+                <select class="form-select provincia"
+                    data-index="${index}">
+
+                    <option value="">Seleccione</option>
+
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label>Distrito</label>
+
+                <select class="form-select distrito"
+                    data-index="${index}">
+
+                    <option value="">Seleccione</option>
+
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label>Sucursal</label>
+
+                <select class="form-select sucursal"
+                    data-index="${index}">
+
+                    <option value="">Seleccione</option>
+
+                </select>
+            </div>
+
+        </div>
+
+    </div>
     `;
 
     $("#contenedorPuntos").append(html);
 
-    let select = $("#contenedorPuntos .punto:last select");
+    if (data) {
+        let dep = UBIGEO.find((d) =>
+            d.provincias.some((p) =>
+                p.distritos.some((x) => x.id == data.distrito_id),
+            ),
+        );
 
-    if (valorSeleccionado) {
-        select.val(valorSeleccionado);
+        let prov = dep?.provincias.find((p) =>
+            p.distritos.some((x) => x.id == data.distrito_id),
+        );
+
+        let distrito = prov?.distritos.find((x) => x.id == data.distrito_id);
+
+        let punto = $("#contenedorPuntos .punto").last();
+
+        punto.find(".departamento").val(dep?.id).trigger("change");
+
+        setTimeout(() => {
+            punto.find(".provincia").val(prov?.id).trigger("change");
+
+            setTimeout(() => {
+                punto.find(".distrito").val(data.distrito_id).trigger("change");
+
+                setTimeout(() => {
+                    punto.find(".sucursal").val(data.sucursal_id);
+                }, 100);
+            }, 100);
+        }, 100);
     }
 
     lucide.createIcons();
-    actualizarOpciones();
     generarTramos();
 }
+
+function generarOpcionesDepartamentos() {
+    let html = "";
+
+    UBIGEO.forEach((dep) => {
+        html += `
+            <option value="${dep.id}">
+                ${dep.nombre}
+            </option>
+        `;
+    });
+
+    return html;
+}
+
+$(document).on("change", ".departamento", function () {
+    let index = $(this).data("index");
+    let depId = $(this).val();
+
+    let provinciaSelect = $(`.provincia[data-index="${index}"]`);
+    let distritoSelect = $(`.distrito[data-index="${index}"]`);
+
+    provinciaSelect.empty();
+    distritoSelect.empty();
+
+    provinciaSelect.append(`<option value="">Seleccione</option>`);
+    distritoSelect.append(`<option value="">Seleccione</option>`);
+
+    let dep = UBIGEO.find((d) => d.id == depId);
+
+    if (!dep) return;
+
+    dep.provincias.forEach((prov) => {
+        provinciaSelect.append(`
+            <option value="${prov.id}">
+                ${prov.nombre}
+            </option>
+        `);
+    });
+});
+
+$(document).on("change", ".provincia", function () {
+    let index = $(this).data("index");
+
+    let depId = $(`.departamento[data-index="${index}"]`).val();
+
+    let provId = $(this).val();
+
+    let distritoSelect = $(`.distrito[data-index="${index}"]`);
+
+    distritoSelect.empty();
+
+    distritoSelect.append(`<option value="">Seleccione</option>`);
+
+    let dep = UBIGEO.find((d) => d.id == depId);
+
+    let prov = dep?.provincias.find((p) => p.id == provId);
+
+    if (!prov) return;
+
+    prov.distritos.forEach((dist) => {
+        distritoSelect.append(`
+            <option value="${dist.id}">
+                ${dist.nombre}
+            </option>
+        `);
+    });
+});
+
+$(document).on("change", ".distrito", function () {
+    let index = $(this).data("index");
+
+    let distritoId = $(this).val();
+
+    let sucursalSelect = $(`.sucursal[data-index="${index}"]`);
+
+    sucursalSelect.empty();
+
+    sucursalSelect.append(`
+        <option value="">Seleccione</option>
+    `);
+
+    let filtradas = sucursales.filter((s) => s.distrito_id == distritoId);
+
+    filtradas.forEach((s) => {
+        sucursalSelect.append(`
+            <option value="${s.id}">
+                ${s.nombre_comercial}
+            </option>
+        `);
+    });
+});
 
 function eliminarPunto(btn) {
     let total = $("#contenedorPuntos .punto").length;
@@ -212,60 +361,28 @@ function reordenarPuntos() {
 }
 
 function validarPuntos() {
-    let valores = [];
-
+    let distritos = [];
     let valido = true;
 
-    $("#contenedorPuntos select").each(function () {
+    $(".distrito").each(function () {
         let val = $(this).val();
 
         if (!val) {
             valido = false;
         }
 
-        if (valores.includes(val)) {
+        if (distritos.includes(val)) {
             valido = false;
         }
 
-        valores.push(val);
+        distritos.push(val);
     });
 
     return valido;
 }
 
-function actualizarOpciones() {
-    let seleccionados = [];
-
-    $("#contenedorPuntos select").each(function () {
-        let val = $(this).val();
-
-        if (val) {
-            seleccionados.push(val);
-        }
-    });
-
-    $("#contenedorPuntos select").each(function () {
-        let current = $(this).val();
-
-        $(this)
-            .find("option")
-            .each(function () {
-                let val = $(this).val();
-
-                if (val === "") return;
-
-                if (seleccionados.includes(val) && val !== current) {
-                    $(this).hide();
-                } else {
-                    $(this).show();
-                }
-            });
-    });
-}
-
 $(document).on("change", "#contenedorPuntos select", function () {
-    actualizarOpciones();
-    generarTramos();
+    generarTramos(tramosActuales);
 });
 
 function verRuta(id) {
@@ -282,29 +399,39 @@ function verRuta(id) {
             <hr>
 
             <ul class="list-group">
+
                 ${ruta.puntos
                     .map(
                         (p, i) => `
+
                     <li class="list-group-item d-flex justify-content-between">
-                        <span>${i + 1}. ${p.nombre_comercial}</span>
+
+                        <span>
+                            ${i + 1}. ${p.distrito || "Sin distrito"}
+                        </span>
+
                     </li>
+
                 `,
                     )
                     .join("")}
+
             </ul>
         `;
 
         $("#tituloPanel").text("Detalle de Ruta");
+
         $("#panelContenido").html(html);
     });
 }
 
 function editarRuta(id) {
     $.get(route("rutas.show", id), function (ruta) {
+        tramosActuales = ruta.tramos;
         let html = `
             <h6>Editar Ruta</h6>
 
-            <input type="text" class="form-control mb-2"
+            <input type="text" class="form-control form-control-sm mb-2"
                 id="nombreRuta"
                 value="${ruta.nombre}">
 
@@ -329,7 +456,7 @@ function editarRuta(id) {
         $("#panelContenido").html(html);
 
         ruta.puntos.forEach((p) => {
-            agregarPunto(p.sucursal_id);
+            agregarPunto(p);
         });
 
         setTimeout(() => {
@@ -360,7 +487,6 @@ function eliminarPuntoEdit(puntoId) {
             });
         }
     });
-    actualizarOpciones();
 }
 
 $(document).on("click", ".ver", function () {
@@ -419,10 +545,15 @@ window.guardarEdicion = function (id) {
     let duracion = [];
     let costo = [];
 
-    $("#contenedorPuntos select").each(function () {
-        let val = $(this).val();
-        if (val) {
-            puntos.push(val);
+    $("#contenedorPuntos .punto").each(function () {
+        let distrito_id = $(this).find(".distrito").val();
+        let sucursal_id = $(this).find(".sucursal").val();
+
+        if (distrito_id) {
+            puntos.push({
+                distrito_id,
+                sucursal_id: sucursal_id || null,
+            });
         }
     });
 
@@ -514,61 +645,66 @@ $(document).on("input", "input[name='minutos[]']", function () {
 });
 
 function generarTramos(tramosData = []) {
+    tramosActuales = tramosData;
+
     let puntos = [];
 
-    $("#contenedorPuntos select").each(function () {
-        let val = $(this).val();
-        let text = $(this).find("option:selected").text();
-
-        if (val) {
-            puntos.push({
-                id: val,
-                nombre: text,
-            });
-        }
+    $("#contenedorPuntos .punto").each(function () {
+        puntos.push({
+            nombre: $(this).find(".distrito option:selected").text() || "Punto",
+        });
     });
 
     let html = "";
 
     for (let i = 0; i < puntos.length - 1; i++) {
-        let duracion = tramosData[i]?.duracion ?? "";
+        let duracion = tramosData[i]?.duracion ?? 0;
         let costo = tramosData[i]?.costo ?? "";
+
         let data = minutosAHorasMinutos(duracion);
 
         html += `
-<div class="mb-2 border p-3 rounded">
+        <div class="mb-2 border p-3 rounded">
 
-    <strong>${puntos[i].nombre} → ${puntos[i + 1].nombre}</strong>
+            <strong>
+                ${puntos[i].nombre}
+                →
+                ${puntos[i + 1].nombre}
+            </strong>
 
-    <div class="row mt-2">
+            <div class="row mt-2">
 
-        <div class="col-3">
-            <input type="number"
-                name="horas[]"
-                class="form-control"
-                value="${duracion ? data.horas : ""}"
-                placeholder="Horas" min="0">
+                <div class="col-3">
+                    <input type="number"
+                        name="horas[]"
+                        class="form-control"
+                        value="${data.horas}"
+                        placeholder="Horas"
+                        min="0">
+                </div>
+
+                <div class="col-3">
+                    <input type="number"
+                        name="minutos[]"
+                        class="form-control"
+                        value="${data.minutos}"
+                        placeholder="Min"
+                        min="0"
+                        max="59">
+                </div>
+
+                <div class="col-6">
+                    <input type="number"
+                        name="costo[]"
+                        class="form-control"
+                        value="${costo}"
+                        placeholder="S/ Costo">
+                </div>
+
+            </div>
+
         </div>
-
-        <div class="col-3">
-            <input type="number"
-                name="minutos[]"
-                class="form-control"
-                value="${duracion ? data.minutos : ''}"
-                placeholder="Min" min="0" max="59">
-        </div>
-
-        <div class="col-6">
-            <input type="number"
-                name="costo[]"
-                class="form-control"
-                value="${costo}"
-                placeholder="S/ Costo">
-        </div>
-
-    </div>
-</div>
-`;
+        `;
     }
 
     $("#contenedorTramos").html(html);

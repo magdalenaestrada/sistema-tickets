@@ -41,7 +41,8 @@
     <script src="{{ asset('assets/js/color-modes.js') }}"></script>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" type="image/png" href="{{ $empresaGlobal->icon ? asset('storage/' . $empresaGlobal->icon) : asset('default/favicon.ico') }}">
+    <link rel="icon" type="image/png"
+        href="{{ $empresaGlobal->icon ? asset('storage/' . $empresaGlobal->icon) : asset('default/favicon.ico') }}">
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +70,7 @@
                     <span class="visually-hidden">Cargando...</span>
                 </div>
             </div>
-            <div id="contenidoApp" class="page-content container-xxl" style="display:none;">
+            <div id="contenidoApp" class="page-content container-fluid" style="display:none;">
                 @yield('content')
             </div>
         </div>

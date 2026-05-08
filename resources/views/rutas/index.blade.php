@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="row">
-        <div class="col-md-7">
+        <div class="col-md-5">
             <div class="card">
                 <div class="card-header d-flex justify-content-between">
                     <h5>Lista de rutas</h5>
@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="col-md-5">
+        <div class="col-md-7">
             <div class="card">
                 <div class="card-header">
                     <h5 id="tituloPanel">Detalle</h5>
