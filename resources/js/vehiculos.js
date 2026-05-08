@@ -1,0 +1,265 @@
+$(document).ready(function () {
+    const modal = new bootstrap.Modal($("#modalVehiculo")[0]);
+    const modalMantenimiento = new bootstrap.Modal($("#modalMantenimiento")[0]);
+
+    let tabla = $("#tablaVehiculos").DataTable({
+        ajax: route("vehiculos.datatable"),
+        dom: "rtip",
+        info: false,
+        columns: [
+            { data: "DT_RowIndex" },
+            { data: "tipo_vehiculo" },
+            { data: "numero_placa" },
+            { data: "marca" },
+            { data: "habilitacion_vehicular" },
+            { data: "estado_badge" },
+            { data: "acciones" },
+        ],
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+        },
+        drawCallback: function () {
+            lucide.createIcons();
+        },
+    });
+
+    $("#numero_placa").on("input", function () {
+        let valor = $(this).val().toUpperCase();
+
+        valor = valor.replace(/[^A-Z0-9]/g, "");
+        valor = valor.substring(0, 6);
+
+        if (valor.length > 3) {
+            valor = valor.slice(0, 3) + "-" + valor.slice(3);
+        }
+
+        $(this).val(valor);
+    });
+
+    function toggleHabilitacion() {
+        let tipo = $("#tipo_vehiculo_id").val();
+        let input = $("#habilitacion_vehicular");
+        let asterisco = $("#asterisco_habilitacion");
+
+        if (tipo == "1") {
+            input.prop("required", false);
+            asterisco.hide();
+        } else if (tipo == "2") {
+            input.prop("required", true);
+            asterisco.show();
+        }
+    }
+
+    $("#tipo_vehiculo_id").on("change", function () {
+        toggleHabilitacion();
+    });
+
+    async function cargarTiposVehiculo(selectedId = null) {
+        const tipoSelect = $("#tipo_vehiculo_id");
+        tipoSelect.empty().append('<option value="">Seleccione</option>');
+
+        try {
+            const tipos = await $.get(route("listas.vehiculos.tipos"));
+            tipos.forEach((tipo) => {
+                tipoSelect.append(
+                    `<option value="${tipo.id}" ${
+                        tipo.id == selectedId ? "selected" : ""
+                    }>${tipo.descripcion}</option>`,
+                );
+            });
+        } catch (err) {
+            console.error("Error cargando tipos de vehículo:", err);
+        }
+    }
+
+    $("#btnNuevaVehiculo").click(async function () {
+        $("#formVehiculo")[0].reset();
+        $("#vehiculo_id").val("");
+        await cargarTiposVehiculo();
+        toggleHabilitacion();
+        modal.show();
+    });
+
+    $("#formVehiculo").on("submit", async function (e) {
+        e.preventDefault();
+        const formData = $(this).serialize();
+        const id = $("#vehiculo_id").val();
+
+        try {
+            if (id) {
+                const res = await $.ajax({
+                    url: route("vehiculos.actualizar", id),
+                    type: "PUT",
+                    data: formData,
+                });
+                if (res.success) {
+                    Swal.fire("Éxito", res.message, "success");
+                    modal.hide();
+                    tabla.ajax.reload(null, false);
+                } else {
+                    Swal.fire("Error", res.message, "error");
+                }
+            } else {
+                // Crear → POST
+                const res = await $.post(route("vehiculos.guardar"), formData);
+                if (res.success) {
+                    Swal.fire("Éxito", res.message, "success");
+                    modal.hide();
+                    tabla.ajax.reload(null, false);
+                } else {
+                    Swal.fire("Error", res.message, "error");
+                }
+            }
+        } catch (err) {
+            console.error(err);
+
+            if (err.status === 422) {
+                let errores = err.responseJSON.errors;
+                let mensaje = Object.values(errores).join("\n");
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Validación",
+                    text: mensaje,
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: err.responseJSON?.message || "Error en la petición",
+                });
+            }
+        }
+    });
+
+    $("#formMantenimiento").on("submit", async function (e) {
+        e.preventDefault();
+
+        const id = $("#vehiculo_id").val();
+        const formData = $(this).serialize();
+        const fechaInicio = $("input[name='fecha_inicio']").val();
+        const horaInicio = $("input[name='hora_inicio']").val();
+        const fechaFin = $("input[name='fecha_fin']").val();
+        const horaFin = $("input[name='hora_fin']").val();
+
+        if (fechaInicio && horaInicio && fechaFin && horaFin) {
+            const inicio = new Date(fechaInicio + "T" + horaInicio);
+            const fin = new Date(fechaFin + "T" + horaFin);
+
+            if (fin <= inicio) {
+                Swal.fire(
+                    "Fecha inválida",
+                    "La fecha y hora de fin deben ser mayores que la de inicio.",
+                    "warning",
+                );
+                return;
+            }
+        }
+        try {
+            const res = await $.post(
+                route("vehiculos.mantenimiento", id),
+                formData,
+            );
+
+            Swal.fire("Éxito", res.message, "success");
+            modalMantenimiento.hide();
+            tabla.ajax.reload(null, false);
+        } catch (err) {
+            Swal.fire("Error", "No se pudo procesar", "error");
+        }
+    });
+
+    $("#tablaVehiculos").on("click", ".editar", async function () {
+        const id = $(this).data("id");
+
+        try {
+            const res = await $.get(route("vehiculos.mostrar", id));
+            $("#vehiculo_id").val(res.id);
+            $("#numero_placa").val(res.numero_placa);
+            $("#marca").val(res.marca);
+            $("#habilitacion_vehicular").val(res.habilitacion_vehicular);
+            await cargarTiposVehiculo(res.tipo_vehiculo_id);
+            toggleHabilitacion();
+            modal.show();
+        } catch (err) {
+            console.error(err);
+            Swal.fire("Error", "No se pudo cargar el vehículo", "error");
+        }
+    });
+
+    $("#tablaVehiculos").on("click", ".mantenimiento", function () {
+        const id = $(this).data("id");
+        const estado = $(this).data("estado");
+
+        $("#formMantenimiento")[0].reset();
+        $("#vehiculo_id").val(id);
+
+        if (estado === "A") {
+            $("#tituloMantenimiento").text("Enviar a mantenimiento");
+            $("#inicioMantenimiento").removeClass("d-none");
+            $("#fecha_inicio").prop("required", true);
+            $("#hora_inicio").prop("required", true);
+            $("#razon_id").prop("required", true);
+            $("#finMantenimiento").addClass("d-none");
+        } else {
+            $("#tituloMantenimiento").text("Finalizar mantenimiento");
+            $("#inicioMantenimiento").addClass("d-none");
+            $("#finMantenimiento").removeClass("d-none");
+            $("#fecha_inicio").prop("required", false);
+            $("#hora_inicio").prop("required", false);
+            $("#razon_id").prop("required", false);
+            $("input[name='fecha_fin']").val("");
+            $("input[name='hora_fin']").val("");
+        }
+        const hoy = new Date().toISOString().split("T")[0];
+
+        if (estado === "A") {
+            $("#fecha_inicio").attr("min", hoy);
+            $("#fecha_fin").removeAttr("min");
+        } else {
+            $("#fecha_fin").attr("min", hoy);
+        }
+        modalMantenimiento.show();
+    });
+
+    $("input[name='fecha_inicio']").on("change", function () {
+        let fechaInicio = $(this).val();
+
+        $("input[name='fecha_fin']").attr("min", fechaInicio);
+    });
+
+    $("#tablaVehiculos").on("click", ".eliminar", function () {
+        const id = $(this).data("id");
+        Swal.fire({
+            title: "¿Está seguro?",
+            text: "No podrá revertir esto",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await $.ajax({
+                        url: route("vehiculos.eliminar", id),
+                        type: "DELETE",
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr(
+                                "content",
+                            ),
+                        },
+                    });
+                    if (res.success) {
+                        Swal.fire("Eliminado", res.message, "success");
+                        tabla.ajax.reload(null, false);
+                    } else {
+                        Swal.fire("Error", res.message, "error");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire("Error", "Error en la petición", "error");
+                }
+            }
+        });
+    });
+});
