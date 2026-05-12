@@ -7,25 +7,32 @@ use Illuminate\Database\Eloquent\Model;
 class RutaPunto extends Model
 {
     protected $table = "ruta_puntos";
+
     protected $fillable = [
         'ruta_id',
         'sucursal_id',
         'distrito_id',
+        'pueblito_id',
         'orden'
     ];
 
     public function sucursal()
     {
-        return $this->belongsTo(Sucursal::class, "sucursal_id");
+        return $this->belongsTo(Sucursal::class);
     }
 
     public function ruta()
     {
-        return $this->belongsTo(Ruta::class, "ruta_id");
+        return $this->belongsTo(Ruta::class);
     }
 
     public function distrito()
     {
-        return $this->belongsTo(Distrito::class, "distrito_id");
+        return $this->belongsTo(Distrito::class);
+    }
+
+    public function pueblito()
+    {
+        return $this->belongsTo(Pueblito::class);
     }
 }
