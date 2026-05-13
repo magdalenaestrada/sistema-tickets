@@ -20,4 +20,6 @@ Route::middleware(['auth'])->prefix('ubigeos')->group(function () {
         ->name('ubigeos.byDistrito');
     Route::get('/pueblitos/distrito/{id}', [UbigeoController::class, 'porDistrito'])->name('pueblitos.porDistrito');
     Route::get('/pueblitos/lista', [UbigeoController::class, 'listaPueblitos'])->name('pueblitos.lista');
+    Route::get('/sucursales/lista', [UbigeoController::class, 'listaSucursales'])->name('sucursales.lista');
+    
 });

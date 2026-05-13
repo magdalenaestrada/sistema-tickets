@@ -75,7 +75,6 @@ class RutaController extends Controller
     {
         $request->validate([
             'nombre' => 'required',
-            'puntos.*.distrito_id' => 'required|exists:distritos,id',
             'puntos.*.pueblito_id' => 'required|exists:pueblitos,id',
             'puntos.*.sucursal_id' => 'nullable|exists:sucursales,id',
             'puntos' => 'required|array|min:2',
@@ -147,7 +146,6 @@ class RutaController extends Controller
         $request->validate([
             'nombre' => 'required',
             'puntos' => 'required|array|min:2',
-            'puntos.*.distrito_id' => 'required|exists:distritos,id',
             'puntos.*.pueblito_id' => 'required|exists:pueblitos,id',
             'puntos.*.sucursal_id' => 'nullable|exists:sucursales,id',
         ]);
