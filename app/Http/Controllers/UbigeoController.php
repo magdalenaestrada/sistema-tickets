@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Departamento;
 use App\Models\Provincia;
 use App\Models\Distrito;
+use App\Models\Pueblito;
 use App\Models\Sucursal;
 
 class UbigeoController extends Controller
@@ -45,7 +46,7 @@ class UbigeoController extends Controller
                 ->get()
         );
     }
-   
+
     public function getUbigeosConSucursales()
     {
         $departamentos = Departamento::whereHas('provincias.distritos.sucursales')
@@ -79,5 +80,10 @@ class UbigeoController extends Controller
             'provincia_id'    => $distrito->provincia->id,
             'distrito_id'     => $distrito->id,
         ];
+    }
+    
+    public function porDistrito($id)
+    {
+        return Pueblito::where('distrito_id', $id)->get();
     }
 }

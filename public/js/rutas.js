@@ -93,6 +93,7 @@ window.guardarRuta = function () {
     $("#contenedorPuntos .punto").each(function () {
         puntos.push({
             distrito_id: $(this).find(".distrito").val(),
+            pueblito_id: $(this).find(".pueblito").val(),
             sucursal_id: $(this).find(".sucursal").val(),
         });
     });
@@ -194,6 +195,17 @@ function agregarPunto(data = null) {
 
                 </select>
             </div>
+
+            <div class="col-md-2">
+    <label>Pueblito</label>
+
+    <select class="form-select pueblito"
+        data-index="${index}">
+
+        <option value="">Seleccione</option>
+
+    </select>
+</div>
 
             <div class="col-md-3">
                 <label>Sucursal</label>
@@ -337,6 +349,24 @@ $(document).on("change", ".distrito", function () {
             </option>
         `);
     });
+
+    let pueblitoSelect = $(`.pueblito[data-index="${index}"]`);
+
+    pueblitoSelect.empty();
+
+    pueblitoSelect.append(`
+    <option value="">Seleccione</option>
+`);
+
+    $.get(route("pueblitos.porDistrito", distritoId), function (pueblitos) {
+        pueblitos.forEach((p) => {
+            pueblitoSelect.append(`
+            <option value="${p.id}">
+                ${p.nombre}
+            </option>
+        `);
+        });
+    });
 });
 
 function eliminarPunto(btn) {
@@ -361,21 +391,21 @@ function reordenarPuntos() {
 }
 
 function validarPuntos() {
-    let distritos = [];
+    let pueblitos  = [];
     let valido = true;
 
-    $(".distrito").each(function () {
+    $(".pueblito").each(function () {
         let val = $(this).val();
 
         if (!val) {
             valido = false;
         }
 
-        if (distritos.includes(val)) {
+        if (pueblitos.includes(val)) {
             valido = false;
         }
 
-        distritos.push(val);
+        pueblitos.push(val);
     });
 
     return valido;
@@ -548,10 +578,12 @@ window.guardarEdicion = function (id) {
     $("#contenedorPuntos .punto").each(function () {
         let distrito_id = $(this).find(".distrito").val();
         let sucursal_id = $(this).find(".sucursal").val();
+        let pueblito_id = $(this).find(".pueblito").val();
 
         if (distrito_id) {
             puntos.push({
                 distrito_id,
+                pueblito_id: pueblito_id || null,
                 sucursal_id: sucursal_id || null,
             });
         }

@@ -71,6 +71,14 @@ function agregarPunto() {
                 <option value="">Seleccione</option>
             </select>
         </div>
+        <div class="col-md-3">
+    <label>Pueblito</label>
+    <select class="form-select pueblito"
+        name="puntos[${index - 1}][pueblito_id]"
+        required>
+        <option value="">Seleccione</option>
+    </select>
+</div>
 
         <div class="col-md-3">
             <label>Sucursal (opcional)</label>
@@ -110,11 +118,35 @@ function reordenarPuntos() {
     });
 }
 
+$(document).on("change", ".distrito", async function () {
+    let distritoId = $(this).val();
+
+    let contenedor = $(this).closest(".punto");
+
+    let pueblitoSelect = contenedor.find(".pueblito");
+
+    pueblitoSelect.html(`<option value="">Cargando...</option>`);
+
+    let pueblitos = await $.get(route("pueblitos.porDistrito", distritoId));
+
+    let options = `<option value="">Seleccione</option>`;
+
+    pueblitos.forEach((p) => {
+        options += `
+            <option value="${p.id}">
+                ${p.nombre}
+            </option>
+        `;
+    });
+
+    pueblitoSelect.html(options);
+});
+
 $("#formRuta").submit(function (e) {
     e.preventDefault();
 
     if (!validarPuntos()) {
-        Swal.fire("Error", "No puedes repetir distritos", "error");
+        Swal.fire("Error", "No puedes repetir destinos", "error");
         return;
     }
 
@@ -155,17 +187,16 @@ function validarPuntos() {
 
     let valido = true;
 
-    $("#contenedorPuntos select").each(function () {
+    $("#contenedorPuntos .pueblito").each(function () {
         let val = $(this).val();
 
         if (!val) {
             valido = false;
+            return;
         }
-
         if (valores.includes(val)) {
             valido = false;
         }
-
         valores.push(val);
     });
 

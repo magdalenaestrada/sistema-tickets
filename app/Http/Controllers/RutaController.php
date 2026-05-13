@@ -17,13 +17,13 @@ class RutaController extends Controller
 
     public function index()
     {
-        $rutas = Ruta::with('puntos.distrito', 'puntos.sucursal')->get();
+        $rutas = Ruta::with('puntos.distrito', 'puntos.pueblito', 'puntos.sucursal')->get();
         return view('rutas.index', compact('rutas'));
     }
 
     public function datatable()
     {
-        $rutas = Ruta::with('puntos.distrito', 'puntos.sucursal');
+        $rutas = Ruta::with('puntos.distrito', 'puntos.pueblito', 'puntos.sucursal');
 
         return DataTables::of($rutas)
 
@@ -95,6 +95,7 @@ class RutaController extends Controller
                 $puntosData[] = [
                     'ruta_id' => $ruta->id,
                     'distrito_id' => $punto['distrito_id'],
+                    'pueblito_id' => $punto['pueblito_id'],
                     'sucursal_id' => $punto['sucursal_id'] ?? null,
                     'orden' => $index + 1
                 ];
@@ -130,7 +131,11 @@ class RutaController extends Controller
 
     public function edit($id)
     {
-        $ruta = Ruta::with('puntos.distrito', 'puntos.sucursal')->findOrFail($id);
+        $ruta = Ruta::with(
+            'puntos.distrito',
+            'puntos.pueblito',
+            'puntos.sucursal'
+        )->findOrFail($id);
         $sucursales = Sucursal::where("estado", "A")->get();
         $distritos = Distrito::all();
 
@@ -165,6 +170,7 @@ class RutaController extends Controller
                 'ruta_id' => $ruta->id,
                 'orden' => $index + 1,
                 'distrito_id' => $punto['distrito_id'],
+                'pueblito_id' => $punto['pueblito_id'],
                 'sucursal_id' => $punto['sucursal_id'] ?? null,
             ]);
 
@@ -205,6 +211,7 @@ class RutaController extends Controller
     {
         $ruta = Ruta::with([
             'puntos.distrito',
+            'puntos.pueblito',
             'puntos.sucursal',
             'tramos.origen.sucursal',
             'tramos.destino.sucursal',
@@ -225,7 +232,9 @@ class RutaController extends Controller
                         'id' => $p->id,
                         'sucursal_id' => $p->sucursal_id,
                         'distrito_id' => $p->distrito_id,
+                        'pueblito_id' => $p->pueblito_id,
                         'distrito' => $p->distrito->nombre,
+                        'pueblito' => $p->pueblito?->nombre,
                         'sucursal' => $p->sucursal?->nombre_comercial,
                     ];
                 }),
@@ -243,7 +252,7 @@ class RutaController extends Controller
                 }),
         ]);
     }
-    
+
     public function guardarTramos(Request $request, $rutaId)
     {
         $ruta = Ruta::findOrFail($rutaId);
