@@ -249,8 +249,9 @@ window.agregarPunto = function (data = null) {
                 punto.find(".distrito").val(data.distrito_id).trigger("change");
 
                 setTimeout(() => {
-                    punto.find(".sucursal").val(data.sucursal_id);
-                }, 100);
+                    punto.find(".pueblito").val(String(data.pueblito_id));
+                    punto.find(".sucursal").val(String(data.sucursal_id));
+                }, 500);
             }, 100);
         }, 100);
     }
@@ -327,50 +328,46 @@ $(document).on("change", ".provincia", function () {
     });
 });
 
-$(document).on("change", ".distrito", function () {
+$(document).on("change", ".distrito", async function () {
     let index = $(this).data("index");
 
     let distritoId = $(this).val();
 
     let sucursalSelect = $(`.sucursal[data-index="${index}"]`);
+    let pueblitoSelect = $(`.pueblito[data-index="${index}"]`);
 
     sucursalSelect.empty();
-
     sucursalSelect.append(`
         <option value="">Seleccione</option>
     `);
-
-    let filtradas = sucursales.filter((s) => s.distrito_id == distritoId);
 
     $.get(
         route("ubigeos.sucursalesPorDistrito", distritoId),
         function (filtradas) {
             filtradas.forEach((s) => {
                 sucursalSelect.append(`
-             <option value="${s.id}">
-                ${s.nombre_comercial}
-            </option>
-        `);
+                    <option value="${s.id}">
+                        ${s.nombre_comercial}
+                    </option>
+                `);
             });
         },
     );
 
-    let pueblitoSelect = $(`.pueblito[data-index="${index}"]`);
+    let pueblitos = await $.get(route("pueblitos.porDistrito", distritoId));
 
     pueblitoSelect.empty();
 
     pueblitoSelect.append(`
-    <option value="">Seleccione</option>
-`);
+        <option value="">Seleccione</option>
+    `);
 
-    $.get(route("pueblitos.porDistrito", distritoId), function (pueblitos) {
-        pueblitos.forEach((p) => {
-            pueblitoSelect.append(`
+    pueblitos.forEach((p) => {
+        pueblitoSelect.append(`
             <option value="${p.id}">
                 ${p.descripcion}
             </option>
         `);
-        });
     });
 });
 
