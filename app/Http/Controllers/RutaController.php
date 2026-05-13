@@ -234,7 +234,7 @@ class RutaController extends Controller
                         'distrito_id' => $p->distrito_id,
                         'pueblito_id' => $p->pueblito_id,
                         'distrito' => $p->distrito->nombre,
-                        'pueblito' => $p->pueblito?->nombre,
+                        'pueblito' => $p->pueblito?->descripcion,
                         'sucursal' => $p->sucursal?->nombre_comercial,
                     ];
                 }),

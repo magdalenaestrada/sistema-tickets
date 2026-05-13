@@ -51,5 +51,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    @vite('resources/js/rutas.js')
+    <script src="{{ asset('js/rutas.js') }}"></script>
 @endpush

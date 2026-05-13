@@ -139,7 +139,7 @@ window.guardarRuta = function () {
         });
 };
 
-function agregarPunto(data = null) {
+window.agregarPunto = function (data = null) {
     let index = $("#contenedorPuntos .punto").length;
 
     let html = `
@@ -159,9 +159,9 @@ function agregarPunto(data = null) {
 
         </div>
 
-        <div class="row">
+<div class="row g-2">
 
-            <div class="col-md-3">
+            <div class="col-md">
                 <label>Departamento</label>
 
                 <select class="form-select departamento"
@@ -174,7 +174,7 @@ function agregarPunto(data = null) {
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md">
                 <label>Provincia</label>
 
                 <select class="form-select provincia"
@@ -185,7 +185,7 @@ function agregarPunto(data = null) {
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md">
                 <label>Distrito</label>
 
                 <select class="form-select distrito"
@@ -196,7 +196,7 @@ function agregarPunto(data = null) {
                 </select>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md">
     <label>Pueblito</label>
 
     <select class="form-select pueblito"
@@ -207,7 +207,7 @@ function agregarPunto(data = null) {
     </select>
 </div>
 
-            <div class="col-md-3">
+            <div class="col-md">
                 <label>Sucursal</label>
 
                 <select class="form-select sucursal"
@@ -257,7 +257,7 @@ function agregarPunto(data = null) {
 
     lucide.createIcons();
     generarTramos();
-}
+};
 
 function generarOpcionesDepartamentos() {
     let html = "";
@@ -342,13 +342,18 @@ $(document).on("change", ".distrito", function () {
 
     let filtradas = sucursales.filter((s) => s.distrito_id == distritoId);
 
-    filtradas.forEach((s) => {
-        sucursalSelect.append(`
-            <option value="${s.id}">
+    $.get(
+        route("ubigeos.sucursalesPorDistrito", distritoId),
+        function (filtradas) {
+            filtradas.forEach((s) => {
+                sucursalSelect.append(`
+             <option value="${s.id}">
                 ${s.nombre_comercial}
             </option>
         `);
-    });
+            });
+        },
+    );
 
     let pueblitoSelect = $(`.pueblito[data-index="${index}"]`);
 
@@ -362,14 +367,14 @@ $(document).on("change", ".distrito", function () {
         pueblitos.forEach((p) => {
             pueblitoSelect.append(`
             <option value="${p.id}">
-                ${p.nombre}
+                ${p.descripcion}
             </option>
         `);
         });
     });
 });
 
-function eliminarPunto(btn) {
+window.eliminarPunto = function (btn) {
     let total = $("#contenedorPuntos .punto").length;
 
     if (total <= 2) {
@@ -380,7 +385,7 @@ function eliminarPunto(btn) {
     $(btn).closest(".punto").remove();
     reordenarPuntos();
     generarTramos();
-}
+};
 
 function reordenarPuntos() {
     $("#contenedorPuntos .punto").each(function (i) {
@@ -391,7 +396,7 @@ function reordenarPuntos() {
 }
 
 function validarPuntos() {
-    let pueblitos  = [];
+    let pueblitos = [];
     let valido = true;
 
     $(".pueblito").each(function () {
@@ -683,7 +688,7 @@ function generarTramos(tramosData = []) {
 
     $("#contenedorPuntos .punto").each(function () {
         puntos.push({
-            nombre: $(this).find(".distrito option:selected").text() || "Punto",
+            nombre: $(this).find(".pueblito option:selected").text() || "Punto",
         });
     });
 
