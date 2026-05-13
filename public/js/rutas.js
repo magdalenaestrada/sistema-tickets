@@ -2,8 +2,10 @@ let tablaRutas;
 let UBIGEO = [];
 let sucursales = [];
 let tramosActuales = [];
+let pueblitos = [];
 
 $(document).ready(async function () {
+    pueblitos = await $.get(route("pueblitos.lista"));
     tablaRutas = $("#tablaRutas").DataTable({
         ajax: {
             url: route("rutas.datatable"),
@@ -159,18 +161,15 @@ window.agregarPunto = function (data = null) {
 
         </div>
 
-<div class="row g-2">
+        <div class="row g-2">
 
             <div class="col-md">
                 <label>Departamento</label>
 
                 <select class="form-select departamento"
                     data-index="${index}">
-
                     <option value="">Seleccione</option>
-
                     ${generarOpcionesDepartamentos()}
-
                 </select>
             </div>
 
@@ -179,9 +178,7 @@ window.agregarPunto = function (data = null) {
 
                 <select class="form-select provincia"
                     data-index="${index}">
-
                     <option value="">Seleccione</option>
-
                 </select>
             </div>
 
@@ -190,31 +187,25 @@ window.agregarPunto = function (data = null) {
 
                 <select class="form-select distrito"
                     data-index="${index}">
-
                     <option value="">Seleccione</option>
-
                 </select>
             </div>
 
             <div class="col-md">
-    <label>Pueblito</label>
+                <label>Pueblito</label>
 
-    <select class="form-select pueblito"
-        data-index="${index}">
-
-        <option value="">Seleccione</option>
-
-    </select>
-</div>
+                <select class="form-select pueblito"
+                    data-index="${index}">
+                    <option value="">Seleccione</option>
+                </select>
+            </div>
 
             <div class="col-md">
                 <label>Sucursal</label>
 
                 <select class="form-select sucursal"
                     data-index="${index}">
-
                     <option value="">Seleccione</option>
-
                 </select>
             </div>
 
@@ -224,6 +215,8 @@ window.agregarPunto = function (data = null) {
     `;
 
     $("#contenedorPuntos").append(html);
+
+    let punto = $("#contenedorPuntos .punto").last();
 
     if (data) {
         let dep = UBIGEO.find((d) =>
@@ -236,27 +229,19 @@ window.agregarPunto = function (data = null) {
             p.distritos.some((x) => x.id == data.distrito_id),
         );
 
-        let distrito = prov?.distritos.find((x) => x.id == data.distrito_id);
-
-        let punto = $("#contenedorPuntos .punto").last();
-
         punto.find(".departamento").val(dep?.id).trigger("change");
 
-        setTimeout(() => {
-            punto.find(".provincia").val(prov?.id).trigger("change");
+        punto.find(".provincia").val(prov?.id).trigger("change");
 
-            setTimeout(() => {
-                punto.find(".distrito").val(data.distrito_id).trigger("change");
+        punto.find(".distrito").val(data.distrito_id).trigger("change");
 
-                setTimeout(() => {
-                    punto.find(".pueblito").val(String(data.pueblito_id));
-                    punto.find(".sucursal").val(String(data.sucursal_id));
-                }, 500);
-            }, 100);
-        }, 100);
+        punto.find(".pueblito").val(String(data.pueblito_id));
+
+        punto.find(".sucursal").val(String(data.sucursal_id));
     }
 
     lucide.createIcons();
+
     generarTramos();
 };
 
@@ -328,7 +313,7 @@ $(document).on("change", ".provincia", function () {
     });
 });
 
-$(document).on("change", ".distrito", async function () {
+$(document).on("change", ".distrito", function () {
     let index = $(this).data("index");
 
     let distritoId = $(this).val();
@@ -337,32 +322,33 @@ $(document).on("change", ".distrito", async function () {
     let pueblitoSelect = $(`.pueblito[data-index="${index}"]`);
 
     sucursalSelect.empty();
+    pueblitoSelect.empty();
+
     sucursalSelect.append(`
         <option value="">Seleccione</option>
     `);
-
-    $.get(
-        route("ubigeos.sucursalesPorDistrito", distritoId),
-        function (filtradas) {
-            filtradas.forEach((s) => {
-                sucursalSelect.append(`
-                    <option value="${s.id}">
-                        ${s.nombre_comercial}
-                    </option>
-                `);
-            });
-        },
-    );
-
-    let pueblitos = await $.get(route("pueblitos.porDistrito", distritoId));
-
-    pueblitoSelect.empty();
 
     pueblitoSelect.append(`
         <option value="">Seleccione</option>
     `);
 
-    pueblitos.forEach((p) => {
+    let sucursalesFiltradas = sucursales.filter(
+        (s) => s.distrito_id == distritoId,
+    );
+
+    sucursalesFiltradas.forEach((s) => {
+        sucursalSelect.append(`
+            <option value="${s.id}">
+                ${s.nombre_comercial}
+            </option>
+        `);
+    });
+
+    let pueblitosFiltrados = pueblitos.filter(
+        (p) => p.distrito_id == distritoId,
+    );
+
+    pueblitosFiltrados.forEach((p) => {
         pueblitoSelect.append(`
             <option value="${p.id}">
                 ${p.descripcion}
@@ -491,10 +477,8 @@ function editarRuta(id) {
             agregarPunto(p);
         });
 
-        setTimeout(() => {
-            activarOrdenamiento();
-            generarTramos(ruta.tramos);
-        }, 100);
+        activarOrdenamiento();
+        generarTramos(ruta.tramos);
 
         lucide.createIcons();
     });

@@ -81,9 +81,14 @@ class UbigeoController extends Controller
             'distrito_id'     => $distrito->id,
         ];
     }
-    
+
     public function porDistrito($id)
     {
         return Pueblito::where('distrito_id', $id)->get();
+    }
+
+    public function listaPueblitos()
+    {
+        return Pueblito::all();
     }
 }
