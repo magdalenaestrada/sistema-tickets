@@ -14,8 +14,18 @@ class PueblitosSeeder extends Seeder
     public function run(): void
     {
         Pueblito::insert([
-           
-
+            [
+                'distrito_id' => 335,
+                'descripcion' => 'AREQUIPA',
+            ],
+            [
+                'distrito_id' => 378,
+                'descripcion' => 'CHALA',
+            ],
+            [
+                'distrito_id' => 514,
+                'descripcion' => 'PAUZA',
+            ],
         ]);
     }
 }
