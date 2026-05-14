@@ -96,12 +96,8 @@ class UbigeoController extends Controller
         )->get();
     }
 
-    public function lista()
+    public function listaSucursales()
     {
-        return Sucursal::select(
-            'id',
-            'nombre_comercial',
-            'distrito_id'
-        )->get();
+        return Sucursal::all();
     }
 }

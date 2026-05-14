@@ -2,8 +2,14 @@ let tablaRutas;
 let UBIGEO = [];
 let sucursales = [];
 let tramosActuales = [];
+let pueblitos = [];
 
 $(document).ready(async function () {
+    pueblitos = await $.get(route("pueblitos.lista"));
+    sucursales = await $.get(route("sucursales.lista"));
+    console.log(sucursales);
+    console.log(sucursales);
+    console.log(Array.isArray(sucursales));
     tablaRutas = $("#tablaRutas").DataTable({
         ajax: {
             url: route("rutas.datatable"),
@@ -30,7 +36,6 @@ $(document).ready(async function () {
     });
 
     UBIGEO = await $.get(route("ubigeos.todo"));
-    sucursales = await $.get(route("sucursales.lista"));
     window.modoCrear = function () {
         let html = `
        <form id="formRuta">
@@ -50,7 +55,7 @@ $(document).ready(async function () {
 
     <hr>
 
-    <h6>Tramos</h6>
+    <h6>TRAMOS</h6>
     <div id="contenedorTramos"></div>
 
     <button type="submit" class="btn btn-primary w-100 mt-2">
@@ -91,11 +96,21 @@ window.guardarRuta = function () {
     let costo = [];
 
     $("#contenedorPuntos .punto").each(function () {
+        let pueblitoId = $(this).find(".pueblito").val();
+
+        let pueblito = pueblitos.find((p) => p.id == pueblitoId);
+
         puntos.push({
-            distrito_id: $(this).find(".distrito").val(),
+            distrito_id: pueblito?.distrito_id || null,
+            pueblito_id: pueblitoId,
             sucursal_id: $(this).find(".sucursal").val(),
         });
     });
+
+    if (puntos.some((p) => !p.pueblito_id)) {
+        Swal.fire("Error", "Todos los puntos deben tener parada", "error");
+        return;
+    }
 
     $("input[name='horas[]']").each(function (index) {
         let horas = parseInt($(this).val()) || 0;
@@ -138,7 +153,7 @@ window.guardarRuta = function () {
         });
 };
 
-function agregarPunto(data = null) {
+window.agregarPunto = function (data = null) {
     let index = $("#contenedorPuntos .punto").length;
 
     let html = `
@@ -158,51 +173,23 @@ function agregarPunto(data = null) {
 
         </div>
 
-        <div class="row">
+        <div class="row g-2">
 
-            <div class="col-md-3">
-                <label>Departamento</label>
+            <div class="col-md-6">
+                <label>PARADA</label>
 
-                <select class="form-select departamento"
+                <select class="pueblito"
                     data-index="${index}">
-
                     <option value="">Seleccione</option>
-
-                    ${generarOpcionesDepartamentos()}
-
                 </select>
             </div>
 
-            <div class="col-md-3">
-                <label>Provincia</label>
+            <div class="col-md-6">
+                <label>SUCURSAL</label>
 
-                <select class="form-select provincia"
+                <select class=" form-control sucursal"
                     data-index="${index}">
-
                     <option value="">Seleccione</option>
-
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label>Distrito</label>
-
-                <select class="form-select distrito"
-                    data-index="${index}">
-
-                    <option value="">Seleccione</option>
-
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label>Sucursal</label>
-
-                <select class="form-select sucursal"
-                    data-index="${index}">
-
-                    <option value="">Seleccione</option>
-
                 </select>
             </div>
 
@@ -213,38 +200,91 @@ function agregarPunto(data = null) {
 
     $("#contenedorPuntos").append(html);
 
+    let punto = $("#contenedorPuntos .punto").last();
+
+    let selectPueblito = punto.find(".pueblito");
+
+    let listaPueblitos = [...pueblitos];
+
+    listaPueblitos.sort((a, b) => a.descripcion.localeCompare(b.descripcion));
+
+    listaPueblitos.forEach((p) => {
+        selectPueblito.append(`
+            <option value="${p.id}">
+                ${p.descripcion}
+            </option>
+        `);
+    });
+
+    let tom = new TomSelect(selectPueblito[0], {
+        valueField: "id",
+        labelField: "descripcion",
+        searchField: ["descripcion"],
+
+        maxOptions: 100,
+
+        placeholder: "Buscar parada...",
+
+        onChange: function (value) {
+            cargarSucursalesPorPueblito(value, index);
+            actualizarOpcionesPueblitos();
+            generarTramos(tramosActuales);
+        },
+    });
+
     if (data) {
-        let dep = UBIGEO.find((d) =>
-            d.provincias.some((p) =>
-                p.distritos.some((x) => x.id == data.distrito_id),
-            ),
-        );
+        selectPueblito[0].tomselect.setValue(String(data.pueblito_id));
 
-        let prov = dep?.provincias.find((p) =>
-            p.distritos.some((x) => x.id == data.distrito_id),
-        );
-
-        let distrito = prov?.distritos.find((x) => x.id == data.distrito_id);
-
-        let punto = $("#contenedorPuntos .punto").last();
-
-        punto.find(".departamento").val(dep?.id).trigger("change");
-
-        setTimeout(() => {
-            punto.find(".provincia").val(prov?.id).trigger("change");
-
-            setTimeout(() => {
-                punto.find(".distrito").val(data.distrito_id).trigger("change");
-
-                setTimeout(() => {
-                    punto.find(".sucursal").val(data.sucursal_id);
-                }, 100);
-            }, 100);
-        }, 100);
+        cargarSucursalesPorPueblito(data.pueblito_id, index, data.sucursal_id);
     }
 
     lucide.createIcons();
     generarTramos();
+    actualizarOpcionesPueblitos();
+};
+
+async function cargarSucursalesPorPueblito(
+    pueblitoId,
+    index,
+    sucursalSeleccionada = null,
+) {
+    let sucursalSelect = $(`.sucursal[data-index="${index}"]`);
+
+    sucursalSelect.empty();
+
+    sucursalSelect.append(`
+        <option value="">
+            Seleccione
+        </option>
+    `);
+
+    try {
+        let listaSucursales = [...sucursales];
+
+        listaSucursales.sort((a, b) =>
+            a.nombre_comercial.localeCompare(b.nombre_comercial),
+        );
+
+        listaSucursales.forEach((s) => {
+            sucursalSelect.append(`
+                <option value="${s.id}">
+                    ${s.nombre_comercial}
+                </option>
+            `);
+        });
+
+        if (sucursalSeleccionada) {
+            sucursalSelect.val(String(sucursalSeleccionada));
+        }
+    } catch (error) {
+        console.error(error);
+
+        sucursalSelect.html(`
+            <option value="">
+                Error al cargar
+            </option>
+        `);
+    }
 }
 
 function generarOpcionesDepartamentos() {
@@ -315,31 +355,7 @@ $(document).on("change", ".provincia", function () {
     });
 });
 
-$(document).on("change", ".distrito", function () {
-    let index = $(this).data("index");
-
-    let distritoId = $(this).val();
-
-    let sucursalSelect = $(`.sucursal[data-index="${index}"]`);
-
-    sucursalSelect.empty();
-
-    sucursalSelect.append(`
-        <option value="">Seleccione</option>
-    `);
-
-    let filtradas = sucursales.filter((s) => s.distrito_id == distritoId);
-
-    filtradas.forEach((s) => {
-        sucursalSelect.append(`
-            <option value="${s.id}">
-                ${s.nombre_comercial}
-            </option>
-        `);
-    });
-});
-
-function eliminarPunto(btn) {
+window.eliminarPunto = function (btn) {
     let total = $("#contenedorPuntos .punto").length;
 
     if (total <= 2) {
@@ -348,9 +364,11 @@ function eliminarPunto(btn) {
     }
 
     $(btn).closest(".punto").remove();
+
     reordenarPuntos();
+    actualizarOpcionesPueblitos();
     generarTramos();
-}
+};
 
 function reordenarPuntos() {
     $("#contenedorPuntos .punto").each(function (i) {
@@ -361,24 +379,67 @@ function reordenarPuntos() {
 }
 
 function validarPuntos() {
-    let distritos = [];
+    let ids = new Set();
+
     let valido = true;
 
-    $(".distrito").each(function () {
+    $("#contenedorPuntos .pueblito").each(function () {
         let val = $(this).val();
 
-        if (!val) {
+        if (!val || val === "") {
             valido = false;
+            return false;
         }
 
-        if (distritos.includes(val)) {
+        val = String(val).trim();
+
+        if (ids.has(val)) {
             valido = false;
+            return false;
         }
 
-        distritos.push(val);
+        ids.add(val);
     });
 
     return valido;
+}
+
+function actualizarOpcionesPueblitos() {
+    let seleccionados = [];
+
+    $("#contenedorPuntos .pueblito").each(function () {
+        let valor = $(this).val();
+
+        if (valor) {
+            seleccionados.push(String(valor));
+        }
+    });
+
+    $("#contenedorPuntos .pueblito").each(function () {
+        let select = this;
+        let valorActual = $(select).val();
+
+        $(select)
+            .find("option")
+            .each(function () {
+                let optionValue = $(this).attr("value");
+
+                if (!optionValue) return;
+
+                if (
+                    seleccionados.includes(String(optionValue)) &&
+                    String(optionValue) !== String(valorActual)
+                ) {
+                    $(this).prop("disabled", true);
+                } else {
+                    $(this).prop("disabled", false);
+                }
+            });
+
+        if (select.tomselect) {
+            select.tomselect.sync();
+        }
+    });
 }
 
 $(document).on("change", "#contenedorPuntos select", function () {
@@ -444,7 +505,7 @@ function editarRuta(id) {
 
             <hr>
 
-            <h6>Tramos</h6>
+            <h6>TRAMOS</h6>
             <div id="contenedorTramos"></div>
 
             <button class="btn btn-success w-100 mt-2"
@@ -459,10 +520,8 @@ function editarRuta(id) {
             agregarPunto(p);
         });
 
-        setTimeout(() => {
-            activarOrdenamiento();
-            generarTramos(ruta.tramos);
-        }, 100);
+        activarOrdenamiento();
+        generarTramos(ruta.tramos);
 
         lucide.createIcons();
     });
@@ -540,18 +599,25 @@ $(document).on("click", ".activar", function () {
 });
 
 window.guardarEdicion = function (id) {
+    if (!validarPuntos()) {
+        Swal.fire("Error", "Todos los puntos deben tener parada", "error");
+        return;
+    }
     let nombre = $("#nombreRuta").val();
     let puntos = [];
     let duracion = [];
     let costo = [];
 
     $("#contenedorPuntos .punto").each(function () {
-        let distrito_id = $(this).find(".distrito").val();
+        let pueblito_id = $(this).find(".pueblito").val();
         let sucursal_id = $(this).find(".sucursal").val();
 
-        if (distrito_id) {
+        let pueblito = pueblitos.find((p) => p.id == pueblito_id);
+
+        if (pueblito_id) {
             puntos.push({
-                distrito_id,
+                distrito_id: pueblito?.distrito_id || null,
+                pueblito_id: pueblito_id,
                 sucursal_id: sucursal_id || null,
             });
         }
@@ -651,7 +717,7 @@ function generarTramos(tramosData = []) {
 
     $("#contenedorPuntos .punto").each(function () {
         puntos.push({
-            nombre: $(this).find(".distrito option:selected").text() || "Punto",
+            nombre: $(this).find(".pueblito option:selected").text() || "Punto",
         });
     });
 
@@ -678,7 +744,7 @@ function generarTramos(tramosData = []) {
                     <input type="number"
                         name="horas[]"
                         class="form-control"
-                        value="${data.horas}"
+                        value="${data.horas ?? ""}"
                         placeholder="Horas"
                         min="0">
                 </div>
@@ -687,7 +753,7 @@ function generarTramos(tramosData = []) {
                     <input type="number"
                         name="minutos[]"
                         class="form-control"
-                        value="${data.minutos}"
+                        value="${data.minutos ?? ""}"
                         placeholder="Min"
                         min="0"
                         max="59">
@@ -697,7 +763,7 @@ function generarTramos(tramosData = []) {
                     <input type="number"
                         name="costo[]"
                         class="form-control"
-                        value="${costo}"
+                        value="${costo ?? ""}"
                         placeholder="S/ Costo">
                 </div>
 

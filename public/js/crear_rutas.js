@@ -26,10 +26,8 @@ function obtenerOpcionesDisponibles() {
 }
 
 function agregarPunto() {
-    let options = obtenerOpcionesDisponibles();
-
     let index = $("#contenedorPuntos .punto").length + 1;
-
+    
     let html = `
 <div class="punto border rounded p-3 mb-3">
 
