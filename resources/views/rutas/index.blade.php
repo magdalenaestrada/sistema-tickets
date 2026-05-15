@@ -32,19 +32,20 @@
 
         <div class="col-md-5">
             <div class="card">
+
                 <div class="card-header">
                     <h5 id="tituloPanel">Detalle</h5>
                 </div>
-
                 <div class="card-body" id="panelContenido">
-                    <p class="text-muted">Selecciona una ruta</p>
+                    <p class="text-muted">
+                        Selecciona una ruta
+                    </p>
+                    <div id="contenedorPuntosWrapper">
+                        <div id="contenedorPuntos"></div>
+                    </div>
                 </div>
-
-                <div id="contenedorTramos"></div>
-
             </div>
         </div>
-
     </div>
 @endsection
 

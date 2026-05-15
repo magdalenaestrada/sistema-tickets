@@ -45,12 +45,16 @@ $(document).ready(async function () {
         class="form-control form-control-sm mb-3"
         placeholder="Nombre de la ruta" required>
 
-    <div id="contenedorPuntos"></div>
+<div id="contenedorPuntosWrapper">
+        <div id="contenedorPuntos"></div>
+    </div>
+ <button type="button"
+    class="btn btn-success btn-xs mb-2"
+    onclick="agregarPunto()">
 
-    <button type="button" class="btn btn-sm btn-success mb-2"
-        onclick="agregarPunto()">
-        Añadir Punto
-    </button>
+    <i data-lucide="plus"></i>
+    Añadir punto
+</button>
 
     <hr>
 
@@ -122,7 +126,7 @@ window.guardarRuta = function () {
     });
 
     $("input[name='costo[]']").each(function () {
-        costo.push($(this).val());
+        costo.push($(this).val() || null);
     });
 
     Swal.fire({
@@ -156,49 +160,40 @@ window.agregarPunto = function (data = null) {
     let index = $("#contenedorPuntos .punto").length;
 
     let html = `
-    <div class="punto border rounded p-3 mb-2">
+<div class="punto card shadow-sm border-0 mb-2">
 
-        <div class="d-flex justify-content-between mb-2">
+    <div class="card-body py-2 px-2">
 
-            <div>
-                <i class="drag-handle cursor-move"
-                   data-lucide="grip"></i>
+        <div class="d-flex align-items-center gap-2">
 
-                <span class="badge bg-secondary">
-                    Punto ${index + 1}
-                </span>
+            <div class="drag-handle px-1">
+                <i data-lucide="grip-vertical"></i>
             </div>
+
+            <span class="badge bg-dark">
+                ${index + 1}
+            </span>
+
+            <select class="form-select form-select-sm pueblito">
+                <option value="">Parada</option>
+            </select>
+
+            <select class="form-select form-select-sm sucursal">
+                <option value="">Sucursal</option>
+            </select>
 
             <button type="button"
                 class="btn btn-danger btn-xs"
                 onclick="eliminarPunto(this)">
-                <i data-lucide="trash"></i>
+                <i data-lucide="trash-2"></i>
             </button>
 
         </div>
 
-        <div class="row g-2">
-
-            <div class="col-md-6">
-                <label>PARADA</label>
-
-                <select class="form-select pueblito">
-                    <option value="">Seleccione</option>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label>SUCURSAL</label>
-
-                <select class="form-select sucursal">
-                    <option value="">Seleccione</option>
-                </select>
-            </div>
-
-        </div>
-
     </div>
-    `;
+
+</div>
+`;
 
     $("#contenedorPuntos").append(html);
 
@@ -393,10 +388,13 @@ function editarRuta(id) {
 
             <div id="contenedorPuntos"></div>
 
-            <button class="btn btn-sm btn-primary mb-2"
-                onclick="agregarPunto()">
-                Añadir punto
-            </button>
+           <button type="button"
+    class="btn btn-success btn-xs w-100 btn-add-punto"
+    onclick="agregarPunto()">
+
+    <i data-lucide="plus"></i>
+    Añadir punto
+</button>
 
             <hr>
 
@@ -529,7 +527,7 @@ window.guardarEdicion = function (id) {
     });
 
     $("input[name='costo[]']").each(function () {
-        costo.push($(this).val());
+        costo.push($(this).val() || null);
     });
 
     if (nombre.trim() === "") {
@@ -636,44 +634,60 @@ function generarTramos(tramosData = []) {
         let data = minutosAHorasMinutos(duracion);
 
         html += `
-        <div class="mb-2 border p-3 rounded">
+<div class="tramo card border-0 shadow-sm mb-2">
 
-            <strong>
-                ${puntos[i].nombre}
-                →
-                ${puntos[i + 1].nombre}
-            </strong>
+    <div class="card-body py-2 px-3">
 
-            <div class="row mt-2">
+        <div class="d-flex align-items-center justify-content-between gap-3">
 
-                <div class="col-3">
+            <div class="flex-grow-1">
+
+                <small class="text-muted d-block">
+                    Tramo
+                </small>
+
+                <strong>
+                    ${puntos[i].nombre}
+                    →
+                    ${puntos[i + 1].nombre}
+                </strong>
+
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+
+                <div style="width:80px">
                     <input type="number"
                         name="horas[]"
-                        class="form-control"
+                        class="form-control form-control-sm"
                         value="${data.horas ?? ""}"
                         placeholder="Horas">
                 </div>
 
-                <div class="col-3">
+                <div style="width:80px">
                     <input type="number"
                         name="minutos[]"
-                        class="form-control"
+                        class="form-control form-control-sm"
                         value="${data.minutos ?? ""}"
                         placeholder="Min">
                 </div>
 
-                <div class="col-6">
+                <div style="width:100px">
                     <input type="number"
                         name="costo[]"
-                        class="form-control"
+                        class="form-control form-control-sm"
                         value="${costo ?? ""}"
-                        placeholder="S/ Costo">
+                        placeholder="Costo">
                 </div>
 
             </div>
 
         </div>
-        `;
+
+    </div>
+
+</div>
+`;
     }
 
     $("#contenedorTramos").html(html);
