@@ -15,16 +15,24 @@ class PueblitosSeeder extends Seeder
     {
         Pueblito::insert([
             [
-                'distrito_id' => 335,
-                'descripcion' => 'AREQUIPA',
+                'distrito_id' => 364,
+                'descripcion' => 'CAMANA',
             ],
             [
-                'distrito_id' => 378,
-                'descripcion' => 'CHALA',
+                'distrito_id' => 379,
+                'descripcion' => 'CHAPARRA',
+            ],
+            [
+                'distrito_id' => 383,
+                'descripcion' => 'QUICACHA',
+            ],
+            [
+                'distrito_id' => 342,
+                'descripcion' => 'REPARTICION AYROCA',
             ],
             [
                 'distrito_id' => 514,
-                'descripcion' => 'PAUZA',
+                'descripcion' => 'CORA CORA',
             ],
         ]);
     }
