@@ -35,8 +35,15 @@ $(document).ready(async function () {
     });
 
     UBIGEO = await $.get(route("ubigeos.todo"));
-    window.modoCrear = function () {
-        let html = `
+});
+
+
+$(document).on("click", ".btn-crear", function () {
+    modoCrear();
+});
+
+function modoCrear() {
+    let html = `
        <form id="formRuta">
     <h6 class="mb-2"><b>NOMBRE DE LA RUTA <span
                                 style="color: red">*</span></b></h6>
@@ -67,27 +74,26 @@ $(document).ready(async function () {
 </form>
     `;
 
-        $("#tituloPanel").text("Crear Ruta");
-        $("#panelContenido").html(html);
-        $("#formRuta").on("submit", function (e) {
-            e.preventDefault();
+    $("#tituloPanel").text("Crear Ruta");
+    $("#panelContenido").html(html);
+    $("#formRuta").on("submit", function (e) {
+        e.preventDefault();
 
-            if (!this.checkValidity()) {
-                this.reportValidity();
-                return;
-            }
+        if (!this.checkValidity()) {
+            this.reportValidity();
+            return;
+        }
 
-            guardarRuta();
-        });
-        setTimeout(() => {
-            agregarPunto();
-            agregarPunto();
-            activarOrdenamiento();
-        }, 100);
-    };
-});
+        guardarRuta();
+    });
+    setTimeout(() => {
+        agregarPunto();
+        agregarPunto();
+        activarOrdenamiento();
+    }, 100);
+}
 
-window.guardarRuta = function () {
+function guardarRuta() {
     if (!validarPuntos()) {
         Swal.fire("Error", "Revisa los puntos", "error");
         return;
@@ -154,9 +160,9 @@ window.guardarRuta = function () {
         .fail(function () {
             Swal.fire("Error", "No se pudo guardar", "error");
         });
-};
+}
 
-window.agregarPunto = function (data = null) {
+function agregarPunto(data = null) {
     let index = $("#contenedorPuntos .punto").length;
 
     let html = `
@@ -170,9 +176,9 @@ window.agregarPunto = function (data = null) {
                 <i data-lucide="grip-vertical"></i>
             </div>
 
-            <span class="badge bg-dark">
-                ${index + 1}
-            </span>
+          <span class="badge bg-dark numero-punto">
+    ${index + 1}
+</span>
 
             <select class="form-select form-select-sm pueblito">
                 <option value="">Parada</option>
@@ -203,8 +209,9 @@ window.agregarPunto = function (data = null) {
 
     let listaPueblitos = [...pueblitos];
 
-    listaPueblitos.sort((a, b) => a.descripcion.localeCompare(b.descripcion));
-
+    let pueblitosOrdenados = [...pueblitos].sort((a, b) =>
+        a.descripcion.localeCompare(b.descripcion),
+    );
     listaPueblitos.forEach((p) => {
         selectPueblito.append(`
             <option value="${p.id}">
@@ -242,9 +249,9 @@ window.agregarPunto = function (data = null) {
     generarTramos();
 
     lucide.createIcons();
-};
+}
 
-window.eliminarPunto = function (btn) {
+function eliminarPunto(btn) {
     let total = $("#contenedorPuntos .punto").length;
 
     if (total <= 2) {
@@ -257,13 +264,13 @@ window.eliminarPunto = function (btn) {
     reordenarPuntos();
     actualizarOpcionesPueblitos();
     generarTramos();
-};
+}
 
 function reordenarPuntos() {
     $("#contenedorPuntos .punto").each(function (i) {
         $(this)
             .find(".badge")
-            .text(`Punto ${i + 1}`);
+            .text(`${i + 1}`);
     });
 }
 
@@ -294,46 +301,40 @@ function validarPuntos() {
 }
 
 function actualizarOpcionesPueblitos() {
-    let seleccionados = [];
+    let seleccionados = new Set();
 
-    $("#contenedorPuntos .pueblito").each(function () {
-        let valor = $(this).val();
-
-        if (valor) {
-            seleccionados.push(String(valor));
-        }
+    $(".pueblito").each(function () {
+        let val = $(this).val();
+        if (val) seleccionados.add(val);
     });
 
-    $("#contenedorPuntos .pueblito").each(function () {
-        let valorActual = String($(this).val());
+    $(".pueblito").each(function () {
+        let select = $(this);
+        let actual = select.val();
 
-        $(this)
-            .find("option")
-            .each(function () {
-                let optionValue = String($(this).attr("value"));
+        select.find("option").each(function () {
+            let val = $(this).val();
 
-                if (!optionValue) return;
+            if (!val) return;
 
-                let estaSeleccionado = seleccionados.includes(optionValue);
-
-                let esMiValor = optionValue === valorActual;
-
-                if (estaSeleccionado && !esMiValor) {
-                    $(this).hide();
-                } else {
-                    $(this).show();
-                }
-            });
+            this.disabled = seleccionados.has(val) && val !== actual;
+        });
     });
 }
 
 $(document).on("change", "#contenedorPuntos select", function () {
     generarTramos(tramosActuales);
 });
-$(document).on("change", ".pueblito", function () {
-    actualizarOpcionesPueblitos();
 
-    generarTramos(tramosActuales);
+let timeout;
+
+$(document).on("change", ".pueblito", function () {
+    clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+        actualizarOpcionesPueblitos();
+        generarTramos(tramosActuales);
+    }, 200);
 });
 
 function verRuta(id) {
@@ -491,7 +492,7 @@ $(document).on("click", ".activar", function () {
     });
 });
 
-window.guardarEdicion = function (id) {
+function guardarEdicion(id) {
     if (!validarPuntos()) {
         Swal.fire("Error", "Todos los puntos deben tener parada", "error");
         return;
@@ -580,7 +581,7 @@ window.guardarEdicion = function (id) {
             Swal.fire("Error", mensaje, "error");
         },
     });
-};
+}
 
 function minutosAHorasMinutos(total) {
     total = parseInt(total);

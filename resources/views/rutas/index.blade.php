@@ -7,7 +7,7 @@
                 <div class="card-header d-flex justify-content-between">
                     <h5>Lista de rutas</h5>
 
-                    <button class="btn btn-primary" onclick="modoCrear()">
+                    <button class="btn btn-primary btn-crear">
                         <i data-lucide="plus"></i> Nueva ruta
                     </button>
                 </div>
