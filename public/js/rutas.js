@@ -37,7 +37,6 @@ $(document).ready(async function () {
     UBIGEO = await $.get(route("ubigeos.todo"));
 });
 
-
 $(document).on("click", ".btn-crear", function () {
     modoCrear();
 });
@@ -301,11 +300,11 @@ function validarPuntos() {
 }
 
 function actualizarOpcionesPueblitos() {
-    let seleccionados = new Set();
+    let seleccionados = [];
 
     $(".pueblito").each(function () {
         let val = $(this).val();
-        if (val) seleccionados.add(val);
+        if (val) seleccionados.push(val);
     });
 
     $(".pueblito").each(function () {
@@ -317,7 +316,11 @@ function actualizarOpcionesPueblitos() {
 
             if (!val) return;
 
-            this.disabled = seleccionados.has(val) && val !== actual;
+            if (seleccionados.includes(val) && val !== actual) {
+                $(this).hide();
+            } else {
+                $(this).show();
+            }
         });
     });
 }
