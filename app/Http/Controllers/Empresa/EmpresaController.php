@@ -34,7 +34,6 @@ class EmpresaController extends Controller
             'logo' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:2048',
             'certificado' => 'nullable|file|mimes:pem,txt|max:2048',
             'favicon' => 'nullable|image|mimes:png,jpg,jpeg,ico,svg|max:1024',
-            'igv' => 'required'
         ]);
 
         $logoPath = null;
@@ -65,6 +64,7 @@ class EmpresaController extends Controller
             'logo' => $logoPath,
             'certificado_path' => $certificadoPath,
             'icon' => $faviconPath,
+            'mensaje' => $request->mensaje ? $request->mensaje : "GRACIAS POR SU COMPRA",
 
         ]);
 
@@ -120,7 +120,7 @@ class EmpresaController extends Controller
             'certificado_path' => $empresa->certificado_path,
             'icon' => $empresa->icon,
             'igv' => $request->igv,
-
+            'mensaje' => $request->mensaje,
         ]);
 
         return response()->json(['success' => true]);

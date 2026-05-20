@@ -16,7 +16,8 @@ class Empresa extends Model
         'contrasena_facturacion',
         'certificado_path',
         'icon', 
-        'igv'
+        'igv',
+        'mensaje'
     ];
 
     public function sucursales()

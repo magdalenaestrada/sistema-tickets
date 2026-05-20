@@ -68,6 +68,9 @@ $(document).ready(function () {
                 $("#igv").val(
                     empresaOriginal.igv,
                 );
+                 $("#mensaje").val(
+                    empresaOriginal.mensaje,
+                );
                 disableInputs();
                 $("#btnCancelar").addClass("d-none");
                 $("#btnGuardar").addClass("d-none");

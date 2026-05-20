@@ -66,12 +66,6 @@ window.modoCrearHorario = function () {
             </select>
         </div>
 
-        <div class="mb-2">
-            <label class="form-label">Tipo de viaje <span style="color: red">*</span></label>
-            <select id="tipo_viaje_id" class="form-select">
-                ${opcionesTiposViaje()}
-            </select>
-        </div>
 
         <div class="mb-2">
             <label class="form-label">Tipo de vehículo <span style="color: red">*</span></label>
@@ -86,7 +80,7 @@ window.modoCrearHorario = function () {
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Costo total S/ <span style="color: red">*</span></label>
+            <label class="form-label">Costo total S/ </label>
             <input type="number" id="costo_base" class="form-control" min="0" step="0.01">
         </div>
 
@@ -102,17 +96,14 @@ window.modoCrearHorario = function () {
 
 window.guardarHorario = function () {
     let ruta_id = $("#ruta_id").val();
-    let tipo_viaje_id = $("#tipo_viaje_id").val();
     let tipo_vehiculo_id = $("#tipo_vehiculo_id").val();
     let hora_salida = $("#hora_salida").val();
     let costo_base = $("#costo_base").val();
 
     if (
         !ruta_id ||
-        !tipo_viaje_id ||
         !tipo_vehiculo_id ||
         !hora_salida ||
-        costo_base === ""
     ) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
@@ -127,7 +118,6 @@ window.guardarHorario = function () {
     $.post(route("horarios.store"), {
         _token: $("meta[name=csrf-token]").attr("content"),
         ruta_id: ruta_id,
-        tipo_viaje_id: tipo_viaje_id,
         tipo_vehiculo_id: tipo_vehiculo_id,
         hora_salida: hora_salida,
         costo_base: costo_base,
@@ -209,13 +199,6 @@ function editarHorario(id) {
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Tipo de viaje <span style="color: red">*</span></label>
-                <select id="tipo_viaje_id" class="form-select">
-                    ${opcionesTiposViaje(horario.tipo_viaje_id)}
-                </select>
-            </div>
-
-            <div class="mb-2">
                 <label class="form-label">Tipo de vehículo <span style="color: red">*</span></label>
                 <select id="tipo_vehiculo_id" class="form-select">
                     ${opcionesTiposVehiculo(horario.tipo_vehiculo_id)}
@@ -228,7 +211,7 @@ function editarHorario(id) {
             </div>
 
             <div class="mb-2">
-                <label class="form-label">Costo base S/ <span style="color: red">*</span></label>
+                <label class="form-label">Costo base S/ </label>
                 <input type="number" id="costo_base" class="form-control" min="0" step="0.01" value="${horario.costo_base}">
             </div>
 
@@ -245,17 +228,14 @@ function editarHorario(id) {
 
 window.guardarEdicionHorario = function (id) {
     let ruta_id = $("#ruta_id").val();
-    let tipo_viaje_id = $("#tipo_viaje_id").val();
     let tipo_vehiculo_id = $("#tipo_vehiculo_id").val();
     let hora_salida = $("#hora_salida").val();
     let costo_base = $("#costo_base").val();
 
     if (
         !ruta_id ||
-        !tipo_viaje_id ||
         !tipo_vehiculo_id ||
         !hora_salida ||
-        costo_base === ""
     ) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
@@ -274,7 +254,6 @@ window.guardarEdicionHorario = function (id) {
             _token: $("meta[name=csrf-token]").attr("content"),
             _method: "PUT",
             ruta_id: ruta_id,
-            tipo_viaje_id: tipo_viaje_id,
             tipo_vehiculo_id: tipo_vehiculo_id,
             hora_salida: hora_salida,
             costo_base: costo_base,

@@ -71,7 +71,7 @@
                             </div>
                         @endif
                     </div>
-                    <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <label class="form-label">Usuario SOL (SUNAT)</label>
                         <input type="text" class="form-control" name="usuario_facturacion" id="usuario_facturacion"
                             value="{{ $empresa->usuario_facturacion ?? '' }}">
@@ -100,7 +100,12 @@
                                 <span class="badge bg-success">Certificado cargado</span>
                             </div>
                         @endif
-                    </div>
+                    </div> --}}
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Mensaje personalizado</label>
+                    <input type="text" class="form-control" id="mensaje" name="mensaje"
+                        value="{{ $empresa->mensaje }}">
                 </div>
                 <div class="mt-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary" id="btnGuardar">

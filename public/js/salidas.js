@@ -159,6 +159,10 @@ window.guardarSalida = function () {
     let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
 
+    fecha_salida = $("#fecha_salida").prop("disabled")
+        ? $("#fecha_salida").attr("value")
+        : $("#fecha_salida").val();
+
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
@@ -302,106 +306,171 @@ function bloqueCambioEstado(salida = {}) {
         : "display:none;";
 
     return `
-        <div id="bloqueCambioEstado" style="${visible}">
-            <hr>
+    <div id="bloqueCambioEstado" style="${visible}">
+        <hr>
 
-            <div class="mb-2">
-                <label class="form-label">Fecha <span class="text-danger">*</span></label>
-<input 
-    type="date" 
-    id="fecha_cambio_estado" 
-    class="form-control" 
-    min="${hoy()}"
-    value="${salida.fecha_cambio_estado ?? hoy()}">            </div>
-
-            <div class="mb-2">
-                <label class="form-label">Hora <span class="text-danger">*</span></label>
-                <input type="time" id="hora_cambio_estado" class="form-control" value="${salida.hora_cambio_estado ?? ahora()}">
-            </div>
-
-            <div class="mb-2">
-                <label class="form-label">Motivo <span class="text-danger">*</span></label>
-                <textarea id="motivo_cambio_estado" class="form-control" rows="3">${salida.motivo_cambio_estado ?? ""}</textarea>
-            </div>
+        <div class="alert alert-warning">
+            <strong>Salida original:</strong><br>
+            Fecha: ${salida.fecha_formateada ?? "-"}<br>
+            Hora: ${salida.hora_salida ?? "-"}
         </div>
-    `;
+
+        <div class="mb-2">
+            <label class="form-label">Nueva fecha <span class="text-danger">*</span></label>
+
+            <input 
+                type="date" 
+                id="fecha_cambio_estado" 
+                class="form-control" 
+                min="${hoy()}"
+                value="${salida.fecha_cambio_estado ?? hoy()}">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Nueva hora <span class="text-danger">*</span></label>
+
+            <input 
+                type="time" 
+                id="hora_cambio_estado" 
+                class="form-control" 
+                value="${salida.hora_cambio_estado ?? ahora()}">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Motivo <span class="text-danger">*</span></label>
+
+            <textarea 
+                id="motivo_cambio_estado" 
+                class="form-control" 
+                rows="3">${salida.motivo_cambio_estado ?? ""}
+            </textarea>
+        </div>
+    </div>
+`;
 }
 
 function editarSalida(id) {
     $.get(route("salidas.show", { id: id }), function (salida) {
         let html = `
-            <div class="mb-2">
-                <label class="form-label">Horario <span class="text-danger">*</span></label>
-                <select id="horario_id" >
-                    ${opcionesHorarios(salida.horario_id)}
-                </select>
-            </div>
+    <div class="mb-2">
+        <label class="form-label">
+            Estado <span class="text-danger">*</span>
+        </label>
 
-            <div class="mb-2">
-                <label class="form-label">Fecha <span class="text-danger">*</span></label>
-                <input type="date" id="fecha_salida" class="form-control" value="${salida.fecha_salida}">
-            </div>
+        <select id="estado" class="form-select">
+            ${opcionesEstados(salida.estado)}
+        </select>
+    </div>
 
-            <div class="mb-2">
-                <label class="form-label">Estado <span class="text-danger">*</span></label>
-                <select id="estado" class="form-select">
-                    ${opcionesEstados(salida.estado)}
-                </select>
-            </div>
-${bloqueCambioEstado(salida)}
-            <!-- BLOQUE NUEVO -->
-            <div id="bloqueAsignacionRuta" style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
+    <div id="bloqueDatosSalida">
 
-                <hr>
+        <div class="mb-2">
+            <label class="form-label">
+                Horario <span class="text-danger">*</span>
+            </label>
 
-                <div class="mb-2">
-                    <label class="form-label">Vehículo <span class="text-danger">*</span></label>
-                    <select id="vehiculo_id" class="form-select">
-                        <option value="">Seleccione vehículo</option>
-                        ${window.VEHICULOS.map(
-                            (v) => `
-                            <option value="${v.id}" ${v.id == salida.vehiculo_id ? "selected" : ""}>
-                                ${v.tipo_vehiculo.descripcion} - ${v.numero_placa} 
-                            </option>
-                        `,
-                        ).join("")}
-                    </select>
-                </div>
+            <select id="horario_id">
+                ${opcionesHorarios(salida.horario_id)}
+            </select>
+        </div>
 
-                <div class="mb-2">
-                    <label class="form-label">Conductor principal <span class="text-danger">*</span></label>
-                    <select id="conductor_principal_id" class="form-select">
-                        <option value="">Seleccione</option>
-                        ${window.CONDUCTORES.map(
-                            (c) => `
-                            <option value="${c.id}" ${c.id == salida.conductor_principal_id ? "selected" : ""}>
-                                ${c.persona.nombres} ${c.persona.apellidos}
-                            </option>
-                        `,
-                        ).join("")}
-                    </select>
-                </div>
+        <div class="mb-2">
+            <label class="form-label">
+                Fecha <span class="text-danger">*</span>
+            </label>
 
-                <div class="mb-2">
-                    <label class="form-label">Conductor secundario</label>
-                    <select id="conductor_secundario_id" class="form-select">
-                        <option value="">Opcional</option>
-                        ${window.CONDUCTORES.map(
-                            (c) => `
-                            <option value="${c.id}" ${c.id == salida.conductor_secundario_id ? "selected" : ""}>
-                                ${c.persona.nombres} ${c.persona.apellidos}
-                            </option>
-                        `,
-                        ).join("")}
-                    </select>
-                </div>
+            <input
+                type="date"
+                id="fecha_salida"
+                class="form-control"
+                value="${salida.fecha_salida}">
+        </div>
 
-            </div>
+    </div>
 
-            <button class="btn btn-success w-100 mt-2" onclick="guardarEdicionSalida(${salida.id})">
-                Guardar cambios
-            </button>
-        `;
+    ${bloqueCambioEstado(salida)}
+
+    <div id="bloqueAsignacionRuta"
+        style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
+
+        <hr>
+
+        <div class="mb-2">
+            <label class="form-label">
+                Vehículo <span class="text-danger">*</span>
+            </label>
+
+            <select id="vehiculo_id" class="form-select">
+                <option value="">Seleccione vehículo</option>
+
+                ${window.VEHICULOS.map(
+                    (v) => `
+                        <option
+                            value="${v.id}"
+                            ${v.id == salida.vehiculo_id ? "selected" : ""}>
+
+                            ${v.tipo_vehiculo.descripcion}
+                            - ${v.numero_placa}
+                        </option>
+                    `,
+                ).join("")}
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">
+                Conductor principal
+                <span class="text-danger">*</span>
+            </label>
+
+            <select id="conductor_principal_id" class="form-select">
+                <option value="">Seleccione</option>
+
+                ${window.CONDUCTORES.map(
+                    (c) => `
+                        <option
+                            value="${c.id}"
+                            ${c.id == salida.conductor_principal_id ? "selected" : ""}>
+
+                            ${c.persona.nombres}
+                            ${c.persona.apellidos}
+                        </option>
+                    `,
+                ).join("")}
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">
+                Conductor secundario
+            </label>
+
+            <select id="conductor_secundario_id" class="form-select">
+                <option value="">Opcional</option>
+
+                ${window.CONDUCTORES.map(
+                    (c) => `
+                        <option
+                            value="${c.id}"
+                            ${c.id == salida.conductor_secundario_id ? "selected" : ""}>
+
+                            ${c.persona.nombres}
+                            ${c.persona.apellidos}
+                        </option>
+                    `,
+                ).join("")}
+            </select>
+        </div>
+
+    </div>
+
+    <button
+        class="btn btn-success w-100 mt-2"
+        onclick="guardarEdicionSalida(${salida.id})">
+
+        Guardar cambios
+    </button>
+`;
 
         $("#tituloPanelSalida").text("Editar salida");
         $("#panelSalidaContenido").html(html);
@@ -434,8 +503,8 @@ ${bloqueCambioEstado(salida)}
             create: false,
         });
 
-        $("#estado").on("change", function () {
-            let estado = $(this).val();
+        function actualizarFormularioPorEstado() {
+            let estado = $("#estado").val();
 
             if (estado === "en_ruta") {
                 $("#bloqueAsignacionRuta").slideDown();
@@ -448,7 +517,49 @@ ${bloqueCambioEstado(salida)}
             } else {
                 $("#bloqueCambioEstado").slideUp();
             }
-        });
+
+            let bloquear = estado === "finalizado";
+
+            $("#horario_id")[0].tomselect.enable();
+
+            $("#fecha_salida").prop("disabled", bloquear);
+
+            if (bloquear) {
+                $("#horario_id")[0].tomselect.disable();
+            }
+        }
+
+        function actualizarFormularioPorEstado() {
+            let estado = $("#estado").val();
+
+            if (estado === "en_ruta") {
+                $("#bloqueAsignacionRuta").slideDown();
+            } else {
+                $("#bloqueAsignacionRuta").slideUp();
+            }
+
+            if (estado === "reprogramado" || estado === "cancelado") {
+                $("#bloqueCambioEstado").slideDown();
+            } else {
+                $("#bloqueCambioEstado").slideUp();
+            }
+
+            let bloquear = estado === "finalizado";
+
+            $("#fecha_salida").prop("disabled", bloquear);
+
+            if ($("#horario_id")[0]?.tomselect) {
+                if (bloquear) {
+                    $("#horario_id")[0].tomselect.disable();
+                } else {
+                    $("#horario_id")[0].tomselect.enable();
+                }
+            }
+        }
+
+        $("#estado").on("change", actualizarFormularioPorEstado);
+
+        actualizarFormularioPorEstado();
 
         lucide.createIcons();
     });
@@ -464,6 +575,10 @@ window.guardarEdicionSalida = function (id) {
     let vehiculo_id = $("#vehiculo_id").val();
     let conductor_principal_id = $("#conductor_principal_id").val();
     let conductor_secundario_id = $("#conductor_secundario_id").val();
+
+    fecha_salida = $("#fecha_salida").prop("disabled")
+        ? $("#fecha_salida").attr("value")
+        : $("#fecha_salida").val();
 
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
