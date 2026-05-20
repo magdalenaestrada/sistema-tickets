@@ -304,6 +304,7 @@ class SalidaController extends Controller
             $salida = Salida::create([
                 'horario_id' => $request->horario_id,
                 'fecha_salida' => $request->fecha_salida,
+                'hora_salida' => $request->hora_salida,
                 'estado' => $request->estado,
             ]);
 
@@ -432,6 +433,7 @@ class SalidaController extends Controller
                 'estado' => $request->estado,
                 'usuario_cambio_estado_id' => $user,
                 'vehiculo_id' => $request->vehiculo_id,
+                'hora_salida' => $request->hora_salida,
                 'conductor_principal_id' => $request->conductor_principal_id,
                 'conductor_secundario_id' => $request->conductor_secundario_id,
                 'fecha_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->fecha_cambio_estado : null,

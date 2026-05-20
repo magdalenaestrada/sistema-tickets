@@ -139,7 +139,10 @@ window.modoCrearSalida = function () {
                                 style="color: red">*</span></label>
             <input type="date" id="fecha_salida" class="form-control">
         </div>
-
+<div class="mb-2">
+    <label class="form-label">Hora de salida <span style="color:red">*</span></label>
+    <input type="time" id="hora_salida" class="form-control">
+</div>
         <div class="mb-2">
             <label class="form-label">Estado <span
                                 style="color: red">*</span></label>
@@ -218,24 +221,20 @@ window.modoGenerarSalidas = function () {
 window.guardarSalida = function () {
     let horario_id = $("#horario_id").val();
     let fecha_salida = $("#fecha_salida").val();
+    let hora_salida = $("#hora_salida").val(); // 👈 NUEVO
     let estado = $("#estado").val();
 
-    if (!horario_id || !fecha_salida || !estado) {
+    if (!horario_id || !fecha_salida || !hora_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
 
-    Swal.fire({
-        title: "Guardando...",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-    });
-
     $.post(route("salidas.store"), {
         _token: $("meta[name=csrf-token]").attr("content"),
-        horario_id: horario_id,
-        fecha_salida: fecha_salida,
-        estado: estado,
+        horario_id,
+        fecha_salida,
+        hora_salida, // 👈 NUEVO
+        estado,
     })
         .done(function () {
             Swal.fire("Guardado", "", "success");
@@ -560,34 +559,43 @@ function editarSalida(id) {
             create: false,
         });
 
-        function actualizarFormularioPorEstado() {
+        function aplicarReglasEstado() {
             let estado = $("#estado").val();
 
-            let esEnRuta = estado === "en_ruta";
-            let esReprogramado = estado === "reprogramado";
-            let esCancelado = estado === "cancelado";
-            let esFinalizado = estado === "finalizado";
+            let enRuta = estado === "en_ruta";
+            let reprogramado = estado === "reprogramado";
+            let cancelado = estado === "cancelado";
+            let finalizado = estado === "finalizado";
 
-            $("#bloqueAsignacionRuta").toggle(esEnRuta);
+            let bloquearBase = enRuta || finalizado;
 
-            $("#bloqueCambioEstado").toggle(esReprogramado || esCancelado);
-
-            $("#fecha_cambio_estado").closest(".mb-2").toggle(esReprogramado);
-
-            $("#hora_cambio_estado").closest(".mb-2").toggle(esReprogramado);
-
-            $("#fecha_salida").prop("readonly", esFinalizado);
-
+            // 🔒 HORARIO
             if ($("#horario_id")[0]?.tomselect) {
-                esFinalizado
-                    ? $("#horario_id")[0].tomselect.disable()
-                    : $("#horario_id")[0].tomselect.enable();
+                if (bloquearBase || reprogramado) {
+                    $("#horario_id")[0].tomselect.disable();
+                } else {
+                    $("#horario_id")[0].tomselect.enable();
+                }
             }
+
+            // 🔒 FECHA BASE
+            $("#fecha_salida").prop("readonly", bloquearBase || reprogramado);
+
+            // 📌 BLOQUE BASE (si está en ruta, ocultas esto)
+            $("#bloqueDatosSalida").toggle(!enRuta);
+
+            // 🚛 ASIGNACIÓN SOLO EN RUTA
+            $("#bloqueAsignacionRuta").toggle(enRuta);
+
+            // 🔁 CAMBIO DE ESTADO
+            $("#bloqueCambioEstado").toggle(reprogramado || cancelado);
+
+            $("#fecha_cambio_estado").closest(".mb-2").toggle(reprogramado);
+            $("#hora_cambio_estado").closest(".mb-2").toggle(reprogramado);
         }
 
-        $("#estado").on("change", actualizarFormularioPorEstado);
-
-        actualizarFormularioPorEstado();
+        $("#estado").on("change", aplicarReglasEstado);
+        aplicarReglasEstado();
 
         lucide.createIcons();
     });
