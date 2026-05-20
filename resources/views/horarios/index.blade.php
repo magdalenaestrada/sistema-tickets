@@ -19,7 +19,6 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Ruta</th>
-                                <th>Viaje</th>
                                 <th>Salida</th>
                                 <th>Llegada</th>
                                 <th>Duración</th>

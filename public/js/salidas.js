@@ -7,6 +7,14 @@ $(document).ready(function () {
             url: route("salidas.datatable"),
         },
         columns: [
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data) {
+                    return `<input type="checkbox" class="chk-salida" value="${data.id}">`;
+                },
+            },
             { data: "id" },
             { data: "ruta" },
             { data: "fecha_formateada" },
@@ -29,6 +37,59 @@ function hoy() {
     let fecha = new Date();
     return fecha.toISOString().split("T")[0];
 }
+
+function getSeleccionados() {
+    let ids = [];
+
+    $(".chk-salida:checked").each(function () {
+        ids.push($(this).val());
+    });
+
+    return ids;
+}
+
+$("#btnEliminarSeleccionados").on("click", function () {
+    let ids = getSeleccionados();
+
+    if (ids.length === 0) {
+        Swal.fire("Atención", "Selecciona al menos una salida", "warning");
+        return;
+    }
+
+    Swal.fire({
+        title: `¿Eliminar ${ids.length} salidas?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.ajax({
+            url: route("salidas.destroy.bulk"),
+            method: "POST",
+            data: {
+                _token: $("meta[name=csrf-token]").attr("content"),
+                _method: "DELETE",
+                ids: ids,
+            },
+            success: function () {
+                Swal.fire("Eliminadas", "", "success");
+                tablaSalidas.ajax.reload();
+            },
+            error: function (err) {
+                Swal.fire(
+                    "Error",
+                    err.responseJSON?.message || "No se pudo eliminar",
+                    "error",
+                );
+            },
+        });
+    });
+});
+
+$(document).on("change", "#chk-todos", function () {
+    $(".chk-salida").prop("checked", $(this).is(":checked"));
+});
 
 function ahora() {
     let fecha = new Date();
@@ -644,7 +705,6 @@ $(document).on("click", ".eliminar", function () {
     let id = $(this).data("id");
     eliminarSalida(id);
 });
-
 
 $(document).on("change", "#horario_id", function () {
     let horario_id = $(this).val();

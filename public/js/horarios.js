@@ -11,7 +11,6 @@ $(document).ready(async function () {
         columns: [
             { data: "id" },
             { data: "ruta" },
-            { data: "tipo_viaje" },
             { data: "hora_salida_formateada" },
             { data: "hora_llegada_formateada" },
             { data: "duracion" },
@@ -103,7 +102,7 @@ window.guardarHorario = function () {
     if (
         !ruta_id ||
         !tipo_vehiculo_id ||
-        !hora_salida ||
+        !hora_salida
     ) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
@@ -235,7 +234,7 @@ window.guardarEdicionHorario = function (id) {
     if (
         !ruta_id ||
         !tipo_vehiculo_id ||
-        !hora_salida ||
+        !hora_salida
     ) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;

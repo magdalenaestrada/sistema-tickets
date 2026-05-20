@@ -25,16 +25,12 @@ class HorarioController extends Controller
     {
         $horarios = Horario::with([
             'ruta.puntos.sucursal',
-            'tipo_viaje',
             'tipo_vehiculo'
         ]);
 
         return DataTables::of($horarios)
             ->addColumn('ruta', function ($horario) {
                 return $horario->ruta?->nombre ?? '-';
-            })
-            ->addColumn('tipo_viaje', function ($horario) {
-                return $horario->tipo_viaje?->descripcion ?? '-';
             })
             ->addColumn('tipo_vehiculo', function ($horario) {
                 return $horario->tipo_vehiculo?->descripcion ?? '-';
@@ -105,10 +101,10 @@ class HorarioController extends Controller
     {
         $request->validate([
             'ruta_id' => 'required|exists:rutas,id',
-            'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
+            'tipo_viaje_id' => 'nullable|exists:tipos_viajes,id',
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'hora_salida' => 'required',
-            'costo_base' => 'required|numeric|min:0',
+            'costo_base' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -133,14 +129,15 @@ class HorarioController extends Controller
         }
     }
 
+    
     public function update(Request $request, $id)
     {
         $request->validate([
             'ruta_id' => 'required|exists:rutas,id',
-            'tipo_viaje_id' => 'required|exists:tipos_viajes,id',
+            'tipo_viaje_id' => 'nullable|exists:tipos_viajes,id',
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'hora_salida' => 'required',
-            'costo_base' => 'required|numeric|min:0',
+            'costo_base' => 'nullable|numeric|min:0',
         ]);
 
         try {

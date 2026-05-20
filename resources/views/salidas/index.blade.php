@@ -12,10 +12,12 @@
                             <i class="link-icon" data-lucide="calendar-plus"></i>
                             Programar varias salidas
                         </button>
-
                         <button class="btn btn-primary" onclick="modoCrearSalida()">
                             <i class="link-icon" data-lucide="plus"></i>
                             Crear salida única
+                        </button>
+                        <button id="btnEliminarSeleccionados" class="btn btn-danger">  <i class="link-icon" data-lucide="trash-2"></i>
+                            Eliminar seleccionados
                         </button>
                     </div>
                 </div>
@@ -25,6 +27,7 @@
                         <table id="tablaSalidas" class="table table-hover align-middle w-100">
                             <thead class="table-primary">
                                 <tr>
+                                    <th><input type="checkbox" id="chk-todos"></th>
                                     <th>ID</th>
                                     <th>Ruta</th>
                                     <th>Fecha</th>

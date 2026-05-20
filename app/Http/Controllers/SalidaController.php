@@ -68,7 +68,7 @@ class SalidaController extends Controller
             ->whereDate('fecha_salida', '>=', now()->toDateString())
             ->orderBy('fecha_salida', 'asc')
             ->get();
-            
+
         return DataTables::of($salidas)
             ->addColumn('ruta', function ($salida) {
                 return $salida->horario?->ruta?->nombre ?? '-';
@@ -157,6 +157,19 @@ class SalidaController extends Controller
             "manifiesto_pasajeros_{$salida->id}.pdf",
             'P'
         );
+    }
+
+    public function destroyBulk(Request $request)
+    {
+        $ids = $request->ids;
+
+        if (!$ids || !is_array($ids)) {
+            return response()->json(['message' => 'IDs inválidos'], 422);
+        }
+
+        Salida::whereIn('id', $ids)->delete();
+
+        return response()->json(['message' => 'Eliminadas correctamente']);
     }
 
     public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService)
