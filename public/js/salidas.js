@@ -159,10 +159,6 @@ window.guardarSalida = function () {
     let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
 
-    fecha_salida = $("#fecha_salida").prop("disabled")
-        ? $("#fecha_salida").attr("value")
-        : $("#fecha_salida").val();
-
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
@@ -506,54 +502,25 @@ function editarSalida(id) {
         function actualizarFormularioPorEstado() {
             let estado = $("#estado").val();
 
-            if (estado === "en_ruta") {
-                $("#bloqueAsignacionRuta").slideDown();
-            } else {
-                $("#bloqueAsignacionRuta").slideUp();
-            }
+            let esEnRuta = estado === "en_ruta";
+            let esReprogramado = estado === "reprogramado";
+            let esCancelado = estado === "cancelado";
+            let esFinalizado = estado === "finalizado";
 
-            if (estado === "reprogramado" || estado === "cancelado") {
-                $("#bloqueCambioEstado").slideDown();
-            } else {
-                $("#bloqueCambioEstado").slideUp();
-            }
+            $("#bloqueAsignacionRuta").toggle(esEnRuta);
 
-            let bloquear = estado === "finalizado";
+            $("#bloqueCambioEstado").toggle(esReprogramado || esCancelado);
 
-            $("#horario_id")[0].tomselect.enable();
+            $("#fecha_cambio_estado").closest(".mb-2").toggle(esReprogramado);
 
-            $("#fecha_salida").prop("disabled", bloquear);
+            $("#hora_cambio_estado").closest(".mb-2").toggle(esReprogramado);
 
-            if (bloquear) {
-                $("#horario_id")[0].tomselect.disable();
-            }
-        }
-
-        function actualizarFormularioPorEstado() {
-            let estado = $("#estado").val();
-
-            if (estado === "en_ruta") {
-                $("#bloqueAsignacionRuta").slideDown();
-            } else {
-                $("#bloqueAsignacionRuta").slideUp();
-            }
-
-            if (estado === "reprogramado" || estado === "cancelado") {
-                $("#bloqueCambioEstado").slideDown();
-            } else {
-                $("#bloqueCambioEstado").slideUp();
-            }
-
-            let bloquear = estado === "finalizado";
-
-            $("#fecha_salida").prop("disabled", bloquear);
+            $("#fecha_salida").prop("readonly", esFinalizado);
 
             if ($("#horario_id")[0]?.tomselect) {
-                if (bloquear) {
-                    $("#horario_id")[0].tomselect.disable();
-                } else {
-                    $("#horario_id")[0].tomselect.enable();
-                }
+                esFinalizado
+                    ? $("#horario_id")[0].tomselect.disable()
+                    : $("#horario_id")[0].tomselect.enable();
             }
         }
 
@@ -576,16 +543,12 @@ window.guardarEdicionSalida = function (id) {
     let conductor_principal_id = $("#conductor_principal_id").val();
     let conductor_secundario_id = $("#conductor_secundario_id").val();
 
-    fecha_salida = $("#fecha_salida").prop("disabled")
-        ? $("#fecha_salida").attr("value")
-        : $("#fecha_salida").val();
-
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
 
-    if (estado === "reprogramado" || estado === "cancelado") {
+    if (estado === "reprogramado") {
         if (
             !fecha_cambio_estado ||
             !hora_cambio_estado ||
@@ -595,6 +558,14 @@ window.guardarEdicionSalida = function (id) {
             return;
         }
     }
+
+    if (estado === "cancelado") {
+        if (!motivo_cambio_estado) {
+            Swal.fire("Error", "Debe ingresar motivo", "error");
+            return;
+        }
+    }
+
     if (estado === "en_ruta") {
         if (!vehiculo_id || !conductor_principal_id) {
             Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
@@ -674,13 +645,6 @@ $(document).on("click", ".eliminar", function () {
     eliminarSalida(id);
 });
 
-$("#estado_salida").on("change", function () {
-    if ($(this).val() === "en_ruta") {
-        $("#bloqueAsignacionRuta").slideDown();
-    } else {
-        $("#bloqueAsignacionRuta").slideUp();
-    }
-});
 
 $(document).on("change", "#horario_id", function () {
     let horario_id = $(this).val();
