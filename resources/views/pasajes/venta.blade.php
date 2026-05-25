@@ -23,12 +23,12 @@
                     <div class="d-flex flex-wrap align-items-stretch resumen-top">
                         <div class="resumen-item">
                             <div class="resumen-label">Salida:</div>
-                            <div class="resumen-value">{{ $origen->nombre_comercial }}</div>
+                            <div class="resumen-value">{{ $origen->descripcion }}</div>
                         </div>
 
                         <div class="resumen-item">
                             <div class="resumen-label">Llegada:</div>
-                            <div class="resumen-value">{{ $destino->nombre_comercial }}</div>
+                            <div class="resumen-value">{{ $destino->descripcion }}</div>
                         </div>
 
                         <div class="resumen-item">
@@ -39,7 +39,7 @@
                         </div>
 
                         <div class="resumen-item">
-                            <div class="resumen-label">Asientos seleccionados:</div>
+                            <div class="resumen-label">Numero de asiento:</div>
                             <div class="resumen-value">{{ implode(' ', $asientos) }}</div>
                         </div>
 
@@ -241,7 +241,7 @@
                                 </div>
                             </div>
 
-                            <div class="mb-2 text-center fw-semibold">Sucursal de venta:</div>
+                            <div class="mb-2 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span></div>
 
                             <div class="mb-3">
                                 <select name="caja_id" id="caja_id" class="form-select">

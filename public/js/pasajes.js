@@ -42,8 +42,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     cargarAsientos(
                         salidaId,
-                        primero?.sucursal_id || null,
-                        ultimo?.sucursal_id || null,
+                        primero?.pueblito_id || null,
+                        ultimo?.pueblito_id || null,
                     );
                 }
             });
@@ -65,6 +65,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
         cargarAsientos(salidaId, origenId, destinoId);
     }
+
+    const btnLimpiar = document.getElementById("btn-limpiar-filtros");
+
+    btnLimpiar?.addEventListener("click", () => {
+        document.getElementById("filtro_fecha").value = fechaHoy;
+        document.getElementById("filtro_origen").value = "";
+        document.getElementById("filtro_destino").value = "";
+        document.querySelectorAll(".horario-row").forEach((row) => {
+            row.style.display = "none";
+            row.classList.remove("active");
+        });
+        document.getElementById("resultados-info").innerHTML = "";
+        document.getElementById("svg-container").innerHTML = `
+        <div class="no-results">
+            Selecciona una salida para ver los asientos
+        </div>
+    `;
+        document.getElementById("sell-button").style.display = "none";
+        document.getElementById("edit-button").style.display = "none";
+        document.getElementById("estado-inicial").style.display = "block";
+
+        filtrarSalidas();
+    });
 
     function cargarAsientos(salidaId, origenId, destinoId) {
         if (!salidaId) return;
@@ -388,11 +411,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const puntoOrigen = puntos.find(
-                (p) => String(p.sucursal_id) === String(origen),
+                (p) => String(p.pueblito_id) === String(origen),
             );
 
             const puntoDestino = puntos.find(
-                (p) => String(p.sucursal_id) === String(destino),
+                (p) => String(p.pueblito_id) === String(destino),
             );
 
             const matchFecha = rowFecha === fecha;
@@ -415,8 +438,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const coincideExacto =
                     primero &&
                     ultimo &&
-                    String(primero.sucursal_id) === String(origen) &&
-                    String(ultimo.sucursal_id) === String(destino);
+                    String(primero.pueblito_id) === String(origen) &&
+                    String(ultimo.pueblito_id) === String(destino);
 
                 visible = coincideExacto;
             }

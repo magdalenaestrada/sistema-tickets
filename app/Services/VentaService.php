@@ -88,7 +88,15 @@ class VentaService
 
             foreach ($detalles as $detalle) {
                 if ((int) $tipoServicioId === 1) {
-                    $descripcion = data_get($request, 'origen_nombre') . ' → ' . data_get($request, 'destino_nombre');
+
+                    $descripcion = trim(
+                        (string) ($detalle['descripcion'] ?? '')
+                    );
+
+                    if ($descripcion === '') {
+                        $descripcion = 'Pasaje de viaje';
+                    }
+
                     $tipoServicioDetalle = 1;
                 } elseif ((int) $tipoServicioId === 2) {
                     $descripcion = 'Encomienda: '
@@ -204,7 +212,7 @@ class VentaService
                 'fecha_emision'             => now(),
             ]);
 
-            $descripcion = $horario->punto_origen->nombre_comercial . ' → '
+            $descripcion = $horario->punto_origen->nombre_comercial . ' - '
                 . $horario->punto_destino->nombre_comercial
                 . ' - Asiento ' . $asiento;
 
@@ -643,13 +651,29 @@ class VentaService
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
             }
 
-            $igv = $empresa->igv;
-            $valorUnitario = round($totalLinea / (1 + $igv), 10);
-            $igvLinea = round($totalLinea - $valorUnitario, 2);
-            $valorVentaLinea = round($totalLinea - $igvLinea, 2);
-            $precioUnitario = round($totalLinea / $cantidad, 10);
-            $valorUnitarioSinIgv = round($valorVentaLinea / $cantidad, 10);
+            $igv = (float) $empresa->igv;
 
+            if ($igv > 1) {
+                $igv = $igv / 100;
+            }
+            $porcentajeIgv = 0.18;
+            $totalLinea = round($totalLinea, 2);
+            $valorVentaLinea = round(
+                $totalLinea / (1 + $porcentajeIgv),
+                2
+            );
+            $igvLinea = round(
+                $totalLinea - $valorVentaLinea,
+                2
+            );
+            $precioUnitario = round(
+                $totalLinea / $cantidad,
+                10
+            );
+            $valorUnitarioSinIgv = round(
+                $valorVentaLinea / $cantidad,
+                10
+            );
             $detalles[] = (new SaleDetail())
                 ->setCodProducto((string) ($detalle->id ?? 'ITEM'))
                 ->setUnidad('NIU')
@@ -657,8 +681,7 @@ class VentaService
                 ->setMtoValorUnitario($valorUnitarioSinIgv)
                 ->setDescripcion($detalle->descripcion)
                 ->setMtoBaseIgv($valorVentaLinea)
-                ->setPorcentajeIgv(18.00)
-                ->setIgv($igvLinea)
+                ->setPorcentajeIgv($igv * 100)->setIgv($igvLinea)
                 ->setTipAfeIgv('10')
                 ->setTotalImpuestos($igvLinea)
                 ->setMtoValorVenta($valorVentaLinea)

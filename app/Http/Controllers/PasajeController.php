@@ -13,6 +13,7 @@ use App\Models\Caja;
 use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
+use App\Models\Pueblito;
 use App\Models\Venta;
 use App\Services\PagoService;
 use App\Services\VentaService;
@@ -47,19 +48,19 @@ class PasajeController extends Controller
                 $salida->puntos_json = json_encode(
                     $puntos->map(function ($p) {
                         return [
-                            'sucursal_id' => (string) $p->sucursal_id,
+                            'pueblito_id' => (string) $p->pueblito_id,
                             'orden' => (int) $p->orden,
-                            'nombre' => $p->sucursal?->nombre_comercial,
+                            'nombre' => $p->pueblito?->descripcion,
                         ];
                     })->values()->toArray(),
                     JSON_UNESCAPED_UNICODE
                 );
 
-                $salida->origen_nombre = $puntos->first()?->sucursal?->nombre_comercial ?? '—';
-                $salida->destino_nombre = $puntos->last()?->sucursal?->nombre_comercial ?? '—';
+                $salida->origen_nombre = $puntos->first()?->pueblito?->descripcion;
+                $salida->destino_nombre = $puntos->last()?->pueblito?->descripcion;
 
-                $origenId = $puntos->first()?->sucursal_id;
-                $destinoId = $puntos->last()?->sucursal_id;
+                $origenId = $puntos->first()?->pueblito_id;
+                $destinoId = $puntos->last()?->pueblito_id;
                 $asientosMap = $salida->asientosDisponibles($origenId, $destinoId);
                 $salida->capacidad_bus = collect($asientosMap)->filter(fn($estado) => $estado === 'libre')->count();
 
@@ -69,7 +70,9 @@ class PasajeController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
-        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer'));
+        $pueblitos = Pueblito::orderBy('descripcion')
+            ->get();
+        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitos'));
     }
 
     public function listarPasajes(Request $request)
@@ -96,11 +99,11 @@ class PasajeController extends Controller
         }
 
         if ($request->filled('origen_id')) {
-            $query->where('pasajes.origen_sucursal_id', $request->origen_id);
+            $query->where('pasajes.origen_pueblito_id', $request->origen_id);
         }
 
         if ($request->filled('destino_id')) {
-            $query->where('pasajes.destino_sucursal_id', $request->destino_id);
+            $query->where('pasajes.destino_pueblito_id', $request->destino_id);
         }
 
         if ($request->filled('estado')) {
@@ -154,7 +157,7 @@ class PasajeController extends Controller
                 $pasaje->puntos_json = json_encode(
                     $puntos->map(function ($p) {
                         return [
-                            'sucursal_id' => (string) $p->sucursal_id,
+                            'pueblito_id' => (string) $p->pueblito_id,
                             'orden' => (int) $p->orden,
                             'nombre' => $p->sucursal?->nombre_comercial,
                         ];
@@ -165,8 +168,8 @@ class PasajeController extends Controller
                 $pasaje->origen_nombre = $puntos->first()?->sucursal?->nombre_comercial ?? '—';
                 $pasaje->destino_nombre = $puntos->last()?->sucursal?->nombre_comercial ?? '—';
 
-                $origenId = $puntos->first()?->sucursal_id;
-                $destinoId = $puntos->last()?->sucursal_id;
+                $origenId = $puntos->first()?->pueblito_id;
+                $destinoId = $puntos->last()?->pueblito_id;
 
                 $asientosMap = $pasaje->salida->asientosDisponibles($origenId, $destinoId);
                 $pasaje->capacidad_bus = collect($asientosMap)
@@ -186,8 +189,8 @@ class PasajeController extends Controller
     public function asientos(Salida $salida, Request $request)
     {
         $request->validate([
-            'origen_id' => 'nullable|exists:sucursales,id',
-            'destino_id' => 'nullable|exists:sucursales,id',
+            'origen_id' => 'nullable|exists:pueblitos,id',
+            'destino_id' => 'nullable|exists:pueblitos,id',
         ]);
 
         $origenId = $request->origen_id;
@@ -206,8 +209,8 @@ class PasajeController extends Controller
             $ruta = $salida->horario->ruta;
             $puntos = $ruta->puntos->sortBy('orden')->values();
 
-            $origenId = $puntos->first()?->sucursal_id;
-            $destinoId = $puntos->last()?->sucursal_id;
+            $origenId = $puntos->first()?->pueblito_id;
+            $destinoId = $puntos->last()?->pueblito_id;
 
             $asientos = $salida->asientosDisponibles($origenId, $destinoId);
             $precio = $salida->horario->costo_base;
@@ -251,8 +254,8 @@ class PasajeController extends Controller
     {
         $request->validate([
             'salida_id' => 'required|exists:salidas,id',
-            'origen_id' => 'required|exists:sucursales,id',
-            'destino_id' => 'required|exists:sucursales,id',
+            'origen_id' => 'required|exists:pueblitos,id',
+            'destino_id' => 'required|exists:pueblitos,id',
             'dni' => 'required|string|max:20',
             'codigo' => 'nullable|string',
         ]);
@@ -260,8 +263,8 @@ class PasajeController extends Controller
         $cantidad = Pasaje::whereHas('persona', function ($q) use ($request) {
             $q->where('documento', $request->dni);
         })
-            ->where('origen_sucursal_id', $request->origen_id)
-            ->where('destino_sucursal_id', $request->destino_id)
+            ->where('origen_pueblito_id', $request->origen_id)
+            ->where('destino_pueblito_id', $request->destino_id)
             ->whereIn('estado', ['V', 'F'])
             ->count();
 
@@ -282,8 +285,8 @@ class PasajeController extends Controller
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'salida_id' => 'required|exists:salidas,id',
-            'origen_id' => 'required|exists:sucursales,id',
-            'destino_id' => 'required|exists:sucursales,id',
+            'origen_id' => 'required|exists:pueblitos,id',
+            'destino_id' => 'required|exists:pueblitos,id',
             'asientos' => 'required|array|min:1',
             'asientos.*' => 'required|integer|min:1',
             'tipo_documento_id' => 'required|array',
@@ -324,7 +327,7 @@ class PasajeController extends Controller
             $estadoPasaje = $accion === 'reservar' ? 'R' : 'V';
 
             $salida = Salida::with([
-                'horario.ruta.puntos.sucursal',
+                'horario.ruta.puntos.pueblito',
                 'horario.ruta.tramos.origen',
                 'horario.ruta.tramos.destino',
                 'horario.tipo_vehiculo',
@@ -431,8 +434,8 @@ class PasajeController extends Controller
                         $cantidadCompradosMismoDni = Pasaje::whereHas('persona', function ($q) use ($documento) {
                             $q->where('documento', $documento);
                         })
-                            ->where('origen_sucursal_id', $request->origen_id)
-                            ->where('destino_sucursal_id', $request->destino_id)
+                            ->where('origen_pueblito_id', $request->origen_id)
+                            ->where('destino_pueblito_id', $request->destino_id)
                             ->whereIn('estado', ['V', 'F'])
                             ->count();
 
@@ -479,7 +482,13 @@ class PasajeController extends Controller
             $detalles = [];
 
             foreach ($pasajeros as $p) {
+                $origenNombre = Pueblito::find($request->origen_id)?->descripcion;
+                $destinoNombre = Pueblito::find($request->destino_id)?->descripcion;
+
                 $detalles[] = [
+                    'descripcion' =>
+                    "Pasaje {$origenNombre} - {$destinoNombre} | Asiento {$p['asiento_numero']}",
+
                     'costo' => $p['precio_final'],
                     'descuento' => $p['descuento_monto'],
                 ];
@@ -581,8 +590,8 @@ class PasajeController extends Controller
                     'autorizacion_pdf' => $pasajeroData['autorizacion_pdf'],
                     'asiento_numero' => $pasajeroData['asiento_numero'],
                     'salida_id' => $salida->id,
-                    'origen_sucursal_id' => $request->origen_id,
-                    'destino_sucursal_id' => $request->destino_id,
+                    'origen_pueblito_id' => $request->origen_id,
+                    'destino_pueblito_id' => $request->destino_id,
                     'estado' => $estadoPasaje,
                     'es_promocion' => $pasajeroData['es_promocion'],
                     'precio_cobrado' => $pasajeroData['precio_final'],
@@ -640,8 +649,8 @@ class PasajeController extends Controller
             'fecha' => $pasaje->salida?->fecha_salida?->format('Y-m-d'),
             'hora' => $pasaje->salida?->horario?->hora_formateada,
             'ruta' => $pasaje->salida?->horario?->ruta?->nombre,
-            'origen' => $pasaje->origen?->nombre_comercial,
-            'destino' => $pasaje->destino?->nombre_comercial,
+            'origen' => $pasaje->origenPueblito?->descripcion,
+            'destino' => $pasaje->destinoPueblito?->descripcion,
             'pasajero' => $pasaje->persona ? [
                 'documento' => $pasaje->persona->documento,
                 'nombres' => $pasaje->persona->nombres,
@@ -759,8 +768,8 @@ class PasajeController extends Controller
         $request->validate([
             'nueva_salida_id' => 'required|exists:salidas,id',
             'nuevo_asiento_numero' => 'required|integer|min:1',
-            'origen_id' => 'required|exists:sucursales,id',
-            'destino_id' => 'required|exists:sucursales,id',
+            'origen_id' => 'required|exists:pueblitos,id',
+            'destino_id' => 'required|exists:pueblitos,id',
         ]);
 
         if (!in_array($pasaje->estado, ['R', 'V'])) {
@@ -823,8 +832,8 @@ class PasajeController extends Controller
 
                 $pasaje->update([
                     'salida_id' => $nuevaSalida->id,
-                    'origen_sucursal_id' => $request->origen_id,
-                    'destino_sucursal_id' => $request->destino_id,
+                    'origen_pueblito_id' => $request->origen_id,
+                    'destino_pueblito_id' => $request->destino_id,
                     'asiento_numero' => $request->nuevo_asiento_numero,
                     'precio_cobrado' => $nuevoPrecio,
                     'es_promocion' => (int) $request->descuento_id === 1,
@@ -873,8 +882,8 @@ class PasajeController extends Controller
         $request->validate([
             'salida' => 'required|exists:salidas,id',
             'asientos' => 'required|string',
-            'origen_id' => 'required|exists:sucursales,id',
-            'destino_id' => 'required|exists:sucursales,id',
+            'origen_id' => 'required|exists:pueblitos,id',
+            'destino_id' => 'required|exists:pueblitos,id',
         ]);
 
         $salida = Salida::with([
@@ -899,8 +908,8 @@ class PasajeController extends Controller
                 ->withErrors('No se recibieron asientos válidos.');
         }
 
-        $origen = Sucursal::findOrFail($request->origen_id);
-        $destino = Sucursal::findOrFail($request->destino_id);
+        $origen = Pueblito::findOrFail($request->origen_id);
+        $destino = Pueblito::findOrFail($request->destino_id);
 
         $tramos = $salida->obtenerTramosDeViaje($origen->id, $destino->id);
 

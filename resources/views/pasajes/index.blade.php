@@ -273,28 +273,34 @@
             <div class="filtros-bar">
                 <div class="filtro-group">
                     <label>Fecha</label>
-                    <input type="date" id="filtro_fecha" min="{{ $ayer }}" class="form-control" value="{{ $hoy }}">
+                    <input type="date" id="filtro_fecha" min="{{ $ayer }}" class="form-control"
+                        value="{{ $hoy }}">
                 </div>
-
                 <div class="filtro-group">
                     <label>Origen</label>
                     <select id="filtro_origen" class="form-select">
                         <option value="">Seleccionar origen</option>
-                        @foreach ($sucursales as $sucursal)
-                            <option value="{{ $sucursal->id }}">{{ $sucursal->nombre_comercial }}</option>
+                        @foreach ($pueblitos as $pueblito)
+                            <option value="{{ $pueblito->id }}">
+                                {{ $pueblito->descripcion }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
-
                 <div class="filtro-group">
                     <label>Destino</label>
                     <select id="filtro_destino" class="form-select">
                         <option value="">Seleccionar destino</option>
-                        @foreach ($sucursales as $sucursal)
-                            <option value="{{ $sucursal->id }}">{{ $sucursal->nombre_comercial }}</option>
+                        @foreach ($pueblitos as $pueblito)
+                            <option value="{{ $pueblito->id }}">
+                                {{ $pueblito->descripcion }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
+                <button id="btn-limpiar-filtros" class="btn btn-outline-secondary">
+                    Limpiar
+                </button>
             </div>
 
             <div class="venta-wrapper">
@@ -377,5 +383,8 @@
 @endsection
 
 @push('scripts')
+    <script>
+        const fechaHoy = @json($hoy);
+    </script>
     <script src="{{ asset('js/pasajes.js') }}"></script>
 @endpush

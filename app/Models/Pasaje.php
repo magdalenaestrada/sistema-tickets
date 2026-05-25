@@ -18,8 +18,8 @@ class Pasaje extends Model
         'autorizacion_pdf',
         'asiento_numero',
         'salida_id',
-        'origen_sucursal_id',
-        'destino_sucursal_id',
+        'origen_pasaje_id',
+        'destino_pasaje_id',
         'estado',
         'es_promocion',
         'precio_cobrado',
@@ -48,12 +48,12 @@ class Pasaje extends Model
 
     public function origen()
     {
-        return $this->belongsTo(Sucursal::class, 'origen_sucursal_id');
+        return $this->belongsTo(Pueblito::class, 'origen_pasaje_id');
     }
 
     public function destino()
     {
-        return $this->belongsTo(Sucursal::class, 'destino_sucursal_id');
+        return $this->belongsTo(Pueblito::class, 'destino_pasaje_id');
     }
 
     public function persona(){

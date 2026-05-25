@@ -56,7 +56,7 @@ class Salida extends Model
         return $this->horario?->hora_llegada;
     }
 
-    public function obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)
+    public function obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)
     {
         $ruta = $this->horario?->ruta;
 
@@ -64,10 +64,19 @@ class Salida extends Model
             return collect();
         }
 
-        $puntos = $ruta->puntos()->orderBy('orden')->get();
+        $puntos = $ruta->puntos()
+            ->orderBy('orden')
+            ->get();
 
-        $puntoOrigen = $puntos->firstWhere('sucursal_id', $origenSucursalId);
-        $puntoDestino = $puntos->firstWhere('sucursal_id', $destinoSucursalId);
+        $puntoOrigen = $puntos->firstWhere(
+            'pueblito_id',
+            $origenPueblitoId
+        );
+
+        $puntoDestino = $puntos->firstWhere(
+            'pueblito_id',
+            $destinoPueblitoId
+        );
 
         if (!$puntoOrigen || !$puntoDestino) {
             return collect();
@@ -81,6 +90,7 @@ class Salida extends Model
             ->with(['origen', 'destino'])
             ->get()
             ->filter(function ($tramo) use ($puntoOrigen, $puntoDestino) {
+
                 if (!$tramo->origen || !$tramo->destino) {
                     return false;
                 }
@@ -94,10 +104,9 @@ class Salida extends Model
             ->values();
     }
 
-    public function asientosDisponibles($origenSucursalId, $destinoSucursalId)
+    public function asientosDisponibles($origenPueblitoId, $destinoPueblitoId)
     {
-        $tramos = $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId);
-
+        $tramos = $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId);
         if ($tramos->isEmpty()) {
             return [];
         }
@@ -140,10 +149,9 @@ class Salida extends Model
         return $asientos;
     }
 
-    public function calcularCostoPorTramos($origenSucursalId, $destinoSucursalId)
+    public function calcularCostoPorTramos($origenPueblitoId, $destinoPueblitoId)
     {
-        return $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)
-            ->sum('costo_tramo');
+        return $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)->sum('costo_tramo');
     }
 
     public function vehiculo()
@@ -173,7 +181,7 @@ class Salida extends Model
             ->withTimestamps();
     }
 
-    public function puedeTransportarEncomienda($origenSucursalId, $destinoSucursalId)
+    public function puedeTransportarEncomienda($origenPueblitoId, $destinoPueblitoId)
     {
         $ruta = $this->horario?->ruta;
 
@@ -193,10 +201,10 @@ class Salida extends Model
         $tipoViajeId = (int) ($this->horario?->tipo_viaje_id ?? 0);
 
         if ($tipoViajeId === 1) {
-            return (int) $primerPunto?->sucursal_id === (int) $origenSucursalId
-                && (int) $ultimoPunto?->sucursal_id === (int) $destinoSucursalId;
+            return (int) $primerPunto?->pueblito_id === (int) $origenPueblitoId
+                && (int) $ultimoPunto?->pueblito_id === (int) $destinoPueblitoId;
         }
 
-        return $this->obtenerTramosDeViaje($origenSucursalId, $destinoSucursalId)->isNotEmpty();
+        return $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)->isNotEmpty();
     }
 }
