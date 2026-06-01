@@ -514,6 +514,8 @@ document.addEventListener("DOMContentLoaded", function () {
             row.click();
         }
     }
-
     precargarDesdeUrl();
+
+
+    
 });
