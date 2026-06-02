@@ -515,7 +515,4 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
     precargarDesdeUrl();
-
-
-    
 });

@@ -163,7 +163,7 @@
 
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label">SUCURSAL ORIGEN <span style="color: red">*</span></label>
+                                <label class="form-label">PARADA ORIGEN <span style="color: red">*</span></label>
                                 <select id="origen" class="form-select" name="origen">
                                     <option value="" disabled>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)
@@ -177,7 +177,7 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label">SUCURSAL DESTINO <span style="color: red">*</span></label>
+                                <label class="form-label">PARADA DESTINO <span style="color: red">*</span></label>
                                 <select id="destino" class="form-select" name="destino" required>
                                     <option value="" disabled selected>Seleccione una sucursal</option>
                                     @foreach ($sucursales as $s)

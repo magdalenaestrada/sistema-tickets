@@ -221,17 +221,17 @@
                                     <span class="fw-semibold">EMITIR SUNAT:</span>
 
                                     <div class="form-check form-switch m-0">
-                                        <input class="form-check-input" type="checkbox" id="emitir_sunat" checked>
+                                        <input class="form-check-input" type="checkbox" id="emitir_sunat" disabled>
                                     </div>
                                 </div>
 
                                 <div class="d-flex gap-2 mb-3">
                                     <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
-                                        id="btn_boleta" data-doc="boleta">
+                                        id="btn_boleta" data-doc="boleta" disabled>
                                         Boleta
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
-                                        id="btn_factura" data-doc="factura">
+                                        id="btn_factura" data-doc="factura" disabled>
                                         Factura
                                     </button>
                                     <button type="button" class="btn btn-sm btn-success doc-btn active"
@@ -241,7 +241,8 @@
                                 </div>
                             </div>
 
-                            <div class="mb-2 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span></div>
+                            <div class="mb-2 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span>
+                            </div>
 
                             <div class="mb-3">
                                 <select name="caja_id" id="caja_id" class="form-select">
@@ -290,7 +291,8 @@
 
                             <div class="mb-3">
                                 <label for="direccion" class="form-label">Dirección</label>
-                                <input type="text" id="direccion" name="direccion" class="form-control" readonly>
+                                <input type="text" id="direccion" name="direccion" class="form-control"
+                                    value="-" readonly>
                             </div>
 
                             <div class="d-grid gap-2">
