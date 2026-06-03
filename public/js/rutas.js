@@ -93,11 +93,6 @@ function modoCrear() {
 }
 
 function guardarRuta() {
-    if (!validarPuntos()) {
-        Swal.fire("Error", "Revisa los puntos", "error");
-        return;
-    }
-
     let nombre = $("#nombreNuevaRuta").val();
     let puntos = [];
     let duracion = [];
@@ -209,14 +204,17 @@ function agregarPunto(data = null) {
     let listaPueblitos = [...pueblitos];
 
     let pueblitosOrdenados = [...pueblitos].sort((a, b) =>
-        a.descripcion.localeCompare(b.descripcion),
+        a.descripcion.localeCompare(b.descripcion, "es", {
+            sensitivity: "base",
+        }),
     );
-    listaPueblitos.forEach((p) => {
+
+    pueblitosOrdenados.forEach((p) => {
         selectPueblito.append(`
-            <option value="${p.id}">
-                ${p.descripcion}
-            </option>
-        `);
+        <option value="${p.id}">
+            ${p.descripcion}
+        </option>
+    `);
     });
 
     let sucursalSelect = punto.find(".sucursal");
@@ -243,8 +241,6 @@ function agregarPunto(data = null) {
         }
     }
 
-    actualizarOpcionesPueblitos();
-
     generarTramos();
 
     lucide.createIcons();
@@ -261,7 +257,6 @@ function eliminarPunto(btn) {
     $(btn).closest(".punto").remove();
 
     reordenarPuntos();
-    actualizarOpcionesPueblitos();
     generarTramos();
 }
 
@@ -335,7 +330,6 @@ $(document).on("change", ".pueblito", function () {
     clearTimeout(timeout);
 
     timeout = setTimeout(() => {
-        actualizarOpcionesPueblitos();
         generarTramos(tramosActuales);
     }, 200);
 });
@@ -362,7 +356,7 @@ function verRuta(id) {
                     <li class="list-group-item d-flex justify-content-between">
 
                         <span>
-                            ${i + 1}. ${p.distrito || "Sin distrito"}
+                            ${i + 1}. ${p.pueblito || "Sin parada"}
                         </span>
 
                     </li>
