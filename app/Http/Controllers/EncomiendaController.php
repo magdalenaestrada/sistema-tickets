@@ -81,8 +81,8 @@ class EncomiendaController extends Controller
         $data = Encomienda::with([
             'emisor:id,documento,nombres,apellidos',
             'receptor:id,documento,nombres,apellidos',
-            'origenPueblito:id,descripcion',
-            'destinoPueblito:id,descripcion',
+            'sucursal_origen:id,nombre_comercial',
+            'sucursal_destino:id,nombre_comercial',
         ])
             ->where('estado', 'A')
             ->when($request->filled('documento'), function ($q) use ($request) {
@@ -100,10 +100,10 @@ class EncomiendaController extends Controller
                 $q->whereDate('fecha_creacion', $request->fecha);
             })
             ->when($request->filled('origen_id'), function ($q) use ($request) {
-                $q->where('origen_pueblito_id', $request->origen_id);
+                $q->where('origen', $request->origen_id);
             })
             ->when($request->filled('destino_id'), function ($q) use ($request) {
-                $q->where('destino_pueblito_id', $request->destino_id);
+                $q->where('destino', $request->destino_id);
             })
             ->orderByDesc('id');
 
@@ -118,8 +118,8 @@ class EncomiendaController extends Controller
             ->addColumn('dni_emisor', fn($e) => $e->emisor?->documento ?? '-')
             ->addColumn('receptor', fn($e) => trim(($e->receptor?->nombres ?? '') . ' ' . ($e->receptor?->apellidos ?? '')))
             ->addColumn('dni_receptor', fn($e) => $e->receptor?->documento ?? '-')
-            ->addColumn('origen', fn($e) => $e->origenPueblito?->descripcion ?? '-')
-            ->addColumn('destino', fn($e) => $e->destinoPueblito?->descripcion ?? '-')
+            ->addColumn('origen', fn($e) => $e->sucursal_origen?->nombre_comercial ?? '-')
+            ->addColumn('destino', fn($e) => $e->sucursal_destino?->nombre_comercial ?? '-')
             ->addColumn('total', fn($e) => 'S/ ' . number_format($e->total ?? 0, 2))
             ->addColumn('estado', fn() => '<span class="badge bg-danger">Sin asignar</span>')
             ->addColumn('acciones', function ($e) {
@@ -138,21 +138,13 @@ class EncomiendaController extends Controller
     public function datatable_asignadas(Request $request)
     {
         $query = Encomienda::query()
-            ->with([
-                'receptor',
-                'emisor',
-                'origenPueblito',
-                'destinoPueblito',
-                'salidaActual'
-            ])->when($request->documento, function ($q) use ($request) {
+            ->with(['receptor', 'emisor', 'sucursal_origen', 'sucursal_destino', 'salidaActual'])
+            ->when($request->documento, function ($q) use ($request) {
                 $q->whereHas('receptor', function ($sub) use ($request) {
                     $sub->where('nro_documento', 'like', $request->documento . '%');
                 });
             })
-            ->when(
-                $request->origen_id,
-                fn($q) => $q->where('origen_pueblito_id', $request->origen_id)
-            )
+            ->when($request->origen_id, fn($q) => $q->where('origen_id', $request->origen_id))
             ->when($request->destino_id, fn($q) => $q->where('destino_id', $request->destino_id))
             ->when($request->salida_id, fn($q) => $q->where('salida_id', $request->salida_id));
 
@@ -174,10 +166,10 @@ class EncomiendaController extends Controller
                 return $row->receptor->documento ?? '-';
             })
             ->addColumn('origen', function ($row) {
-                return $row->origenPueblito->descripcion ?? '-';
+                return $row->sucursal_origen->nombre_comercial ?? '-';
             })
             ->addColumn('destino', function ($row) {
-                return $row->destinoPueblito->descripcion ?? '-';
+                return $row->sucursal_destino->nombre_comercial ?? '-';
             })
             ->addColumn('salida', function ($row) {
                 return $row->salidaActual->salida->fecha_salida ?? '-';
@@ -259,8 +251,8 @@ class EncomiendaController extends Controller
     public function salidasDisponiblesParaAsignacion(Request $request)
     {
         $request->validate([
-            'origen_id' => 'required|exists:pueblitos,id',
-            'destino_id' => 'required|exists:pueblitos,id',
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
         ]);
 
         $salidas = Salida::with([
@@ -318,7 +310,7 @@ class EncomiendaController extends Controller
                 ->get();
 
             foreach ($encomiendas as $encomienda) {
-                if (!$salida->puedeTransportarEncomienda($encomienda->origen_pueblito_id, $encomienda->destino_pueblito_id)) {
+                if (!$salida->puedeTransportarEncomienda($encomienda->origen, $encomienda->destino)) {
                     throw new \Exception("La encomienda {$encomienda->id} no es compatible con la salida seleccionada.");
                 }
 
@@ -387,8 +379,8 @@ class EncomiendaController extends Controller
             'venta.pagos',
             'venta.pagos.billetera',
             'venta.pagos.metodoPago',
-            'origenPueblito',
-            'destinoPueblito'
+            'sucursal_origen',
+            'sucursal_destino'
         ])->findOrFail($id);
 
         return view('encomiendas.edit', compact('metodos_pago', 'encomienda', 'sucursales', 'user', 'tipos_documentos', 'tipo_encomiendas', 'tipos_documentos_facturas', 'billeteras_digitales'));
@@ -596,8 +588,8 @@ class EncomiendaController extends Controller
     public function salidasDisponibles(Request $request)
     {
         $request->validate([
-            'origen_id' => 'required|exists:pueblitos,id',
-            'destino_id' => 'required|exists:pueblitos,id',
+            'origen_id' => 'required|exists:sucursales,id',
+            'destino_id' => 'required|exists:sucursales,id',
         ]);
 
         $salidas = Salida::with([
@@ -670,7 +662,7 @@ class EncomiendaController extends Controller
                     throw new \Exception("La encomienda {$encomienda->id} ya tiene una salida asignada.");
                 }
 
-                if (!$salida->puedeTransportarEncomienda($encomienda->origen_pueblito_id, $encomienda->destino_pueblito_id)) {
+                if (!$salida->puedeTransportarEncomienda($encomienda->origen, $encomienda->destino)) {
                     throw new \Exception("La encomienda {$encomienda->id} no corresponde a esta salida.");
                 }
 
@@ -711,8 +703,8 @@ class EncomiendaController extends Controller
             'receptor',
             'usuario.persona',
             'detalles.tipo_encomienda',
-            'origenPueblito',
-            'destinoPueblito',
+            'sucursal_origen.empresa',
+            'sucursal_destino',
             'venta.pagos.metodoPago',
         ]);
 

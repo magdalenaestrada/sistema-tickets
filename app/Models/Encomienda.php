@@ -26,9 +26,7 @@ class Encomienda extends Model
         'origen',
         'destino',
         'pago_instantaneo',
-        'sobre_equipaje',
-        'origen_pueblito_id',
-        'destino_pueblito_id',
+        'sobre_equipaje'
     ];
 
     protected $casts = [
@@ -111,21 +109,5 @@ class Encomienda extends Model
         return $this->belongsToMany(Salida::class, 'encomienda_salida')
             ->withPivot(['usuario_id', 'fecha_asignacion', 'fecha_llegada', 'estado'])
             ->withTimestamps();
-    }
-
-    public function origenPueblito()
-    {
-        return $this->belongsTo(
-            Pueblito::class,
-            'origen_pueblito_id'
-        );
-    }
-
-    public function destinoPueblito()
-    {
-        return $this->belongsTo(
-            Pueblito::class,
-            'destino_pueblito_id'
-        );
     }
 }
