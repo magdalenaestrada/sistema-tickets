@@ -38,7 +38,7 @@
                 </div>
                 <div class="card-body" id="panelContenido">
                     <p class="text-muted">
-                        Selecciona una ruta
+                        Seleccionar una ruta
                     </p>
                     <div id="contenedorPuntosWrapper">
                         <div id="contenedorPuntos"></div>
