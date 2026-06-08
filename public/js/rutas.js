@@ -3,6 +3,9 @@ let UBIGEO = [];
 let sucursales = [];
 let tramosActuales = [];
 let pueblitos = [];
+let puntosOriginales = [];
+let hayCambiosEnTramos = false;
+let puntosOriginalesOrdenados = [];
 
 $(document).ready(async function () {
     pueblitos = await $.get(route("pueblitos.lista"));
@@ -242,7 +245,7 @@ function agregarPunto(data = null) {
     }
 
     generarTramos();
-
+    actualizarOpcionesPueblitos();
     lucide.createIcons();
 }
 
@@ -269,26 +272,25 @@ function reordenarPuntos() {
 }
 
 function validarPuntos() {
-    let ids = new Set();
-
     let valido = true;
 
-    $("#contenedorPuntos .pueblito").each(function () {
-        let val = $(this).val();
+    $("#contenedorPuntos .punto").each(function () {
+        let select = $(this).find(".pueblito");
 
-        if (!val || val === "") {
+        if (!select.length) {
             valido = false;
             return false;
         }
 
-        val = String(val).trim();
+        let val = select.val();
 
-        if (ids.has(val)) {
+        if (val === null || val === undefined || val === "") {
+            $(select).addClass("is-invalid");
             valido = false;
             return false;
+        } else {
+            $(select).removeClass("is-invalid");
         }
-
-        ids.add(val);
     });
 
     return valido;
@@ -337,7 +339,9 @@ $(document).on("change", ".pueblito", function () {
 function verRuta(id) {
     $.get(route("rutas.show", id), function (ruta) {
         let total = ruta.puntos.length;
-
+        tramosActuales = ruta.tramos;
+        puntosOriginales = ruta.puntos.map((p) => String(p.pueblito_id));
+        hayCambiosEnTramos = false;
         let html = `
             <h6>${ruta.nombre}</h6>
 
@@ -377,6 +381,9 @@ function verRuta(id) {
 function editarRuta(id) {
     $.get(route("rutas.show", id), function (ruta) {
         tramosActuales = ruta.tramos;
+        puntosOriginalesOrdenados = ruta.puntos.map((p) =>
+            String(p.pueblito_id),
+        );
         let html = `
             <h6>Editar Ruta</h6>
 
@@ -399,23 +406,51 @@ function editarRuta(id) {
             <h6>TRAMOS</h6>
             <div id="contenedorTramos"></div>
 
-            <button class="btn btn-success w-100 mt-2"
-                onclick="guardarEdicion(${ruta.id})">
-                Guardar cambios
-            </button>
+          <div id="alertaTramos" class="alert alert-danger py-2 mb-2 d-none">
+    <strong>
+        Verifique los tiempos entre paradas antes de guardar cambios nuevos.
+    </strong>
+</div>
+
+<button class="btn btn-success w-100 mt-2"
+    onclick="guardarEdicion(${ruta.id})">
+    Guardar cambios
+</button>
         `;
 
         $("#panelContenido").html(html);
+        setTimeout(() => {
+            ruta.puntos.forEach((p) => agregarPunto(p));
 
-        ruta.puntos.forEach((p) => {
-            agregarPunto(p);
-        });
+            actualizarOpcionesPueblitos();
+            generarTramos(ruta.tramos);
+        }, 100);
 
         activarOrdenamiento();
         generarTramos(ruta.tramos);
 
         lucide.createIcons();
     });
+}
+
+function verificarCambiosPuntos() {
+    let actuales = [];
+
+    $("#contenedorPuntos .pueblito").each(function () {
+        actuales.push(String($(this).val() || ""));
+    });
+
+    if (actuales.length !== puntosOriginales.length) {
+        return true;
+    }
+
+    for (let i = 0; i < actuales.length; i++) {
+        if (actuales[i] !== puntosOriginales[i]) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function eliminarPuntoEdit(puntoId) {
@@ -492,6 +527,8 @@ $(document).on("click", ".activar", function () {
 function guardarEdicion(id) {
     if (!validarPuntos()) {
         Swal.fire("Error", "Todos los puntos deben tener parada", "error");
+        $("#contenedorPuntos .pueblito").addClass("is-invalid");
+
         return;
     }
     let nombre = $("#nombreRuta").val();
@@ -619,15 +656,46 @@ function generarTramos(tramosData = []) {
         let item = pueblitos.find((p) => String(p.id) === String(valor));
 
         puntos.push({
+            id: valor,
             nombre: item?.descripcion || "Punto",
         });
     });
 
     let html = "";
 
+    const cambioPuntos = verificarCambiosPuntos();
+    hayCambiosEnTramos = cambioPuntos;
+    if (cambioPuntos) {
+        $("#alertaTramos").removeClass("d-none");
+    } else {
+        $("#alertaTramos").addClass("d-none");
+    }
+
     for (let i = 0; i < puntos.length - 1; i++) {
-        let duracion = tramosData[i]?.duracion ?? 0;
-        let costo = tramosData[i]?.costo ?? "";
+        let duracion = 0;
+        let costo = "";
+
+        const origenActual = puntos[i].id;
+        const destinoActual = puntos[i + 1].id;
+
+        const tramoExistente = tramosActuales.find(
+            (t) =>
+                String(t.origen_id) === String(origenActual) &&
+                String(t.destino_id) === String(destinoActual),
+        );
+
+        const esTramoOriginal =
+            puntosOriginalesOrdenados.length > i + 1 &&
+            String(puntosOriginalesOrdenados[i]) === String(origenActual) &&
+            String(puntosOriginalesOrdenados[i + 1]) === String(destinoActual);
+
+        if (tramoExistente && esTramoOriginal) {
+            duracion = tramoExistente.duracion;
+            costo = tramoExistente.costo;
+        } else {
+            duracion = 0;
+            costo = "";
+        }
 
         let data = minutosAHorasMinutos(duracion);
 

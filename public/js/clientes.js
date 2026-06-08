@@ -1,5 +1,42 @@
 let UBIGEO = null;
 
+window.buscarDocumento = function (documento, callbacks = {}) {
+    if (!/^\d{8,11}$/.test(documento)) {
+        Swal.fire("Error", "Documento inválido", "warning");
+        return;
+    }
+
+    Swal.fire({
+        title: "Buscando...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+    });
+
+    $.ajax({
+        url: route("buscar.buscar") + `?documento=${documento}`,
+        type: "GET",
+        dataType: "json",
+
+        success: function (data) {
+            Swal.close();
+
+            if (data.error) {
+                Swal.fire("Error", data.error, "error");
+                return;
+            }
+
+            // callback flexible (cliente o empresa)
+            if (callbacks.success) {
+                callbacks.success(data);
+            }
+        },
+
+        error: function () {
+            Swal.fire("Error", "No se pudo consultar el documento", "error");
+        },
+    });
+};
+
 $(document).ready(async function () {
     UBIGEO = await $.get(route("ubigeos.todo"));
     cargarSelectDepartamentos();
@@ -246,6 +283,27 @@ $(document).ready(async function () {
         );
     }
 
+    $(document).on("click", "#btnBuscarDocumento", function () {
+        const documento = $("#documento").val().trim();
+
+        window.buscarDocumento(documento, {
+            success: function (data) {
+                if (data.nombres) {
+                    $("#nombres").val(data.nombres || "");
+                    $("#apellidos").val(
+                        `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`,
+                    );
+                }
+
+                if (data.razon_social) {
+                    $("#razon_social").val(data.razon_social);
+                }
+
+                $("#direccion").val(data.direccion || "");
+            },
+        });
+    });
+
     function cargarSelectDepartamentos() {
         const $dep = $("#departamento_id");
         $dep.empty().append('<option value="">Seleccione</option>');
@@ -440,5 +498,4 @@ $(document).ready(async function () {
     $("#modalCliente").on("hidden.bs.modal", () => {
         habilitarModoEdicion();
     });
-
 });

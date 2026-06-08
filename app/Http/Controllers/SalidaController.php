@@ -280,12 +280,12 @@ class SalidaController extends Controller
         try {
             $existe = Salida::where('horario_id', $request->horario_id)
                 ->where('fecha_salida', $request->fecha_salida)
+                ->where('hora_salida', $request->hora_salida)
                 ->exists();
 
             if ($existe) {
                 return response()->json([
-                    'ok' => false,
-                    'message' => 'Ya existe una salida para ese horario y fecha.'
+                    'message' => 'Ya existe una salida programada para esta hora'
                 ], 422);
             }
 
@@ -405,16 +405,14 @@ class SalidaController extends Controller
 
             $existe = Salida::where('horario_id', $request->horario_id)
                 ->where('fecha_salida', $request->fecha_salida)
-                ->where('id', '!=', $salida->id)
+                ->where('hora_salida', $request->hora_salida)
                 ->exists();
 
             if ($existe) {
                 return response()->json([
-                    'ok' => false,
-                    'message' => 'Ya existe otra salida para ese horario y fecha.'
+                    'message' => 'Ya existe una salida programada para esta hora'
                 ], 422);
             }
-
             if ($request->estado === 'en_ruta') {
                 if (!$request->vehiculo_id || !$request->conductor_principal_id) {
                     return response()->json([

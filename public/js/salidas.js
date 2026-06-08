@@ -1,6 +1,19 @@
 let tablaSalidas;
 let horariosSalida = window.HORARIOS_SALIDA || [];
 
+function cargarHorasDisponibles() {
+    let horario_id = $("#horario_id").val();
+    let fecha = $("#fecha_salida").val();
+
+    if (!horario_id || !fecha) return;
+
+    console.log("Cargando horas disponibles...");
+}
+
+$(document).on("change", "#fecha_salida, #horario_id", function () {
+    cargarHorasDisponibles();
+});
+
 $(document).ready(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
         ajax: {
@@ -46,6 +59,24 @@ function getSeleccionados() {
     });
 
     return ids;
+}
+
+function validarHoraDuplicada(horario_id, fecha_salida, hora_salida) {
+    let existe = false;
+
+    tablaSalidas.rows().every(function () {
+        let data = this.data();
+
+        if (
+            String(data.horario_id) === String(horario_id) &&
+            data.fecha_salida === fecha_salida &&
+            data.hora_salida === hora_salida
+        ) {
+            existe = true;
+        }
+    });
+
+    return existe;
 }
 
 $("#btnEliminarSeleccionados").on("click", function () {
@@ -223,6 +254,15 @@ window.guardarSalida = function () {
     let fecha_salida = $("#fecha_salida").val();
     let hora_salida = $("#hora_salida").val(); // 👈 NUEVO
     let estado = $("#estado").val();
+
+    if (validarHoraDuplicada(horario_id, fecha_salida, hora_salida)) {
+        Swal.fire(
+            "Error",
+            "Ya existe una salida con esta fecha y hora",
+            "error",
+        );
+        return;
+    }
 
     if (!horario_id || !fecha_salida || !hora_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
@@ -536,6 +576,9 @@ function editarSalida(id) {
             (h) => String(h.id) === String(salida.horario_id),
         );
 
+        let horaOriginal = salida.hora_salida;
+        let fechaOriginal = salida.fecha_salida;
+
         if (horario) {
             let filtrados = window.VEHICULOS.filter(
                 (v) =>
@@ -612,9 +655,19 @@ window.guardarEdicionSalida = function (id) {
     let vehiculo_id = $("#vehiculo_id").val();
     let conductor_principal_id = $("#conductor_principal_id").val();
     let conductor_secundario_id = $("#conductor_secundario_id").val();
+    let cambioHora = hora_salida !== salida.hora_salida;
 
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
+        return;
+    }
+
+    if (cambioHora && estado !== "reprogramado") {
+        Swal.fire(
+            "Error",
+            "No puedes cambiar la hora sin reprogramar",
+            "error",
+        );
         return;
     }
 
