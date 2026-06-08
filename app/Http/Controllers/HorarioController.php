@@ -65,13 +65,12 @@ class HorarioController extends Controller
     public function show($id)
     {
         $horario = Horario::with([
-            'ruta.puntos.sucursal',
-            'ruta.tramos.origen.sucursal',
-            'ruta.tramos.destino.sucursal',
+            'ruta.puntos.pueblito',
+            'ruta.tramos.origen.pueblito',
+            'ruta.tramos.destino.pueblito',
             'tipo_viaje',
             'tipo_vehiculo'
         ])->findOrFail($id);
-
         return response()->json([
             'id' => $horario->id,
             'ruta_id' => $horario->ruta_id,
@@ -86,11 +85,12 @@ class HorarioController extends Controller
             'ruta' => [
                 'id' => $horario->ruta?->id,
                 'nombre' => $horario->ruta?->nombre,
-                'puntos' => $horario->ruta?->puntos?->sortBy('orden')->values()->map(function ($p) {
+                'puntos' => $horario->ruta?->puntos?->sortBy('orden')->values()->map(function ($p) use ($horario) {
                     return [
                         'id' => $p->id,
                         'orden' => $p->orden,
-                        'nombre' => $p->sucursal?->nombre_comercial,
+                        'nombre' => $p->pueblito?->descripcion,
+                        'hora' => $horario->horaEnPunto($p->id),
                     ];
                 }),
             ]
@@ -129,7 +129,7 @@ class HorarioController extends Controller
         }
     }
 
-    
+
     public function update(Request $request, $id)
     {
         $request->validate([

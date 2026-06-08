@@ -307,18 +307,19 @@ function verSalida(id) {
 
         if (salida.ruta?.puntos?.length) {
             puntos = `
-                <ul class="list-group mt-2">
-                    ${salida.ruta.puntos
-                        .map(
-                            (p) => `
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span>${p.orden}. ${p.nombre}</span>
-                                </li>
-                            `,
-                        )
-                        .join("")}
-                </ul>
-            `;
+        <ul class="list-group mt-2">
+            ${salida.ruta.puntos
+                .map(
+                    (p) => `
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>${p.orden}. ${p.nombre}</span>
+                        <span class="badge bg-primary">${p.hora}</span>
+                    </li>
+                `,
+                )
+                .join("")}
+        </ul>
+    `;
         }
 
         let html = `

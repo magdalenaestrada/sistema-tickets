@@ -99,11 +99,7 @@ window.guardarHorario = function () {
     let hora_salida = $("#hora_salida").val();
     let costo_base = $("#costo_base").val();
 
-    if (
-        !ruta_id ||
-        !tipo_vehiculo_id ||
-        !hora_salida
-    ) {
+    if (!ruta_id || !tipo_vehiculo_id || !hora_salida) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
@@ -149,9 +145,10 @@ function verHorario(id) {
                     ${horario.ruta.puntos
                         .map(
                             (p) => `
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>${p.orden}. ${p.nombre}</span>
-                        </li>
+                       <li class="list-group-item d-flex justify-content-between">
+    <span>${p.orden}. ${p.nombre}</span>
+    <span class="badge bg-primary">${p.hora}</span>
+</li>
                     `,
                         )
                         .join("")}
@@ -231,11 +228,7 @@ window.guardarEdicionHorario = function (id) {
     let hora_salida = $("#hora_salida").val();
     let costo_base = $("#costo_base").val();
 
-    if (
-        !ruta_id ||
-        !tipo_vehiculo_id ||
-        !hora_salida
-    ) {
+    if (!ruta_id || !tipo_vehiculo_id || !hora_salida) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }

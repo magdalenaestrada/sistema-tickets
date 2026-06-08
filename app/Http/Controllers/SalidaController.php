@@ -226,7 +226,7 @@ class SalidaController extends Controller
     public function show($id)
     {
         $salida = Salida::with([
-            'horario.ruta.puntos.sucursal',
+            'horario.ruta.puntos.pueblito',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])->findOrFail($id);
@@ -252,12 +252,16 @@ class SalidaController extends Controller
             'tipo_vehiculo' => $salida->horario?->tipo_vehiculo?->descripcion,
             'ruta' => [
                 'nombre' => $salida->horario?->ruta?->nombre,
-                'puntos' => $salida->horario?->ruta?->puntos?->sortBy('orden')->values()->map(function ($p) {
-                    return [
-                        'orden' => $p->orden,
-                        'nombre' => $p->sucursal?->nombre_comercial,
-                    ];
-                }),
+                'puntos' => $salida->horario?->ruta?->puntos
+                    ?->sortBy('orden')
+                    ->values()
+                    ->map(function ($p) use ($salida) {
+                        return [
+                            'orden' => $p->orden,
+                            'nombre' => $p->pueblito?->descripcion,
+                            'hora' => $salida->horario->horaEnPunto($p->id),
+                        ];
+                    }),
             ],
         ]);
     }

@@ -9,7 +9,7 @@ class Pueblito extends Model
     protected $table = "pueblitos";
 
     protected $fillable = [
-        'nombre',
+        'descripcion',
         'distrito_id'
     ];
 

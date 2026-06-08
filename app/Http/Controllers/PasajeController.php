@@ -34,6 +34,7 @@ class PasajeController extends Controller
         $ayer = now('America/Lima')->subDay()->format('Y-m-d');
 
         $salidas = Salida::with([
+            'horario.ruta.puntos.pueblito',
             'horario.ruta.puntos.sucursal',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
@@ -50,14 +51,27 @@ class PasajeController extends Controller
                         return [
                             'pueblito_id' => (string) $p->pueblito_id,
                             'orden' => (int) $p->orden,
-                            'nombre' => $p->pueblito?->descripcion,
+                            'nombre' => trim(
+                                ($p->pueblito?->descripcion ?? '') .
+                                    ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')
+                            ),
                         ];
                     })->values()->toArray(),
                     JSON_UNESCAPED_UNICODE
                 );
 
-                $salida->origen_nombre = $puntos->first()?->pueblito?->descripcion;
-                $salida->destino_nombre = $puntos->last()?->pueblito?->descripcion;
+                $origen = $puntos->first();
+                $destino = $puntos->last();
+
+                $salida->origen_nombre = trim(
+                    ($origen?->pueblito?->descripcion ?? '') .
+                        ($origen?->sucursal ? ' - ' . $origen->sucursal->nombre_comercial : '')
+                );
+
+                $salida->destino_nombre = trim(
+                    ($destino?->pueblito?->descripcion ?? '') .
+                        ($destino?->sucursal ? ' - ' . $destino->sucursal->nombre_comercial : '')
+                );
 
                 $origenId = $puntos->first()?->pueblito_id;
                 $destinoId = $puntos->last()?->pueblito_id;
@@ -887,6 +901,7 @@ class PasajeController extends Controller
         ]);
 
         $salida = Salida::with([
+            'horario.ruta.puntos.pueblito',
             'horario.ruta.puntos.sucursal',
             'horario.tipo_vehiculo',
             'horario.tipo_viaje',
