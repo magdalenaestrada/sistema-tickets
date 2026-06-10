@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
             row.addEventListener("click", function () {
+                console.log("SALIDA:", this.dataset.salidaId);
+                console.log("PUNTOS:", this.dataset.puntos);
                 const salidaId = this.dataset.salidaId;
                 const tipoViajeId = parseInt(this.dataset.tipoViajeId);
 
@@ -36,6 +38,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     } catch (e) {
                         puntos = [];
                     }
+
+                    console.log(
+                        row.dataset.salidaId,
+                        JSON.parse(row.dataset.puntos || "[]"),
+                    );
 
                     const primero = puntos[0];
                     const ultimo = puntos[puntos.length - 1];

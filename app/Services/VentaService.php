@@ -467,11 +467,15 @@ class VentaService
         $venta->loadMissing(['persona', 'detalles']);
 
         $empresa = Empresa::first();
+
         if (!$empresa) {
             throw new Exception('No existe configuración de empresa.');
         }
 
+        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
+
         $see = $this->crearSee($tipo->codigo);
+
         $invoice = $this->buildInvoice($venta, $empresa);
         $result = $see->send($invoice);
 
@@ -574,20 +578,21 @@ class VentaService
             throw new Exception('No existe configuración de empresa.');
         }
 
-        if ($tipoDocumento !== 'NV') {
-
-
-            $certDisk = config('services.greenter.cert_disk', 'public');
-            $certPath = config('services.greenter.cert_path', 'certificado/certificate.pem');
-
-            if (!Storage::disk($certDisk)->exists($certPath)) {
-                throw new Exception("No se encontró el certificado en: {$certPath}");
-            }
-
-            $see->setCertificate(
-                Storage::disk($certDisk)->get($certPath)
-            );
+        if (trim(strtoupper($tipoDocumento)) === 'NV') {
+            return $see;
         }
+
+        $certDisk = config('services.greenter.cert_disk', 'public');
+        $certPath = config('services.greenter.cert_path', 'certificado/certificate.pem');
+
+        if (!Storage::disk($certDisk)->exists($certPath)) {
+            throw new Exception("No se encontró el certificado en: {$certPath}");
+        }
+
+        $see->setCertificate(
+            Storage::disk($certDisk)->get($certPath)
+        );
+
         $modo = config('services.greenter.mode', 'beta');
 
         if ($modo === 'production') {

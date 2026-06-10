@@ -45,6 +45,7 @@ class PasajeController extends Controller
             ->map(function ($salida) {
                 $ruta = $salida->horario->ruta;
                 $puntos = $ruta->puntos->sortBy('orden')->values();
+            
 
                 $salida->puntos_json = json_encode(
                     $puntos->map(function ($p) {
@@ -167,7 +168,7 @@ class PasajeController extends Controller
                 }
 
                 $puntos = $ruta->puntos->sortBy('orden')->values();
-
+            
                 $pasaje->puntos_json = json_encode(
                     $puntos->map(function ($p) {
                         return [
@@ -222,7 +223,7 @@ class PasajeController extends Controller
         } else {
             $ruta = $salida->horario->ruta;
             $puntos = $ruta->puntos->sortBy('orden')->values();
-
+        
             $origenId = $puntos->first()?->pueblito_id;
             $destinoId = $puntos->last()?->pueblito_id;
 

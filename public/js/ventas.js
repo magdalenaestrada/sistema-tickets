@@ -515,9 +515,12 @@ $(function () {
         input.prop("disabled", true);
 
         try {
+            
             const res = await $.getJSON(
                 route("descuentos.buscar") + `?codigo=${codigo}`,
             );
+
+            console.log(res);
 
             if (res.error) {
                 Swal.fire("Atención", res.error, "warning");
