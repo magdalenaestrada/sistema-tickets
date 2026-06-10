@@ -1,7 +1,7 @@
 $(function () {
     const config = window.VENTA_CONFIG || {};
     const csrfToken = $('meta[name="csrf-token"]').attr("content");
-
+    const tiposEncomienda = config.tiposEncomienda || [];
     const salidaId = config.salidaId;
     const origenId = config.origenId;
     const destinoId = config.destinoId;
@@ -101,6 +101,21 @@ $(function () {
             if ($(`#descuento_asiento_${i}`).length) {
                 $(`#descuento_asiento_${i}`).text(`S/ ${descuento.toFixed(2)}`);
             }
+
+            let totalSobre = 0;
+            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
+                totalSobre +=
+                    parseFloat($(this).find(".sobre-costo").val()) || 0;
+            });
+            totalPagar += totalSobre;
+        });
+
+        selectedSeatNumbers.forEach((num, i) => {
+            const precioFinal = parseFloat(seatPrices[num]) || 0;
+            const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
+            console.log(
+                `Asiento ${num}: precioFinal=${precioFinal}, descuento=${descuento}, precioBase=${precioBase}`,
+            );
         });
 
         $("#subtotal").text(totalPagar.toFixed(2));
@@ -515,7 +530,6 @@ $(function () {
         input.prop("disabled", true);
 
         try {
-            
             const res = await $.getJSON(
                 route("descuentos.buscar") + `?codigo=${codigo}`,
             );

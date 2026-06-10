@@ -14,6 +14,7 @@ use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
 use App\Models\Pueblito;
+use App\Models\TipoEncomienda;
 use App\Models\Venta;
 use App\Services\PagoService;
 use App\Services\VentaService;
@@ -45,7 +46,7 @@ class PasajeController extends Controller
             ->map(function ($salida) {
                 $ruta = $salida->horario->ruta;
                 $puntos = $ruta->puntos->sortBy('orden')->values();
-            
+
 
                 $salida->puntos_json = json_encode(
                     $puntos->map(function ($p) {
@@ -168,7 +169,7 @@ class PasajeController extends Controller
                 }
 
                 $puntos = $ruta->puntos->sortBy('orden')->values();
-            
+
                 $pasaje->puntos_json = json_encode(
                     $puntos->map(function ($p) {
                         return [
@@ -223,7 +224,7 @@ class PasajeController extends Controller
         } else {
             $ruta = $salida->horario->ruta;
             $puntos = $ruta->puntos->sortBy('orden')->values();
-        
+
             $origenId = $puntos->first()?->pueblito_id;
             $destinoId = $puntos->last()?->pueblito_id;
 
@@ -936,7 +937,7 @@ class PasajeController extends Controller
         }
 
         $asientosDisponibles = $salida->asientosDisponibles($origen->id, $destino->id);
-
+        $tiposEncomienda = TipoEncomienda::all();
         foreach ($asientos as $asiento) {
             if (($asientosDisponibles[$asiento] ?? 'ocupado') !== 'libre') {
                 return redirect()->route('pasajes.index')
@@ -962,7 +963,8 @@ class PasajeController extends Controller
             'metodos_pago',
             'billeteras_digitales',
             'cajas_emision',
-            'user'
+            'user', 
+            'tiposEncomienda'
         ));
     }
 

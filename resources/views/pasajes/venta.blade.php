@@ -433,7 +433,9 @@
             asientos: @json($asientos),
             precioUnitario: @json((float) $precioUnitario),
             descuentoPromoId: 1,
-            volverAsientosUrl: @json(url()->previous())
+            volverAsientosUrl: @json(url()->previous()),
+            tiposEncomienda: @json($tiposEncomienda ?? [])
+
         };
     </script>
     <script src="{{ asset('js/ventas.js') }}"></script>
