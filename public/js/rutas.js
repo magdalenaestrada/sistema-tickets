@@ -622,8 +622,10 @@ $(document).on("input", "input[name='minutos[]']", function () {
     }
 });
 
-function generarTramos(tramosData = []) {
-    tramosActuales = tramosData;
+function generarTramos(tramosData = null) {
+    if (tramosData !== null) {
+        tramosActuales = tramosData;
+    }
 
     let puntos = [];
 
@@ -663,18 +665,14 @@ function generarTramos(tramosData = []) {
                 String(t.destino_id) === String(destinoActual),
         );
 
-        const esTramoOriginal =
-            puntosOriginalesOrdenados.length > i + 1 &&
-            String(puntosOriginalesOrdenados[i]) === String(origenActual) &&
-            String(puntosOriginalesOrdenados[i + 1]) === String(destinoActual);
-
-        if (tramoExistente && esTramoOriginal) {
+        if (tramoExistente) {
             duracion = tramoExistente.duracion;
             costo = tramoExistente.costo;
         } else {
             duracion = 0;
             costo = "";
         }
+
         console.log(JSON.stringify(tramosActuales, null, 2));
         console.log(origenActual);
         console.log(destinoActual);
@@ -683,7 +681,7 @@ function generarTramos(tramosData = []) {
 
         let data = minutosAHorasMinutos(duracion);
         console.log("duracion:", duracion);
-console.log("convertido:", data);
+        console.log("convertido:", data);
 
         html += `
 <div class="tramo card border-0 shadow-sm mb-2">
