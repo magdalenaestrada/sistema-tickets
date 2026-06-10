@@ -9,7 +9,7 @@
             <input type="hidden" name="origen_id" value="{{ $origen->id }}">
             <input type="hidden" name="destino_id" value="{{ $destino->id }}">
 
-            <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat" value="nota_venta">
+            <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat" value="4">
             <input type="hidden" name="metodo_pago_id" id="metodo_pago_id_hidden">
             <input type="hidden" name="pago_efectivo" id="pago_efectivo_hidden">
             <input type="hidden" name="pago_tarjeta" id="pago_tarjeta_hidden">
@@ -235,7 +235,7 @@
                                         Factura
                                     </button>
                                     <button type="button" class="btn btn-sm btn-success doc-btn active"
-                                        id="btn_nota_venta" data-doc="nota_venta">
+                                        id="btn_nota_venta" data-doc="4">
                                         N. Venta
                                     </button>
                                 </div>

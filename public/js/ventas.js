@@ -302,7 +302,7 @@ $(function () {
                 .removeClass("btn-outline-secondary")
                 .addClass("active btn-success");
         } else {
-            $("#tipo_doc_sunat").val("nota_venta");
+            $("#tipo_doc_sunat").val("4");
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 8);
             ponerClienteVariosNotaVenta();
@@ -522,7 +522,7 @@ $(function () {
 
             console.log(res);
 
-            if (res.error) {
+            if (res.errpor) {
                 Swal.fire("Atención", res.error, "warning");
                 input.val("");
                 return;

@@ -527,7 +527,8 @@ class PasajeController extends Controller
             $ventaService = app(VentaService::class);
             $pagoService = app(PagoService::class);
 
-            $tipoDocumentoFacturaId = $request->tipo_documento_factura_id ?: 2;
+            $tipoDocumentoFacturaId = $request->tipo_documento_factura_id ?: 4;
+
             $numeroDocFact = trim((string) ($request->numero_documento_id ?: $personaFacturacion->documento));
 
             if ((int) $tipoDocumentoFacturaId === 1 && strlen($numeroDocFact) !== 11) {
@@ -539,7 +540,7 @@ class PasajeController extends Controller
             $ventaData = $ventaService->crearVenta(
                 new Request([
                     'tipo_servicio_id' => 1,
-                    'tipo_documento_factura_id' => $tipoDocumentoFacturaId,
+                    'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,
                     'total' => $totalVenta,
@@ -1072,7 +1073,7 @@ class PasajeController extends Controller
             $personaVenta = Persona::updateOrCreate(
                 ['documento' => $request->numero_documento_id ?: 'SIN-DOC-' . $pasaje->venta_id],
                 [
-                    'tipo_documento_id' => $request->tipo_documento_factura_id,
+                    'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
                     'nombres' => $request->razon_social ?: 'CLIENTE',
                     'direccion' => $request->direccion,
                     'estado' => 'A',
@@ -1082,7 +1083,7 @@ class PasajeController extends Controller
 
             $pasaje->venta->update([
                 'persona_id' => $personaVenta->id,
-                'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
+                'tipo_documento_factura_id' => $request->tipo_documento_factura_id ?? 1,
             ]);
 
             DB::commit();

@@ -39,7 +39,8 @@ class VentaService
 
         return DB::transaction(function () use ($request, $servicio_model, $servicio_id, $user) {
 
-            $tipoDocumentoFacturaId = (int) data_get($request, 'tipo_documento_factura_id');
+            $tipoDocumentoFacturaId = (int) data_get($request, 'tipo_documento_factura_id')
+                ?: (int) data_get($request, 'tipo_doc_sunat');
             $tipoServicioId = (int) data_get($request, 'tipo_servicio_id');
             $numeroDocumento = trim((string) data_get($request, 'numero_documento_id'));
             $direccion = trim((string) data_get($request, 'direccion'));
@@ -240,8 +241,8 @@ class VentaService
     public function emitirVenta(Venta $venta): array
     {
         $venta->refresh();
-        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
 
+        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
         if (!$tipo) {
             throw new Exception('Tipo de documento no válido.');
         }
@@ -307,6 +308,8 @@ class VentaService
             '01' => 'FFF' . $numero,
             '03' => 'BBB' . $numero,
             '07' => 'NC' . $numero,
+            'NV' => 'NNN' . $numero,  // ← agrega esto
+
             default => throw new \Exception('Código no soportado: ' . $codigoTipoDocumento),
         };
     }
@@ -472,8 +475,9 @@ class VentaService
             throw new Exception('No existe configuración de empresa.');
         }
 
-        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
 
+
+        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
         $see = $this->crearSee($tipo->codigo);
 
         $invoice = $this->buildInvoice($venta, $empresa);
@@ -578,7 +582,7 @@ class VentaService
             throw new Exception('No existe configuración de empresa.');
         }
 
-        if (trim(strtoupper($tipoDocumento)) === 'NV') {
+        if (trim(strtoupper($tipoDocumento)) === '07') {
             return $see;
         }
 
