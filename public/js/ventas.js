@@ -6,7 +6,7 @@ $(function () {
     const origenId = config.origenId;
     const destinoId = config.destinoId;
     const selectedSeatNumbers = config.asientos || [];
-    const precioBase = parseFloat(config.precioUnitario || 0);
+    let precioBase = parseFloat(config.precioUnitario || 0);
     const descuentoPromoId = config.descuentoPromoId || 1;
 
     const costoTotalInput = $("#costo_total");
@@ -92,33 +92,25 @@ $(function () {
             const precioFinal = parseFloat(seatPrices[num]) || 0;
             const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
 
-            subtotalOriginal += precioBase;
+            // sobre equipaje
+            let totalSobre = 0;
+            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
+                totalSobre +=
+                    parseFloat($(this).find(".sobre-costo").val()) || 0;
+            });
+
+            subtotalOriginal += precioBase + totalSobre;
             totalDescuento += descuento;
-            totalPagar += precioFinal;
+            totalPagar += precioFinal + totalSobre;
 
             $(`#precio_asiento_${i}`).text(`S/ ${precioFinal.toFixed(2)}`);
 
             if ($(`#descuento_asiento_${i}`).length) {
                 $(`#descuento_asiento_${i}`).text(`S/ ${descuento.toFixed(2)}`);
             }
-
-            let totalSobre = 0;
-            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
-                totalSobre +=
-                    parseFloat($(this).find(".sobre-costo").val()) || 0;
-            });
-            totalPagar += totalSobre;
         });
 
-        selectedSeatNumbers.forEach((num, i) => {
-            const precioFinal = parseFloat(seatPrices[num]) || 0;
-            const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
-            console.log(
-                `Asiento ${num}: precioFinal=${precioFinal}, descuento=${descuento}, precioBase=${precioBase}`,
-            );
-        });
-
-        $("#subtotal").text(totalPagar.toFixed(2));
+        $("#subtotal").text(subtotalOriginal.toFixed(2));
         $("#total_descuento").text(totalDescuento.toFixed(2));
         $("#total_pagar").text(totalPagar.toFixed(2));
         $("#modal_total_pagar").text(totalPagar.toFixed(2));
@@ -433,8 +425,20 @@ $(function () {
         const nuevoPrecio = parseFloat($(this).val());
         if (isNaN(nuevoPrecio) || nuevoPrecio < 0) return;
 
+        precioBase = nuevoPrecio;
+
         selectedSeatNumbers.forEach((num) => {
-            seatPrices[num] = nuevoPrecio;
+            const desc = descuentosAplicados[num];
+
+            if (desc && desc.tipo === "porcentaje") {
+                desc.monto = nuevoPrecio * (desc.valor / 100);
+            } else if (desc && desc.tipo === "monto_fijo") {
+                desc.monto = desc.valor;
+            } else {
+                desc.monto = 0;
+            }
+
+            seatPrices[num] = Math.max(0, nuevoPrecio - (desc?.monto || 0));
         });
 
         actualizarCostoTotal();
@@ -545,9 +549,10 @@ $(function () {
             let descuentoAplicado = 0;
             let descuentoId = res.id || null;
 
+            // REEMPLAZA donde calculas descuentoAplicado y guardas en descuentosAplicados:
+
             if (parseInt(descuentoId) === parseInt(descuentoPromoId)) {
                 const promo = await verificarPromo10(index, codigo, dni);
-
                 if (!promo.valido) {
                     Swal.fire(
                         "Atención",
@@ -557,27 +562,40 @@ $(function () {
                     input.val("");
                     return;
                 }
-
-                descuentoAplicado = precioBase;
+                // Promo = 100% del precio
+                descuentosAplicados[asiento] = {
+                    descuento_id: descuentoId,
+                    codigo: codigo,
+                    tipo: "porcentaje",
+                    valor: 100,
+                    monto: precioBase,
+                };
                 msg.text(`Promo aplicada: ${promo.message}`);
             } else {
                 if (res.monto_efectivo) {
-                    descuentoAplicado = parseFloat(res.monto_efectivo);
+                    descuentosAplicados[asiento] = {
+                        descuento_id: descuentoId,
+                        codigo: codigo,
+                        tipo: "monto_fijo",
+                        valor: parseFloat(res.monto_efectivo),
+                        monto: parseFloat(res.monto_efectivo),
+                    };
                 } else if (res.porcentaje) {
-                    descuentoAplicado =
-                        precioBase * (parseFloat(res.porcentaje) / 100);
+                    descuentosAplicados[asiento] = {
+                        descuento_id: descuentoId,
+                        codigo: codigo,
+                        tipo: "porcentaje",
+                        valor: parseFloat(res.porcentaje),
+                        monto: precioBase * (parseFloat(res.porcentaje) / 100),
+                    };
                 }
             }
 
-            const nuevoPrecio = Math.max(0, precioBase - descuentoAplicado);
+            const nuevoPrecio = Math.max(
+                0,
+                precioBase - descuentosAplicados[asiento].monto,
+            );
             seatPrices[asiento] = nuevoPrecio;
-
-            descuentosAplicados[asiento] = {
-                descuento_id: descuentoId,
-                codigo: codigo,
-                monto: descuentoAplicado,
-            };
-
             actualizarCostoTotal();
 
             Swal.fire(
@@ -702,7 +720,7 @@ $(function () {
 
     $("#btnAbrirPago").on("click", function (e) {
         e.preventDefault();
-
+        if (!datosPasajerosCompletos()) return;
         if (!validarMenores()) {
             Swal.fire(
                 "Atención",
@@ -743,7 +761,6 @@ $(function () {
             );
             return;
         }
-
         if (!validarSumaPagos()) {
             Swal.fire(
                 "Atención",
@@ -759,6 +776,25 @@ $(function () {
         const pagoPlin = parseFloat($("#modal_pago_plin").val()) || 0;
         const pagoTransferencia =
             parseFloat($("#modal_pago_transferencia").val()) || 0;
+
+        actualizarCostoTotal();
+
+        const totalActual = parseFloat(costoTotalInput.val()) || 0;
+        const sumaPagos =
+            pagoEfectivo +
+            pagoTarjeta +
+            pagoYape +
+            pagoPlin +
+            pagoTransferencia;
+
+        if (Math.abs(sumaPagos - totalActual) > 0.01) {
+            Swal.fire(
+                "Atención",
+                `La suma de pagos (S/ ${sumaPagos.toFixed(2)}) no coincide con el total (S/ ${totalActual.toFixed(2)}).`,
+                "warning",
+            );
+            return;
+        }
 
         $("#metodo_pago_id_hidden").val($("#modal_metodo_pago").val());
         $("#pago_efectivo_hidden").val(pagoEfectivo.toFixed(2));

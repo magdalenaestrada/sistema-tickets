@@ -496,6 +496,18 @@ class PasajeController extends Controller
 
                 $totalVenta += $precioFinalReal;
 
+                $sobreEquipajeTotal = 0;
+
+                if ($request->has('sobre_equipaje_detalles')) {
+                    foreach ($request->sobre_equipaje_detalles as $grupo) {
+                        foreach ($grupo as $item) {
+                            $sobreEquipajeTotal += (float) ($item['costo'] ?? 0);
+                        }
+                    }
+                }
+
+                $totalVenta += $sobreEquipajeTotal;
+                
                 $pasajeros[] = [
                     'index' => $index,
                     'persona' => $persona,
