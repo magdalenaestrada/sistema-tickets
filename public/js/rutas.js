@@ -101,6 +101,10 @@ function guardarRuta() {
     let costo = [];
 
     $("#contenedorPuntos .punto").each(function () {
+        console.log("TRAMOS", tramosActuales);
+        console.log("ORIGEN", origenActual);
+        console.log("DESTINO", destinoActual);
+        console.log("tramoExistente", tramoExistente);
         let pueblitoId = $(this).find(".pueblito").val();
 
         let pueblito = pueblitos.find((p) => p.id == pueblitoId);
@@ -671,13 +675,15 @@ function generarTramos(tramosData = []) {
             duracion = 0;
             costo = "";
         }
-        console.log(tramosActuales);
+        console.log(JSON.stringify(tramosActuales, null, 2));
         console.log(origenActual);
         console.log(destinoActual);
         //console.log(puntosOriginalesOrdenados, origenActual);
         //console.log(puntosOriginalesOrdenados, destinoActual);
 
         let data = minutosAHorasMinutos(duracion);
+        console.log("duracion:", duracion);
+console.log("convertido:", data);
 
         html += `
 <div class="tramo card border-0 shadow-sm mb-2">

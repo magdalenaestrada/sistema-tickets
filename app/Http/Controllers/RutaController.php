@@ -236,18 +236,16 @@ class RutaController extends Controller
                         'sucursal' => $p->sucursal?->nombre_comercial,
                     ];
                 }),
-
             'tramos' => $ruta->tramos
-                ->sortBy('punto_origen_id')
-                ->values()
                 ->map(function ($t) {
                     return [
-                        'origen_id' => $t->punto_origen_id,
-                        'destino_id' => $t->punto_destino_id,
+                        'origen_id' => $t->origen->pueblito_id,
+                        'destino_id' => $t->destino->pueblito_id,
                         'duracion' => $t->duracion_minutos,
                         'costo' => $t->costo_tramo,
                     ];
                 }),
+
         ]);
     }
 
