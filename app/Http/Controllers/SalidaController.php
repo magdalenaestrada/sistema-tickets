@@ -69,13 +69,11 @@ class SalidaController extends Controller
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
-            ->whereDate('fecha_salida', '>=', now()->toDateString());
+            ->whereDate(
+                'fecha_salida',
+                $request->fecha ?? now('America/Lima')->toDateString()
+            );
 
-        if ($request->filled('fecha')) {
-            $salidas->whereDate('fecha_salida', $request->fecha);
-        } else {
-            $salidas->whereDate('fecha_salida', today());
-        }
         if ($request->filled('estado')) {
             $salidas->where('estado', $request->estado);
         }
@@ -86,11 +84,9 @@ class SalidaController extends Controller
             });
         }
 
-
         $salidas = $salidas
-            ->orderBy('fecha_salida', 'asc')
+            ->orderBy('fecha_salida')
             ->get();
-
 
         return DataTables::of($salidas)
             ->addColumn('ruta', function ($salida) {
