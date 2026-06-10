@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Empleado;
 use App\Models\Empresa;
 use App\Models\Horario;
+use App\Models\Ruta;
 use App\Models\Salida;
 use App\Models\Vehiculo;
 use App\Services\PdfService;
@@ -19,6 +20,8 @@ class SalidaController extends Controller
 {
     public function index()
     {
+        $rutas = Ruta::all();
+
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
         $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
         $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
@@ -34,11 +37,12 @@ class SalidaController extends Controller
                         ($h->tipo_vehiculo?->descripcion ?? ''),
                 ];
             });
-        return view('salidas.index', compact('vehiculos', 'conductores', 'horariosSalida'));
+        return view('salidas.index', compact('vehiculos', 'conductores', 'horariosSalida', 'rutas'));
     }
 
     public function index_vendedor()
     {
+        $rutas = Ruta::all();
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
         $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
         $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
@@ -54,20 +58,39 @@ class SalidaController extends Controller
                         ($h->tipo_vehiculo?->descripcion ?? ''),
                 ];
             });
-        return view('salidas.index-vendedor', compact('vehiculos', 'conductores', 'horariosSalida'));
+        return view('salidas.index-vendedor', compact('vehiculos', 'conductores', 'horariosSalida', 'rutas'));
     }
 
 
-    public function datatable()
+    public function datatable(Request $request)
     {
         $salidas = Salida::with([
             'horario.ruta',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
-            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->whereDate('fecha_salida', '>=', now()->toDateString());
+
+        if ($request->filled('fecha')) {
+            $salidas->whereDate('fecha_salida', $request->fecha);
+        } else {
+            $salidas->whereDate('fecha_salida', today());
+        }
+        if ($request->filled('estado')) {
+            $salidas->where('estado', $request->estado);
+        }
+
+        if ($request->filled('ruta_id')) {
+            $salidas->whereHas('horario.ruta', function ($q) use ($request) {
+                $q->where('id', $request->ruta_id);
+            });
+        }
+
+
+        $salidas = $salidas
             ->orderBy('fecha_salida', 'asc')
             ->get();
+
 
         return DataTables::of($salidas)
             ->addColumn('ruta', function ($salida) {

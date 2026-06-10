@@ -9,6 +9,21 @@
                 </div>
 
                 <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select id="filtroEstado" class="form-select">
+                                <option value="">Todas</option>
+                                <option value="programado">Programadas</option>
+                                <option value="en_ruta">En ruta</option>
+                                <option value="finalizado">Finalizadas</option>
+                                <option value="cancelado">Canceladas</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <input type="date" id="filtroFecha" class="form-control">
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table id="tablaSalidas" class="table table-hover align-middle w-100">
                             <thead class="table-primary">

@@ -16,13 +16,41 @@
                             <i class="link-icon" data-lucide="plus"></i>
                             Crear salida única
                         </button>
-                        <button id="btnEliminarSeleccionados" class="btn btn-danger">  <i class="link-icon" data-lucide="trash-2"></i>
+                        <button id="btnEliminarSeleccionados" class="btn btn-danger"> <i class="link-icon"
+                                data-lucide="trash-2"></i>
                             Eliminar seleccionados
                         </button>
                     </div>
                 </div>
 
                 <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="date" id="filtroFecha" class="form-control"
+                                value="{{ now()->format('Y-m-d') }}">
+                        </div>
+
+                        <div class="col-md-4">
+                            <select id="filtroEstado" class="form-select">
+                                <option value="">Todos los estados</option>
+                                <option value="programado">Programado</option>
+                                <option value="en_ruta">En ruta</option>
+                                <option value="finalizado">Finalizado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <select id="filtroRuta">
+                                <option value="">Todas las rutas</option>
+                                @foreach ($rutas as $ruta)
+                                    <option value="{{ $ruta->id }}">
+                                        {{ $ruta->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table id="tablaSalidas" class="table table-hover align-middle w-100">
                             <thead class="table-primary">

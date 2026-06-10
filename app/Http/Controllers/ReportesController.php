@@ -10,8 +10,10 @@ use App\Models\Pasaje;
 use App\Models\Horario;
 use App\Models\Descuento;
 use App\Models\Encomienda;
-use App\Models\HorarioPunto;
 use App\Models\MetodoPago;
+use App\Models\Pueblito;
+use App\Models\RutaPunto;
+use App\Models\Salida;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoVehiculo;
@@ -30,7 +32,7 @@ class ReportesController extends Controller
         $tipos_documento = TipoDocumentoFactura::all();
         $tipos_vehiculo = TipoVehiculo::all();
         $tipos_viaje = TipoVehiculo::all();
-        $puntos = HorarioPunto::all();
+        $puntos = Pueblito::orderBy('descripcion')->get();
         return view('reportes.index', compact('sucursales', 'metodosPago', 'vehiculos', 'tipos_documento', 'tipos_vehiculo', 'tipos_viaje', 'puntos'));
     }
 
@@ -86,36 +88,108 @@ class ReportesController extends Controller
                 $query = Encomienda::query();
                 return DataTables::of($query)->make(true);
 
+
             case 'viajes':
-                $query = Horario::with(['tipo_vehiculo', 'tipo_viaje', 'punto_origen', 'punto_destino']);
 
-                // Filtros
-                if ($request->tipo_vehiculo) $query->where('tipo_vehiculo_id', $request->tipo_vehiculo);
-                if ($request->tipo_viaje) $query->where('tipo_viaje_id', $request->tipo_viaje);
-                if ($request->punto_origen) $query->where('punto_origen_id', $request->punto_origen);
-                if ($request->punto_destino) $query->where('punto_destino_id', $request->punto_destino);
-                if ($request->fecha_inicio) $query->whereDate('fecha_salida', '>=', $request->fecha_inicio);
-                if ($request->fecha_fin) $query->whereDate('fecha_salida', '<=', $request->fecha_fin);
-                if ($request->hora_embarque) $query->where('hora_embarque', $request->hora_embarque);
-                if ($request->costo_pasaje) $query->where('costo_pasaje', $request->costo_pasaje);
+                $query = Salida::with([
+                    'horario.ruta.puntos.pueblito',
+                    'horario.tipo_vehiculo',
+                    'horario.tipo_viaje',
+                    'vehiculo'
+                ]);
 
-                // Días de la semana
-                $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-                foreach ($dias as $dia) {
-                    if ($request->$dia) $query->where($dia, 1);
+                if ($request->fecha_inicio) {
+                    $query->whereDate(
+                        'fecha_salida',
+                        '>=',
+                        $request->fecha_inicio
+                    );
+                }
+
+                if ($request->fecha_fin) {
+                    $query->whereDate(
+                        'fecha_salida',
+                        '<=',
+                        $request->fecha_fin
+                    );
+                }
+
+                if ($request->tipo_vehiculo) {
+                    $query->whereHas(
+                        'horario',
+                        fn($q) =>
+                        $q->where(
+                            'tipo_vehiculo_id',
+                            $request->tipo_vehiculo
+                        )
+                    );
+                }
+
+                if ($request->tipo_viaje) {
+                    $query->whereHas(
+                        'horario',
+                        fn($q) =>
+                        $q->where(
+                            'tipo_viaje_id',
+                            $request->tipo_viaje
+                        )
+                    );
                 }
 
                 return DataTables::of($query)
-                    ->addColumn('fecha', fn($row) => $row->fechaFormateada)
-                    ->addColumn('hora', fn($row) => $row->horaFormateada)
-                    ->addColumn('tipo_vehiculo', fn($row) => $row->tipo_vehiculo->descripcion ?? '')
-                    ->addColumn('tipo_viaje', fn($row) => $row->tipo_viaje->descripcion ?? '')
-                    ->addColumn('origen', fn($row) => $row->punto_origen->nombre_comercial ?? '')
-                    ->addColumn('destino', fn($row) => $row->punto_destino->nombre_comercial ?? '')
-                    ->addColumn('costo', fn($row) => $row->costo_pasaje)
-                    ->rawColumns(['fecha', 'hora', 'tipo_vehiculo', 'tipo_viaje', 'origen', 'destino', 'costo'])
-                    ->make(true);
 
+                    ->addColumn('fecha', function ($row) {
+                        return $row->fecha_formateada;
+                    })
+
+                    ->addColumn('hora', function ($row) {
+                        return $row->hora_salida;
+                    })
+
+                    ->addColumn('tipo_vehiculo', function ($row) {
+                        return $row->horario?->tipo_vehiculo?->descripcion;
+                    })
+
+                    ->addColumn('tipo_viaje', function ($row) {
+                        return $row->horario?->tipo_viaje?->descripcion;
+                    })
+
+                    ->addColumn('origen', function ($row) {
+
+                        $ruta = $row->horario?->ruta;
+
+                        if (!$ruta) {
+                            return '';
+                        }
+
+                        $primerPunto = $ruta->puntos
+                            ->sortBy('orden')
+                            ->first();
+
+                        return $primerPunto?->pueblito?->descripcion ?? '';
+                    })
+
+                    ->addColumn('destino', function ($row) {
+
+                        $ruta = $row->horario?->ruta;
+
+                        if (!$ruta) {
+                            return '';
+                        }
+
+                        $ultimoPunto = $ruta->puntos
+                            ->sortByDesc('orden')
+                            ->first();
+
+                        return $ultimoPunto?->pueblito?->descripcion ?? '';
+                    })
+
+                    ->addColumn('costo', function ($row) {
+
+                        return $row->horario?->costo_base ?? 0;
+                    })
+
+                    ->make(true);
 
             default:
                 abort(404);
@@ -166,29 +240,60 @@ class ReportesController extends Controller
             $anulados = $ventas->where('estado', 'A');
         }
         if ($tipo === 'viajes') {
-            $query = Horario::with(['tipo_vehiculo', 'tipo_viaje', 'punto_origen', 'punto_destino']);
 
-            if ($request->tipo_vehiculo) $query->where('tipo_vehiculo_id', $request->tipo_vehiculo);
-            if ($request->tipo_viaje) $query->where('tipo_viaje_id', $request->tipo_viaje);
-            if ($request->punto_origen) $query->where('punto_origen_id', $request->punto_origen);
-            if ($request->punto_destino) $query->where('punto_destino_id', $request->punto_destino);
-            if ($request->fecha_inicio && $request->fecha_fin) {
-                $query->whereBetween('fecha_salida', [$request->fecha_inicio, $request->fecha_fin]);
+            $query = Salida::with([
+                'horario.ruta.puntos.pueblito',
+                'horario.tipo_vehiculo',
+                'horario.tipo_viaje',
+                'vehiculo'
+            ]);
+
+            if ($request->fecha_inicio) {
+                $query->whereDate(
+                    'fecha_salida',
+                    '>=',
+                    $request->fecha_inicio
+                );
             }
-            if ($request->hora_embarque) $query->where('hora_embarque', $request->hora_embarque);
-            if ($request->costo_pasaje) $query->where('costo_pasaje', $request->costo_pasaje);
 
-            $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-            foreach ($dias as $dia) {
-                if ($request->$dia) $query->where($dia, 1);
+            if ($request->fecha_fin) {
+                $query->whereDate(
+                    'fecha_salida',
+                    '<=',
+                    $request->fecha_fin
+                );
             }
 
-            $horarios = $query->get();
+            if ($request->tipo_vehiculo) {
+                $query->whereHas(
+                    'horario',
+                    fn($q) =>
+                    $q->where(
+                        'tipo_vehiculo_id',
+                        $request->tipo_vehiculo
+                    )
+                );
+            }
 
-            $pdf = FacadePdf::loadView("reportes.pdf.$tipo", compact('horarios', 'filtros'))
-                ->setPaper('a4', 'landscape');
+            if ($request->tipo_viaje) {
+                $query->whereHas(
+                    'horario',
+                    fn($q) =>
+                    $q->where(
+                        'tipo_viaje_id',
+                        $request->tipo_viaje
+                    )
+                );
+            }
 
-            return $pdf->download("reporte_$tipo.pdf");
+            $salidas = $query->get();
+
+            $pdf = FacadePdf::loadView(
+                'reportes.pdf.viajes',
+                compact('salidas', 'filtros')
+            )->setPaper('a4', 'landscape');
+
+            return $pdf->download('reporte_viajes.pdf');
         }
 
         $pdf = FacadePdf::loadView("reportes.pdf.$tipo", compact('emitidos', 'anulados', 'filtros'))

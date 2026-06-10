@@ -16,8 +16,17 @@ $(document).on("change", "#fecha_salida, #horario_id", function () {
 
 $(document).ready(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
+        rowGroup: {
+            dataSrc: "fecha_formateada",
+        },
+
         ajax: {
             url: route("salidas.datatable"),
+            data: function (d) {
+                d.estado = $("#filtroEstado").val();
+                d.ruta_id = $("#filtroRuta").val();
+                d.fecha = $("#filtroFecha").val();
+            },
         },
         columns: [
             {
@@ -33,9 +42,16 @@ $(document).ready(function () {
             { data: "fecha_formateada" },
             { data: "hora_salida" },
             { data: "hora_llegada" },
-            { data: "estado_badge" },
+            {
+                data: "estado",
+                render: function (data, type, row) {
+                    if (type === "display") return row.estado_badge;
+                    return data;
+                },
+            },
             { data: "acciones" },
         ],
+
         order: [[2, "asc"]],
         responsive: true,
         info: false,
@@ -44,8 +60,24 @@ $(document).ready(function () {
             lucide.createIcons();
         },
     });
+
+    $("#filtroEstado, #filtroRuta, #filtroFecha").on("change", function () {
+        tablaSalidas.ajax.reload();
+    });
 });
 
+new TomSelect("#filtroRuta", {
+    valueField: "id",
+    labelField: "nombre",
+    searchField: "nombre",
+
+    load: function (query, callback) {
+        fetch(route("rutas.buscar") + "?q=" + query)
+            .then((response) => response.json())
+            .then((json) => callback(json))
+            .catch(() => callback());
+    },
+});
 function hoy() {
     let fecha = new Date();
     return fecha.toISOString().split("T")[0];
