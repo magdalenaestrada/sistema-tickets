@@ -71,7 +71,7 @@
                             </div>
                         @endif
                     </div>
-                    {{-- <div class="col-md-3">
+                     <div class="col-md-3">
                         <label class="form-label">Usuario SOL (SUNAT)</label>
                         <input type="text" class="form-control" name="usuario_facturacion" id="usuario_facturacion"
                             value="{{ $empresa->usuario_facturacion ?? '' }}">
@@ -86,7 +86,7 @@
                         <label class="form-label">IGV (%)</label>
                         <div class="input-group">
                             <input type="text" name="igv" id="igv"
-                                value={{ $empresa->igv ?? '' }} class="form-control">
+                                value="{{ $empresa->igv ?? '' }}" class="form-control">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                                 <span class="badge bg-success">Certificado cargado</span>
                             </div>
                         @endif
-                    </div> --}}
+                    </div> 
                 </div>
                 <div class="col-md-12">
                     <label class="form-label">Mensaje personalizado</label>

@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     actualizarContador(-1);
     attachRowEvents();
-
+    mostrarPrimeras10Salidas();
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
             row.addEventListener("click", function () {
@@ -377,20 +377,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "";
 
         if (!fecha || !origen || !destino) {
-            document.querySelectorAll(".horario-row").forEach((row) => {
-                row.style.display = "none";
-
-                const label = row.querySelector(".hr-route-label");
-                const origenOriginal = row.dataset.origenNombre || "";
-                const destinoOriginal = row.dataset.destinoNombre || "";
-
-                if (label && origenOriginal && destinoOriginal) {
-                    label.textContent = `${origenOriginal} → ${destinoOriginal}`;
-                }
-            });
-
-            document.getElementById("estado-inicial").style.display = "block";
-            document.getElementById("resultados-info").textContent = "";
+            mostrarPrimeras10Salidas();
             return;
         }
 
@@ -515,4 +502,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
     precargarDesdeUrl();
+
+    function mostrarPrimeras10Salidas() {
+        const rows = document.querySelectorAll(".horario-row");
+
+        let visibles = 0;
+
+        rows.forEach((row) => {
+            if (visibles < 10) {
+                row.style.display = "flex";
+                visibles++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        actualizarContador(visibles);
+
+        const estadoInicial = document.getElementById("estado-inicial");
+        if (estadoInicial) {
+            estadoInicial.style.display = visibles ? "none" : "block";
+        }
+    }
 });

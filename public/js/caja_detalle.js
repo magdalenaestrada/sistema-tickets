@@ -184,6 +184,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     tablaContenedor.innerHTML = data.tabla;
                 }
 
+                document.getElementById("total-ingresos").textContent =
+                    `S/ ${parseFloat(data.total_ingresos).toFixed(2)}`;
+
+                document.getElementById("total-egresos").textContent =
+                    `S/ ${parseFloat(data.total_salidas).toFixed(2)}`;
+
+                document.getElementById("efectivo-esperado").textContent =
+                    `S/ ${parseFloat(data.efectivo_esperado).toFixed(2)}`;
+
                 if (typeof lucide !== "undefined") {
                     lucide.createIcons();
                 }

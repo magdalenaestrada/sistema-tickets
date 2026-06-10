@@ -66,7 +66,7 @@
                 <div class="card border-danger shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <h6 class="text-muted d-block mb-1"><strong>Egresos</strong></h6>
-                        <div class="fw-bold text-danger">S/ {{ number_format($caja->total_salidas, 2) }}</div>
+                        <div id="total_egresos" class="fw-bold text-danger">S/ {{ number_format($caja->total_salidas, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -75,7 +75,7 @@
                 <div class="card border-primary shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <h6 class="text-muted d-block mb-1"><strong>Ingresos</strong></h6>
-                        <div class="fw-bold text-primary">S/ {{ number_format($caja->total_ingresos, 2) }}</div>
+                        <div id="total_ingresos" class="fw-bold text-primary">S/ {{ number_format($caja->total_ingresos, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                 <div class="card border-success shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <h6 class="text-muted d-block mb-1"><strong>Efectivo esperado</strong></h6>
-                        <div class="fw-bold text-success">S/ {{ number_format($caja->efectivo_esperado, 2) }}</div>
+                        <div id="efectivo-esperado" class="fw-bold text-success">S/ {{ number_format($caja->efectivo_esperado, 2) }}</div>
                     </div>
                 </div>
             </div>

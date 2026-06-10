@@ -10,7 +10,6 @@ let puntosOriginalesOrdenados = [];
 $(document).ready(async function () {
     pueblitos = await $.get(route("pueblitos.lista"));
     sucursales = await $.get(route("sucursales.lista"));
-    console.log(sucursales);
 
     tablaRutas = $("#tablaRutas").DataTable({
         ajax: {
@@ -245,7 +244,6 @@ function agregarPunto(data = null) {
     }
 
     generarTramos();
-    actualizarOpcionesPueblitos();
     lucide.createIcons();
 }
 
@@ -297,29 +295,7 @@ function validarPuntos() {
 }
 
 function actualizarOpcionesPueblitos() {
-    let seleccionados = [];
-
-    $(".pueblito").each(function () {
-        let val = $(this).val();
-        if (val) seleccionados.push(val);
-    });
-
-    $(".pueblito").each(function () {
-        let select = $(this);
-        let actual = select.val();
-
-        select.find("option").each(function () {
-            let val = $(this).val();
-
-            if (!val) return;
-
-            if (seleccionados.includes(val) && val !== actual) {
-                $(this).hide();
-            } else {
-                $(this).show();
-            }
-        });
-    });
+    $(".pueblito option").show();
 }
 
 $(document).on("change", "#contenedorPuntos select", function () {
@@ -421,14 +397,11 @@ function editarRuta(id) {
         $("#panelContenido").html(html);
         setTimeout(() => {
             ruta.puntos.forEach((p) => agregarPunto(p));
-
-            actualizarOpcionesPueblitos();
-            generarTramos(ruta.tramos);
         }, 100);
-
-        activarOrdenamiento();
-        generarTramos(ruta.tramos);
-
+        setTimeout(() => {
+            generarTramos(ruta.tramos);
+            activarOrdenamiento();
+        }, 400);
         lucide.createIcons();
     });
 }
@@ -661,6 +634,8 @@ function generarTramos(tramosData = []) {
         });
     });
 
+    console.log(puntos);
+
     let html = "";
 
     const cambioPuntos = verificarCambiosPuntos();
@@ -696,6 +671,11 @@ function generarTramos(tramosData = []) {
             duracion = 0;
             costo = "";
         }
+        console.log(tramosActuales);
+        console.log(origenActual);
+        console.log(destinoActual);
+        //console.log(puntosOriginalesOrdenados, origenActual);
+        //console.log(puntosOriginalesOrdenados, destinoActual);
 
         let data = minutosAHorasMinutos(duracion);
 
