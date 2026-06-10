@@ -326,12 +326,13 @@
                                         {{ $salida->horario->tipo_viaje->descripcion ?? '-' }}
                                     </div>
                                 </div>
-
                                 <div class="hr-date">
                                     <span class="hr-date-day">{{ optional($salida->fecha_salida)->format('d/m') }}</span>
-                                    <span class="hr-date-time">{{ $salida->horario->hora_formateada }}</span>
+                                    <span class="hr-date-time"
+                                        data-hora-original="{{ $salida->horario->hora_formateada }}">
+                                        {{ $salida->horario->hora_formateada }}
+                                    </span>
                                 </div>
-
                                 <div class="hr-bus">
                                     {{ $salida->horario->tipo_vehiculo->descripcion ?? '-' }}
                                 </div>

@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 resetSeleccion();
 
                 if (tipoViajeId === 2) {
-                    manejarViajePorTramo(salidaId);
+                    manejarViajePorTramo(salidaId, this);
                 } else {
                     let puntos = [];
 
@@ -57,16 +57,31 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function manejarViajePorTramo(salidaId) {
+    function manejarViajePorTramo(salidaId, row) {
         const origenId = document.getElementById("filtro_origen").value;
         const destinoId = document.getElementById("filtro_destino").value;
 
         if (!origenId || !destinoId) {
-            svgContainer.innerHTML = `
+            let puntos = [];
+            try {
+                puntos = JSON.parse(row?.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+
+            const primero = puntos[0];
+            const ultimo = puntos[puntos.length - 1];
+
+            if (!primero || !ultimo) {
+                svgContainer.innerHTML = `
                 <div class="no-results">
                     Selecciona origen y destino para ver asientos
                 </div>
             `;
+                return;
+            }
+
+            cargarAsientos(salidaId, primero.pueblito_id, ultimo.pueblito_id);
             return;
         }
 
@@ -449,11 +464,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (label) {
                     label.textContent = `${nombreOrigen} → ${nombreDestino}`;
                 }
+
+                const horaEl = row.querySelector(".hr-date-time");
+                if (horaEl && puntoOrigen?.hora) {
+                    horaEl.textContent = puntoOrigen.hora;
+                }
             } else {
                 row.style.display = "none";
 
                 if (label && origenOriginal && destinoOriginal) {
                     label.textContent = `${origenOriginal} → ${destinoOriginal}`;
+                }
+
+                const horaEl = row.querySelector(".hr-date-time");
+                const horaOriginal = horaEl?.dataset.horaOriginal; // ✅
+                if (horaEl && horaOriginal) {
+                    horaEl.textContent = horaOriginal;
                 }
             }
         });

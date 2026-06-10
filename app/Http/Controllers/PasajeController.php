@@ -46,21 +46,35 @@ class PasajeController extends Controller
             ->map(function ($salida) {
                 $ruta = $salida->horario->ruta;
                 $puntos = $ruta->puntos->sortBy('orden')->values();
+                $hora = Carbon::parse($salida->fecha_salida);
+                $hora->setTimeFromTimeString($salida->horario->hora_salida);
+                $puntosConHora = [];
 
+                foreach ($puntos as $i => $p) {
 
-                $salida->puntos_json = json_encode(
-                    $puntos->map(function ($p) {
-                        return [
-                            'pueblito_id' => (string) $p->pueblito_id,
-                            'orden' => (int) $p->orden,
-                            'nombre' => trim(
-                                ($p->pueblito?->descripcion ?? '') .
-                                    ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')
-                            ),
-                        ];
-                    })->values()->toArray(),
-                    JSON_UNESCAPED_UNICODE
-                );
+                    if ($i > 0) {
+                        $tramo = $ruta->tramos()
+                            ->where('punto_origen_id', $puntos[$i - 1]->id)
+                            ->where('punto_destino_id', $p->id)
+                            ->first();
+
+                        if ($tramo) {
+                            $hora->addMinutes($tramo->duracion_minutos);
+                        }
+                    }
+
+                    $puntosConHora[] = [
+                        'pueblito_id' => (string) $p->pueblito_id,
+                        'orden' => (int) $p->orden,
+                        'nombre' => trim(
+                            ($p->pueblito?->descripcion ?? '') .
+                                ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')
+                        ),
+                        'hora' => $hora->format('H:i')
+                    ];
+                }
+
+                $salida->puntos_json = json_encode($puntosConHora, JSON_UNESCAPED_UNICODE);
 
                 $origen = $puntos->first();
                 $destino = $puntos->last();
@@ -963,7 +977,7 @@ class PasajeController extends Controller
             'metodos_pago',
             'billeteras_digitales',
             'cajas_emision',
-            'user', 
+            'user',
             'tiposEncomienda'
         ));
     }
