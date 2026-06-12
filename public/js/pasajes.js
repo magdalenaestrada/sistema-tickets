@@ -14,39 +14,49 @@ document.addEventListener("DOMContentLoaded", function () {
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
             row.addEventListener("click", function () {
-                console.log("SALIDA:", this.dataset.salidaId);
-                console.log("PUNTOS:", this.dataset.puntos);
                 const salidaId = this.dataset.salidaId;
                 const tipoViajeId = parseInt(this.dataset.tipoViajeId);
-
                 currentSalidaId = salidaId;
 
                 document
                     .querySelectorAll(".horario-row")
                     .forEach((r) => r.classList.remove("active"));
-
                 this.classList.add("active");
                 resetSeleccion();
 
-                if (tipoViajeId === 2) {
-                    manejarViajePorTramo(salidaId, this);
-                } else {
-                    let puntos = [];
+                // ← AGREGA ESTO: si no hay filtros, fuerza origen/destino desde los puntos
+                const origenSelect = document.getElementById("filtro_origen");
+                const destinoSelect = document.getElementById("filtro_destino");
 
+                if (!origenSelect.value || !destinoSelect.value) {
+                    let puntos = [];
                     try {
                         puntos = JSON.parse(this.dataset.puntos || "[]");
-                    } catch (e) {
-                        puntos = [];
-                    }
-
-                    console.log(
-                        row.dataset.salidaId,
-                        JSON.parse(row.dataset.puntos || "[]"),
-                    );
+                    } catch (e) {}
 
                     const primero = puntos[0];
                     const ultimo = puntos[puntos.length - 1];
 
+                    if (primero && ultimo) {
+                        cargarAsientos(
+                            salidaId,
+                            primero.pueblito_id,
+                            ultimo.pueblito_id,
+                        );
+                        return;
+                    }
+                }
+
+                // flujo normal con filtros
+                if (tipoViajeId === 2) {
+                    manejarViajePorTramo(salidaId, this);
+                } else {
+                    let puntos = [];
+                    try {
+                        puntos = JSON.parse(this.dataset.puntos || "[]");
+                    } catch (e) {}
+                    const primero = puntos[0];
+                    const ultimo = puntos[puntos.length - 1];
                     cargarAsientos(
                         salidaId,
                         primero?.pueblito_id || null,

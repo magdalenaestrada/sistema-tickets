@@ -422,7 +422,6 @@ $(function () {
             );
             return;
         }
-
     });
 
     $("#btnRegresarAsientos").on("click", function () {
