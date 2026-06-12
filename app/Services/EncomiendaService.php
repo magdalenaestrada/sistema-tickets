@@ -27,6 +27,7 @@ class EncomiendaService
                 'emisor_persona_id' => $emisorId,
                 'receptor_persona_id' => $receptorId,
                 'distrito_id' => $request->distrito_id,
+                'destino_pueblito_id' => $request->destino_pueblito_id,
                 'total' => $request->total,
                 'estado' => 'A',
                 'pago_instantaneo' => $request->boolean('pago_instantaneo'),

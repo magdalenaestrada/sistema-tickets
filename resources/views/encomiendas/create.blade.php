@@ -139,14 +139,24 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">DISTRITO <span style="color: red">*</span></label>
                                 <select name="receptor_distrito_id" id="distrito_id" class="form-select" required>
                                     <option value="">Seleccione</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <label class="form-label">PARADA <span style="color: red">*</span></label>
+                                <select name="destino_pueblito_id" id="pueblito_id" class="form-select" required>
+                                    <option value="">Seleccione</option>
+                                    @foreach ($pueblitos as $pueblito)
+                                        <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
                                 <label class="form-label">Ubigeo</label>
                                 <input type="text" class="form-control" id="receptor_ubigeo" name="receptor_ubigeo"
                                     readonly>
@@ -237,116 +247,106 @@
                     </div>
                 </div>
                 <div class="card mb-1">
-                    <div class="card-body">
-                        @if ($user->hasRole('Administrador'))
-                            <div class="mb-1">
-                                <label for="sucursal_id" class="col-12 col-form-label">Sucursal de emisión <span
-                                        style="color: red">*</span></label>
-                                <select name="sucursal_id" id="sucursal_id" class="form-select form-select-sm" required>
-                                    <option value="">Seleccionar una caja</option>
+                    <div class="card shadow-sm border-0 panel-venta">
+                        <div class="card-body">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold">EMITIR SUNAT:</span>
+
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" id="emitir_sunat">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
+                                        id="btn_boleta" data-doc="boleta">
+                                        Boleta
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
+                                        id="btn_factura" data-doc="factura">
+                                        Factura
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-success doc-btn active"
+                                        id="btn_nota_venta" data-doc="4">
+                                        N. Venta
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-2 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <select name="caja_id" id="caja_id" class="form-select">
+                                    <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
-                                        <option value="{{ $caja->sucursal_id }}"
+                                        <option value="{{ $caja->id }}"
+                                            data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
                                             @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                        @endif
 
-                        <div class="mb-1">
-                            <label for="tipo_documento_factura_id" class="col-6 col-form-label">Tipo de
-                                documento <span style="color: red">*</span></label>
-                            <select name="tipo_documento_factura_id" id="tipo_documento_factura_id"
-                                class="form-select form-select-sm">
-                                @foreach ($tipos_documentos_facturas as $index => $tipo_documento_factura)
-                                    <option value="{{ $tipo_documento_factura->id }}"
-                                        @if ($index === 1) selected @endif>
-                                        {{ $tipo_documento_factura->descripcion }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                            <div class="mb-2 fw-semibold">Serie sucursal:</div>
+                            <div class="panel-box mb-3 text-center" id="serie_doc">Seleccionar sucursal</div>
 
-                        <div class="mb-1">
-                            <label for="numero_documento_id" class="form-label">Número documento <span
-                                    style="color: red">*</span></label>
-                            <input type="number" id="numero_documento_id" name="numero_documento_id"
-                                class="form-control solo-numeros form-control-xs">
-                        </div>
-
-                        <div class="mb-1">
-                            <label for="razon_social" class="form-label">Razón social</label>
-                            <input type="text" id="razon_social" name="razon_social"
-                                class="form-control form-control-xs">
-                        </div>
-                    </div>
-                </div>
-                <div class="card mb-1">
-                    <div class="card-body">
-                        <div class="form-check mb-1">
-                            <input class="form-check-input" type="checkbox" id="pago_instantaneo"
-                                name="pago_instantaneo" value="1" checked>
-                            <label class="form-check-label" for="pago_instantaneo">
-                                Registrar pago
-                            </label>
-                        </div>
-                        <div class="row mb-1">
-                            <label for="metodo_pago_id" class="col-6 col-form-label">Método de pago</label>
-                            <div class="col-6">
-                                <select name="metodo_pago_id" id="metodo_pago_id" class="form-select form-select-sm">
-                                    <option value="">Seleccione</option>
-                                    @foreach ($metodos_pago as $metodo_pago)
-                                        <option value="{{ $metodo_pago->id }}">
-                                            {{ $metodo_pago->descripcion }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div id="container_pago" hidden>
-
-                            <div class="row mb-2 grupo_costo_total" hidden>
-                                <label for="costo_total" class="col-6 col-form-label">Costo total <b>(S/)</b></label>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="costo_total" name="costo_total"
-                                        class="form-control form-control-xs" readonly>
+                            <div class="resumen-totales">
+                                <div class="d-flex justify-content-between">
+                                    <span>Sub total:</span>
+                                    <strong>S/ <span id="subtotal">0.00</span></strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Descuentos:</span>
+                                    <strong>S/ <span id="total_descuento">0.00</span></strong>
+                                </div>
+                                <div class="d-flex justify-content-between text-primary">
+                                    <span>Total a pagar:</span>
+                                    <strong>S/ <span id="total_pagar">0.00</span></strong>
                                 </div>
                             </div>
 
-                            <div class="row mb-2">
-                                <label for="pago_efectivo" class="col-6 col-form-label">Pago efectivo <b>(S/)</b></label>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="pago_efectivo" name="pago_efectivo"
-                                        class="form-control form-control-xs">
+
+                            <input type="hidden" name="emitir_sunat_estado" id="emitir_sunat_estado" value="0">
+
+                            <div class="mb-2">
+                                <label class="form-label">Documento cliente: </label>
+
+                                <div class="input-group">
+                                    <input type="text" id="doc_cliente" name="numero_documento_id"
+                                        class="form-control solo-numeros">
+
+                                    <button type="button" id="btnBuscarCliente" class="btn btn-primary">
+                                        <i class="link-icon" data-lucide="search"></i>
+                                    </button>
                                 </div>
                             </div>
 
-                            <div class="row mb-2">
-                                <label for="billetera_id" class="col-6 col-form-label">Yape/Plin/POS</label>
-                                <div class="col-6">
-                                    <select name="billetera_id" id="billetera_id" class="form-select form-select-sm">
-                                        <option value="">Seleccione</option>
-                                        @foreach ($billeteras_digitales as $billetera_digital)
-                                            <option value="{{ $billetera_digital->id }}">
-                                                {{ $billetera_digital->descripcion }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label">Razón social:</label>
+                                <input type="text" id="razon_social" name="razon_social" class="form-control">
                             </div>
 
-                            <div class="row mb-2">
-                                <label for="pago_billetera" class="col-6 col-form-label">Pago digital <b>(S/)</b></label>
-                                <div class="col-6">
-                                    <input type="number" step="0.01" id="pago_billetera" name="pago_billetera"
-                                        class="form-control form-control-xs">
-                                </div>
+                            <div class="mb-3">
+                                <label for="direccion" class="form-label">Dirección</label>
+                                <input type="text" id="direccion" name="direccion" class="form-control"
+                                    value="-" readonly>
+                            </div>
+
+                            <div class="d-grid gap-2">
+
+                                <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
+                                    Terminar Venta
+                                </button>
+
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
         <div class="row mt-3">
             <div class="col-12 text-end">
@@ -354,8 +354,8 @@
                 <button type="submit" class="btn btn-primary">Guardar Encomienda</button>
             </div>
         </div>
-
     </form>
+    @include('pasajes.modals.metodos_pago')
 @endsection
 
 @push('scripts')

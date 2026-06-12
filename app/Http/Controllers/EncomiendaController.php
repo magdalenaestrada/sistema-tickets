@@ -13,6 +13,7 @@ use App\Models\EncomiendaSalida;
 use App\Models\MetodoPago;
 use App\Models\Persona;
 use App\Models\Provincia;
+use App\Models\Pueblito;
 use App\Models\Salida;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
@@ -69,11 +70,12 @@ class EncomiendaController extends Controller
             ->where('usuario_id', $user->id)
             ->where('estado', 'A')
             ->get();
+        $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
-        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales', 'cajas_emision'));
+        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'pueblitos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales', 'cajas_emision'));
     }
 
     public function datatable_no_asignadas(Request $request)
