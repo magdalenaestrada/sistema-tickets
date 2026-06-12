@@ -10,6 +10,7 @@ use App\Models\TipoDocumentoPersona;
 use App\Models\MetodoPago;
 use App\Models\BilleteraDigital;
 use App\Models\Caja;
+use App\Models\CajaDetalle;
 use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
@@ -507,7 +508,7 @@ class PasajeController extends Controller
                 }
 
                 $totalVenta += $sobreEquipajeTotal;
-                
+
                 $pasajeros[] = [
                     'index' => $index,
                     'persona' => $persona,
@@ -614,6 +615,19 @@ class PasajeController extends Controller
             }
 
             if ($accion === 'vender') {
+
+                foreach ($pagos as $pago) {
+                    CajaDetalle::create([
+                        'caja_id' => $request->caja_id,
+                        'subtipo_movimiento_caja_id' => 1, // venta
+                        'metodo_pago_id' => $pago['metodo_pago_id'],
+                        'amount' => $pago['total'],
+                        'description' => "Venta de pasaje #{$venta->id}",
+                        'anulado' => false,
+                        'billetera_digital_id' => $pago['billetera_id'] ?? null,
+                    ]);
+                }
+
                 $pagoService->registrarPagos(
                     $venta->id,
                     $pagos,
