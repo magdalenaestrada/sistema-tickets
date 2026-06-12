@@ -184,13 +184,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     tablaContenedor.innerHTML = data.tabla;
                 }
 
-                document.getElementById("total-ingresos").textContent =
+                document.getElementById("total_ingresos").textContent =
                     `S/ ${parseFloat(data.total_ingresos).toFixed(2)}`;
 
-                document.getElementById("total-egresos").textContent =
+                document.getElementById("total_egresos").textContent =
                     `S/ ${parseFloat(data.total_salidas).toFixed(2)}`;
 
-                document.getElementById("efectivo-esperado").textContent =
+                document.getElementById("efectivo_esperado").textContent =
                     `S/ ${parseFloat(data.efectivo_esperado).toFixed(2)}`;
 
                 if (typeof lucide !== "undefined") {
@@ -226,150 +226,37 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    const modalSalida = document.getElementById("modalSalida");
+    const salidaSimple = document.getElementById("salida_monto_simple");
+    const salidaEfectivo = document.getElementById("salida_monto_efectivo");
+    const salidaDigital = document.getElementById("salida_monto_digital");
+    const salidaBilletera = document.getElementById("salida_billetera");
 
-    if (modalSalida) {
-        modalSalida.addEventListener("show.bs.modal", function () {
-            const form = modalSalida.querySelector("form");
-            if (form) form.reset();
+    function actualizarSalida() {
+        ocultarSalida();
 
-            document.querySelectorAll(".salida-campo").forEach((el) => {
-                el.classList.add("d-none");
+        if (!tipoSalida) return;
 
-                const input = el.querySelector("input");
-                const select = el.querySelector("select");
+        const value = tipoSalida.value;
 
-                if (input) input.value = "";
-                if (select) select.value = "";
-            });
-        });
-    }
-
-    const tipoSalidaVisual = document.getElementById("tipo_salida_visual");
-    const bloqueMetodosSalida = document.getElementById(
-        "bloque_metodos_salida",
-    );
-    const formSalida = document.getElementById("form-salida");
-
-    const rows = {
-        contado: document.getElementById("row_contado"),
-        tarjeta: document.getElementById("row_tarjeta"),
-        yape: document.getElementById("row_yape"),
-        plin: document.getElementById("row_plin"),
-        transferencia: document.getElementById("row_transferencia"),
-    };
-
-    const inputs = {
-        contado: document.getElementById("input_contado"),
-        tarjeta: document.getElementById("input_tarjeta"),
-        yape: document.getElementById("input_yape"),
-        plin: document.getElementById("input_plin"),
-        transferencia: document.getElementById("input_transferencia"),
-    };
-
-    function ocultarFilasSalida() {
-        Object.values(rows).forEach((row) => row?.classList.add("d-none"));
-        Object.values(inputs).forEach((input) => {
-            if (input) input.value = "";
-        });
-        if (bloqueMetodosSalida) bloqueMetodosSalida.classList.add("d-none");
-    }
-
-    function mostrarFila(nombre) {
-        if (bloqueMetodosSalida) bloqueMetodosSalida.classList.remove("d-none");
-        if (rows[nombre]) rows[nombre].classList.remove("d-none");
-    }
-
-    function actualizarVistaSalida() {
-        ocultarFilasSalida();
-
-        const tipo = tipoSalidaVisual?.value;
-        if (!tipo) return;
-
-        if (tipo === "mixto") {
-            mostrarFila("contado");
-            mostrarFila("tarjeta");
-            mostrarFila("yape");
-            mostrarFila("plin");
-            mostrarFila("transferencia");
-            return;
+        if (value === "1") {
+            salidaSimple?.classList.remove("d-none");
+        } else if (value === "2") {
+            salidaSimple?.classList.remove("d-none");
+            salidaBilletera?.classList.remove("d-none");
+        } else if (value === "3") {
+            salidaEfectivo?.classList.remove("d-none");
+            salidaDigital?.classList.remove("d-none");
+            salidaBilletera?.classList.remove("d-none");
         }
-
-        mostrarFila(tipo);
     }
 
-    tipoSalidaVisual?.addEventListener("change", actualizarVistaSalida);
-
+    tipoSalida?.addEventListener("change", actualizarSalida);
     document
         .getElementById("modalSalida")
         ?.addEventListener("show.bs.modal", function () {
-            if (formSalida) formSalida.reset();
-            ocultarFilasSalida();
+            const form = document.getElementById("form-salida");
+            if (form) form.reset();
 
-            document.getElementById("metodo_pago_id_real").value = "";
-            document.getElementById("amount_real").value = "";
-            document.getElementById("monto_efectivo_real").value = "";
-            document.getElementById("monto_digital_real").value = "";
-            document.getElementById("billetera_digital_id_real").value = "";
+            ocultarSalida();
         });
-
-    formSalida?.addEventListener("submit", function (e) {
-        const tipo = tipoSalidaVisual?.value;
-
-        document.getElementById("metodo_pago_id_real").value = "";
-        document.getElementById("amount_real").value = "";
-        document.getElementById("monto_efectivo_real").value = "";
-        document.getElementById("monto_digital_real").value = "";
-        document.getElementById("billetera_digital_id_real").value = "";
-
-        if (!tipo) {
-            e.preventDefault();
-            Swal.fire("Atención", "Seleccione un método de pago.", "warning");
-            return;
-        }
-
-        if (tipo === "contado") {
-            document.getElementById("metodo_pago_id_real").value = 1;
-            document.getElementById("amount_real").value =
-                inputs.contado.value || 0;
-        }
-
-        if (tipo === "tarjeta") {
-            document.getElementById("metodo_pago_id_real").value = 4;
-            document.getElementById("amount_real").value =
-                inputs.tarjeta.value || 0;
-        }
-
-        if (tipo === "yape") {
-            document.getElementById("metodo_pago_id_real").value = 2;
-            document.getElementById("amount_real").value =
-                inputs.yape.value || 0;
-        }
-
-        if (tipo === "plin") {
-            document.getElementById("metodo_pago_id_real").value = 2;
-            document.getElementById("amount_real").value =
-                inputs.plin.value || 0;
-        }
-
-        if (tipo === "transferencia") {
-            document.getElementById("metodo_pago_id_real").value = 5;
-            document.getElementById("amount_real").value =
-                inputs.transferencia.value || 0;
-        }
-
-        if (tipo === "mixto") {
-            const contado = parseFloat(inputs.contado.value || 0);
-            const tarjeta = parseFloat(inputs.tarjeta.value || 0);
-            const yape = parseFloat(inputs.yape.value || 0);
-            const plin = parseFloat(inputs.plin.value || 0);
-            const transferencia = parseFloat(inputs.transferencia.value || 0);
-
-            const digital = tarjeta + yape + plin + transferencia;
-
-            document.getElementById("metodo_pago_id_real").value = 3;
-            document.getElementById("monto_efectivo_real").value = contado;
-            document.getElementById("monto_digital_real").value = digital;
-        }
-    });
 });

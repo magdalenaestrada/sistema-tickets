@@ -57,7 +57,7 @@ class DescuentoController extends Controller
                 }
 
                 $conteoPersonas = $d->personas->count();
-                
+
                 if ($conteoPersonas > 1) {
                     $badges[] = '<span class="badge bg-primary"> +2 PERSONAS</span>';
                 } else {
@@ -250,13 +250,19 @@ class DescuentoController extends Controller
     public function cuponesPersona(Request $request)
     {
         $documento = $request->documento;
-        if (!$documento) return response()->json([]);
+
+        if (!$documento) {
+            return response()->json([]);
+        }
 
         $persona = Persona::where('documento', $documento)->first();
-        if (!$persona) return response()->json([]);
 
-        $empleado = Empleado::where('persona_id', $persona->id)->first();
-        $cargoId  = $empleado?->cargo_id;
+        $cargoId = null;
+
+        if ($persona) {
+            $empleado = Empleado::where('persona_id', $persona->id)->first();
+            $cargoId = $empleado?->cargo_id;
+        }
 
         $descuentos = Descuento::query()
             ->where('activo', 1)
@@ -269,17 +275,23 @@ class DescuentoController extends Controller
                     ->orWhere('cantidad_usos', '>', 0);
             })
             ->where(function ($q) use ($persona, $cargoId) {
-                $q->where('tipo_asignacion_id', 'T')
-                    ->orWhereHas(
+
+                // TODOS
+                $q->where('tipo_asignacion_id', 'T');
+
+                // PERSONA
+                if ($persona) {
+                    $q->orWhereHas(
                         'personas',
-                        fn($sub) =>
-                        $sub->where('persona_id', $persona->id)
+                        fn($sub) => $sub->where('persona_id', $persona->id)
                     );
+                }
+
+                // CARGO
                 if ($cargoId) {
                     $q->orWhereHas(
                         'cargos',
-                        fn($sub) =>
-                        $sub->where('cargo_id', $cargoId)
+                        fn($sub) => $sub->where('cargo_id', $cargoId)
                     );
                 }
             })

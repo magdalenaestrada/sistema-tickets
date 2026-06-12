@@ -84,7 +84,7 @@
                 <div class="card border-success shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <h6 class="text-muted d-block mb-1"><strong>Efectivo esperado</strong></h6>
-                        <div id="efectivo-esperado" class="fw-bold text-success">S/ {{ number_format($caja->efectivo_esperado, 2) }}</div>
+                        <div id="efectivo_esperado" class="fw-bold text-success">S/ {{ number_format($caja->efectivo_esperado, 2) }}</div>
                     </div>
                 </div>
             </div>

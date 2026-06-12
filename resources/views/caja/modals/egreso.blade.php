@@ -4,20 +4,16 @@
             class="modal-content border-0 shadow">
             @csrf
 
-            {{-- Campos reales que espera backend --}}
-            <input type="hidden" name="metodo_pago_id" id="metodo_pago_id_real">
-            <input type="hidden" name="amount" id="amount_real">
-            <input type="hidden" name="monto_efectivo" id="monto_efectivo_real">
-            <input type="hidden" name="monto_digital" id="monto_digital_real">
-            <input type="hidden" name="billetera_digital_id" id="billetera_digital_id_real">
-
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title w-100 text-center">Registrar egreso</h5>
+                <div class="w-100 text-center">
+                    <h3 class="mb-1 text-primary fw-light">Registrar salida</h3>
+                </div>
                 <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body px-4">
+            <div class="modal-body pt-2 px-4">
                 <div class="row g-3">
+
                     <div class="col-md-6">
                         <label class="form-label small mb-1">Subtipo</label>
                         <select name="subtipo_movimiento_caja_id" class="form-select" required>
@@ -30,93 +26,91 @@
 
                     <div class="col-md-6">
                         <label class="form-label small mb-1">Agregar método de pago</label>
-                        <select id="tipo_salida_visual" class="form-select" required>
+                        <select name="metodo_pago_id" id="tipo_salida" class="form-select" required>
                             <option value="">Seleccione</option>
-                            <option value="contado">Contado</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="yape">Yape</option>
-                            <option value="plin">Plin</option>
-                            <option value="transferencia">Transferencia</option>
-                            <option value="mixto">Pago Mixto</option>
+                            @foreach ($metodosPago as $metodo)
+                                <option value="{{ $metodo->id }}">{{ $metodo->descripcion }}</option>
+                            @endforeach
                         </select>
                     </div>
 
-                    <div id="bloque_metodos_salida" class="col-12 d-none">
-                        <div class="row g-2">
-
-                            <div class="col-12 metodo-salida-row d-none" id="row_contado">
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-md-5">
-                                        <div class="metodo-box">💵 Contado</div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <input type="number" step="0.01" min="0" id="input_contado"
-                                            class="form-control metodo-input" placeholder="0.00">
-                                    </div>
+                    {{-- SIMPLE --}}
+                    <div class="col-12 salida-campo d-none" id="salida_monto_simple">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-5">
+                                <div class="bg-light rounded p-3 fw-semibold">
+                                    💵 Monto
                                 </div>
                             </div>
+                            <div class="col-md-7">
+                                <input type="number" step="0.01" min="0.01" name="amount"
+                                    class="form-control form-control-lg" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
 
-                            <div class="col-12 metodo-salida-row d-none" id="row_tarjeta">
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-md-5">
-                                        <div class="metodo-box">💳 Tarjeta</div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <input type="number" step="0.01" min="0" id="input_tarjeta"
-                                            class="form-control metodo-input" placeholder="0.00">
-                                    </div>
+                    {{-- MIXTO --}}
+                    <div class="col-12 salida-campo d-none" id="salida_monto_efectivo">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-5">
+                                <div class="bg-light rounded p-3 fw-semibold">
+                                    💵 Efectivo
                                 </div>
                             </div>
+                            <div class="col-md-7">
+                                <input type="number" step="0.01" min="0.01" name="monto_efectivo"
+                                    class="form-control form-control-lg" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
 
-                            <div class="col-12 metodo-salida-row d-none" id="row_yape">
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-md-5">
-                                        <div class="metodo-box">🟪 Yape</div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <input type="number" step="0.01" min="0" id="input_yape"
-                                            class="form-control metodo-input" placeholder="0.00">
-                                    </div>
+                    <div class="col-12 salida-campo d-none" id="salida_monto_digital">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-5">
+                                <div class="bg-light rounded p-3 fw-semibold">
+                                    📲 Monto digital
                                 </div>
                             </div>
+                            <div class="col-md-7">
+                                <input type="number" step="0.01" min="0.01" name="monto_digital"
+                                    class="form-control form-control-lg" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
 
-                            <div class="col-12 metodo-salida-row d-none" id="row_plin">
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-md-5">
-                                        <div class="metodo-box">🟦 Plin</div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <input type="number" step="0.01" min="0" id="input_plin"
-                                            class="form-control metodo-input" placeholder="0.00">
-                                    </div>
+                    <div class="col-12 salida-campo d-none" id="salida_billetera">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-5">
+                                <div class="bg-light rounded p-3 fw-semibold">
+                                    🏦 Billetera / digital
                                 </div>
                             </div>
-
-                            <div class="col-12 metodo-salida-row d-none" id="row_transferencia">
-                                <div class="row g-2 align-items-center">
-                                    <div class="col-md-5">
-                                        <div class="metodo-box">🏦 Transferencia</div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <input type="number" step="0.01" min="0" id="input_transferencia"
-                                            class="form-control metodo-input" placeholder="0.00">
-                                    </div>
-                                </div>
+                            <div class="col-md-7">
+                                <select name="billetera_digital_id" class="form-select form-select-lg">
+                                    <option value="">Seleccione</option>
+                                    @foreach ($billeterasDigitales as $billetera)
+                                        <option value="{{ $billetera->id }}">{{ $billetera->descripcion }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-
                         </div>
                     </div>
 
                     <div class="col-12">
                         <label class="form-label small mb-1">Observaciones</label>
-                        <input type="text" name="description" class="form-control" placeholder="Ej: Te la debo">
+                        <input type="text" name="description" class="form-control">
                     </div>
+
                 </div>
             </div>
 
             <div class="modal-footer border-0 px-4 pb-4">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-danger">Registrar egreso</button>
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-success px-4">
+                    Registrar salida
+                </button>
             </div>
         </form>
     </div>

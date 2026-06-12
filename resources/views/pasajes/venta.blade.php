@@ -86,12 +86,21 @@
                                             @endforeach
                                         </select>
                                     </div>
-
                                     <div class="col-md-2">
-                                        <label class="form-label">Documento <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control solo-numeros documento-input"
-                                            id="documento_{{ $index }}" data-index="{{ $index }}"
-                                            name="documento[]" required>
+                                        <label class="form-label">
+                                            Documento <span class="text-danger">*</span>
+                                        </label>
+
+                                        <div class="input-group">
+                                            <input type="text" class="form-control solo-numeros documento-input"
+                                                id="documento_{{ $index }}" data-index="{{ $index }}"
+                                                name="documento[]" required>
+
+                                            <button type="button" class="btn btn-primary btn-buscar-documento"
+                                                data-index="{{ $index }}">
+                                                <i class="link-icon" data-lucide="search"></i>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div class="col-md-4">
@@ -221,17 +230,17 @@
                                     <span class="fw-semibold">EMITIR SUNAT:</span>
 
                                     <div class="form-check form-switch m-0">
-                                        <input class="form-check-input" type="checkbox" id="emitir_sunat" disabled>
+                                        <input class="form-check-input" type="checkbox" id="emitir_sunat">
                                     </div>
                                 </div>
 
                                 <div class="d-flex gap-2 mb-3">
                                     <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
-                                        id="btn_boleta" data-doc="boleta" disabled>
+                                        id="btn_boleta" data-doc="boleta">
                                         Boleta
                                     </button>
                                     <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
-                                        id="btn_factura" data-doc="factura" disabled>
+                                        id="btn_factura" data-doc="factura">
                                         Factura
                                     </button>
                                     <button type="button" class="btn btn-sm btn-success doc-btn active"
@@ -280,8 +289,15 @@
 
                             <div class="mb-2">
                                 <label class="form-label">Documento cliente:</label>
-                                <input type="text" id="doc_cliente" name="numero_documento_id"
-                                    class="form-control solo-numeros">
+
+                                <div class="input-group">
+                                    <input type="text" id="doc_cliente" name="numero_documento_id"
+                                        class="form-control solo-numeros">
+
+                                    <button type="button" id="btnBuscarCliente" class="btn btn-primary">
+                                        <i class="link-icon" data-lucide="search"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="mb-3">

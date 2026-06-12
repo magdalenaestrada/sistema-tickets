@@ -30,8 +30,10 @@
                                   <td>
                                       @if ($detalle->amount > 0)
                                           <span class="badge bg-success">Ingreso</span>
-                                      @else
+                                      @elseif ($detalle->amount < 0)
                                           <span class="badge bg-danger">Egreso</span>
+                                      @else
+                                          <span class="badge bg-secondary">Apertura</span>
                                       @endif
                                   </td>
                                   <td>{{ $detalle->subtipo->descripcion ?? '---' }}</td>

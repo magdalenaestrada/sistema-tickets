@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BilleteraDigital;
 use App\Models\Caja;
 use App\Models\CajaDetalle;
+use App\Models\Empresa;
 use App\Models\MetodoPago;
 use App\Models\SubtipoMovimientoCaja;
 use App\Models\Sucursal;
@@ -56,7 +57,7 @@ class CajaController extends Controller
                 $contadorPorSucursal[$sucursalId]++;
             }
 
-            $totalEfectivo = (clone $query)->sum('monto_apertura');
+            $totalCajasAbiertas = (clone $query)->count();
 
             // sumar solo cajas abiertas:
             // $totalEfectivo = (clone $query)
@@ -65,7 +66,7 @@ class CajaController extends Controller
 
             $sucursales = Sucursal::orderBy('nombre_comercial')->get();
 
-            return view('caja.index_admin', compact('cajas', 'sucursales', 'totalEfectivo'));
+            return view('caja.index_admin', compact('cajas', 'sucursales', 'totalCajasAbiertas'));
         }
 
         $cajaAbierta = Caja::with(['sucursal', 'usuario.persona'])
@@ -257,15 +258,14 @@ class CajaController extends Controller
             });
 
             if ($request->ajax() || $request->wantsJson()) {
+                $caja->refresh();
+
                 $caja->load([
                     'detalles.subtipo',
                     'detalles.metodoPago'
                 ]);
 
                 $tabla = view('caja.partials.tabla_movimientos', compact('caja'))->render();
-
-                $caja->refresh();
-
                 return response()->json([
                     'success' => true,
                     'message' => 'Ingreso registrado correctamente.',
@@ -412,7 +412,7 @@ class CajaController extends Controller
     public function print_corte(int $cajaId)
     {
         $usuario = auth()->user();
-
+        $empresa = Empresa::query()->firstOrFail();
         $caja = Caja::with([
             'usuario',
             'sucursal.empresa',
@@ -426,7 +426,7 @@ class CajaController extends Controller
             abort(403, 'No tienes permiso para imprimir este corte.');
         }
 
-        return view('caja.corte_ticket', compact('caja', 'usuario'));
+        return view('caja.corte_ticket', compact('caja', 'usuario', 'empresa'));
     }
 
     public function reimprimir(CajaDetalle $detalle)

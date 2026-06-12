@@ -33,7 +33,7 @@
                     <div class="card-body py-3">
                         <form id="form-filtros-caja" method="GET" action="{{ route('caja.index') }}"
                             class="row g-2 align-items-end">
-                            <div class="col-md-5">
+                            <div class="col-md-8">
                                 <label for="filtro_sucursal" class="form-label mb-1">Sucursal</label>
                                 <select name="sucursal_id" id="filtro_sucursal" class="form-select form-select-sm">
                                     <option value="">Todas las sucursales</option>
@@ -43,17 +43,6 @@
                                             {{ $sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label for="filtro_estado" class="form-label mb-1">Estado</label>
-                                <select name="estado" id="filtro_estado" class="form-select form-select-sm">
-                                    <option value="">Todas</option>
-                                    <option value="abierta" {{ request('estado') == 'abierta' ? 'selected' : '' }}>Abiertas
-                                    </option>
-                                    <option value="cerrada" {{ request('estado') == 'cerrada' ? 'selected' : '' }}>Cerradas
-                                    </option>
                                 </select>
                             </div>
 
@@ -77,10 +66,9 @@
 
             <div class="col-lg-2">
                 <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body py-3 px-3 d-flex flex-column justify-content-center">
-                        <span class="text-muted small">Total efectivo</span>
-                        <h5 class="mb-0 fw-bold">S/ {{ number_format($totalEfectivo ?? 0, 2) }}</h5>
-                        <small class="text-muted">Según filtros aplicados</small>
+                    <div class="card-body py-3 px-3 d-flex flex-column justify-content-center text-center">
+                        <span class="text-muted small">Cajas abiertas</span>
+                        <h3 class="mb-0 fw-bold">{{ $totalCajasAbiertas }}</h3>
                     </div>
                 </div>
             </div>

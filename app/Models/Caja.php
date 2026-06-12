@@ -106,7 +106,6 @@ class Caja extends Model
     public function getIngresosYapeAttribute()
     {
         return $this->detalles
-            ->where('amount', '>', 0)
             ->where('billetera_digital_id', 1)
             ->sum('amount');
     }
@@ -114,7 +113,6 @@ class Caja extends Model
     public function getIngresosPlinAttribute()
     {
         return $this->detalles
-            ->where('amount', '>', 0)
             ->where('billetera_digital_id', 2)
             ->sum('amount');
     }
@@ -122,7 +120,6 @@ class Caja extends Model
     public function getIngresosTarjetaAttribute()
     {
         return $this->detalles
-            ->where('amount', '>', 0)
             ->where('billetera_digital_id', 3)
             ->sum('amount');
     }
@@ -130,7 +127,6 @@ class Caja extends Model
     public function getIngresosTransferenciaAttribute()
     {
         return $this->detalles
-            ->where('amount', '>', 0)
             ->where('billetera_digital_id', 4)
             ->sum('amount');
     }
@@ -138,7 +134,6 @@ class Caja extends Model
     public function getIngresosEfectivoAttribute()
     {
         return $this->detalles
-            ->where('amount', '>', 0)
             ->where('metodo_pago_id', 1)
             ->sum('amount');
     }

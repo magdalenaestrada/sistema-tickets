@@ -177,36 +177,55 @@ $(function () {
         return true;
     }
 
-    function buscarClienteFacturacion() {
-        const documento = $("#doc_cliente").val().trim();
-        const tipo = $("#tipo_doc_sunat").val();
+    function buscarCliente() {
+        let documento = $("#doc_cliente").val().trim();
 
-        if (!documento || tipo === "nota_venta") return;
+        $("#btnBuscarCliente").prop("disabled", true);
 
-        $.getJSON(route("buscar.buscar") + `?documento=${documento}`).done(
-            (data) => {
+        $.getJSON(route("buscar.buscar") + "?documento=" + documento)
+            .done(function (data) {
                 if (data.error) {
-                    $("#razon_social").val("");
-                    Swal.fire("Atención", data.error, "warning");
+                    alert(data.error);
                     return;
                 }
 
+                // RUC
                 if (data.razon_social) {
                     $("#razon_social").val(data.razon_social);
-                    $("#direccion_cliente").val(data.direccion || "-");
-                } else {
-                    const apellidos =
-                        `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
-
-                    $("#razon_social").val(
-                        `${data.nombres || ""} ${apellidos}`.trim(),
-                    );
-
-                    $("#direccion_cliente").val(data.direccion || "-");
+                    $("#direccion").val(data.direccion || "-");
                 }
-            },
-        );
+                // DNI
+                else {
+                    let nombreCompleto = (
+                        (data.nombres || "") +
+                        " " +
+                        (data.apellido_paterno || "") +
+                        " " +
+                        (data.apellido_materno || "")
+                    ).trim();
+
+                    $("#razon_social").val(nombreCompleto);
+                    $("#direccion").val("-");
+                }
+            })
+            .fail(function () {
+                alert("No se encontró el documento.");
+            })
+            .always(function () {
+                $("#btnBuscarCliente").prop("disabled", false);
+            });
     }
+
+    $(document).on("click", "#btnBuscarCliente", function () {
+        buscarCliente();
+    });
+
+    $(document).on("keypress", "#doc_cliente", function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            buscarCliente();
+        }
+    });
 
     function actualizarCostoTotal() {
         actualizarResumenTotales();
@@ -231,30 +250,36 @@ $(function () {
         const plin = $("#modal_pago_plin");
         const transferencia = $("#modal_pago_transferencia");
 
-        efectivo.prop("readonly", false);
-        tarjeta.prop("readonly", false);
-        yape.prop("readonly", false);
-        plin.prop("readonly", false);
-        transferencia.prop("readonly", false);
+        // Reiniciar
+        [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
+            input.prop("disabled", true);
+            input.val("0.00");
+        });
 
-        if (metodo === 1) {
-            efectivo.val(total.toFixed(2)).prop("readonly", true);
-            tarjeta.val("0");
-            yape.val("0");
-            plin.val("0");
-            transferencia.val("0");
-        } else if (metodo === 2) {
-            efectivo.val("0");
-            tarjeta.val("0");
-            yape.val(total.toFixed(2));
-            plin.val("0");
-            transferencia.val("0");
-        } else if (metodo === 3) {
-            efectivo.val(total.toFixed(2));
-            tarjeta.val("0");
-            yape.val("0");
-            plin.val("0");
-            transferencia.val("0");
+        switch (metodo) {
+            case 1:
+                efectivo.prop("disabled", false);
+                efectivo.val(total.toFixed(2));
+                break;
+
+            case 2:
+                yape.prop("disabled", false);
+                plin.prop("disabled", false);
+                transferencia.prop("disabled", false);
+                tarjeta.prop("disabled", false);
+
+                yape.val(total.toFixed(2));
+                break;
+
+            case 3:
+                efectivo.prop("disabled", false);
+                tarjeta.prop("disabled", false);
+                yape.prop("disabled", false);
+                plin.prop("disabled", false);
+                transferencia.prop("disabled", false);
+
+                efectivo.val(total.toFixed(2));
+                break;
         }
 
         validarSumaPagos();
@@ -430,15 +455,20 @@ $(function () {
         selectedSeatNumbers.forEach((num) => {
             const desc = descuentosAplicados[num];
 
-            if (desc && desc.tipo === "porcentaje") {
+            if (!desc) {
+                seatPrices[num] = nuevoPrecio;
+                return;
+            }
+
+            if (desc.tipo === "porcentaje") {
                 desc.monto = nuevoPrecio * (desc.valor / 100);
-            } else if (desc && desc.tipo === "monto_fijo") {
+            } else if (desc.tipo === "monto_fijo") {
                 desc.monto = desc.valor;
             } else {
                 desc.monto = 0;
             }
 
-            seatPrices[num] = Math.max(0, nuevoPrecio - (desc?.monto || 0));
+            seatPrices[num] = Math.max(0, nuevoPrecio - desc.monto);
         });
 
         actualizarCostoTotal();
@@ -459,18 +489,19 @@ $(function () {
         }
     });
 
-    $(".documento-input").on("blur", function () {
-        const input = $(this);
-        const index = input.data("index");
+    function buscarDocumento(index) {
+        const input = $(`#documento_${index}`);
         const documento = input.val().trim();
-
-        if (!documento) return;
+        limpiarCupones(index);
 
         input.prop("disabled", true);
 
         $.getJSON(route("buscar.buscar") + `?documento=${documento}`)
             .done((data) => {
-                if (data.error) return;
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
 
                 if (data.razon_social) {
                     $(`#nombres_${index}`).val(data.razon_social);
@@ -478,16 +509,52 @@ $(function () {
                     $(`#correo_${index}`).val(data.direccion || "");
                 } else {
                     $(`#nombres_${index}`).val(data.nombres || "");
+
                     const apellidos =
                         `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
+
                     $(`#apellidos_${index}`).val(apellidos);
                     $(`#correo_${index}`).val(data.direccion || "");
                 }
+
                 cargarCuponesPersona(index, documento);
             })
             .always(() => {
                 input.prop("disabled", false);
             });
+    }
+
+    function limpiarCupones(index) {
+        const asiento = selectedSeatNumbers[index];
+
+        $(`#descuento_${index}`)
+            .empty()
+            .append('<option value="">Sin cupón</option>');
+
+        $(`#descuento_msg_${index}`).text("");
+
+        descuentosAplicados[asiento] = {
+            descuento_id: null,
+            codigo: null,
+            monto: 0,
+        };
+
+        seatPrices[asiento] = precioBase;
+
+        actualizarCostoTotal();
+    }
+
+    function buscarYLimpiar(index) {
+        limpiarCupones(index);
+        buscarDocumento(index);
+    }
+
+    $(document).on("blur", ".documento-input", function () {
+        buscarYLimpiar($(this).data("index"));
+    });
+
+    $(document).on("click", ".btn-buscar-documento", function () {
+        buscarYLimpiar($(this).data("index"));
     });
 
     async function verificarPromo10(index, codigo, dni) {
@@ -519,7 +586,15 @@ $(function () {
 
         msg.text("");
 
-        if (!codigo) return;
+        if (!codigo) {
+            delete descuentosAplicados[asiento];
+            seatPrices[asiento] = precioBase;
+
+            msg.text("");
+
+            actualizarCostoTotal();
+            return;
+        }
 
         if (!dni) {
             Swal.fire(
@@ -743,11 +818,89 @@ $(function () {
         distribuirPagosPorMetodo();
     });
 
-    $(
+    $(document).on(
+        "input",
         "#modal_pago_efectivo, #modal_pago_tarjeta, #modal_pago_yape, #modal_pago_plin, #modal_pago_transferencia",
-    ).on("input", function () {
-        validarSumaPagos();
-    });
+        function () {
+            const metodo = parseInt($("#modal_metodo_pago").val()) || 1;
+
+            if (metodo !== 3) {
+                validarSumaPagos();
+                return;
+            }
+
+            const total = parseFloat($("#costo_total").val()) || 0;
+
+            const efectivo = $("#modal_pago_efectivo");
+            const tarjeta = $("#modal_pago_tarjeta");
+            const yape = $("#modal_pago_yape");
+            const plin = $("#modal_pago_plin");
+            const transferencia = $("#modal_pago_transferencia");
+
+            const campoEditado = $(this).attr("id");
+
+            if (campoEditado === "modal_pago_efectivo") {
+                validarSumaPagos();
+                return;
+            }
+
+            const vTarjeta = parseFloat(tarjeta.val()) || 0;
+            const vYape = parseFloat(yape.val()) || 0;
+            const vPlin = parseFloat(plin.val()) || 0;
+            const vTransferencia = parseFloat(transferencia.val()) || 0;
+
+            const otros = vTarjeta + vYape + vPlin + vTransferencia;
+
+            if (otros > total) {
+                const valorActual = parseFloat($(this).val()) || 0;
+                const sumaSinActual = otros - valorActual;
+
+                const maxPermitido = Math.max(0, total - sumaSinActual);
+
+                $(this).val(maxPermitido.toFixed(2));
+
+                const nuevosOtros =
+                    campoEditado === "modal_pago_tarjeta"
+                        ? maxPermitido + vYape + vPlin + vTransferencia
+                        : campoEditado === "modal_pago_yape"
+                          ? vTarjeta + maxPermitido + vPlin + vTransferencia
+                          : campoEditado === "modal_pago_plin"
+                            ? vTarjeta + vYape + maxPermitido + vTransferencia
+                            : vTarjeta + vYape + vPlin + maxPermitido;
+
+                efectivo.val(Math.max(0, total - nuevosOtros).toFixed(2));
+            } else {
+                efectivo.val(Math.max(0, total - otros).toFixed(2));
+            }
+
+            validarSumaPagos();
+        },
+    );
+
+    $(document).on(
+        "input",
+        "#modal_pago_tarjeta, #modal_pago_plin, #modal_pago_transferencia",
+        function () {
+            if (parseInt($("#modal_metodo_pago").val()) !== 2) {
+                return;
+            }
+
+            const total = parseFloat($("#costo_total").val()) || 0;
+
+            const tarjeta = parseFloat($("#modal_pago_tarjeta").val()) || 0;
+            const plin = parseFloat($("#modal_pago_plin").val()) || 0;
+            const transferencia =
+                parseFloat($("#modal_pago_transferencia").val()) || 0;
+
+            const sumaOtros = tarjeta + plin + transferencia;
+
+            $("#modal_pago_yape").val(
+                Math.max(0, total - sumaOtros).toFixed(2),
+            );
+
+            validarSumaPagos();
+        },
+    );
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
