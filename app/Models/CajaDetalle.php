@@ -44,6 +44,11 @@ class CajaDetalle extends Model
         return $this->belongsTo(MetodoPago::class, 'metodo_pago_id');
     }
 
+     public function billetera_digital()
+    {
+        return $this->belongsTo(BilleteraDigital::class, 'billetera_digital_id');
+    }
+
     public function servicio()
     {
         return $this->morphTo(null, 'table_name', 'table_id');

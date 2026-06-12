@@ -33,7 +33,7 @@
         }
 
         body {
-           
+
             font-size: var(--font-base);
             color: #000;
             background: #fff;
@@ -411,7 +411,8 @@
                         <tr>
                             <td>{{ $d->created_at?->format('d/m/y H:i') }}</td>
                             <td>{{ $d->numero_ticket ?? '---' }}</td>
-                            <td>{{ $d->metodoPago->descripcion ?? '---' }}
+                            <td> {{ collect([$d->metodoPago?->descripcion, $d->billetera_digital?->descripcion])->filter()->implode(' - ') ?:
+                                '---' }}
                                 @if ($d->anulado)
                                     <span class="tag-anulado">ANUL</span>
                                 @endif
