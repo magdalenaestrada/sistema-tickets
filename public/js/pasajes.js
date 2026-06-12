@@ -24,7 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 this.classList.add("active");
                 resetSeleccion();
 
-                // ← AGREGA ESTO: si no hay filtros, fuerza origen/destino desde los puntos
                 const origenSelect = document.getElementById("filtro_origen");
                 const destinoSelect = document.getElementById("filtro_destino");
 
@@ -374,8 +373,31 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!selectedSeats.length || !currentSalidaId) return;
 
         const seats = selectedSeats.sort((a, b) => a - b).join(",");
-        const origenId = document.getElementById("filtro_origen").value;
-        const destinoId = document.getElementById("filtro_destino").value;
+        let origenId = document.getElementById("filtro_origen").value;
+        let destinoId = document.getElementById("filtro_destino").value;
+
+        if (!origenId || !destinoId) {
+            const rowActiva = document.querySelector(".horario-row.active");
+            if (rowActiva) {
+                let puntos = [];
+                try {
+                    puntos = JSON.parse(rowActiva.dataset.puntos || "[]");
+                } catch (e) {}
+                const primero = puntos[0];
+                const ultimo = puntos[puntos.length - 1];
+                origenId = primero?.pueblito_id || null;
+                destinoId = ultimo?.pueblito_id || null;
+            }
+        }
+
+        if (!origenId || !destinoId) {
+            Swal.fire(
+                "Atención",
+                "Selecciona origen y destino antes de vender.",
+                "warning",
+            );
+            return;
+        }
 
         window.location.href = route("pasajes.vender", {
             salida: currentSalidaId,
