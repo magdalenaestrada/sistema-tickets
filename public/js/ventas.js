@@ -131,7 +131,6 @@ $(function () {
 
     function ponerClienteVariosNotaVenta() {
         $("#doc_cliente").val("00000000").prop("readonly", true);
-        buscarClienteFacturacion;
         $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
         $("#direccion_cliente").val("-");
     }
@@ -424,7 +423,6 @@ $(function () {
             return;
         }
 
-        buscarClienteFacturacion();
     });
 
     $("#btnRegresarAsientos").on("click", function () {
