@@ -25,10 +25,7 @@
 
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-md-4">
-                            <input type="date" id="filtroFecha" class="form-control"
-                                value="{{ now()->format('Y-m-d') }}">
-                        </div>
+
 
                         <div class="col-md-4">
                             <select id="filtroEstado" class="form-select">

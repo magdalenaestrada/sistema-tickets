@@ -68,12 +68,8 @@ class SalidaController extends Controller
             'horario.ruta',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
-        ])
-            ->whereDate(
-                'fecha_salida',
-                $request->fecha ?? now('America/Lima')->toDateString()
-            );
-
+        ]);
+    
         if ($request->filled('estado')) {
             $salidas->where('estado', $request->estado);
         }

@@ -25,7 +25,6 @@ $(document).ready(function () {
             data: function (d) {
                 d.estado = $("#filtroEstado").val();
                 d.ruta_id = $("#filtroRuta").val();
-                d.fecha = $("#filtroFecha").val();
             },
         },
         columns: [
@@ -61,7 +60,7 @@ $(document).ready(function () {
         },
     });
 
-    $("#filtroEstado, #filtroRuta, #filtroFecha").on("change", function () {
+    $("#filtroEstado, #filtroRuta").on("change", function () {
         tablaSalidas.ajax.reload();
     });
 });
