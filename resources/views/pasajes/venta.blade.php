@@ -288,7 +288,7 @@
                             <input type="hidden" name="emitir_sunat_estado" id="emitir_sunat_estado" value="0">
 
                             <div class="mb-2">
-                                <label class="form-label">Documento cliente:</label>
+                                <label class="form-label">Documento cliente: </label>
 
                                 <div class="input-group">
                                     <input type="text" id="doc_cliente" name="numero_documento_id"
