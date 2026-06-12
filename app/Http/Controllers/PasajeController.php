@@ -551,70 +551,69 @@ class PasajeController extends Controller
             } else {
                 $personaFacturacion = $pasajeros[0]['persona'];
             }
-
-            $ventaService = app(VentaService::class);
-            $pagoService = app(PagoService::class);
-
-            $tipoDocumentoFacturaId = $request->tipo_documento_factura_id ?: 4;
-
-            $numeroDocFact = trim((string) ($request->numero_documento_id ?: $personaFacturacion->documento));
-
-            if ((int) $tipoDocumentoFacturaId === 1 && strlen($numeroDocFact) !== 11) {
-                throw ValidationException::withMessages([
-                    'numero_documento_id' => 'La factura requiere RUC de 11 dígitos.',
-                ]);
-            }
-
-            $ventaData = $ventaService->crearVenta(
-                new Request([
-                    'tipo_servicio_id' => 1,
-                    'tipo_documento_factura_id' => $request->tipo_doc_sunat,
-                    'numero_documento_id' => $personaFacturacion->documento,
-                    'razon_social' => $personaFacturacion->nombres,
-                    'total' => $totalVenta,
-                    'caja_id' => $request->caja_id,
-                    'detalles' => $detalles,
-                    'origen_nombre' => $salida->horario->ruta->puntos->first()?->sucursal?->nombre_comercial,
-                    'destino_nombre' => $salida->horario->ruta->puntos->last()?->sucursal?->nombre_comercial,
-                ]),
-                Pasaje::class,
-                null
-            );
-
-            $venta = $ventaData['venta'];
-
-            $pagos = [];
-
-            if ((float) $request->pago_efectivo > 0) {
-                $pagos[] = [
-                    'metodo_pago_id' => 1,
-                    'total' => (float) $request->pago_efectivo,
-                ];
-            }
-
-            $pagoCuentaDigital =
-                (float) $request->pago_yape +
-                (float) $request->pago_plin +
-                (float) $request->pago_transferencia +
-                (float) $request->pago_tarjeta;
-
-            if ($pagoCuentaDigital > 0) {
-                $pagos[] = [
-                    'metodo_pago_id' => 2,
-                    'billetera_id' => $request->billetera_id,
-                    'total' => $pagoCuentaDigital,
-                ];
-            }
-
-            $sumaPagos = collect($pagos)->sum('total');
-
-            if (round($sumaPagos, 2) !== round($totalVenta, 2) && $accion === 'vender') {
-                throw ValidationException::withMessages([
-                    'pago_efectivo' => 'La suma de pagos no coincide con el total de la venta.',
-                ]);
-            }
-
             if ($accion === 'vender') {
+                $ventaService = app(VentaService::class);
+                $pagoService = app(PagoService::class);
+
+                $tipoDocumentoFacturaId = $request->tipo_documento_factura_id ?: 4;
+
+                $numeroDocFact = trim((string) ($request->numero_documento_id ?: $personaFacturacion->documento));
+
+                if ((int) $tipoDocumentoFacturaId === 1 && strlen($numeroDocFact) !== 11) {
+                    throw ValidationException::withMessages([
+                        'numero_documento_id' => 'La factura requiere RUC de 11 dígitos.',
+                    ]);
+                }
+
+                $ventaData = $ventaService->crearVenta(
+                    new Request([
+                        'tipo_servicio_id' => 1,
+                        'tipo_documento_factura_id' => $request->tipo_doc_sunat,
+                        'numero_documento_id' => $personaFacturacion->documento,
+                        'razon_social' => $personaFacturacion->nombres,
+                        'total' => $totalVenta,
+                        'caja_id' => $request->caja_id,
+                        'detalles' => $detalles,
+                        'origen_nombre' => $salida->horario->ruta->puntos->first()?->sucursal?->nombre_comercial,
+                        'destino_nombre' => $salida->horario->ruta->puntos->last()?->sucursal?->nombre_comercial,
+                    ]),
+                    Pasaje::class,
+                    null
+                );
+
+                $venta = $ventaData['venta'];
+
+                $pagos = [];
+
+                if ((float) $request->pago_efectivo > 0) {
+                    $pagos[] = [
+                        'metodo_pago_id' => 1,
+                        'total' => (float) $request->pago_efectivo,
+                    ];
+                }
+
+                $pagoCuentaDigital =
+                    (float) $request->pago_yape +
+                    (float) $request->pago_plin +
+                    (float) $request->pago_transferencia +
+                    (float) $request->pago_tarjeta;
+
+                if ($pagoCuentaDigital > 0) {
+                    $pagos[] = [
+                        'metodo_pago_id' => 2,
+                        'billetera_id' => $request->billetera_id,
+                        'total' => $pagoCuentaDigital,
+                    ];
+                }
+
+                $sumaPagos = collect($pagos)->sum('total');
+
+                if (round($sumaPagos, 2) !== round($totalVenta, 2) && $accion === 'vender') {
+                    throw ValidationException::withMessages([
+                        'pago_efectivo' => 'La suma de pagos no coincide con el total de la venta.',
+                    ]);
+                }
+
 
                 foreach ($pagos as $pago) {
                     CajaDetalle::create([
@@ -640,7 +639,7 @@ class PasajeController extends Controller
 
             foreach ($pasajeros as $pasajeroData) {
                 $pasaje = Pasaje::create([
-                    'venta_id' => $venta?->id,
+                    'venta_id' => $venta?->id ?? null,
                     'usuario_id' => Auth::id(),
                     'persona_id' => $pasajeroData['persona']->id,
                     'pasajero_menor' => $pasajeroData['pasajero_menor'],
@@ -660,6 +659,14 @@ class PasajeController extends Controller
             }
 
             DB::commit();
+
+            if ($accion === 'reservar') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Reserva realizada correctamente.',
+                    'redirect' => route('pasajes.index'),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
