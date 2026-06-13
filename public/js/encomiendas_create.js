@@ -660,4 +660,203 @@ $(async function () {
             }
         }
     }
+
+    // ===============================
+    // FACTURACION SUNAT
+    // ===============================
+
+    function obtenerCodigoSucursal() {
+        const option = $("#caja_id option:selected");
+        return String(option.data("serie") || "").trim();
+    }
+
+    function generarSeriePorTipo(tipo) {
+        const codigo = obtenerCodigoSucursal();
+
+        if (!codigo || isNaN(Number(codigo))) {
+            return "Seleccione una sucursal";
+        }
+
+        const numero = Number(codigo);
+
+        if (tipo === "boleta") return `BBB${numero}`;
+        if (tipo === "factura") return `FFF${numero}`;
+
+        return `NNN${numero}`;
+    }
+
+    function limpiarClienteFacturacion() {
+        $("#doc_cliente").val("").prop("readonly", false);
+        $("#razon_social").val("").prop("readonly", false);
+        $("#direccion").val("-");
+    }
+
+    function ponerClienteVariosNotaVenta() {
+        $("#doc_cliente").val("00000000").prop("readonly", true);
+        $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
+        $("#direccion").val("-");
+    }
+
+    function buscarCliente() {
+        let documento = $("#doc_cliente").val().trim();
+
+        if (!documento) return;
+
+        $("#btnBuscarCliente").prop("disabled", true);
+
+        $.getJSON(route("buscar.buscar") + "?documento=" + documento)
+            .done(function (data) {
+                if (data.error) {
+                    Swal.fire("Aviso", data.error, "warning");
+                    return;
+                }
+
+                if (data.razon_social) {
+                    $("#razon_social").val(data.razon_social);
+                    $("#direccion").val(data.direccion || "-");
+                } else {
+                    let nombreCompleto = (
+                        (data.nombres || "") +
+                        " " +
+                        (data.apellido_paterno || "") +
+                        " " +
+                        (data.apellido_materno || "")
+                    ).trim();
+
+                    $("#razon_social").val(nombreCompleto);
+                    $("#direccion").val("-");
+                }
+            })
+            .fail(function () {
+                Swal.fire("Error", "No se encontró el documento", "error");
+            })
+            .always(function () {
+                $("#btnBuscarCliente").prop("disabled", false);
+            });
+    }
+
+    function marcarTipoDocumento(tipo) {
+        $(".doc-btn")
+            .removeClass("active btn-primary btn-success btn-warning")
+            .addClass("btn-outline-secondary");
+
+        const serie = generarSeriePorTipo(tipo);
+
+        if (tipo === "boleta") {
+            $("#tipo_doc_sunat").val("boleta");
+            $("#serie_doc").text(serie);
+
+            $("#doc_cliente").attr("maxlength", 11);
+
+            limpiarClienteFacturacion();
+
+            $("#btn_boleta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-primary");
+        } else if (tipo === "factura") {
+            $("#tipo_doc_sunat").val("factura");
+            $("#serie_doc").text(serie);
+
+            $("#doc_cliente").attr("maxlength", 11);
+
+            limpiarClienteFacturacion();
+
+            $("#btn_factura")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-success");
+        } else {
+            $("#tipo_doc_sunat").val("4");
+            $("#serie_doc").text(serie);
+
+            $("#doc_cliente").attr("maxlength", 8);
+
+            ponerClienteVariosNotaVenta();
+
+            $("#btn_nota_venta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-warning");
+        }
+    }
+
+    function actualizarEstadoSunat() {
+        const sunatActivo = $("#emitir_sunat").is(":checked");
+
+        $("#emitir_sunat_estado").val(sunatActivo ? "1" : "0");
+
+        if (sunatActivo) {
+            $("#btn_boleta").prop("disabled", false);
+            $("#btn_factura").prop("disabled", false);
+
+            $("#btn_nota_venta")
+                .prop("disabled", true)
+                .removeClass("active btn-warning")
+                .addClass("btn-outline-secondary");
+
+            const actual = $("#tipo_doc_sunat").val();
+
+            if (actual === "factura") {
+                marcarTipoDocumento("factura");
+            } else {
+                marcarTipoDocumento("boleta");
+            }
+        } else {
+            $("#btn_boleta")
+                .prop("disabled", true)
+                .removeClass("active btn-primary")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_factura")
+                .prop("disabled", true)
+                .removeClass("active btn-success")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_nota_venta").prop("disabled", false);
+
+            marcarTipoDocumento("nota_venta");
+        }
+    }
+
+    function validarClienteFacturacion() {
+        const tipo = $("#tipo_doc_sunat").val();
+
+        const doc = $("#doc_cliente").val().trim();
+
+        const razon = $("#razon_social").val().trim();
+
+        if (tipo === "4") {
+            return true;
+        }
+
+        if (!doc || !razon) {
+            Swal.fire(
+                "Atención",
+                "Debe buscar el cliente para emitir el comprobante.",
+                "warning",
+            );
+
+            return false;
+        }
+
+        if (tipo === "factura" && doc.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "La factura requiere RUC de 11 dígitos.",
+                "warning",
+            );
+
+            return false;
+        }
+
+        if (tipo === "boleta" && doc.length !== 8 && doc.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "La boleta requiere DNI (8) o RUC (11).",
+                "warning",
+            );
+
+            return false;
+        }
+
+        return true;
+    }
 });
