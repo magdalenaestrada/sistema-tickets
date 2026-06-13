@@ -536,7 +536,8 @@ class PasajeController extends Controller
                     'descuento' => $p['descuento_monto'],
                 ];
             }
-
+        
+            
             if ($request->filled('numero_documento_id')) {
                 $personaFacturacion = Persona::updateOrCreate(
                     ['documento' => $request->numero_documento_id],
@@ -554,16 +555,6 @@ class PasajeController extends Controller
             if ($accion === 'vender') {
                 $ventaService = app(VentaService::class);
                 $pagoService = app(PagoService::class);
-
-                $tipoDocumentoFacturaId = $request->tipo_documento_factura_id ?: 4;
-
-                $numeroDocFact = trim((string) ($request->numero_documento_id ?: $personaFacturacion->documento));
-
-                if ((int) $tipoDocumentoFacturaId === 1 && strlen($numeroDocFact) !== 11) {
-                    throw ValidationException::withMessages([
-                        'numero_documento_id' => 'La factura requiere RUC de 11 dígitos.',
-                    ]);
-                }
 
                 $ventaData = $ventaService->crearVenta(
                     new Request([

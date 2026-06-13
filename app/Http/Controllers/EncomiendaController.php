@@ -497,6 +497,8 @@ class EncomiendaController extends Controller
             'detalles' => 'required|array|min:1',
         ]);
 
+        dd($request->tipo_documento_factura_id);
+
         try {
             $emisor = Persona::updateOrCreate(
                 [

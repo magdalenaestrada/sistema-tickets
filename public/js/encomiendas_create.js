@@ -86,6 +86,10 @@ $(async function () {
     const csrf = $('meta[name="csrf-token"]').attr("content");
     let tiposEncomienda = [];
 
+    // ===============================
+    // ORIGEN / DESTINO
+    // ===============================
+
     function filtrarOrigenDestino() {
         const origen = $("#origen").val();
         const destino = $("#destino").val();
@@ -108,9 +112,9 @@ $(async function () {
         $("#emisor_ubigeo").val(ubigeo);
     }
 
-    $("#origen").on("change", function () {
-        filtrarOrigenDestino();
-    });
+    // ===============================
+    // RESUMEN DE DETALLES
+    // ===============================
 
     function actualizarResumen() {
         let totalPeso = 0;
@@ -133,66 +137,300 @@ $(async function () {
             total += parseFloat($(this).find(".costo").val()) || 0;
         });
 
-        $("#costo_total").val(total.toFixed(2));
+        const totalFinal = total.toFixed(2);
 
-        const metodo = parseInt($("#metodo_pago_id").val());
+        // Actualizar panel de resumen (igual que ventas: subtotal, descuentos, total)
+        $("#subtotal").text(totalFinal);
+        $("#total_descuento").text("0.00");
+        $("#total_pagar").text(totalFinal);
 
-        if (metodo === 1) {
-            $("#pago_efectivo").val(total.toFixed(2));
-            $("#pago_billetera").val(0);
-        } else if (metodo === 2) {
-            $("#pago_billetera").val(total.toFixed(2));
-            $("#pago_efectivo").val(0);
-        } else if (metodo === 3) {
-            let pagoE = parseFloat($("#pago_efectivo").val()) || 0;
-            if (pagoE > total) pagoE = total;
-            $("#pago_efectivo").val(pagoE.toFixed(2));
-            $("#pago_billetera").val((total - pagoE).toFixed(2));
+        // También actualizar input hidden de costo total si existe
+        if ($("#costo_total").length) {
+            $("#costo_total").val(totalFinal);
         }
     }
 
-    function refrescarPagos() {
-        const metodo = parseInt($("#metodo_pago_id").val());
-        const total = parseFloat($("#costo_total").val()) || 0;
-        const sinVenta = $("#tiene_venta").val() !== "1";
+    // ===============================
+    // MODAL DE PAGO (idéntico a ventas)
+    // ===============================
 
-        $("#pago_efectivo").closest(".row").attr("hidden", true);
-        $("#billetera_id").closest(".row").attr("hidden", true);
-        $("#pago_billetera").closest(".row").attr("hidden", true);
-        $("#pago_efectivo").prop("readonly", false);
-        $("#pago_billetera").prop("readonly", false);
+    function limpiarPagosModal() {
+        $("#modal_pago_efectivo").val("0");
+        $("#modal_pago_tarjeta").val("0");
+        $("#modal_pago_yape").val("0");
+        $("#modal_pago_plin").val("0");
+        $("#modal_pago_transferencia").val("0");
+        $("#alerta_pago").addClass("d-none");
+    }
 
-        if (metodo === 1) {
-            $("#pago_efectivo").closest(".row").removeAttr("hidden");
-            $("#pago_efectivo").val(total.toFixed(2)).prop("readonly", true);
-            $("#pago_billetera").val("0");
-            sinVenta
-                ? $(".grupo_costo_total").removeAttr("hidden")
-                : $(".grupo_costo_total").attr("hidden", true);
-        } else if (metodo === 2) {
-            $("#billetera_id").closest(".row").removeAttr("hidden");
-            $("#pago_billetera").closest(".row").removeAttr("hidden");
-            $("#pago_billetera").val(total.toFixed(2)).prop("readonly", true);
-            $("#pago_efectivo").val("0");
-            sinVenta
-                ? $(".grupo_costo_total").removeAttr("hidden")
-                : $(".grupo_costo_total").attr("hidden", true);
-        } else if (metodo === 3) {
-            $("#pago_efectivo").closest(".row").removeAttr("hidden");
-            $("#billetera_id").closest(".row").removeAttr("hidden");
-            $("#pago_billetera").closest(".row").removeAttr("hidden");
-            $(".grupo_costo_total").removeAttr("hidden");
+    function distribuirPagosPorMetodo() {
+        const metodo = parseInt($("#modal_metodo_pago").val() || 1);
+        const total = parseFloat($("#total_pagar").text()) || 0;
 
-            if (!window.IS_EDIT) {
-                $("#pago_efectivo").val(total.toFixed(2));
-                $("#pago_billetera").val("0.00");
-            } else {
-                let pagoE = parseFloat($("#pago_efectivo").val()) || 0;
-                if (pagoE > total) pagoE = total;
-                $("#pago_efectivo").val(pagoE.toFixed(2));
-                $("#pago_billetera").val((total - pagoE).toFixed(2));
-            }
+        const efectivo = $("#modal_pago_efectivo");
+        const tarjeta = $("#modal_pago_tarjeta");
+        const yape = $("#modal_pago_yape");
+        const plin = $("#modal_pago_plin");
+        const transferencia = $("#modal_pago_transferencia");
+
+        [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
+            input.prop("disabled", true);
+            input.val("0.00");
+        });
+
+        switch (metodo) {
+            case 1:
+                efectivo.prop("disabled", false);
+                efectivo.val(total.toFixed(2));
+                break;
+
+            case 2:
+                yape.prop("disabled", false);
+                plin.prop("disabled", false);
+                transferencia.prop("disabled", false);
+                tarjeta.prop("disabled", false);
+                yape.val(total.toFixed(2));
+                break;
+
+            case 3:
+                efectivo.prop("disabled", false);
+                tarjeta.prop("disabled", false);
+                yape.prop("disabled", false);
+                plin.prop("disabled", false);
+                transferencia.prop("disabled", false);
+                efectivo.val(total.toFixed(2));
+                break;
         }
+
+        validarSumaPagos();
+    }
+
+    function sumarPagosModal() {
+        return (
+            (parseFloat($("#modal_pago_efectivo").val()) || 0) +
+            (parseFloat($("#modal_pago_tarjeta").val()) || 0) +
+            (parseFloat($("#modal_pago_yape").val()) || 0) +
+            (parseFloat($("#modal_pago_plin").val()) || 0) +
+            (parseFloat($("#modal_pago_transferencia").val()) || 0)
+        );
+    }
+
+    function validarSumaPagos() {
+        const total = parseFloat($("#total_pagar").text()) || 0;
+        const totalPagado = sumarPagosModal();
+
+        if (Math.abs(totalPagado - total) > 0.01) {
+            $("#alerta_pago").removeClass("d-none");
+            return false;
+        }
+
+        $("#alerta_pago").addClass("d-none");
+        return true;
+    }
+
+    // ===============================
+    // FACTURACIÓN SUNAT (idéntico a ventas)
+    // ===============================
+
+    function obtenerCodigoSucursal() {
+        const option = $("#caja_id option:selected");
+        return String(option.data("serie") || "").trim();
+    }
+
+    function generarSeriePorTipo(tipo) {
+        const codigo = obtenerCodigoSucursal();
+
+        if (!codigo || isNaN(Number(codigo))) {
+            return "Seleccione una sucursal";
+        }
+
+        const numero = Number(codigo);
+
+        if (tipo === "boleta") return `BBB${numero}`;
+        if (tipo === "factura") return `FFF${numero}`;
+        return `NNN${numero}`;
+    }
+
+    function limpiarClienteFacturacion() {
+        $("#doc_cliente").val("").prop("readonly", false);
+        $("#razon_social").val("").prop("readonly", false);
+        $("#direccion").val("-");
+    }
+
+    function ponerClienteVariosNotaVenta() {
+        $("#doc_cliente").val("00000000").prop("readonly", true);
+        $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
+        $("#direccion").val("-");
+    }
+
+    function marcarTipoDocumento(tipo) {
+        $(".doc-btn")
+            .removeClass("active btn-primary btn-success btn-warning")
+            .addClass("btn-outline-secondary");
+
+        const serie = generarSeriePorTipo(tipo);
+
+        if (tipo === "boleta") {
+            $("#tipo_doc_sunat").val("2");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11);
+            limpiarClienteFacturacion();
+
+            $("#btn_boleta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-primary");
+        } else if (tipo === "factura") {
+            $("#tipo_doc_sunat").val("1");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11);
+            limpiarClienteFacturacion();
+
+            $("#btn_factura")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-success");
+        } else {
+            $("#tipo_doc_sunat").val("4");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 8);
+            ponerClienteVariosNotaVenta();
+
+            $("#btn_nota_venta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-warning");
+        }
+    }
+
+    function actualizarEstadoSunat() {
+        const sunatActivo = $("#emitir_sunat").is(":checked");
+
+        $("#emitir_sunat_estado").val(sunatActivo ? "1" : "0");
+
+        if (sunatActivo) {
+            $("#btn_boleta").prop("disabled", false);
+            $("#btn_factura").prop("disabled", false);
+
+            $("#btn_nota_venta")
+                .prop("disabled", true)
+                .removeClass("active btn-warning")
+                .addClass("btn-outline-secondary");
+
+            const actual = $("#tipo_doc_sunat").val();
+
+            if (actual === "factura") {
+                marcarTipoDocumento("factura");
+            } else {
+                marcarTipoDocumento("boleta");
+            }
+        } else {
+            $("#btn_boleta")
+                .prop("disabled", true)
+                .removeClass("active btn-primary")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_factura")
+                .prop("disabled", true)
+                .removeClass("active btn-success")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_nota_venta").prop("disabled", false);
+
+            marcarTipoDocumento("nota_venta");
+        }
+    }
+
+    function validarClienteFacturacion() {
+        const tipo = $("#tipo_doc_sunat").val();
+        const doc = $("#doc_cliente").val().trim();
+        const razon = $("#razon_social").val().trim();
+
+        if (tipo === "4") return true;
+
+        if (!doc || !razon) {
+            Swal.fire(
+                "Atención",
+                "Ingresa y busca el cliente a quien se va a boletear o facturar.",
+                "warning",
+            );
+            return false;
+        }
+
+        if (tipo === "factura" && doc.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "La factura requiere RUC de 11 dígitos.",
+                "warning",
+            );
+            return false;
+        }
+
+        if (tipo === "boleta" && doc.length !== 8 && doc.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "La boleta requiere DNI (8) o RUC (11).",
+                "warning",
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    function buscarCliente() {
+        let documento = $("#doc_cliente").val().trim();
+        if (!documento) return;
+
+        $("#btnBuscarCliente").prop("disabled", true);
+
+        $.getJSON(route("buscar.buscar") + "?documento=" + documento)
+            .done(function (data) {
+                if (data.error) {
+                    Swal.fire("Aviso", data.error, "warning");
+                    return;
+                }
+
+                if (data.razon_social) {
+                    $("#razon_social").val(data.razon_social);
+                    $("#direccion").val(data.direccion || "-");
+                } else {
+                    let nombreCompleto = (
+                        (data.nombres || "") +
+                        " " +
+                        (data.apellido_paterno || "") +
+                        " " +
+                        (data.apellido_materno || "")
+                    ).trim();
+
+                    $("#razon_social").val(nombreCompleto);
+                    $("#direccion").val("-");
+                }
+            })
+            .fail(function () {
+                Swal.fire("Error", "No se encontró el documento", "error");
+            })
+            .always(function () {
+                $("#btnBuscarCliente").prop("disabled", false);
+            });
+    }
+
+    // ===============================
+    // DETALLES DE ENCOMIENDA
+    // ===============================
+
+    function calcularCostoFila(tr, tipo) {
+        const peso = parseFloat(tr.find(".peso").val()) || 0;
+        const precioBase = parseFloat(tipo.precio_base) || 0;
+        const costoKiloExtra = parseFloat(tipo.costo_kilo_extra) || 0;
+        const pesoLimite = parseFloat(tipo.peso_limite) || 0;
+
+        let costo = precioBase;
+
+        if (pesoLimite && peso > pesoLimite && costoKiloExtra) {
+            costo += (peso - pesoLimite) * costoKiloExtra;
+        }
+
+        tr.find(".costo").val(costo.toFixed(2));
+        recalcularTotal();
+        actualizarResumen();
     }
 
     function agregarFilaDetalle() {
@@ -237,23 +475,9 @@ $(async function () {
         recalcularTotal();
     }
 
-    function calcularCostoFila(tr, tipo) {
-        const peso = parseFloat(tr.find(".peso").val()) || 0;
-        const precioBase = parseFloat(tipo.precio_base) || 0;
-        const costoKiloExtra = parseFloat(tipo.costo_kilo_extra) || 0;
-        const pesoLimite = parseFloat(tipo.peso_limite) || 0;
-
-        let costo = precioBase;
-
-        if (pesoLimite && peso > pesoLimite && costoKiloExtra) {
-            costo += (peso - pesoLimite) * costoKiloExtra;
-        }
-
-        tr.find(".costo").val(costo.toFixed(2));
-        recalcularTotal();
-        actualizarResumen();
-        $("#metodo_pago_id").trigger("change");
-    }
+    // ===============================
+    // BÚSQUEDA DE PERSONAS
+    // ===============================
 
     function debounce(fn, delay) {
         let timeout;
@@ -314,6 +538,32 @@ $(async function () {
         });
     }
 
+    function sincronizarFacturacionDesdeEmisor() {
+        const docEmisor = ($("#emisor_documento").val() || "").trim();
+        const nombresEmisor = ($("#emisor_nombres").val() || "").trim();
+        const apellidosEmisor = ($("#emisor_apellidos").val() || "").trim();
+
+        const docFact = ($("#doc_cliente").val() || "").trim();
+        const razonFact = ($("#razon_social").val() || "").trim();
+
+        if (!docFact && docEmisor) {
+            $("#doc_cliente").val(docEmisor);
+        }
+
+        if (!razonFact) {
+            if (docEmisor.length === 8) {
+                $("#razon_social").val(
+                    [nombresEmisor, apellidosEmisor]
+                        .join(" ")
+                        .replace(/\s+/g, " ")
+                        .trim(),
+                );
+            } else if (docEmisor.length === 11) {
+                $("#razon_social").val(nombresEmisor);
+            }
+        }
+    }
+
     function sinDocumento() {
         const receptor_tipo = $("#receptor_tipo_documento_id").val();
 
@@ -324,6 +574,10 @@ $(async function () {
         }
     }
 
+    // ===============================
+    // INICIALIZACIÓN
+    // ===============================
+
     UBIGEO = await $.get(route("ubigeos.todo"));
     initUbigeosReceptor();
 
@@ -332,6 +586,9 @@ $(async function () {
     recalcularTotal();
     sinDocumento();
 
+    // Estado inicial SUNAT (igual que ventas: arranca en nota de venta)
+    actualizarEstadoSunat();
+
     $.get(route("tipo-encomienda.listar-todos"), function (res) {
         tiposEncomienda = res;
 
@@ -339,9 +596,12 @@ $(async function () {
             agregarFilaDetalle();
         } else {
             recalcularTotal();
-            refrescarPagos();
         }
     });
+
+    // ===============================
+    // EVENTOS DE DETALLES
+    // ===============================
 
     $("#btnAgregarDetalle").on("click", agregarFilaDetalle);
 
@@ -389,23 +649,71 @@ $(async function () {
         recalcularTotal();
     });
 
-    $("#metodo_pago_id").on("change", refrescarPagos);
+    // ===============================
+    // EVENTOS DE FACTURACIÓN SUNAT (idéntico a ventas)
+    // ===============================
 
-    $("#pago_efectivo").on("input", function () {
-        if ($("#metodo_pago_id").val() != "3") return;
-        const total = parseFloat($("#costo_total").val()) || 0;
-        let efectivo = parseFloat($(this).val()) || 0;
-        if (efectivo > total) efectivo = total;
-        $("#pago_billetera").val((total - efectivo).toFixed(2));
+    $("#emitir_sunat").on("change", function () {
+        actualizarEstadoSunat();
     });
 
-    $("#pago_billetera").on("input", function () {
-        if ($("#metodo_pago_id").val() != "3") return;
-        const total = parseFloat($("#costo_total").val()) || 0;
-        let digital = parseFloat($(this).val()) || 0;
-        if (digital > total) digital = total;
-        $("#pago_efectivo").val((total - digital).toFixed(2));
+    $("#caja_id").on("change", function () {
+        const tipoActual = $("#tipo_doc_sunat").val() || "nota_venta";
+        marcarTipoDocumento(tipoActual);
     });
+
+    $(".doc-btn").on("click", function () {
+        if ($(this).prop("disabled")) return;
+        const tipo = $(this).data("doc");
+        marcarTipoDocumento(tipo);
+    });
+
+    $("#doc_cliente").on("input", function () {
+        const tipo = $("#tipo_doc_sunat").val();
+        if (tipo !== "4") {
+            $("#razon_social").val("");
+        }
+    });
+
+    $("#doc_cliente").on("blur", function () {
+        const valor = $(this).val().trim();
+        const tipo = $("#tipo_doc_sunat").val();
+
+        if (!valor || tipo === "4") return;
+
+        if (tipo === "factura" && valor.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "Para factura el RUC debe tener 11 dígitos.",
+                "warning",
+            );
+            return;
+        }
+
+        if (tipo === "boleta" && !(valor.length === 8 || valor.length === 11)) {
+            Swal.fire(
+                "Atención",
+                "Para boleta usa DNI de 8 dígitos o RUC de 11.",
+                "warning",
+            );
+            return;
+        }
+    });
+
+    $(document).on("click", "#btnBuscarCliente", function () {
+        buscarCliente();
+    });
+
+    $(document).on("keypress", "#doc_cliente", function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            buscarCliente();
+        }
+    });
+
+    // ===============================
+    // EVENTOS DE PERSONAS (emisor/receptor)
+    // ===============================
 
     $("#receptor_tipo_documento_id").on("change", sinDocumento);
     $("#tipo_documento_id").on("change", updateRazonSocial);
@@ -419,75 +727,30 @@ $(async function () {
         debounce(() => buscarPersona("receptor"), 300),
     );
 
-    $("#numero_documento_id").on("blur", function () {
-        const numero = ($(this).val() || "").trim();
-
-        if (!numero) {
-            $("#razon_social").val("");
-            return;
-        }
-
-        $.get(route("buscar.buscar") + `?documento=${numero}`, function (res) {
-            if (res.error) {
-                Swal.fire("Aviso", res.error, "warning");
-                return;
-            }
-
-            if (numero.length === 8) {
-                const nombreCompleto = [
-                    res.nombres || "",
-                    res.apellido_paterno || "",
-                    res.apellido_materno || "",
-                ]
-                    .join(" ")
-                    .replace(/\s+/g, " ")
-                    .trim();
-
-                $("#razon_social").val(nombreCompleto);
-            } else if (numero.length === 11) {
-                $("#razon_social").val((res.razon_social || "").trim());
-            } else {
-                $("#razon_social").val("");
-            }
-        }).fail(function (err) {
-            Swal.fire(
-                "Error",
-                err.responseJSON?.error || "Error al buscar documento",
-                "error",
-            );
-        });
+    // Botones de búsqueda por click
+    $(document).on("click", ".btn-buscar-persona", function () {
+        const tipo = $(this).data("tipo");
+        buscarPersona(tipo);
     });
 
-    const $container = $("#container_pago");
-    const $metodo = $("#metodo_pago_id");
+    // Enter en los campos de documento de emisor/receptor
+    $(document).on(
+        "keypress",
+        "#emisor_documento, #receptor_documento",
+        function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                const tipo = $(this).attr("id").replace("_documento", "");
+                buscarPersona(tipo);
+            }
+        },
+    );
 
-    $container.prop("hidden", true);
+    // ===============================
+    // MODAL DE PAGO — BOTÓN ABRIR (idéntico a ventas)
+    // ===============================
 
-    $metodo.on("change", function () {
-        if ($(this).val()) {
-            $container.prop("hidden", false);
-            refrescarPagos();
-        } else {
-            $container.prop("hidden", true);
-        }
-    });
-    function ocultarPago() {
-        $container.prop("hidden", true);
-        $container.find("input, select").prop("disabled", true).val("");
-    }
-
-    function mostrarPago() {
-        $container.prop("hidden", false);
-        $container.find("input, select").prop("disabled", false);
-    }
-
-    const encomiendaId = $("#encomienda_id").val();
-    const url = encomiendaId
-        ? route("encomiendas.actualizar", { encomienda: encomiendaId })
-        : route("encomiendas.guardar");
-    const method = encomiendaId ? "PUT" : "POST";
-
-    $("#formEncomienda").on("submit", function (e) {
+    $("#btnAbrirPago").on("click", function (e) {
         e.preventDefault();
 
         if ($("#tablaDetalles tbody tr").length === 0) {
@@ -496,10 +759,170 @@ $(async function () {
         }
 
         let detalleInvalido = false;
-
         $("#tablaDetalles tbody tr").each(function () {
-            const tipo = $(this).find(".tipo").val();
-            if (!tipo) detalleInvalido = true;
+            if (!$(this).find(".tipo").val()) detalleInvalido = true;
+        });
+
+        if (detalleInvalido) {
+            Swal.fire(
+                "Aviso",
+                "Todos los detalles deben tener un tipo seleccionado.",
+                "warning",
+            );
+            return;
+        }
+
+        if (!validarClienteFacturacion()) return;
+
+        recalcularTotal();
+        limpiarPagosModal();
+        distribuirPagosPorMetodo();
+
+        const modalEl = document.getElementById("modalPago");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    });
+
+    // ===============================
+    // MODAL DE PAGO — INPUTS (idéntico a ventas)
+    // ===============================
+
+    $("#modal_metodo_pago").on("change", function () {
+        distribuirPagosPorMetodo();
+    });
+
+    $(document).on(
+        "input",
+        "#modal_pago_efectivo, #modal_pago_tarjeta, #modal_pago_yape, #modal_pago_plin, #modal_pago_transferencia",
+        function () {
+            const metodo = parseInt($("#modal_metodo_pago").val()) || 1;
+
+            if (metodo !== 3) {
+                validarSumaPagos();
+                return;
+            }
+
+            const total = parseFloat($("#total_pagar").text()) || 0;
+
+            const efectivo = $("#modal_pago_efectivo");
+            const tarjeta = $("#modal_pago_tarjeta");
+            const yape = $("#modal_pago_yape");
+            const plin = $("#modal_pago_plin");
+            const transferencia = $("#modal_pago_transferencia");
+
+            const campoEditado = $(this).attr("id");
+
+            if (campoEditado === "modal_pago_efectivo") {
+                validarSumaPagos();
+                return;
+            }
+
+            const vTarjeta = parseFloat(tarjeta.val()) || 0;
+            const vYape = parseFloat(yape.val()) || 0;
+            const vPlin = parseFloat(plin.val()) || 0;
+            const vTransferencia = parseFloat(transferencia.val()) || 0;
+
+            const otros = vTarjeta + vYape + vPlin + vTransferencia;
+
+            if (otros > total) {
+                const valorActual = parseFloat($(this).val()) || 0;
+                const sumaSinActual = otros - valorActual;
+                const maxPermitido = Math.max(0, total - sumaSinActual);
+
+                $(this).val(maxPermitido.toFixed(2));
+
+                const nuevosOtros =
+                    campoEditado === "modal_pago_tarjeta"
+                        ? maxPermitido + vYape + vPlin + vTransferencia
+                        : campoEditado === "modal_pago_yape"
+                          ? vTarjeta + maxPermitido + vPlin + vTransferencia
+                          : campoEditado === "modal_pago_plin"
+                            ? vTarjeta + vYape + maxPermitido + vTransferencia
+                            : vTarjeta + vYape + vPlin + maxPermitido;
+
+                efectivo.val(Math.max(0, total - nuevosOtros).toFixed(2));
+            } else {
+                efectivo.val(Math.max(0, total - otros).toFixed(2));
+            }
+
+            validarSumaPagos();
+        },
+    );
+
+    $(document).on(
+        "input",
+        "#modal_pago_tarjeta, #modal_pago_plin, #modal_pago_transferencia",
+        function () {
+            if (parseInt($("#modal_metodo_pago").val()) !== 2) return;
+
+            const total = parseFloat($("#total_pagar").text()) || 0;
+
+            const tarjeta = parseFloat($("#modal_pago_tarjeta").val()) || 0;
+            const plin = parseFloat($("#modal_pago_plin").val()) || 0;
+            const transferencia =
+                parseFloat($("#modal_pago_transferencia").val()) || 0;
+
+            const sumaOtros = tarjeta + plin + transferencia;
+
+            $("#modal_pago_yape").val(
+                Math.max(0, total - sumaOtros).toFixed(2),
+            );
+
+            validarSumaPagos();
+        },
+    );
+
+    // ===============================
+    // MODAL DE PAGO — CONFIRMAR VENTA (idéntico a ventas)
+    // ===============================
+
+    $("#btnConfirmarVenta").on("click", function (e) {
+        e.preventDefault();
+
+        if (!validarClienteFacturacion()) return;
+
+        if (!validarSumaPagos()) {
+            Swal.fire(
+                "Atención",
+                "La suma de pagos no coincide con el total.",
+                "warning",
+            );
+            return;
+        }
+
+        const total = parseFloat($("#total_pagar").text()) || 0;
+
+        const pagoEfectivo = parseFloat($("#modal_pago_efectivo").val()) || 0;
+        const pagoTarjeta = parseFloat($("#modal_pago_tarjeta").val()) || 0;
+        const pagoYape = parseFloat($("#modal_pago_yape").val()) || 0;
+        const pagoPlin = parseFloat($("#modal_pago_plin").val()) || 0;
+        const pagoTransferencia =
+            parseFloat($("#modal_pago_transferencia").val()) || 0;
+
+        const sumaPagos =
+            pagoEfectivo +
+            pagoTarjeta +
+            pagoYape +
+            pagoPlin +
+            pagoTransferencia;
+
+        if (Math.abs(sumaPagos - total) > 0.01) {
+            Swal.fire(
+                "Atención",
+                `La suma de pagos (S/ ${sumaPagos.toFixed(2)}) no coincide con el total (S/ ${total.toFixed(2)}).`,
+                "warning",
+            );
+            return;
+        }
+
+        if ($("#tablaDetalles tbody tr").length === 0) {
+            Swal.fire("Aviso", "Debes agregar al menos un detalle.", "warning");
+            return;
+        }
+
+        let detalleInvalido = false;
+        $("#tablaDetalles tbody tr").each(function () {
+            if (!$(this).find(".tipo").val()) detalleInvalido = true;
         });
 
         if (detalleInvalido) {
@@ -524,43 +947,55 @@ $(async function () {
             });
         });
 
+        // Construir pagos
         const pagos = [];
+        const metodo = parseInt($("#modal_metodo_pago").val()) || 1;
 
-        if ($("#pago_instantaneo").is(":checked")) {
-            const metodo = parseInt($("#metodo_pago_id").val());
-            const total = parseFloat($("#costo_total").val()) || 0;
-
-            if (metodo === 1) {
-                pagos.push({
-                    metodo_pago_id: 1,
-                    total: total,
-                });
-            } else if (metodo === 2) {
-                pagos.push({
-                    metodo_pago_id: 2,
-                    billetera_id: $("#billetera_id").val(),
-                    total: total,
-                });
-            } else if (metodo === 3) {
-                const efectivo = parseFloat($("#pago_efectivo").val()) || 0;
-                const billetera = parseFloat($("#pago_billetera").val()) || 0;
-
-                if (efectivo > 0) {
-                    pagos.push({
-                        metodo_pago_id: 1,
-                        total: efectivo,
-                    });
-                }
-
-                if (billetera > 0) {
-                    pagos.push({
-                        metodo_pago_id: 2,
-                        billetera_id: $("#billetera_id").val(),
-                        total: billetera,
-                    });
-                }
-            }
+        if (pagoEfectivo > 0) {
+            pagos.push({ metodo_pago_id: 1, total: pagoEfectivo });
         }
+
+        if (pagoYape > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 1,
+                tipo: "yape",
+                total: pagoYape,
+            });
+        }
+
+        if (pagoPlin > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 2,
+                tipo: "plin",
+                total: pagoPlin,
+            });
+        }
+
+        if (pagoTarjeta > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 3,
+                tipo: "tarjeta",
+                total: pagoTarjeta,
+            });
+        }
+
+        if (pagoTransferencia > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 4,
+                tipo: "transferencia",
+                total: pagoTransferencia,
+            });
+        }
+
+        const encomiendaId = $("#encomienda_id").val();
+        const url = encomiendaId
+            ? route("encomiendas.actualizar", { encomienda: encomiendaId })
+            : route("encomiendas.guardar");
+        const method = encomiendaId ? "PUT" : "POST";
 
         const data = {
             _token: $("input[name=_token]").val(),
@@ -583,18 +1018,20 @@ $(async function () {
                 direccion: $("#receptor_direccion").val(),
             },
             origen: $("#origen").val(),
-            numero_documento_id: $("#numero_documento_id").val(),
-            razon_social: $("#razon_social").val(),
-            pago_instantaneo: $("#pago_instantaneo").is(":checked") ? 1 : 0,
-            distrito_id: $("#distrito_id").val(),
             destino: $("#destino").val(),
-            tipo_documento_factura_id: $("#tipo_documento_factura_id").val(),
-            total: parseFloat($("#costo_total").val()) || 0,
+            distrito_id: $("#distrito_id").val(),
+            destino_pueblito_id: $("#pueblito_id").val(),
+            // Facturación
+            emitir_sunat_estado: $("#emitir_sunat_estado").val(),
+            tipo_doc_sunat: $("#tipo_doc_sunat").val(),
+            caja_id: $("#caja_id").val(),
+            numero_documento_id: $("#doc_cliente").val(),
+            razon_social: $("#razon_social").val(),
+            direccion: $("#direccion").val(),
+            // Totales y pagos
+            total: total,
             detalles: detalles,
             tipo_servicio_id: 2,
-            sucursal_id: $("#sucursal_id").val(),
-            serie: null,
-            numero: null,
             pagos: pagos,
         };
 
@@ -604,6 +1041,10 @@ $(async function () {
             data: data,
             success: function (res) {
                 if (res.success) {
+                    const modalEl = document.getElementById("modalPago");
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.hide();
+
                     Swal.fire({
                         icon: "success",
                         title: encomiendaId
@@ -635,228 +1076,8 @@ $(async function () {
         });
     });
 
-    function sincronizarFacturacionDesdeEmisor() {
-        const docEmisor = ($("#emisor_documento").val() || "").trim();
-        const nombresEmisor = ($("#emisor_nombres").val() || "").trim();
-        const apellidosEmisor = ($("#emisor_apellidos").val() || "").trim();
-
-        const docFact = ($("#numero_documento_id").val() || "").trim();
-        const razonFact = ($("#razon_social").val() || "").trim();
-
-        if (!docFact && docEmisor) {
-            $("#numero_documento_id").val(docEmisor);
-        }
-
-        if (!razonFact) {
-            if (docEmisor.length === 8) {
-                $("#razon_social").val(
-                    [nombresEmisor, apellidosEmisor]
-                        .join(" ")
-                        .replace(/\s+/g, " ")
-                        .trim(),
-                );
-            } else if (docEmisor.length === 11) {
-                $("#razon_social").val(nombresEmisor);
-            }
-        }
-    }
-
-    // ===============================
-    // FACTURACION SUNAT
-    // ===============================
-
-    function obtenerCodigoSucursal() {
-        const option = $("#caja_id option:selected");
-        return String(option.data("serie") || "").trim();
-    }
-
-    function generarSeriePorTipo(tipo) {
-        const codigo = obtenerCodigoSucursal();
-
-        if (!codigo || isNaN(Number(codigo))) {
-            return "Seleccione una sucursal";
-        }
-
-        const numero = Number(codigo);
-
-        if (tipo === "boleta") return `BBB${numero}`;
-        if (tipo === "factura") return `FFF${numero}`;
-
-        return `NNN${numero}`;
-    }
-
-    function limpiarClienteFacturacion() {
-        $("#doc_cliente").val("").prop("readonly", false);
-        $("#razon_social").val("").prop("readonly", false);
-        $("#direccion").val("-");
-    }
-
-    function ponerClienteVariosNotaVenta() {
-        $("#doc_cliente").val("00000000").prop("readonly", true);
-        $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
-        $("#direccion").val("-");
-    }
-
-    function buscarCliente() {
-        let documento = $("#doc_cliente").val().trim();
-
-        if (!documento) return;
-
-        $("#btnBuscarCliente").prop("disabled", true);
-
-        $.getJSON(route("buscar.buscar") + "?documento=" + documento)
-            .done(function (data) {
-                if (data.error) {
-                    Swal.fire("Aviso", data.error, "warning");
-                    return;
-                }
-
-                if (data.razon_social) {
-                    $("#razon_social").val(data.razon_social);
-                    $("#direccion").val(data.direccion || "-");
-                } else {
-                    let nombreCompleto = (
-                        (data.nombres || "") +
-                        " " +
-                        (data.apellido_paterno || "") +
-                        " " +
-                        (data.apellido_materno || "")
-                    ).trim();
-
-                    $("#razon_social").val(nombreCompleto);
-                    $("#direccion").val("-");
-                }
-            })
-            .fail(function () {
-                Swal.fire("Error", "No se encontró el documento", "error");
-            })
-            .always(function () {
-                $("#btnBuscarCliente").prop("disabled", false);
-            });
-    }
-
-    function marcarTipoDocumento(tipo) {
-        $(".doc-btn")
-            .removeClass("active btn-primary btn-success btn-warning")
-            .addClass("btn-outline-secondary");
-
-        const serie = generarSeriePorTipo(tipo);
-
-        if (tipo === "boleta") {
-            $("#tipo_doc_sunat").val("boleta");
-            $("#serie_doc").text(serie);
-
-            $("#doc_cliente").attr("maxlength", 11);
-
-            limpiarClienteFacturacion();
-
-            $("#btn_boleta")
-                .removeClass("btn-outline-secondary")
-                .addClass("active btn-primary");
-        } else if (tipo === "factura") {
-            $("#tipo_doc_sunat").val("factura");
-            $("#serie_doc").text(serie);
-
-            $("#doc_cliente").attr("maxlength", 11);
-
-            limpiarClienteFacturacion();
-
-            $("#btn_factura")
-                .removeClass("btn-outline-secondary")
-                .addClass("active btn-success");
-        } else {
-            $("#tipo_doc_sunat").val("4");
-            $("#serie_doc").text(serie);
-
-            $("#doc_cliente").attr("maxlength", 8);
-
-            ponerClienteVariosNotaVenta();
-
-            $("#btn_nota_venta")
-                .removeClass("btn-outline-secondary")
-                .addClass("active btn-warning");
-        }
-    }
-
-    function actualizarEstadoSunat() {
-        const sunatActivo = $("#emitir_sunat").is(":checked");
-
-        $("#emitir_sunat_estado").val(sunatActivo ? "1" : "0");
-
-        if (sunatActivo) {
-            $("#btn_boleta").prop("disabled", false);
-            $("#btn_factura").prop("disabled", false);
-
-            $("#btn_nota_venta")
-                .prop("disabled", true)
-                .removeClass("active btn-warning")
-                .addClass("btn-outline-secondary");
-
-            const actual = $("#tipo_doc_sunat").val();
-
-            if (actual === "factura") {
-                marcarTipoDocumento("factura");
-            } else {
-                marcarTipoDocumento("boleta");
-            }
-        } else {
-            $("#btn_boleta")
-                .prop("disabled", true)
-                .removeClass("active btn-primary")
-                .addClass("btn-outline-secondary");
-
-            $("#btn_factura")
-                .prop("disabled", true)
-                .removeClass("active btn-success")
-                .addClass("btn-outline-secondary");
-
-            $("#btn_nota_venta").prop("disabled", false);
-
-            marcarTipoDocumento("nota_venta");
-        }
-    }
-
-    function validarClienteFacturacion() {
-        const tipo = $("#tipo_doc_sunat").val();
-
-        const doc = $("#doc_cliente").val().trim();
-
-        const razon = $("#razon_social").val().trim();
-
-        if (tipo === "4") {
-            return true;
-        }
-
-        if (!doc || !razon) {
-            Swal.fire(
-                "Atención",
-                "Debe buscar el cliente para emitir el comprobante.",
-                "warning",
-            );
-
-            return false;
-        }
-
-        if (tipo === "factura" && doc.length !== 11) {
-            Swal.fire(
-                "Atención",
-                "La factura requiere RUC de 11 dígitos.",
-                "warning",
-            );
-
-            return false;
-        }
-
-        if (tipo === "boleta" && doc.length !== 8 && doc.length !== 11) {
-            Swal.fire(
-                "Atención",
-                "La boleta requiere DNI (8) o RUC (11).",
-                "warning",
-            );
-
-            return false;
-        }
-
-        return true;
-    }
+    $("#formEncomienda").on("submit", function (e) {
+        e.preventDefault();
+        $("#btnAbrirPago").trigger("click");
+    });
 });
