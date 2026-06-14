@@ -46,7 +46,7 @@ class EmpresaController extends Controller
 
         if ($request->hasFile('certificado')) {
             $certificadoPath = $request->file('certificado')
-                ->storeAs('certificado', 'certificate.pem', 'public');
+                ->storeAs('certificado', 'certificado.cer', 'public');
         }
 
         if ($request->hasFile('logo')) {
@@ -106,7 +106,7 @@ class EmpresaController extends Controller
             }
 
             $empresa->certificado_path = $request->file('certificado')
-                ->storeAs('certificado', 'certificate.pem', 'public');
+                ->storeAs('certificado', 'certificado.cer', 'public');
         }
 
         $empresa->update($validated + [

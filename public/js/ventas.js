@@ -315,7 +315,7 @@ $(function () {
         const serie = generarSeriePorTipo(tipo);
 
         if (tipo === "boleta") {
-            $("#tipo_doc_sunat").val("boleta");
+            $("#tipo_doc_sunat").val("2");
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 11);
             limpiarClienteFacturacion();
@@ -324,7 +324,7 @@ $(function () {
                 .removeClass("btn-outline-secondary")
                 .addClass("active btn-primary");
         } else if (tipo === "factura") {
-            $("#tipo_doc_sunat").val("factura");
+            $("#tipo_doc_sunat").val("1");
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 11);
             limpiarClienteFacturacion();

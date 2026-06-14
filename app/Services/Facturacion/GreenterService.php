@@ -12,7 +12,7 @@ class GreenterService
     public function getSee(Empresa $empresa): See
     {
         $see = new See();
-        $path = 'certificado/certificate.pem';
+        $path = $empresa->certificado_path;
 
         if (!Storage::disk('public')->exists($path)) {
             throw new \Exception("No existe el certificado en: {$path}");
@@ -21,12 +21,12 @@ class GreenterService
         $certificado = Storage::disk('public')->get($path);
 
         $password = $empresa->contrasena_facturacion;
-        
+
         $see->setCertificate($certificado);
 
         $see->setService(
             $empresa->modo === 'produccion'
-                ? 'https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService?wsdl'
+                ? 'https://ose.nubefact.com/ol-ti-itcpe/billService?wsdl'
                 : 'https://demo-ose.nubefact.com/ol-ti-itcpe/billService?wsdl'
         );
 

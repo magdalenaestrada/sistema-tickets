@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7735ff6ce8e55ee90e9f01038c80d49e",
+    "content-hash": "1737984e363e6c696f11bb963650c5e2",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -1261,7 +1261,7 @@
         },
         {
             "name": "greenter/ws",
-            "version": "v5.2.0",
+            "version": "v5.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thegreenter/ws.git",
@@ -1320,7 +1320,7 @@
             ],
             "support": {
                 "forum": "https://community.greenter.dev/",
-                "source": "https://github.com/thegreenter/ws/tree/v5.2.0"
+                "source": "https://github.com/thegreenter/ws/tree/v5.3.0"
             },
             "time": "2023-05-03T05:20:55+00:00"
         },
@@ -12141,5 +12141,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }

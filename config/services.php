@@ -40,9 +40,9 @@ return [
 
     'greenter' => [
         'mode'      => env('GREENTER_MODE', 'beta'),
-        'beta_url'  => env('GREENTER_BETA_URL', 'https://demo-ose.nubefact.com/ol-ti-itcpe/billService?wsdl'),
+        'beta_url'  => env('GREENTER_BETA_URL', 'https://ose.nubefact.com/ol-ti-itcpe/billService?wsdl'),
+        'demo_url'  => env('GREENTER_DEMO_URL', 'https://demo-ose.nubefact.com/ol-ti-itcpe/billService?wsdl'),
         'cert_disk' => env('GREENTER_CERT_DISK', 'public'),
-        'cert_path' => env('GREENTER_CERT_PATH', 'certificado/certificate.pem'),
     ],
 
 ];

@@ -479,7 +479,6 @@ class VentaService
 
         $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
         $see = $this->crearSee($tipo->codigo);
-
         $invoice = $this->buildInvoice($venta, $empresa);
         $result = $see->send($invoice);
 
@@ -587,30 +586,24 @@ class VentaService
         }
 
         $certDisk = config('services.greenter.cert_disk', 'public');
-        $certPath = config('services.greenter.cert_path', 'certificado/certificate.pem');
-
+        $certPath = $empresa->certificado_path;
         if (!Storage::disk($certDisk)->exists($certPath)) {
             throw new Exception("No se encontró el certificado en: {$certPath}");
+        }
+
+        $modo = $empresa->modo;
+
+        if ($modo === 'produccion') {
+            $see->setService(config('services.greenter.beta_url'));
+        } else {
+            $see->setService(config('services.greenter.demo_url'));
         }
 
         $see->setCertificate(
             Storage::disk($certDisk)->get($certPath)
         );
 
-        $modo = config('services.greenter.mode', 'beta');
-
-        if ($modo === 'production') {
-            $see->setService(SunatEndpoints::FE_PRODUCCION);
-        } else {
-            $see->setService(config('services.greenter.beta_url'));
-        }
-
-        $see->setClaveSOL(
-            $empresa->documento,
-            $empresa->usuario_facturacion,
-            $empresa->contrasena_facturacion
-        );
-
+        $see->setCredentials("{$empresa->documento}{$empresa->usuario_facturacion}", $empresa->contrasena_facturacion);
         return $see;
     }
 

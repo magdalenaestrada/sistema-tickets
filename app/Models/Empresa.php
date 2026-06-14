@@ -17,7 +17,8 @@ class Empresa extends Model
         'certificado_path',
         'icon', 
         'igv',
-        'mensaje'
+        'mensaje', 
+        'modo'
     ];
 
     public function sucursales()
