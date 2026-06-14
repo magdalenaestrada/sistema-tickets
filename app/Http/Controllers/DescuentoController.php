@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cargo;
+use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\DescuentoCargo;
 use App\Models\DescuentoPersona;
@@ -256,13 +257,15 @@ class DescuentoController extends Controller
         }
 
         $persona = Persona::where('documento', $documento)->first();
-
+        $cliente = Cliente::where('persona_id', $persona?->id)->exists();
         $cargoId = null;
 
         if ($persona) {
             $empleado = Empleado::where('persona_id', $persona->id)->first();
             $cargoId = $empleado?->cargo_id;
         }
+
+
 
         $descuentos = Descuento::query()
             ->where('activo', 1)
@@ -274,7 +277,7 @@ class DescuentoController extends Controller
                 $q->whereNull('cantidad_usos')
                     ->orWhere('cantidad_usos', '>', 0);
             })
-            ->where(function ($q) use ($persona, $cargoId) {
+            ->where(function ($q) use ($persona, $cargoId, $cliente) {
 
                 // TODOS
                 $q->where('tipo_asignacion_id', 'T');
@@ -293,6 +296,10 @@ class DescuentoController extends Controller
                         'cargos',
                         fn($sub) => $sub->where('cargo_id', $cargoId)
                     );
+                }
+
+                if ($cliente) {
+                    $q->orWhere('tipo_asignacion_id', 'C');
                 }
             })
             ->get();

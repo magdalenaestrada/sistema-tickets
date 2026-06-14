@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\CajaDetalle;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
+use App\Models\Persona;
+use App\Models\Venta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -49,19 +52,30 @@ class EncomiendaService
             $ventaService = app(VentaService::class);
             $pagoService = app(PagoService::class);
 
+            $personaFacturacion = Persona::updateOrCreate(
+                ['documento' => $request->numero_documento_id],
+                [
+                    'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
+                    'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
+                    'direccion' => $request->direccion,
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
+                ]
+            );
+
             $ventaData = $ventaService->crearVenta(
                 new Request([
                     'tipo_servicio_id' => 1,
                     'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,
-                    'total' => $totalVenta,
+                    'total' => $request,
                     'caja_id' => $request->caja_id,
                     'detalles' => $detalles,
                     'origen_nombre' => $salida->horario->ruta->puntos->first()?->sucursal?->nombre_comercial,
                     'destino_nombre' => $salida->horario->ruta->puntos->last()?->sucursal?->nombre_comercial,
                 ]),
-                Pasaje::class,
+                Encomienda::class,
                 null
             );
 
@@ -92,20 +106,13 @@ class EncomiendaService
 
             $sumaPagos = collect($pagos)->sum('total');
 
-            if (round($sumaPagos, 2) !== round($totalVenta, 2) && $accion === 'vender') {
-                throw ValidationException::withMessages([
-                    'pago_efectivo' => 'La suma de pagos no coincide con el total de la venta.',
-                ]);
-            }
-
-
             foreach ($pagos as $pago) {
                 CajaDetalle::create([
                     'caja_id' => $request->caja_id,
                     'subtipo_movimiento_caja_id' => 1, // venta
                     'metodo_pago_id' => $pago['metodo_pago_id'],
                     'amount' => $pago['total'],
-                    'description' => "Venta de pasaje #{$venta->id}",
+                    'description' => "Venta de encomienda #{$venta->id}",
                     'anulado' => false,
                     'billetera_digital_id' => $pago['billetera_id'] ?? null,
                 ]);

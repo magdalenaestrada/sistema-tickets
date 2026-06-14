@@ -15,6 +15,7 @@ use App\Models\Cliente;
 use App\Models\Descuento;
 use App\Models\Persona;
 use App\Models\Pueblito;
+use App\Models\RutaPunto;
 use App\Models\TipoEncomienda;
 use App\Models\Venta;
 use App\Services\PagoService;
@@ -536,8 +537,8 @@ class PasajeController extends Controller
                     'descuento' => $p['descuento_monto'],
                 ];
             }
-        
-            
+
+
             if ($request->filled('numero_documento_id')) {
                 $personaFacturacion = Persona::updateOrCreate(
                     ['documento' => $request->numero_documento_id],
@@ -552,6 +553,7 @@ class PasajeController extends Controller
             } else {
                 $personaFacturacion = $pasajeros[0]['persona'];
             }
+            
             if ($accion === 'vender') {
                 $ventaService = app(VentaService::class);
                 $pagoService = app(PagoService::class);
@@ -716,42 +718,49 @@ class PasajeController extends Controller
         ]);
     }
 
-    public function editar(Pasaje $pasaje)
-    {
-        $pasaje->load([
-            'persona',
-            'salida.horario.ruta.puntos.sucursal',
-            'salida.horario.tipo_vehiculo',
-            'venta.pagos.billetera',
-            'venta.pagos.metodoPago',
-            'venta.persona',
-            'venta.tipoDocumentoFactura',
-        ]);
+   public function editar(Pasaje $pasaje)
+{
+    $pasaje->load([
+        'persona',
+        'asiento',
+        'salida.horario',
+        'salida.horario.ruta.puntos.sucursal',
+        'venta',
+    ]);
 
-        $tipos_documentos = TipoDocumentoPersona::all();
-        $tipos_documentos_facturas = TipoDocumentoFactura::all();
-        $metodos_pago = MetodoPago::all();
-        $billeteras_digitales = BilleteraDigital::all();
-        $sucursales = Sucursal::where('estado', 'A')->orderBy('nombre_comercial')->get();
-        $salidas = Salida::with([
-            'horario.ruta',
-            'horario.tipo_vehiculo',
-        ])
-            ->whereHas('horario', function ($q) use ($pasaje) {
-                $q->where('ruta_id', $pasaje->salida->horario->ruta_id);
-            })
-            ->orderBy('fecha_salida')
-            ->get();
-        return view('pasajes.editar', compact(
-            'pasaje',
-            'tipos_documentos',
-            'tipos_documentos_facturas',
-            'metodos_pago',
-            'billeteras_digitales',
-            'sucursales',
-            'salidas'
-        ));
-    }
+    $salida  = $pasaje->salida;
+    $venta   = $pasaje->venta;
+
+    $origen  = RutaPunto::find($venta->origen_id);
+    $destino = RutaPunto::find($venta->destino_id);
+
+    // Todos los asientos de esta venta
+    $asientos = $venta->pasajes()
+                      ->with('asiento')
+                      ->get()
+                      ->pluck('asiento.numero')
+                      ->toArray();
+
+    $precioUnitario  = $pasaje->precio;
+    $tiposEncomienda = TipoEncomienda::where('estado', 'A')->get();
+    $tipos_documentos = TipoDocumentoPersona::all();
+    
+    $cajas_emision = collect(); // vacío, no aplica en reserva
+    $user = auth()->user();
+
+    return view('pasajes.editar', compact(
+        'pasaje',
+        'salida',
+        'origen',
+        'destino',
+        'asientos',
+        'precioUnitario',
+        'tipos_documentos',
+        'tiposEncomienda',
+        'cajas_emision',
+        'user',
+    ));
+}
 
     public function abordo(Pasaje $pasaje)
     {

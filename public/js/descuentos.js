@@ -266,7 +266,7 @@ $(document).ready(function () {
             const tipo = selectTipo.value;
 
             reglaEl
-                .querySelectorAll(".detalle-T, .detalle-G, .detalle-P")
+                .querySelectorAll(".detalle-T, .detalle-G, .detalle-P, .detalle-C")
                 .forEach((d) => {
                     if (d) d.style.display = "none";
                 });

@@ -102,6 +102,7 @@
                 <label class="form-label small text-muted mb-1">Tipo</label>
                 <select class="form-select form-select-sm select-tipo-regla" name="reglas_tipo[]">
                     <option value="T">Todos</option>
+                    <option value="C">Todos los clientes</option>
                     <option value="G">Por cargo</option>
                     <option value="P">Personas específicas</option>
                 </select>

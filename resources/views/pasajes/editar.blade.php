@@ -1,395 +1,457 @@
 @extends('layouts.app')
 
-<style>
-    .seat.libre .seat-body,
-    .seat.libre .seat-base {
-        fill: #cbd5e1 !important;
-    }
-
-    .seat.reservado .seat-body,
-    .seat.reservado .seat-base {
-        fill: #f9db16 !important;
-    }
-
-    .seat.ocupado .seat-body,
-    .seat.ocupado .seat-base {
-        fill: #51dc26 !important;
-    }
-
-    .seat.selected-seat .seat-body,
-    .seat.selected-seat .seat-base {
-        fill: #2563eb !important;
-    }
-
-    .seat.seat-actual .seat-body,
-    .seat.seat-actual .seat-base {
-        fill: #a31616 !important;
-    }
-
-    #svgContainerCambio {
-        text-align: center;
-    }
-
-    #svgContainerCambio svg {
-        width: 100%;
-        max-width: 450px;
-        height: auto;
-    }
-</style>
-
 @section('content')
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h4 class="mb-1">Editar pasaje #{{ $pasaje->id }}</h4>
-                <small class="text-muted">
-                    Estado actual:
-                    @php
-                        $estadoTexto = match ($pasaje->estado) {
-                            'R' => 'Reservado',
-                            'V' => 'Vendido',
-                            'F' => 'Abordó',
-                            'X' => 'Cancelado / No abordó',
-                            default => $pasaje->estado,
-                        };
-                    @endphp
-                    <strong>{{ $estadoTexto }}</strong>
-                </small>
+    <div class="container-fluid mt-3">
+        <form method="POST" enctype="multipart/form-data" id="formVenta">
+            @csrf
+
+            <input type="hidden" name="salida_id" value="{{ $salida->id }}">
+            <input type="hidden" name="origen_id" value="{{ $origen->id }}">
+            <input type="hidden" name="destino_id" value="{{ $destino->id }}">
+
+            <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat" value="4">
+            <input type="hidden" name="metodo_pago_id" id="metodo_pago_id_hidden">
+            <input type="hidden" name="pago_efectivo" id="pago_efectivo_hidden">
+            <input type="hidden" name="pago_tarjeta" id="pago_tarjeta_hidden">
+            <input type="hidden" name="pago_yape" id="pago_yape_hidden">
+            <input type="hidden" name="pago_plin" id="pago_plin_hidden">
+            <input type="hidden" name="pago_transferencia" id="pago_transferencia_hidden">
+            <input type="hidden" name="costo_total" id="costo_total" value="0">
+
+            <div class="card shadow-sm border-0 mb-3 resumen-top-card">
+                <div class="card-body p-2">
+                    <div class="d-flex flex-wrap align-items-stretch resumen-top">
+                        <div class="resumen-item">
+                            <div class="resumen-label">Salida:</div>
+                            <div class="resumen-value">{{ $origen->descripcion }}</div>
+                        </div>
+
+                        <div class="resumen-item">
+                            <div class="resumen-label">Llegada:</div>
+                            <div class="resumen-value">{{ $destino->descripcion }}</div>
+                        </div>
+
+                        <div class="resumen-item">
+                            <div class="resumen-label">Fecha y hora:</div>
+                            <div class="resumen-value">
+                                {{ $salida->fecha_salida->format('d-m-Y') }} {{ $salida->horario->hora_formateada }}
+                            </div>
+                        </div>
+
+                        <div class="resumen-item">
+                            <div class="resumen-label">Numero de asiento:</div>
+                            <div class="resumen-value">{{ implode(' ', $asientos) }}</div>
+                        </div>
+
+                        <div class="resumen-item resumen-item-precio">
+                            <div class="resumen-label">Costo por asiento:</div>
+                            <div class="resumen-value">
+                                <input type="number" step="0.01" id="precio_manual" class="form-control form-control-sm"
+                                    value="{{ number_format($precioUnitario, 2, '.', '') }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <a href="{{ route('pasajes.index') }}" class="btn btn-secondary">
-                Volver
-            </a>
-        </div>
-
-        <div class="row">
-            <div class="col-md-8">
-
-                {{-- DATOS DEL PASAJERO --}}
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <strong>Datos del pasajero</strong>
-                    </div>
-                    <div class="card-body">
-                        <form id="formEditarPasaje" enctype="multipart/form-data">
-                            @csrf
-                            @method('PUT')
-
-                            <input type="hidden" name="pasaje_id" value="{{ $pasaje->id }}">
-
-                            <div class="row">
-                                <div class="col-md-2 mb-3">
-                                    <label class="form-label">Tipo documento <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="tipo_documento_id" required>
-                                        @foreach ($tipos_documentos as $tipo)
-                                            <option value="{{ $tipo->id }}"
-                                                {{ $pasaje->persona?->tipo_documento_id == $tipo->id ? 'selected' : '' }}>
-                                                {{ $tipo->codigo }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Documento <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="documento"
-                                        value="{{ $pasaje->persona?->documento }}" required>
-                                </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="nombres"
-                                        value="{{ $pasaje->persona?->nombres }}" required>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="apellidos"
-                                        value="{{ $pasaje->persona?->apellidos }}" required>
-                                </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Celular</label>
-                                    <input type="text" class="form-control" name="celular"
-                                        value="{{ $pasaje->persona?->celular }}" required>
-                                </div>
-
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">Teléfono</label>
-                                    <input type="text" class="form-control" name="telefono"
-                                        value="{{ $pasaje->persona?->telefono }}">
-                                </div>
-
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Correo</label>
-                                    <input type="email" class="form-control" name="correo"
-                                        value="{{ $pasaje->persona?->correo }}">
-                                </div>
-                            </div>
-
-                            <div class="row align-items-end">
-                                <div class="col-md-4 mb-3">
-                                    <div class="form-check mt-2">
-                                        <input type="checkbox" class="form-check-input" id="pasajero_menor"
-                                            name="pasajero_menor" value="1"
-                                            {{ $pasaje->pasajero_menor ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="pasajero_menor">
-                                            ¿Pasajero menor de edad?
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-8 mb-3" id="contenedorAutorizacion"
-                                    style="{{ $pasaje->pasajero_menor ? '' : 'display:none;' }}">
-                                    <label class="form-label">Autorización PDF <span class="text-danger">*</span></label>
-                                    <input type="file" class="form-control" name="autorizacion_pdf" accept=".pdf">
-
-                                    @if ($pasaje->autorizacion_pdf)
-                                        <small class="text-muted d-block mt-1">
-                                            Ya existe una autorización cargada.
-                                        </small>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="text-end">
-                                <button type="button" class="btn btn-primary" id="btnGuardarDatosPasaje">
-                                    Guardar datos del pasajero
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <strong>Cambiar viaje / asiento</strong>
-                    </div>
-                    <div class="card-body">
-                        <form id="formCambiarViaje">
-                            @csrf
-                            @method('PUT')
-
-                            <input type="hidden" name="nuevo_asiento_numero" id="nuevo_asiento_numero" value="">
-                            <input type="hidden" name="descuento_id" id="descuento_id_cambio" value="">
-                            <input type="hidden" name="descuento_monto" id="descuento_monto_cambio" value="0">
-
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Nueva salida</label>
-                                    <select class="form-select" name="nueva_salida_id" id="nueva_salida_id">
-                                        <option value="">Seleccionar...</option>
-                                        @foreach ($salidas ?? [] as $salida)
-                                            <option value="{{ $salida->id }}">
-                                                {{ $salida->fecha_salida?->format('Y-m-d') }}
-                                                - {{ $salida->horario?->hora_formateada }}
-                                                - {{ $salida->horario?->tipo_vehiculo?->descripcion }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Origen</label>
-                                    <select class="form-select" name="origen_id" id="origen_id">
-                                        @foreach ($sucursales as $sucursal)
-                                            <option value="{{ $sucursal->id }}"
-                                                {{ $pasaje->origen_sucursal_id == $sucursal->id ? 'selected' : '' }}>
-                                                {{ $sucursal->nombre_comercial }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Destino</label>
-                                    <select class="form-select" name="destino_id" id="destino_id">
-                                        @foreach ($sucursales as $sucursal)
-                                            <option value="{{ $sucursal->id }}"
-                                                {{ $pasaje->destino_sucursal_id == $sucursal->id ? 'selected' : '' }}>
-                                                {{ $sucursal->nombre_comercial }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Cupón / descuento</label>
-                                    <input type="text" class="form-control" id="descuento_codigo_cambio"
-                                        placeholder="Código">
-                                    <small class="text-muted" id="descuento_msg_cambio"></small>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Asiento actual</label>
-                                    <input type="text" class="form-control" value="{{ $pasaje->asiento_numero }}"
-                                        readonly>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Nuevo asiento seleccionado</label>
-                                    <input type="text" class="form-control" id="nuevo_asiento_texto" readonly
-                                        placeholder="Seleccione en el mapa">
-                                </div>
-                            </div>
-
-                            <div class="border rounded p-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong>Mapa de asientos</strong>
-                                    <small class="text-muted">Haz click en una silla libre o reservada/vendida para
-                                        editar</small>
-                                </div>
-
-                                <div id="svgContainerCambio" style="min-height: 280px;">
-                                    <div class="text-muted">Selecciona una salida para cargar asientos</div>
-                                </div>
-
-                                <div class="mt-3 d-flex gap-3 flex-wrap">
-                                    <div><span class="badge" style="background:#cbd5e1;">&nbsp;</span> Libre</div>
-                                    <div><span class="badge" style="background:#f9db16;">&nbsp;</span> Reservado</div>
-                                    <div><span class="badge" style="background:#51dc26;">&nbsp;</span> Vendido</div>
-                                    <div><span class="badge" style="background:#2563eb;">&nbsp;</span> Seleccionado</div>
-                                    <div><span class="badge" style="background:#16a34a;">&nbsp;</span> Asiento actual
+            <div class="row g-3">
+                <div class="col-lg-9">
+                    @foreach ($asientos as $index => $asiento)
+                        <div class="card shadow-sm border-0 mb-3 asiento-card">
+                            <div class="card-header bg-white border-0 pb-0">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <strong>Asiento número: {{ $asiento }}</strong>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div>
+                                            <strong>Costo asiento:</strong>
+                                            <span id="precio_asiento_{{ $index }}">S/
+                                                {{ number_format($precioUnitario, 2) }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="text-end">
-                                <button type="button" class="btn btn-warning" id="btnCambiarViaje">
-                                    Guardar cambio de viaje
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                            <div class="card-body pt-3">
+                                <input type="hidden" name="asientos[]" value="{{ $asiento }}">
 
-                {{-- FACTURACIÓN --}}
-                @if ($pasaje->venta)
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <strong>Facturación / venta</strong>
-                        </div>
-                        <div class="card-body">
-                            <form id="formEditarVenta">
-                                @csrf
-                                @method('PUT')
-
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Tipo documento factura</label>
-                                        <select class="form-select" name="tipo_documento_factura_id">
-                                            @foreach ($tipos_documentos_facturas as $tipo)
-                                                <option value="{{ $tipo->id }}"
-                                                    {{ $pasaje->venta?->tipo_documento_factura_id == $tipo->id ? 'selected' : '' }}>
-                                                    {{ $tipo->descripcion }}
+                                <div class="row g-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label">Tipo <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="tipo_documento_id[]"
+                                            id="tipo_documento_id_{{ $index }}" required>
+                                            @foreach ($tipos_documentos as $tipo_documento)
+                                                <option value="{{ $tipo_documento->id }}">
+                                                    {{ $tipo_documento->codigo }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">
+                                            Documento <span class="text-danger">*</span>
+                                        </label>
 
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Número documento</label>
-                                        <input type="text" class="form-control" name="numero_documento_id"
-                                            value="{{ $pasaje->venta?->persona?->documento }}">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control solo-numeros documento-input"
+                                                id="documento_{{ $index }}" data-index="{{ $index }}"
+                                                name="documento[]" required>
+
+                                            <button type="button" class="btn btn-primary btn-buscar-documento"
+                                                data-index="{{ $index }}">
+                                                <i class="link-icon" data-lucide="search"></i>
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Razón social</label>
-                                        <input type="text" class="form-control" name="razon_social"
-                                            value="{{ $pasaje->venta?->persona?->nombres }}">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nombres <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control solo-letras"
+                                            id="nombres_{{ $index }}" name="nombres[]" required>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control solo-letras"
+                                            id="apellidos_{{ $index }}" name="apellidos[]" required>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Celular</label>
+                                        <input type="text" class="form-control solo-numeros"
+                                            id="celular_{{ $index }}" name="celular[]" maxlength="9">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Teléfono</label>
+                                        <input type="text" class="form-control solo-numeros"
+                                            id="telefono_{{ $index }}" name="telefono[]" maxlength="9">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Correo</label>
+                                        <input type="email" class="form-control" id="correo_{{ $index }}"
+                                            name="correo[]">
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label class="form-label">Descuento</label>
+                                        <select class="form-select descuento-input" data-index="{{ $index }}"
+                                            id="descuento_{{ $index }}" name="descuento_codigo[]">
+                                            <option value="">Sin cupón</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1"
+                                            id="descuento_msg_{{ $index }}"></small>
+                                    </div>
+                                </div>
+                                <div class="row mt-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input pasajero-menor-check"
+                                                id="pasajero_menor_{{ $index }}" data-index="{{ $index }}"
+                                                name="pasajero_menor[{{ $index }}]" value="1">
+                                            <label class="form-check-label" for="pasajero_menor_{{ $index }}">
+                                                ¿Pasajero menor de edad?
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 autorizacion-container"
+                                        id="autorizacion_container_{{ $index }}" style="display:none;">
+                                        <label class="form-label">Autorización PDF <span
+                                                class="text-danger">*</span></label>
+                                        <input type="file" accept=".pdf" class="form-control"
+                                            id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input toggle-sobre-equipaje" type="checkbox"
+                                        id="toggle_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
+                                        name="registrar_sobre_equipaje[{{ $index }}]" value="1">
+
+                                    <label class="form-check-label fw-semibold"
+                                        for="toggle_sobre_equipaje_{{ $index }}">
+                                        Registrar sobre equipaje para este pasajero
+                                    </label>
+                                </div>
+
+                                <div class="card border-warning sobre-equipaje-card"
+                                    id="card_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
+                                    style="display:none;">
+
+                                    <div class="card-body p-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="fw-bold mb-0">Sobre equipaje</h6>
+
+                                            <button type="button" class="btn btn-sm btn-success btn-agregar-sobre"
+                                                data-index="{{ $index }}">
+                                                Agregar maleta
+                                            </button>
+                                        </div>
+
+                                        <div class="small text-muted mb-2">
+                                            Pasajero:
+                                            <strong id="sobre_pasajero_nombre_{{ $index }}">—</strong>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered tabla-sobre-equipaje"
+                                                id="tablaSobreEquipaje_{{ $index }}"
+                                                data-index="{{ $index }}">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tipo</th>
+                                                        <th>Descripción</th>
+                                                        <th>Peso KG</th>
+                                                        <th>Costo S/</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div>
+
+                                        <div class="text-end fw-bold">
+                                            Total sobre equipaje: S/
+                                            <span id="total_sobre_equipaje_{{ $index }}">0.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="col-lg-3">
+                    <div class="card shadow-sm border-0 panel-venta">
+                        <div class="card-body">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold">EMITIR SUNAT:</span>
+
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" id="emitir_sunat">
                                     </div>
                                 </div>
 
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-info" id="btnGuardarVenta">
-                                        Guardar datos de venta
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
+                                        id="btn_boleta" data-doc="boleta">
+                                        Boleta
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary doc-btn"
+                                        id="btn_factura" data-doc="factura">
+                                        Factura
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-success doc-btn active"
+                                        id="btn_nota_venta" data-doc="4">
+                                        N. Venta
                                     </button>
                                 </div>
-                            </form>
-                        </div>
-                    </div>
-                @endif
-            </div>
+                            </div>
 
-            <div class="col-md-4">
-                {{-- RESUMEN --}}
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <strong>Resumen del pasaje</strong>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-1"><strong>Ruta:</strong> {{ $pasaje->salida?->horario?->ruta?->nombre }}</p>
-                        <p class="mb-1"><strong>Fecha:</strong> {{ $pasaje->salida?->fecha_salida?->format('Y-m-d') }}
-                        </p>
-                        <p class="mb-1"><strong>Hora:</strong> {{ $pasaje->salida?->horario?->hora_formateada }}</p>
-                        <p class="mb-1"><strong>Asiento:</strong> {{ $pasaje->asiento_numero }}</p>
-                        <p class="mb-1"><strong>Origen:</strong> {{ $pasaje->origen?->nombre_comercial }}</p>
-                        <p class="mb-1"><strong>Destino:</strong> {{ $pasaje->destino?->nombre_comercial }}</p>
-                        <p class="mb-1"><strong>Precio:</strong> {{ number_format((float) $pasaje->precio_cobrado, 2) }}
-                        </p>
-                        <p class="mb-0"><strong>Promoción:</strong> {{ $pasaje->es_promocion ? 'Sí' : 'No' }}</p>
-                    </div>
-                </div>
+                            <div class="mb-2 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span>
+                            </div>
 
-                {{-- ACCIONES --}}
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <strong>Acciones</strong>
-                    </div>
-                    <div class="card-body">
-                        @if (in_array($pasaje->estado, ['V']))
-                            <button type="button" class="btn btn-success w-100 mb-2" id="btnAbordo">
-                                Marcar abordó
-                            </button>
+                            <div class="mb-3">
+                                <select name="caja_id" id="caja_id" class="form-select">
+                                    <option value="">Seleccionar sucursal</option>
+                                    @foreach ($cajas_emision as $caja)
+                                        <option value="{{ $caja->id }}"
+                                            data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
+                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
+                                            {{ $caja->sucursal->nombre_comercial }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-                            <button type="button" class="btn btn-danger w-100 mb-2" id="btnNoAbordo">
-                                Marcar no abordó
-                            </button>
-                        @endif
+                            <div class="mb-2 fw-semibold">Serie sucursal:</div>
+                            <div class="panel-box mb-3 text-center" id="serie_doc">Seleccionar sucursal</div>
 
-                        @if (in_array($pasaje->estado, ['R', 'V']))
-                            <button type="button" class="btn btn-outline-danger w-100" id="btnCancelarPasaje">
-                                Cancelar pasaje
-                            </button>
-                        @endif
-                    </div>
-                </div>
-
-                @if ($pasaje->venta)
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <strong>Pagos registrados</strong>
-                        </div>
-                        <div class="card-body">
-                            @forelse ($pasaje->venta->pagos as $pago)
-                                <div class="border rounded p-2 mb-2">
-                                    <div><strong>Método:</strong> {{ $pago->metodoPago?->descripcion }}</div>
-                                    <div><strong>Total:</strong> {{ number_format((float) $pago->total, 2) }}</div>
-                                    @if ($pago->billetera)
-                                        <div><strong>Billetera:</strong> {{ $pago->billetera->descripcion }}</div>
-                                    @endif
+                            <div class="resumen-totales">
+                                <div class="d-flex justify-content-between">
+                                    <span>Sub total:</span>
+                                    <strong>S/ <span id="subtotal">0.00</span></strong>
                                 </div>
-                            @empty
-                                <small class="text-muted">No hay pagos registrados.</small>
-                            @endforelse
+                                <div class="d-flex justify-content-between">
+                                    <span>Descuentos:</span>
+                                    <strong>S/ <span id="total_descuento">0.00</span></strong>
+                                </div>
+                                <div class="d-flex justify-content-between text-primary">
+                                    <span>Total a pagar:</span>
+                                    <strong>S/ <span id="total_pagar">0.00</span></strong>
+                                </div>
+                            </div>
+
+
+                            <input type="hidden" name="emitir_sunat_estado" id="emitir_sunat_estado" value="0">
+
+                            <div class="mb-2">
+                                <label class="form-label">Documento cliente: </label>
+
+                                <div class="input-group">
+                                    <input type="text" id="doc_cliente" name="numero_documento_id"
+                                        class="form-control solo-numeros">
+
+                                    <button type="button" id="btnBuscarCliente" class="btn btn-primary">
+                                        <i class="link-icon" data-lucide="search"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Razón social:</label>
+                                <input type="text" id="razon_social" name="razon_social" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="direccion" class="form-label">Dirección</label>
+                                <input type="text" id="direccion" name="direccion" class="form-control"
+                                    value="-" readonly>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnRegresarAsientos">
+                                    Regresar a escoger asientos
+                                </button>
+                                <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
+                                    Reservar
+                                </button>
+                                <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
+                                    Terminar Venta
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" id="btnCancelarVenta">
+                                    Cancelar Venta
+                                </button>
+                            </div>
                         </div>
                     </div>
-                @endif
+                </div>
             </div>
-        </div>
+        </form>
     </div>
+    @include('pasajes.modals.metodos_pago')
 @endsection
+
+@push('styles')
+    <style>
+        .resumen-top-card,
+        .asiento-card,
+        .panel-venta,
+        #modalPago .modal-content {
+            border-radius: 14px;
+        }
+
+        .resumen-top {
+            width: 100%;
+        }
+
+        .resumen-item {
+            flex: 1 1 180px;
+            padding: 10px 16px;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .resumen-item:last-child {
+            border-right: none;
+        }
+
+        .resumen-item-precio {
+            max-width: 180px;
+        }
+
+        .resumen-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .resumen-value {
+            font-size: 14px;
+            color: #111827;
+        }
+
+        .panel-box {
+            border: 1px solid #cfd4dc;
+            border-radius: 9px;
+            min-height: 38px;
+            padding: 8px 10px;
+            background: #fff;
+        }
+
+        .resumen-totales {
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .asiento-card .card-header {
+            font-size: 13px;
+        }
+
+        .asiento-card .form-label,
+        .panel-venta .form-label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .asiento-card .form-control,
+        .asiento-card .form-select,
+        .panel-venta .form-control {
+            font-size: 13px;
+            border-radius: 8px;
+        }
+
+        .modal-total-title {
+            color: #7f87ff;
+            font-weight: 800;
+        }
+
+        .modal-total-amount {
+            font-size: 40px;
+            font-weight: 800;
+        }
+
+        .metodo-label {
+            background: #eef2f7;
+            border-radius: 8px;
+            padding: 10px 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .doc-btn.active {
+            color: #fff !important;
+        }
+
+        @media (max-width: 991px) {
+            .resumen-item {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .resumen-item:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+@endpush
 
 @push('scripts')
     <script>
-        const PASAJE_ID = @json($pasaje->id);
-        const SALIDA_ACTUAL_ID = @json($pasaje->salida_id);
-        let asientoActual = @json($pasaje->asiento_numero);
-        let pasajeId = PASAJE_ID;
-        let nuevoAsientoSeleccionado = null;
-        let descuentoCambio = {
-            descuento_id: null,
-            monto: 0,
+        window.VENTA_CONFIG = {
+            salidaId: @json($salida->id),
+            origenId: @json($origen->id),
+            destinoId: @json($destino->id),
+            asientos: @json($asientos),
+            precioUnitario: @json((float) $precioUnitario),
+            descuentoPromoId: 1,
+            volverAsientosUrl: @json(url()->previous()),
+            tiposEncomienda: @json($tiposEncomienda ?? [])
+
         };
     </script>
     <script src="{{ asset('js/pasajes_editar.js') }}"></script>

@@ -36,7 +36,7 @@
                     <td>
                         @switch($pasaje->estado)
                             @case('V')
-                                <span class="badge bg-success">Vendido</span>
+                                <span class="badge bg-primary">Vendido</span>
                             @break
 
                             @case('F')
@@ -57,26 +57,15 @@
                     </td>
                     <td>
                         <div class="gap-1">
-                            @if ($pasaje->estado === 'V')
-                                <button type="button" class="btn btn-xs btn-success btn-abordo"
-                                    data-id="{{ $pasaje->id }}">
-                                    <i class="link-icon" data-lucide="check" style="pointer-events:none;"></i>
-                                </button>
-
-                                <button type="button" class="btn btn-xs btn-danger btn-no-abordo"
-                                    data-id="{{ $pasaje->id }}">
-                                    <i class="link-icon" data-lucide="x" style="pointer-events:none;"></i>
-                                </button>
-                            @endif
-
-                            @if (in_array($pasaje->estado, ['R', 'V']))
-                                <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-warning">
-                                    <i class="link-icon" data-lucide="pencil" style="pointer-events:none;"></i>
+                           
+                            @if ($pasaje->estado == "R")
+                                <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-success">
+                                    <i class="link-icon" data-lucide="receipt" style="pointer-events:none;"></i>
                                 </a>
                             @endif
 
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
-                                <button class="btn btn-sm btn-secondary imprimir-pasaje" data-id="{{ $pasaje->id }}">
+                                <button class="btn btn-xs btn-secondary imprimir-pasaje" data-id="{{ $pasaje->id }}">
                                     <i data-lucide="printer"></i>
                                 </button>
                             @endif

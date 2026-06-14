@@ -216,10 +216,10 @@
                                 class="nav-link {{ request()->routeIs('descuentos.*') ? 'active' : '' }}">Cupones</a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('reportes.index') }}"
+                            {{-- <a href="{{ route('reportes.index') }}"
                                 class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
                                 Reportes
-                            </a>
+                            </a> --}}
                         </li>
 
                     </ul>

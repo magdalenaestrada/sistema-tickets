@@ -143,6 +143,7 @@ $(async function () {
         $("#subtotal").text(totalFinal);
         $("#total_descuento").text("0.00");
         $("#total_pagar").text(totalFinal);
+        $("#modal_total_pagar").text(totalFinal);
 
         // También actualizar input hidden de costo total si existe
         if ($("#costo_total").length) {
