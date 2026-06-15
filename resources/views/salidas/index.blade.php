@@ -86,6 +86,7 @@
         window.VEHICULOS = @json($vehiculos);
         window.CONDUCTORES = @json($conductores);
         window.HORARIOS_SALIDA = @json($horariosSalida);
+        window.RUTAS_SALIDA = @json($rutas);
     </script>
 
     <script src="{{ asset('js/salidas.js') }}"></script>

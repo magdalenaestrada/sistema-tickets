@@ -69,7 +69,7 @@ class SalidaController extends Controller
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ]);
-    
+
         if ($request->filled('estado')) {
             $salidas->where('estado', $request->estado);
         }
@@ -388,6 +388,29 @@ class SalidaController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function storeDirecta(Request $request)
+    {
+        dd($request->all());
+        $salida = DB::transaction(function () use ($request) {
+
+            $horario = Horario::create([
+                'ruta_id' => $request->ruta_id,
+                'tipo_viaje_id' => 1,
+                'hora_salida' => $request->hora_salida,
+            ]);
+
+            return Salida::create([
+                'horario_id' => $horario->id,
+                'fecha_salida' => $request->fecha_salida,
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'id' => $salida->id,
+        ]);
     }
 
     public function update(Request $request, $id)

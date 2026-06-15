@@ -1,5 +1,6 @@
 let tablaSalidas;
 let horariosSalida = window.HORARIOS_SALIDA || [];
+let rutasSalida = window.RUTAS_SALIDA || [];
 
 function cargarHorasDisponibles() {
     let horario_id = $("#horario_id").val();
@@ -168,6 +169,16 @@ function opcionesHorarios(selected = "") {
     return html;
 }
 
+function opcionesRutas(selected = "") {
+    let html = `<option value="">Seleccione horario</option>`;
+
+    rutasSalida.forEach((r) => {
+        html += `<option value="${r.id}" ${String(selected) === String(r.id) ? "selected" : ""}>${r.nombre}</option>`;
+    });
+
+    return html;
+}
+
 function opcionesEstados(selected = "programado") {
     let estados = [
         { value: "programado", label: "Programado" },
@@ -188,32 +199,41 @@ function opcionesEstados(selected = "programado") {
 
 window.modoCrearSalida = function () {
     let html = `
-        <div class="mb-2">
-            <label class="form-label">Horario <span
-                                style="color: red">*</span></label>
-            <select id="horario_id">
-                ${opcionesHorarios()}
-            </select>
+        <div id="contenedorRuta">
+            <div class="mb-3">
+                <label class="form-label">
+                    Seleccionar ruta programada <span style="color:red">*</span>
+                </label>
+
+                <select id="ruta_id" name="ruta_id" required>
+                    ${opcionesRutas()}
+                </select>
+            </div>
         </div>
 
-        <div class="mb-2">
-            <label class="form-label">Fecha <span
-                                style="color: red">*</span></label>
-            <input type="date" id="fecha_salida" class="form-control">
-        </div>
-<div class="mb-2">
-    <label class="form-label">Hora de salida <span style="color:red">*</span></label>
-    <input type="time" id="hora_salida" class="form-control">
-</div>
-        <div class="mb-2">
-            <label class="form-label">Estado <span
-                                style="color: red">*</span></label>
-            <select id="estado" class="form-select">
-                ${opcionesEstados()}
-            </select>
+        <div class="mb-3">
+            <label class="form-label">
+                Fecha <span style="color:red">*</span>
+            </label>
+
+            <input type="date"
+                   id="fecha_salida"
+                   class="form-control" name="fecha_salida" required>
         </div>
 
-        <button class="btn btn-primary w-100 mt-2" onclick="guardarSalida()">
+        <div class="mb-3">
+            <label class="form-label">
+                Hora <span style="color:red">*</span>
+            </label>
+
+            <input type="time"
+                   id="hora_salida"
+                   class="form-control" name="hora_salida">
+        </div>
+
+        <button
+            class="btn btn-primary w-100"
+            onclick="guardarSalida()">
             Guardar salida
         </button>
     `;
@@ -221,12 +241,42 @@ window.modoCrearSalida = function () {
     $("#tituloPanelSalida").text("Crear salida");
     $("#panelSalidaContenido").html(html);
 
-    new TomSelect("#horario_id", {
-        create: false,
-        placeholder: "Seleccione horario...",
-    });
+    new TomSelect("#ruta_id");
+    new TomSelect("#origen_id");
+    new TomSelect("#destino_id");
 
-    lucide.createIcons();
+    $("#tipo_salida").on("change", function () {
+        const tipo = $(this).val();
+
+        if (tipo === "ruta") {
+            $("#contenedorRuta").show();
+            $("#contenedorDirecto").hide();
+        } else {
+            $("#contenedorRuta").hide();
+            $("#contenedorDirecto").show();
+        }
+    });
+};
+
+window.guardarSalida = function () {
+    const data = {
+        ruta_id: $("#ruta_id").val(),
+        fecha_salida: $("#fecha_salida").val(),
+        hora_salida: $("#hora_salida").val(),
+        _token: $('meta[name="csrf-token"]').attr("content"),
+    };
+
+    $.post(route("salidas.store.directa"), data)
+        .done(function (res) {
+            Swal.fire("Correcto", "Salida creada", "success");
+        })
+        .fail(function (xhr) {
+            Swal.fire(
+                "Error",
+                xhr.responseJSON?.message ?? "Error al guardar",
+                "error",
+            );
+        });
 };
 
 window.modoGenerarSalidas = function () {

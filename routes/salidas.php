@@ -8,6 +8,10 @@ Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function
     Route::get('/datatable', [SalidaController::class, 'datatable'])->name('datatable');
     Route::post('/', [SalidaController::class, 'store'])->name('store');
     Route::post('/generar', [SalidaController::class, 'generar'])->name('generar');
+    Route::post(
+        '/directa',
+        [SalidaController::class, 'storeDirecta']
+    )->name('store.directa');
     Route::delete('/bulk', [SalidaController::class, 'destroyBulk'])
         ->name('destroy.bulk');
     Route::get('/{id}', [SalidaController::class, 'show'])->name('show');
