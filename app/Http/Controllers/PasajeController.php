@@ -13,6 +13,7 @@ use App\Models\Caja;
 use App\Models\CajaDetalle;
 use App\Models\Cliente;
 use App\Models\Descuento;
+use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\Pueblito;
 use App\Models\RutaPunto;
@@ -116,10 +117,12 @@ class PasajeController extends Controller
                 'destino',
                 'persona',
                 'venta',
+                'sobreEquipajes'
             ])
             ->join('salidas', 'pasajes.salida_id', '=', 'salidas.id')
             ->join('personas', 'pasajes.persona_id', '=', 'personas.id')
-            ->whereIn('pasajes.estado', ['V', 'F', 'X', 'R']);
+            ->whereIn('pasajes.estado', ['V', 'F', 'X', 'R'])
+            ->orderBy("id", "desc");
 
         if ($request->filled('documento')) {
             $documento = trim($request->documento);
@@ -314,6 +317,7 @@ class PasajeController extends Controller
 
     public function store(Request $request)
     {
+
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'salida_id' => 'required|exists:salidas,id',
@@ -498,18 +502,6 @@ class PasajeController extends Controller
 
                 $totalVenta += $precioFinalReal;
 
-                $sobreEquipajeTotal = 0;
-
-                if ($request->has('sobre_equipaje_detalles')) {
-                    foreach ($request->sobre_equipaje_detalles as $grupo) {
-                        foreach ($grupo as $item) {
-                            $sobreEquipajeTotal += (float) ($item['costo'] ?? 0);
-                        }
-                    }
-                }
-
-                $totalVenta += $sobreEquipajeTotal;
-
                 $pasajeros[] = [
                     'index' => $index,
                     'persona' => $persona,
@@ -553,7 +545,7 @@ class PasajeController extends Controller
             } else {
                 $personaFacturacion = $pasajeros[0]['persona'];
             }
-            
+
             if ($accion === 'vender') {
                 $ventaService = app(VentaService::class);
                 $pagoService = app(PagoService::class);
@@ -576,37 +568,17 @@ class PasajeController extends Controller
 
                 $venta = $ventaData['venta'];
 
-                $pagos = [];
+                $pagos = $request->pagos ?? [];
 
-                if ((float) $request->pago_efectivo > 0) {
-                    $pagos[] = [
-                        'metodo_pago_id' => 1,
-                        'total' => (float) $request->pago_efectivo,
-                    ];
-                }
+                $sumaPagos = collect($pagos)->sum(function ($pago) {
+                    return (float) $pago['total'];
+                });
 
-                $pagoCuentaDigital =
-                    (float) $request->pago_yape +
-                    (float) $request->pago_plin +
-                    (float) $request->pago_transferencia +
-                    (float) $request->pago_tarjeta;
-
-                if ($pagoCuentaDigital > 0) {
-                    $pagos[] = [
-                        'metodo_pago_id' => 2,
-                        'billetera_id' => $request->billetera_id,
-                        'total' => $pagoCuentaDigital,
-                    ];
-                }
-
-                $sumaPagos = collect($pagos)->sum('total');
-
-                if (round($sumaPagos, 2) !== round($totalVenta, 2) && $accion === 'vender') {
+                if (round($sumaPagos, 2) !== round((float)$request->total, 2)) {
                     throw ValidationException::withMessages([
-                        'pago_efectivo' => 'La suma de pagos no coincide con el total de la venta.',
+                        'pagos' => 'La suma de pagos no coincide con el total.',
                     ]);
                 }
-
 
                 foreach ($pagos as $pago) {
                     CajaDetalle::create([
@@ -619,18 +591,27 @@ class PasajeController extends Controller
                         'billetera_digital_id' => $pago['billetera_id'] ?? null,
                     ]);
                 }
-
-                $pagoService->registrarPagos(
-                    $venta->id,
-                    $pagos,
-                    Venta::class,
-                    $venta->id
-                );
-
                 $emision = $ventaService->emitirVenta($venta);
             }
 
+            $totalSobreEquipaje = 0;
+
+            if ($request->has('sobre_equipaje_detalles')) {
+
+                foreach ($request->sobre_equipaje_detalles as $grupo) {
+
+                    foreach ($grupo as $item) {
+
+                        $totalSobreEquipaje +=
+                            (float) ($item['costo'] ?? 0);
+                    }
+                }
+            }
+
+            $totalVenta += $totalSobreEquipaje;
+
             foreach ($pasajeros as $pasajeroData) {
+
                 $pasaje = Pasaje::create([
                     'venta_id' => $venta?->id ?? null,
                     'usuario_id' => Auth::id(),
@@ -649,6 +630,25 @@ class PasajeController extends Controller
                 ]);
 
                 $pasaje->tramos()->attach($tramos->pluck('id')->toArray());
+
+                $index = $pasajeroData['index'];
+
+                if (
+                    isset($request->sobre_equipaje_detalles[$index])
+                    && is_array($request->sobre_equipaje_detalles[$index])
+                ) {
+
+                    foreach ($request->sobre_equipaje_detalles[$index] as $sobre) {
+
+                        PasajeSobreEquipaje::create([
+                            'pasaje_id' => $pasaje->id,
+                            'tipo_encomienda_id' => $sobre['tipo_encomienda_id'] ?? null,
+                            'descripcion' => $sobre['descripcion'] ?? null,
+                            'peso' => $sobre['peso'] ?? 0,
+                            'costo' => $sobre['costo'] ?? 0,
+                        ]);
+                    }
+                }
             }
 
             DB::commit();
@@ -718,49 +718,55 @@ class PasajeController extends Controller
         ]);
     }
 
-   public function editar(Pasaje $pasaje)
-{
-    $pasaje->load([
-        'persona',
-        'asiento',
-        'salida.horario',
-        'salida.horario.ruta.puntos.sucursal',
-        'venta',
-    ]);
+    public function showSobreEquipaje(Pasaje $pasaje)
+    {
+        $pasaje->load([
+            'sobreEquipajes.tipoEncomienda'
+        ]);
 
-    $salida  = $pasaje->salida;
-    $venta   = $pasaje->venta;
+        return response()->json([
+            'success' => true,
+            'data' => $pasaje->sobreEquipajes
+        ]);
+    }
 
-    $origen  = RutaPunto::find($venta->origen_id);
-    $destino = RutaPunto::find($venta->destino_id);
+    public function editar(Pasaje $pasaje)
+    {
+        $pasaje->load([
+            'persona',
+            'salida.horario',
+        ]);
 
-    // Todos los asientos de esta venta
-    $asientos = $venta->pasajes()
-                      ->with('asiento')
-                      ->get()
-                      ->pluck('asiento.numero')
-                      ->toArray();
+        $salida  = $pasaje->salida;
+        $origen  = Pueblito::find($pasaje->origen_pueblito_id);
+        $destino = Pueblito::find($pasaje->destino_pueblito_id);
 
-    $precioUnitario  = $pasaje->precio;
-    $tiposEncomienda = TipoEncomienda::where('estado', 'A')->get();
-    $tipos_documentos = TipoDocumentoPersona::all();
-    
-    $cajas_emision = collect(); // vacío, no aplica en reserva
-    $user = auth()->user();
+        // Un solo asiento, el del pasaje
+        $asientos = [$pasaje->asiento_numero];
+        $user = Auth::user();
 
-    return view('pasajes.editar', compact(
-        'pasaje',
-        'salida',
-        'origen',
-        'destino',
-        'asientos',
-        'precioUnitario',
-        'tipos_documentos',
-        'tiposEncomienda',
-        'cajas_emision',
-        'user',
-    ));
-}
+        $precioUnitario   = $pasaje->precio_cobrado;
+        $tiposEncomienda  = TipoEncomienda::all();
+        $cajas_emision = Caja::with('sucursal.serie')
+            ->where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->get();
+        $tipos_documentos = TipoDocumentoPersona::all();
+        $user             = auth()->user();
+
+        return view('pasajes.editar', compact(
+            'pasaje',
+            'salida',
+            'origen',
+            'destino',
+            'asientos',
+            'precioUnitario',
+            'tipos_documentos',
+            'tiposEncomienda',
+            'cajas_emision',
+            'user',
+        ));
+    }
 
     public function abordo(Pasaje $pasaje)
     {

@@ -30,8 +30,8 @@
                     <td>{{ $pasaje->persona->nombres ?? '' }} {{ $pasaje->persona->apellidos ?? '' }}</td>
                     <td>{{ optional($pasaje->salida)->fecha_salida?->format('d/m/Y') }}</td>
                     <td>{{ optional(optional($pasaje->salida)->horario)->hora_formateada ?? '-' }}</td>
-                    <td>{{ $pasaje->origen->nombre_comercial ?? '-' }}</td>
-                    <td>{{ $pasaje->destino->nombre_comercial ?? '-' }}</td>
+                    <td>{{ $pasaje->origen->descripcion ?? '-' }}</td>
+                    <td>{{ $pasaje->destino->descripcion ?? '-' }}</td>
                     <td>{{ $pasaje->asiento_numero }}</td>
                     <td>
                         @switch($pasaje->estado)
@@ -57,13 +57,18 @@
                     </td>
                     <td>
                         <div class="gap-1">
-                           
-                            @if ($pasaje->estado == "R")
+
+                            @if ($pasaje->estado == 'R')
                                 <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-success">
-                                    <i class="link-icon" data-lucide="receipt" style="pointer-events:none;"></i>
+                                    <i data-lucide="receipt"></i>
                                 </a>
                             @endif
-
+                            @if ($pasaje->sobreEquipajes->count() > 0)
+                                <button class="btn btn-info btn-xs btnVerSobreEquipaje" data-id="{{ $pasaje->id }}"
+                                    title="Ver sobre equipaje">
+                                    <i data-lucide="baggage-claim"></i>
+                                </button>
+                            @endif
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
                                 <button class="btn btn-xs btn-secondary imprimir-pasaje" data-id="{{ $pasaje->id }}">
                                     <i data-lucide="printer"></i>

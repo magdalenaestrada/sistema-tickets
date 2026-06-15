@@ -57,6 +57,9 @@
             <div class="row g-3">
                 <div class="col-lg-9">
                     @foreach ($asientos as $index => $asiento)
+                        {{-- Recuperar la persona de este pasaje (solo hay uno) --}}
+                        @php $persona = $pasaje->persona; @endphp
+
                         <div class="card shadow-sm border-0 mb-3 asiento-card">
                             <div class="card-header bg-white border-0 pb-0">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -76,61 +79,64 @@
 
                                 <div class="row g-2">
                                     <div class="col-md-2">
-                                        <label class="form-label">Tipo <span class="text-danger">*</span></label>
+                                        <label class="form-label">Tipo</label>
                                         <select class="form-select" name="tipo_documento_id[]"
-                                            id="tipo_documento_id_{{ $index }}" required>
+                                            id="tipo_documento_id_{{ $index }}" disabled>
                                             @foreach ($tipos_documentos as $tipo_documento)
-                                                <option value="{{ $tipo_documento->id }}">
+                                                <option value="{{ $tipo_documento->id }}"
+                                                    {{ $persona->tipo_documento_id == $tipo_documento->id ? 'selected' : '' }}>
                                                     {{ $tipo_documento->codigo }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
+
                                     <div class="col-md-2">
-                                        <label class="form-label">
-                                            Documento <span class="text-danger">*</span>
-                                        </label>
-
+                                        <label class="form-label">Documento</label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control solo-numeros documento-input"
-                                                id="documento_{{ $index }}" data-index="{{ $index }}"
-                                                name="documento[]" required>
-
+                                            <input type="text" class="form-control bg-light"
+                                                id="documento_{{ $index }}" name="documento[]"
+                                                value="{{ $persona->documento }}" readonly>
                                             <button type="button" class="btn btn-primary btn-buscar-documento"
-                                                data-index="{{ $index }}">
+                                                data-index="{{ $index }}" disabled>
                                                 <i class="link-icon" data-lucide="search"></i>
                                             </button>
                                         </div>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control solo-letras"
-                                            id="nombres_{{ $index }}" name="nombres[]" required>
+                                        <label class="form-label">Nombres</label>
+                                        <input type="text" class="form-control bg-light"
+                                            id="nombres_{{ $index }}" name="nombres[]"
+                                            value="{{ $persona->nombres }}" readonly>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control solo-letras"
-                                            id="apellidos_{{ $index }}" name="apellidos[]" required>
+                                        <label class="form-label">Apellidos</label>
+                                        <input type="text" class="form-control bg-light"
+                                            id="apellidos_{{ $index }}" name="apellidos[]"
+                                            value="{{ $persona->apellidos }}" readonly>
                                     </div>
 
                                     <div class="col-md-3">
                                         <label class="form-label">Celular</label>
-                                        <input type="text" class="form-control solo-numeros"
-                                            id="celular_{{ $index }}" name="celular[]" maxlength="9">
+                                        <input type="text" class="form-control bg-light"
+                                            id="celular_{{ $index }}" name="celular[]"
+                                            value="{{ $persona->celular }}" readonly>
                                     </div>
 
                                     <div class="col-md-3">
                                         <label class="form-label">Teléfono</label>
-                                        <input type="text" class="form-control solo-numeros"
-                                            id="telefono_{{ $index }}" name="telefono[]" maxlength="9">
+                                        <input type="text" class="form-control bg-light"
+                                            id="telefono_{{ $index }}" name="telefono[]"
+                                            value="{{ $persona->telefono }}" readonly>
                                     </div>
 
                                     <div class="col-md-4">
                                         <label class="form-label">Correo</label>
-                                        <input type="email" class="form-control" id="correo_{{ $index }}"
-                                            name="correo[]">
+                                        <input type="email" class="form-control bg-light"
+                                            id="correo_{{ $index }}" name="correo[]"
+                                            value="{{ $persona->correo }}" readonly>
                                     </div>
 
                                     <div class="col-md-2">
@@ -143,32 +149,28 @@
                                             id="descuento_msg_{{ $index }}"></small>
                                     </div>
                                 </div>
+
+                                {{-- Menor de edad --}}
                                 <div class="row mt-3 align-items-center">
                                     <div class="col-md-6">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input pasajero-menor-check"
-                                                id="pasajero_menor_{{ $index }}" data-index="{{ $index }}"
-                                                name="pasajero_menor[{{ $index }}]" value="1">
+                                            <input type="checkbox" class="form-check-input"
+                                                id="pasajero_menor_{{ $index }}"
+                                                {{ $pasaje->pasajero_menor ? 'checked' : '' }} disabled>
                                             <label class="form-check-label" for="pasajero_menor_{{ $index }}">
                                                 ¿Pasajero menor de edad?
                                             </label>
                                         </div>
                                     </div>
-
-                                    <div class="col-md-6 autorizacion-container"
-                                        id="autorizacion_container_{{ $index }}" style="display:none;">
-                                        <label class="form-label">Autorización PDF <span
-                                                class="text-danger">*</span></label>
-                                        <input type="file" accept=".pdf" class="form-control"
-                                            id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
-                                    </div>
                                 </div>
+
                                 <hr>
+
+                                {{-- Sobre equipaje --}}
                                 <div class="form-check form-switch mb-2">
                                     <input class="form-check-input toggle-sobre-equipaje" type="checkbox"
                                         id="toggle_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
                                         name="registrar_sobre_equipaje[{{ $index }}]" value="1">
-
                                     <label class="form-check-label fw-semibold"
                                         for="toggle_sobre_equipaje_{{ $index }}">
                                         Registrar sobre equipaje para este pasajero
@@ -178,22 +180,17 @@
                                 <div class="card border-warning sobre-equipaje-card"
                                     id="card_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
                                     style="display:none;">
-
                                     <div class="card-body p-2">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h6 class="fw-bold mb-0">Sobre equipaje</h6>
-
                                             <button type="button" class="btn btn-sm btn-success btn-agregar-sobre"
                                                 data-index="{{ $index }}">
                                                 Agregar maleta
                                             </button>
                                         </div>
-
                                         <div class="small text-muted mb-2">
-                                            Pasajero:
-                                            <strong id="sobre_pasajero_nombre_{{ $index }}">—</strong>
+                                            Pasajero: <strong>{{ $persona->nombres }} {{ $persona->apellidos }}</strong>
                                         </div>
-
                                         <div class="table-responsive">
                                             <table class="table table-sm table-bordered tabla-sobre-equipaje"
                                                 id="tablaSobreEquipaje_{{ $index }}"
@@ -210,7 +207,6 @@
                                                 <tbody></tbody>
                                             </table>
                                         </div>
-
                                         <div class="text-end fw-bold">
                                             Total sobre equipaje: S/
                                             <span id="total_sobre_equipaje_{{ $index }}">0.00</span>
@@ -312,12 +308,7 @@
                             </div>
 
                             <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnRegresarAsientos">
-                                    Regresar a escoger asientos
-                                </button>
-                                <button type="button" class="btn btn-warning w-100 mb-2" id="btnReservar">
-                                    Reservar
-                                </button>
+                    
                                 <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
                                     Terminar Venta
                                 </button>

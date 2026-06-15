@@ -1018,10 +1018,9 @@ $(async function () {
                 telefono: $("#receptor_telefono").val(),
                 direccion: $("#receptor_direccion").val(),
             },
-            origen: $("#origen").val(),
-            destino: $("#destino").val(),
+            origen_pueblito_id: $("#origen").val(),
+            destino_pueblito_id: $("#destino").val(),
             distrito_id: $("#distrito_id").val(),
-            destino_pueblito_id: $("#pueblito_id").val(),
             // Facturación
             emitir_sunat_estado: $("#emitir_sunat_estado").val(),
             tipo_doc_sunat: $("#tipo_doc_sunat").val(),

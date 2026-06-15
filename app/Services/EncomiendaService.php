@@ -6,9 +6,11 @@ use App\Models\CajaDetalle;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\Persona;
+use App\Models\Pueblito;
 use App\Models\Venta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EncomiendaService
 {
@@ -50,7 +52,6 @@ class EncomiendaService
             $ventaData = null;
 
             $ventaService = app(VentaService::class);
-            $pagoService = app(PagoService::class);
 
             $personaFacturacion = Persona::updateOrCreate(
                 ['documento' => $request->numero_documento_id],
@@ -63,17 +64,29 @@ class EncomiendaService
                 ]
             );
 
+            $detalles = [];
+
+            foreach ($request->detalles as $detalle) {
+                $detalles[] = [
+                    'descripcion' => $detalle['descripcion'],
+                    'costo' => $detalle['costo'],
+                    'descuento' => 0,
+                ];
+            }
+            $origenNombre = Pueblito::find($request->origen_pueblito_id)?->descripcion;
+            $destinoNombre = Pueblito::find($request->destino_pueblito_id)?->descripcion;
+
             $ventaData = $ventaService->crearVenta(
                 new Request([
                     'tipo_servicio_id' => 1,
                     'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,
-                    'total' => $request,
+                    'total' => $request->total,
                     'caja_id' => $request->caja_id,
                     'detalles' => $detalles,
-                    'origen_nombre' => $salida->horario->ruta->puntos->first()?->sucursal?->nombre_comercial,
-                    'destino_nombre' => $salida->horario->ruta->puntos->last()?->sucursal?->nombre_comercial,
+                    'origen_nombre' => $origenNombre,
+                    'destino_nombre' => $destinoNombre,
                 ]),
                 Encomienda::class,
                 null
@@ -81,30 +94,17 @@ class EncomiendaService
 
             $venta = $ventaData['venta'];
 
-            $pagos = [];
+            $pagos = $request->pagos ?? [];
 
-            if ((float) $request->pago_efectivo > 0) {
-                $pagos[] = [
-                    'metodo_pago_id' => 1,
-                    'total' => (float) $request->pago_efectivo,
-                ];
+            $sumaPagos = collect($pagos)->sum(function ($pago) {
+                return (float) $pago['total'];
+            });
+
+            if (round($sumaPagos, 2) !== round((float)$request->total, 2)) {
+                throw ValidationException::withMessages([
+                    'pagos' => 'La suma de pagos no coincide con el total.',
+                ]);
             }
-
-            $pagoCuentaDigital =
-                (float) $request->pago_yape +
-                (float) $request->pago_plin +
-                (float) $request->pago_transferencia +
-                (float) $request->pago_tarjeta;
-
-            if ($pagoCuentaDigital > 0) {
-                $pagos[] = [
-                    'metodo_pago_id' => 2,
-                    'billetera_id' => $request->billetera_id,
-                    'total' => $pagoCuentaDigital,
-                ];
-            }
-
-            $sumaPagos = collect($pagos)->sum('total');
 
             foreach ($pagos as $pago) {
                 CajaDetalle::create([
@@ -117,13 +117,6 @@ class EncomiendaService
                     'billetera_digital_id' => $pago['billetera_id'] ?? null,
                 ]);
             }
-
-            $pagoService->registrarPagos(
-                $venta->id,
-                $pagos,
-                Venta::class,
-                $venta->id
-            );
 
             $emision = $ventaService->emitirVenta($venta);
 

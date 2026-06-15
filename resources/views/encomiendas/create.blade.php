@@ -9,6 +9,7 @@
                     <div class="card-body">
                         <h6>Datos del Emisor</h6>
                         <hr>
+                        <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat">
 
                         <div class="row g-2">
                             <div class="col-md-2">
@@ -24,8 +25,8 @@
                             <div class="col-md-2">
                                 <label class="form-label">Documento <span style="color: red">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control form-control-sm solo-numeros" id="emisor_documento"
-                                        name="emisor_documento" required>
+                                    <input type="text" class="form-control form-control-sm solo-numeros"
+                                        id="emisor_documento" name="emisor_documento" required>
                                     <button type="button" class="btn btn-primary btn-buscar-persona" data-tipo="emisor"
                                         title="Buscar emisor">
                                         <i data-lucide="search"></i>
@@ -49,8 +50,8 @@
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control form-control-sm solo-numeros" id="emisor_celular" maxlength="9"
-                                    name="emisor_celular">
+                                <input type="text" class="form-control form-control-sm solo-numeros" id="emisor_celular"
+                                    maxlength="9" name="emisor_celular">
                             </div>
 
                             <div class="col-md-3">
@@ -61,13 +62,14 @@
 
                             <div class="col-md-4">
                                 <label class="form-label">Correo electrónico</label>
-                                <input type="text" class="form-control form-control-sm" id="emisor_direccion" name="emisor_direccion">
+                                <input type="text" class="form-control form-control-sm" id="emisor_direccion"
+                                    name="emisor_direccion">
                             </div>
 
                             <div class="col-md-2">
                                 <label class="form-label">Ubigeo</label>
-                                <input type="text" class="form-control form-control-sm" id="emisor_ubigeo" name="emisor_ubigeo"
-                                    value="{{ $user->sucursal->distrito->ubigeo ?? '' }}" readonly>
+                                <input type="text" class="form-control form-control-sm" id="emisor_ubigeo"
+                                    name="emisor_ubigeo" value="{{ $user->sucursal->distrito->ubigeo ?? '' }}" readonly>
                             </div>
                         </div>
                     </div>
@@ -92,8 +94,8 @@
                             <div class="col-md-2">
                                 <label class="form-label">Documento</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control form-control-sm solo-numeros" id="receptor_documento"
-                                        name="receptor_documento">
+                                    <input type="text" class="form-control form-control-sm solo-numeros"
+                                        id="receptor_documento" name="receptor_documento">
                                     <button type="button" class="btn btn-primary btn-buscar-persona" data-tipo="receptor"
                                         title="Buscar receptor">
                                         <i data-lucide="search"></i>
@@ -104,22 +106,22 @@
 
                             <div class="col-md-4">
                                 <label class="form-label">Nombres <span style="color: red">*</span></label>
-                                <input type="text" class="form-control form-control-sm  solo-letras" id="receptor_nombres"
-                                    name="receptor_nombres" required>
+                                <input type="text" class="form-control form-control-sm  solo-letras"
+                                    id="receptor_nombres" name="receptor_nombres" required>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos <span style="color: red">*</span></label>
-                                <input type="text" class="form-control form-control-sm solo-letras" id="receptor_apellidos"
-                                    name="receptor_apellidos" required>
+                                <input type="text" class="form-control form-control-sm solo-letras"
+                                    id="receptor_apellidos" name="receptor_apellidos" required>
                             </div>
                         </div>
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control form-control-sm solo-numeros" id="receptor_celular"
-                                    maxlength="9" name="receptor_celular">
+                                <input type="text" class="form-control form-control-sm solo-numeros"
+                                    id="receptor_celular" maxlength="9" name="receptor_celular">
                             </div>
 
                             <div class="col-md-3">
@@ -162,8 +164,8 @@
 
                             <div class="col-md-3">
                                 <label class="form-label">Ubigeo</label>
-                                <input type="text" class="form-control form-control-sm" id="receptor_ubigeo" name="receptor_ubigeo"
-                                    readonly>
+                                <input type="text" class="form-control form-control-sm" id="receptor_ubigeo"
+                                    name="receptor_ubigeo" readonly>
                             </div>
                         </div>
 
@@ -179,7 +181,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">PARADA ORIGEN <span style="color: red">*</span></label>
                                 <select id="origen" class="form-select" name="origen_pueblito_id">
-                                    <option value="" disabled>Seleccione una sucursal</option>
+                                    <option value="">Seleccione una sucursal</option>
                                     @foreach ($pueblitos as $pueblito)
                                         <option value="{{ $pueblito->id }}">
                                             {{ $pueblito->descripcion }}
@@ -192,7 +194,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">PARADA DESTINO <span style="color: red">*</span></label>
                                 <select id="destino" class="form-select" name="destino_pueblito_id" required>
-                                    <option value="" disabled selected>Seleccione una sucursal</option>
+                                    <option value="" selected>Seleccione una sucursal</option>
                                     @foreach ($pueblitos as $pueblito)
                                         <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
                                     @endforeach
@@ -237,14 +239,16 @@
                         <div class="row mb-1">
                             <label for="peso_total" class="col-6 col-form-label">Peso total <b>(KG)</b></label>
                             <div class="col-6">
-                                <input type="number" id="peso_total" class="form-control form-control-sm form-control form-control-sm-xs" readonly>
+                                <input type="number" id="peso_total"
+                                    class="form-control form-control-sm form-control form-control-sm-xs" readonly>
                             </div>
                         </div>
 
                         <div class="row mb-1">
                             <label for="cantidad_bultos" class="col-6 col-form-label">Cantidad Bultos</label>
                             <div class="col-6">
-                                <input type="number" id="cantidad_bultos" class="form-control form-control-sm form-control form-control-sm-xs" readonly>
+                                <input type="number" id="cantidad_bultos"
+                                    class="form-control form-control-sm form-control form-control-sm-xs" readonly>
                             </div>
                         </div>
                     </div>
@@ -329,18 +333,19 @@
 
                             <div class="mb-1">
                                 <label class="form-label">Razón social:</label>
-                                <input type="text" id="razon_social" name="razon_social" class="form-control form-control-sm">
+                                <input type="text" id="razon_social" name="razon_social"
+                                    class="form-control form-control-sm">
                             </div>
 
                             <div class="mb-1">
                                 <label for="direccion" class="form-label">Dirección</label>
-                                <input type="text" id="direccion" name="direccion" class="form-control form-control-sm"
-                                    value="-" readonly>
+                                <input type="text" id="direccion" name="direccion"
+                                    class="form-control form-control-sm" value="-" readonly>
                             </div>
 
                             <div class="d-grid gap-2">
 
-                                <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
+                                <button type="submit" class="btn btn-success btn-sm" id="btnAbrirPago">
                                     Terminar Venta
                                 </button>
 
@@ -350,7 +355,7 @@
                 </div>
             </div>
         </div>
-        
+
     </form>
     @include('pasajes.modals.metodos_pago')
 @endsection

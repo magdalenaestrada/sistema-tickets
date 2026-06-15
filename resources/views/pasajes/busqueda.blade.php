@@ -63,6 +63,7 @@
                 @include('pasajes.partials.tabla', ['pasajes' => $pasajes])
             </div>
         </div>
+        @include('pasajes.modals.sobrequipaje')
     @endsection
 
     @push('styles')

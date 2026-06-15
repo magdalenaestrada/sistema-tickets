@@ -50,6 +50,29 @@ document.addEventListener("DOMContentLoaded", function () {
         return params.toString();
     }
 
+    $(document).on("click", ".btnVerSobreEquipaje", function () {
+        const pasajeId = $(this).data("id");
+
+        $.get(route("pasajes.sobre-equipaje", pasajeId), function (res) {
+            let html = "";
+
+            res.data.forEach((item) => {
+                html += `
+                    <tr>
+                        <td>${item.tipo_encomienda?.descripcion ?? "-"}</td>
+                        <td>${item.descripcion ?? "-"}</td>
+                        <td>${item.peso}</td>
+                        <td>S/ ${item.costo}</td>
+                    </tr>
+                `;
+            });
+
+            $("#tbodySobreEquipaje").html(html);
+
+            $("#modalSobreEquipaje").modal("show");
+        });
+    });
+
     function cargarResultados(url = null) {
         const dni = (document.getElementById("filtroDNI")?.value || "").trim();
 
@@ -242,7 +265,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         debounceTimer = setTimeout(() => {
             cargarResultados();
-        }, 150); 
+        }, 150);
     }
 
     enlazarBotonesAccion();

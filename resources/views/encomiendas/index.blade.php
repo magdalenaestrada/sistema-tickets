@@ -22,8 +22,8 @@
                     <label class="form-label">Origen</label>
                     <select id="filtroOrigen">
                         <option value="">Todos</option>
-                        @foreach ($sucursales as $s)
-                            <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
+                        @foreach ($pueblitos as $pueblito)
+                            <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -32,8 +32,8 @@
                     <label class="form-label">Destino</label>
                     <select id="filtroDestino">
                         <option value="">Todos</option>
-                        @foreach ($sucursales as $s)
-                            <option value="{{ $s->id }}">{{ $s->nombre_comercial }}</option>
+                        @foreach ($pueblitos as $pueblito)
+                            <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
                         @endforeach
                     </select>
                 </div>

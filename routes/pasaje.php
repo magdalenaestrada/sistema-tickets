@@ -22,4 +22,5 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('noAbordo');
     Route::get('/{pasaje}/cambiar-horario', [PasajeController::class, 'cambiarHorario'])->name('cambiarHorario');
     Route::put('/{pasaje}/actualizar-horario', [PasajeController::class, 'actualizarHorario'])->name('actualizarHorario');
+    Route::get('/{pasaje}/sobre-equipaje', [PasajeController::class, 'showSobreEquipaje'])->name('sobre-equipaje');
 });

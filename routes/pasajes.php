@@ -20,4 +20,5 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::post('/{pasaje}/abordo', [PasajeController::class, 'abordo'])->name('abordar');
     Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('noAbordo');
     Route::get('/{pasaje}/editar', [PasajeController::class, 'editar'])->name('editar');
+    Route::get('/{pasaje}/sobre-equipaje', [PasajeController::class, 'showSobreEquipaje'])->name('sobre-equipaje');
 });

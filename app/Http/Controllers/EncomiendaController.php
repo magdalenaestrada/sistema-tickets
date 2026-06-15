@@ -36,12 +36,14 @@ class EncomiendaController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
-            ->get();;
+            ->get();
+        $pueblitos = Pueblito::all();
+
         $asignaciones = AsignarHorario::with('horario')->get();
         $user = Auth::user();
         $tipos_documentos = TipoDocumentoPersona::all();
 
-        return view('encomiendas.index', compact('sucursales', 'user', 'tipos_documentos', 'asignaciones'));
+        return view('encomiendas.index', compact('sucursales', 'user', 'pueblitos', 'tipos_documentos', 'asignaciones'));
     }
 
     public function index_asignadas()

@@ -243,6 +243,7 @@ class VentaService
         $venta->refresh();
 
         $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
+
         if (!$tipo) {
             throw new Exception('Tipo de documento no válido.');
         }
@@ -284,7 +285,6 @@ class VentaService
     private function mapTipoDocumentoComprobante($tipoDocumentoFacturaId): string
     {
         $tipo = TipoDocumentoFactura::find($tipoDocumentoFacturaId);
-
         if (!$tipo) {
             throw new Exception('Tipo de documento de factura no válido.');
         }
@@ -474,8 +474,6 @@ class VentaService
         if (!$empresa) {
             throw new Exception('No existe configuración de empresa.');
         }
-
-
 
         $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
         $see = $this->crearSee($tipo->codigo);
