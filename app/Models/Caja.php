@@ -95,7 +95,9 @@ class Caja extends Model
 
     public function getEfectivoEsperadoAttribute(): float
     {
-        return (float) $this->monto_apertura + $this->ingresos_efectivo - $this->egresos_efectivo;
+        return (float) $this->monto_apertura
+            + $this->ingresos_efectivo
+            - $this->egresos_efectivo;
     }
 
     public function detalles()
@@ -105,36 +107,41 @@ class Caja extends Model
 
     public function getIngresosYapeAttribute()
     {
-        return $this->detalles
+            return (float) $this->detallesActivos()
+
             ->where('billetera_digital_id', 1)
             ->sum('amount');
     }
 
     public function getIngresosPlinAttribute()
     {
-        return $this->detalles
+            return (float) $this->detallesActivos()
+
             ->where('billetera_digital_id', 2)
             ->sum('amount');
     }
 
     public function getIngresosTarjetaAttribute()
     {
-        return $this->detalles
+            return (float) $this->detallesActivos()
+
             ->where('billetera_digital_id', 3)
             ->sum('amount');
     }
 
     public function getIngresosTransferenciaAttribute()
     {
-        return $this->detalles
+            return (float) $this->detallesActivos()
+
             ->where('billetera_digital_id', 4)
             ->sum('amount');
     }
 
     public function getIngresosEfectivoAttribute()
     {
-        return $this->detalles
+            return (float) $this->detallesActivos()
             ->where('metodo_pago_id', 1)
+            ->where('subtipo_movimiento_caja_id', '!=', 10) // apertura
             ->sum('amount');
     }
 }
