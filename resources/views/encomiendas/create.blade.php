@@ -139,24 +139,24 @@
 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
-                                <label class="form-label">DEPARTAMENTO <span style="color: red">*</span></label>
+                                <label class="form-label">DEPARTAMENTO</label>
                                 <select name="receptor_departamento_id" id="departamento_id" class="form-select"
-                                    required>
+                                >
                                     <option value="">Seleccione</option>
                                 </select>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label">PROVINCIA <span style="color: red">*</span></label>
-                                <select name="receptor_provincia_id" id="provincia_id" class="form-select" required>
+                                <label class="form-label">PROVINCIA</label>
+                                <select name="receptor_provincia_id" id="provincia_id" class="form-select">
                                     <option value="">Seleccione</option>
 
                                 </select>
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label">DISTRITO <span style="color: red">*</span></label>
-                                <select name="receptor_distrito_id" id="distrito_id" class="form-select" required>
+                                <label class="form-label">DISTRITO</label>
+                                <select name="receptor_distrito_id" id="distrito_id" class="form-select">
                                     <option value="">Seleccione</option>
                                 </select>
                             </div>

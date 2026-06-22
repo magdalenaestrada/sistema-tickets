@@ -74,4 +74,9 @@ class Persona extends Model
 
         return trim(($this->nombres ?? '') . ' ' . ($this->apellidos ?? ''));
     }
+
+    public function cliente()
+    {
+        return $this->hasOne(Cliente::class, 'persona_id');
+    }
 }

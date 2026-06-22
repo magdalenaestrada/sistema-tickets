@@ -168,8 +168,18 @@ $(document).ready(function () {
                     if (regla.tipo === "P" && regla.personas) {
                         const select =
                             reglaEl.querySelector(
-                                ".select-personas",
+                                ".select-clientes",
                             )?.tomselect;
+
+                        regla.personas.forEach((id) => select?.addItem(id));
+                    }
+
+                    if (regla.tipo === "E" && regla.personas) {
+                        const select =
+                            reglaEl.querySelector(
+                                ".select-empleados",
+                            )?.tomselect;
+
                         regla.personas.forEach((id) => select?.addItem(id));
                     }
                 });
@@ -266,9 +276,11 @@ $(document).ready(function () {
             const tipo = selectTipo.value;
 
             reglaEl
-                .querySelectorAll(".detalle-T, .detalle-G, .detalle-P, .detalle-C")
+                .querySelectorAll(
+                    ".detalle-T, .detalle-G, .detalle-P, .detalle-C, .detalle-E",
+                )
                 .forEach((d) => {
-                    if (d) d.style.display = "none";
+                    d.style.display = "none";
                 });
 
             const target = reglaEl.querySelector(".detalle-" + tipo);
@@ -296,9 +308,20 @@ $(document).ready(function () {
             });
         }
 
-        const selectPersonas = reglaEl.querySelector(".select-personas");
-        if (selectPersonas) {
-            new TomSelect(selectPersonas, {
+        const selectClientes = reglaEl.querySelector(".select-clientes");
+
+        if (selectClientes) {
+            new TomSelect(selectClientes, {
+                plugins: ["remove_button"],
+                maxItems: null,
+                closeAfterSelect: false,
+            });
+        }
+
+        const selectEmpleados = reglaEl.querySelector(".select-empleados");
+
+        if (selectEmpleados) {
+            new TomSelect(selectEmpleados, {
                 plugins: ["remove_button"],
                 maxItems: null,
                 closeAfterSelect: false,

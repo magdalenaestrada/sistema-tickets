@@ -42,6 +42,14 @@
                     <label class="form-label">Salida a asignar</label>
                     <select id="salidaAsignar">
                         <option value="">Seleccione salida</option>
+
+                        @foreach ($salidas as $salida)
+                            <option value="{{ $salida->id }}">
+                                {{ $salida->fecha_salida?->format('d/m/Y') }}
+                                | {{ $salida->horario?->hora_formateada }}
+                                | {{ $salida->horario?->ruta?->nombre ?? 'Ruta' }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-1 d-flex justify-content-center align-items-center">

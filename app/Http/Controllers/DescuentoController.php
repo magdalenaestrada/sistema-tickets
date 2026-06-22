@@ -22,19 +22,32 @@ class DescuentoController extends Controller
     {
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipo_cupones     = TipoCupon::where('estado', 'A')->get();
+
+        $clientes = Cliente::with('persona')
+            ->get()
+            ->sortBy(fn($c) => $c->persona->nombres . ' ' . $c->persona->apellidos);
+
+        $empleados = Empleado::with('persona')
+            ->get()
+            ->sortBy(fn($e) => $e->persona->nombres . ' ' . $e->persona->apellidos);
+
+        $cargos = Cargo::whereHas('empleados')->get();
+
         $personas         = Persona::orderByRaw("CONCAT(nombres, ' ', apellidos) ASC")->get();
-        $cargos           = Cargo::whereHas('empleados')->get();
-        $hoy              = Carbon::now('America/Lima')->format('Y-m-d');
+
+
+        $hoy = Carbon::now('America/Lima')->format('Y-m-d');
 
         return view('descuentos.index', compact(
             'tipos_documentos',
             'tipo_cupones',
-            'personas',
+            'clientes',
+            'empleados',
             'cargos',
+            'personas',
             'hoy'
         ));
     }
-
     public function datatable()
     {
         $data = Descuento::with('personas', 'cargos')->orderBy('id', 'asc');
@@ -108,21 +121,46 @@ class DescuentoController extends Controller
 
     public function mostrar($id)
     {
-        $descuento = Descuento::with('personas', 'cargos')->findOrFail($id);
+        $descuento = Descuento::with([
+            'personas.persona.cliente',
+            'personas.persona.empleado',
+            'cargos'
+        ])->findOrFail($id);
 
         $reglas = [];
 
-        if ($descuento->cargos->count()) {
+        if ($descuento->cargos->isNotEmpty()) {
             $reglas[] = [
-                'tipo' => 'G',
+                'tipo'   => 'G',
                 'cargos' => $descuento->cargos->pluck('cargo_id'),
             ];
         }
 
-        if ($descuento->personas->count()) {
+        $clientes = [];
+        $empleados = [];
+
+        foreach ($descuento->personas as $dp) {
+
+            if ($dp->persona?->cliente) {
+                $clientes[] = $dp->persona_id;
+            }
+
+            if ($dp->persona?->empleado) {
+                $empleados[] = $dp->persona_id;
+            }
+        }
+
+        if (!empty($clientes)) {
             $reglas[] = [
                 'tipo' => 'P',
-                'personas' => $descuento->personas->pluck('persona_id'),
+                'personas' => $clientes,
+            ];
+        }
+
+        if (!empty($empleados)) {
+            $reglas[] = [
+                'tipo' => 'E',
+                'personas' => $empleados,
             ];
         }
 
@@ -139,7 +177,7 @@ class DescuentoController extends Controller
             'monto_efectivo' => $descuento->monto_efectivo,
             'porcentaje' => $descuento->porcentaje,
             'tipo_descuento_id' => $descuento->tipo_descuento_id,
-            'reglas' => $reglas
+            'reglas' => $reglas,
         ]);
     }
 
@@ -173,7 +211,14 @@ class DescuentoController extends Controller
             DescuentoPersona::where('descuento_id', $descuento->id)->delete();
             DescuentoCargo::where('descuento_id', $descuento->id)->delete();
 
-            foreach ($request->personas_asignadas ?? [] as $persona_id) {
+            foreach ($request->clientes_asignados ?? [] as $persona_id) {
+                DescuentoPersona::create([
+                    'descuento_id' => $descuento->id,
+                    'persona_id'   => $persona_id,
+                ]);
+            }
+
+            foreach ($request->empleados_asignados ?? [] as $persona_id) {
                 DescuentoPersona::create([
                     'descuento_id' => $descuento->id,
                     'persona_id'   => $persona_id,
@@ -196,9 +241,13 @@ class DescuentoController extends Controller
     private function derivarTipoAsignacion(Request $request): string
     {
         $tipos = $request->reglas_tipo ?? [];
+
         if (in_array('T', $tipos)) return 'T';
+        if (in_array('C', $tipos)) return 'C';
         if (!empty($request->cargos_asignados)) return 'G';
-        if (!empty($request->personas_asignadas)) return 'P';
+        if (!empty($request->clientes_asignados)) return 'P';
+        if (!empty($request->empleados_asignados)) return 'E';
+
         return 'T';
     }
 

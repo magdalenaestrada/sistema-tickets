@@ -44,6 +44,7 @@ class PasajeController extends Controller
             'horario.tipo_vehiculo',
         ])
             ->whereIn('estado', ['activo', 'programado'])
+            ->whereDate('fecha_salida', '>=', now('America/Lima')->toDateString())
             ->orderBy('fecha_salida')
             ->get()
             ->map(function ($salida) {
@@ -609,6 +610,7 @@ class PasajeController extends Controller
             }
 
             $totalVenta += $totalSobreEquipaje;
+            $pasajesCreados = [];
 
             foreach ($pasajeros as $pasajeroData) {
 
@@ -629,6 +631,7 @@ class PasajeController extends Controller
                     'fecha_inactivacion' => null,
                 ]);
 
+                $pasajesCreados[] = $pasaje->id;
                 $pasaje->tramos()->attach($tramos->pluck('id')->toArray());
 
                 $index = $pasajeroData['index'];
@@ -657,6 +660,8 @@ class PasajeController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Reserva realizada correctamente.',
+                    'ticket_url' => route('ventas.tickets', $venta->id),
+
                     'redirect' => route('pasajes.index'),
                 ]);
             }
@@ -667,6 +672,7 @@ class PasajeController extends Controller
                     ? 'Reserva realizada correctamente.'
                     : 'Venta realizada correctamente.',
                 'venta_id' => $venta->id,
+                'tickets' => $pasajesCreados,
                 'comprobante' => $emision['nombre'] ?? null,
                 'xml_path' => $emision['xml_path'] ?? null,
                 'cdr_path' => $emision['cdr_path'] ?? null,
@@ -1196,5 +1202,18 @@ class PasajeController extends Controller
         ]);
 
         return view('pasajes.ticket', compact('pasaje'));
+    }
+
+    public function ticketsVenta(Venta $venta)
+    {
+        $venta->load([
+            'pasajes.persona',
+            'pasajes.usuario.persona',
+            'pasajes.origen',
+            'pasajes.destino',
+            'pagos.metodoPago',
+        ]);
+
+        return view('pasajes.ticket', compact('venta'));
     }
 }

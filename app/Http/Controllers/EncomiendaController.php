@@ -37,13 +37,33 @@ class EncomiendaController extends Controller
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
             ->get();
+
         $pueblitos = Pueblito::all();
 
         $asignaciones = AsignarHorario::with('horario')->get();
+
         $user = Auth::user();
+
         $tipos_documentos = TipoDocumentoPersona::all();
 
-        return view('encomiendas.index', compact('sucursales', 'user', 'pueblitos', 'tipos_documentos', 'asignaciones'));
+        $salidas = Salida::with([
+            'horario.ruta.puntos.sucursal'
+        ])
+            ->whereIn('estado', ['en_ruta'])
+            ->whereDate('fecha_salida', '>=', Carbon::today()->subDay())
+            ->orderBy('fecha_salida')
+            ->get()
+            ->filter(fn($s) => $s->horario?->ruta)
+            ->values();
+
+        return view('encomiendas.index', compact(
+            'sucursales',
+            'user',
+            'pueblitos',
+            'tipos_documentos',
+            'asignaciones',
+            'salidas'
+        ));
     }
 
     public function index_asignadas()

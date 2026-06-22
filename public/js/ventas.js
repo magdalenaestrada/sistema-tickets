@@ -963,14 +963,24 @@ $(function () {
             contentType: false,
             headers: { "X-CSRF-TOKEN": csrfToken },
             success: function (res) {
-                if (res.success) {
-                    Swal.fire(
-                        "Éxito",
-                        res.message || "Venta realizada correctamente",
-                        "success",
-                    ).then(() => {
-                        window.location.href = res.redirect;
-                    });
+                if (!res.success) return;
+
+                const win = window.open(
+                    res.ticket_url,
+                    "_blank",
+                    "width=420,height=700",
+                );
+
+                if (win) {
+                    win.onload = function () {
+                        win.print();
+
+                        setTimeout(() => {
+                            window.location.href = res.redirect;
+                        }, 1000);
+                    };
+                } else {
+                    window.location.href = res.redirect;
                 }
             },
             error: function (xhr) {

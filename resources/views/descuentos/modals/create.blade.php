@@ -104,7 +104,8 @@
                     <option value="T">Todos</option>
                     <option value="C">Todos los clientes</option>
                     <option value="G">Por cargo</option>
-                    <option value="P">Personas específicas</option>
+                    <option value="P">Clientes</option>
+                    <option value="E">Empleados</option>
                 </select>
             </div>
             <div class="col-md-8 contenedor-detalle-regla">
@@ -120,10 +121,25 @@
                     </select>
                 </div>
                 <div class="detalle-P" style="display:none">
-                    <label class="form-label small text-muted mb-1">Personas</label>
-                    <select class="select-personas" name="personas_asignadas[]" multiple>
-                        @foreach ($personas as $persona)
-                            <option value="{{ $persona->id }}">{{ $persona->nombre_completo }}</option>
+                    <label class="form-label small text-muted mb-1">Clientes</label>
+                    <select class="select-clientes" name="clientes_asignados[]" multiple>
+                        @foreach ($clientes as $cliente)
+                            <option value="{{ $cliente->persona_id }}">
+                                {{ $cliente->persona->nombres }}
+                                {{ $cliente->persona->apellidos }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="detalle-E" style="display:none">
+                    <label class="form-label small text-muted mb-1">Empleados</label>
+                    <select class="select-empleados" name="empleados_asignados[]" multiple>
+                        @foreach ($empleados as $empleado)
+                            <option value="{{ $empleado->persona_id }}">
+                                {{ $empleado->persona->nombres }}
+                                {{ $empleado->persona->apellidos }}
+                            </option>
                         @endforeach
                     </select>
                 </div>

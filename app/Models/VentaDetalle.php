@@ -17,6 +17,15 @@ class VentaDetalle extends Model
         'cantidad',
         'precio_venta',
         'total',
+        'codigo',
+        'unidad',
+        'valor_unitario',
+        'precio_unitario',
+        'base_igv',
+        'porcentaje_igv',
+        'igv',
+        'valor_venta',
+        'tipo_afectacion_igv'
     ];
 
     public function venta()

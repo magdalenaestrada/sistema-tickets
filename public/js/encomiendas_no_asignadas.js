@@ -17,16 +17,12 @@ $(function () {
     const tsSalida = new TomSelect("#salidaAsignar", {
         create: false,
         allowEmptyOption: true,
-        valueField: "id",
-        labelField: "text",
-        searchField: "text",
-        options: [],
     });
 
     const tabla = $("#tablaEncomiendas").DataTable({
         processing: true,
         serverSide: true,
-        dom:'rtip',
+        dom: "rtip",
         ajax: {
             url: route("encomiendas.datatable-no-asignadas"),
             data: function (d) {

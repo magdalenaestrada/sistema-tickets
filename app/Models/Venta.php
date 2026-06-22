@@ -81,4 +81,8 @@ class Venta extends Model
     {
         return $this->belongsTo(Caja::class, 'caja_id');
     }
+    public function pasajes()
+    {
+        return $this->hasMany(Pasaje::class);
+    }
 }
