@@ -36,6 +36,7 @@ class PasajeController extends Controller
         $hoy = now('America/Lima')->format('Y-m-d');
 
         $ayer = now('America/Lima')->subDay()->format('Y-m-d');
+        $limite = now('America/Lima')->subMinutes(30);
 
         $salidas = Salida::with([
             'horario.ruta.puntos.pueblito',
@@ -43,9 +44,15 @@ class PasajeController extends Controller
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
-            ->whereIn('estado', ['activo', 'programado'])
-            ->whereDate('fecha_salida', '>=', now('America/Lima')->toDateString())
-            ->orderBy('fecha_salida')
+            ->join('horarios', 'horarios.id', '=', 'salidas.horario_id')
+            ->whereIn('salidas.estado', ['activo', 'programado'])
+            ->whereRaw(
+                "TIMESTAMP(salidas.fecha_salida, horarios.hora_salida) >= ?",
+                [$limite->format('Y-m-d H:i:s')]
+            )
+            ->orderBy('salidas.fecha_salida')
+            ->orderBy('horarios.hora_salida')
+            ->select('salidas.*')
             ->get()
             ->map(function ($salida) {
                 $ruta = $salida->horario->ruta;
