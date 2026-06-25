@@ -36,4 +36,7 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
 
     Route::post('/pos', [FacturacionController::class, 'store'])
         ->name('pos.store');
+
+    Route::post('anular/{venta}', [FacturacionController::class, 'anularVenta'])
+        ->name('anular');
 });

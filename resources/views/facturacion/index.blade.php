@@ -169,6 +169,10 @@
                                                 </a>
                                             @endif
 
+                                            <button type="button" class="btn btn-danger btn-sm"
+                                                onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
+                                                Anular
+                                            </button>
                                         </div>
 
                                     </td>
@@ -207,8 +211,9 @@
         <script>
             let items = [];
             const IGV = 0.18;
+            const urlAnular = "{{ route('facturacion.anular', ':id') }}";
 
-             function buscarCliente() {
+            function buscarCliente() {
 
                 let documento = $("#doc_cliente").val().trim();
                 if (!documento) return;
@@ -249,6 +254,69 @@
                     .always(function() {
                         $("#btnBuscarCliente").prop("disabled", false);
                     });
+            }
+
+            function anularVenta(id, url) {
+
+                Swal.fire({
+                    title: 'Anular venta',
+                    text: 'Seleccione el motivo de la Nota de Crédito',
+                    icon: 'warning',
+                    input: 'select',
+                    inputOptions: {
+                        '01': 'Anulación de la operación',
+                        '02': 'Anulación por error',
+                        '03': 'Corrección de datos',
+                        '04': 'Devolución'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Continuar',
+                    cancelButtonText: 'Cancelar',
+                    inputValidator: (value) => {
+                        if (!value) return 'Debes seleccionar un motivo';
+                    }
+
+                }).then((result) => {
+
+                    if (!result.isConfirmed) return;
+
+                    const motivo = result.value;
+
+                    Swal.fire({
+                        title: 'Procesando...',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                motivo: motivo
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+
+                            Swal.close();
+
+                            if (data.success) {
+                                Swal.fire('OK', data.message, 'success')
+                                    .then(() => location.reload());
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+
+                        })
+                        .catch(() => {
+                            Swal.fire('Error', 'Error de servidor', 'error');
+                        });
+
+                });
             }
 
             function agregarItem() {

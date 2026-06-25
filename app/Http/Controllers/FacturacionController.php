@@ -7,6 +7,8 @@ use App\Models\TipoDocumentoFactura;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
 use App\Services\Facturacion\EmitirVentaService;
+use App\Services\Facturacion\GreenterService;
+use App\Services\Facturacion\VentaDocumentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -141,5 +143,117 @@ class FacturacionController extends Controller
         return redirect()
             ->route('facturacion.index')
             ->with('success', 'Venta generada y enviada a SUNAT');
+    }
+
+    public function anularVenta(Venta $venta)
+    {
+
+        return DB::transaction(function () use ($venta) {
+
+            $empresa = $venta->sucursal->empresa;
+
+            $nc = new Venta();
+            $tipoNC = TipoDocumentoFactura::where('codigo', '07')->first();
+
+            $nc->tipo_documento_factura_id = $tipoNC->id;
+
+            $nc->sucursal_id = $venta->sucursal_id;
+            $nc->persona_id = $venta->persona_id;
+            $nc->tipo_servicio_id = $venta->tipo_servicio_id;
+            $nc->serie = "NC01";
+            $nc->numero = Venta::where('tipo_documento_factura_id', $tipoNC->id)
+                ->max('numero') + 1;
+            $nc->usuario_id = auth()->id();
+            $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
+
+            $nc->subtotal = -$venta->subtotal;
+            $nc->impuesto = -$venta->impuesto;
+            $nc->total = -$venta->total;
+
+            $nc->estado = 'GENERADA';
+            $nc->fecha_emision = now();
+            $nc->observacion = 'ANULACION DE OPERACION';
+
+            $nc->save();
+            $nc->load([
+                'tipoDocumentoFactura',
+                'persona.tipoDocumento',
+                'sucursal.empresa',
+                'detalles'
+            ]);
+            foreach ($venta->detalles as $d) {
+                $nc->detalles()->create([
+                    'descripcion' => $d->descripcion,
+                    'tipo_servicio_id' => $d->tipo_servicio_id,
+                    'descuento' => $d->descuento,
+                    'cantidad' => $d->cantidad,
+                    'precio_venta' => $d->precio_venta,
+                    'total' => -$d->total,
+                    'codigo' => $d->codigo,
+                    'unidad' => $d->unidad,
+                    'valor_unitario' => $d->valor_unitario,
+                    'precio_unitario' => $d->precio_unitario,
+                    'base_igv' => $d->base_igv,
+                    'porcentaje_igv' => $d->porcentaje_igv,
+                    'igv' => $d->igv,
+                    'valor_venta' => $d->valor_venta,
+                    'tipo_afectacion_igv' => $d->tipo_afectacion_igv,
+                ]);
+            }
+
+            $nc->load([
+                'tipoDocumentoFactura',
+                'persona.tipoDocumento',
+                'sucursal.empresa',
+                'detalles'
+            ]);
+
+            $documento = app(VentaDocumentBuilder::class)->build($nc);
+            $see = app(GreenterService::class)->getSee($empresa);
+
+            $result = $see->send($documento);
+
+            $folder = 'xml/' . now()->format('Y-m-d');
+
+            Storage::disk('public')->put(
+                "{$folder}/{$documento->getName()}.xml",
+                $see->getFactory()->getLastXml()
+            );
+
+            $nc->ruta_xml = "{$folder}/{$documento->getName()}.xml";
+
+            if (!$result->isSuccess()) {
+
+                $nc->estado = 'RECHAZADA';
+                $nc->observacion = $result->getError()->getMessage();
+                $nc->save();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $result->getError()->getMessage()
+                ], 500);
+            }
+
+            $cdr = $result->getCdrResponse();
+
+            Storage::disk('public')->put(
+                "{$folder}/R-{$documento->getName()}.zip",
+                $result->getCdrZip()
+            );
+
+            $nc->ruta_cdr = "{$folder}/R-{$documento->getName()}.zip";
+
+            $nc->estado = ((int) $cdr->getCode() === 0)
+                ? 'ACEPTADA'
+                : 'RECHAZADA';
+
+            $venta->estado = 'ANULADA';
+            $venta->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta anulada correctamente'
+            ]);
+        });
     }
 }
