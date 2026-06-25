@@ -33,19 +33,26 @@ class VentaDocumentBuilder
 
     protected function buildInvoice(Venta $venta, $empresa, $persona, string $tipoDoc): Invoice
     {
+        $venta->loadMissing([
+            'sucursal.distrito.provincia.departamento'
+        ]);
+
+        $distrito = $venta->sucursal->distrito;
+        $provincia = $distrito->provincia;
+        $departamento = $provincia->departamento;
+
         $client = (new Client())
             ->setTipoDoc($this->resolverTipoDocCliente($persona))
             ->setNumDoc($persona->documento ?? '-')
             ->setRznSocial($persona->nombre_facturacion ?? 'CLIENTE VARIOS');
 
         $address = (new Address())
-            ->setUbigueo($venta->sucursal->ubigueo ?? $empresa->ubigueo ?? '150101')
-            ->setDepartamento($venta->sucursal->departamento ?? $empresa->departamento ?? 'LIMA')
-            ->setProvincia($venta->sucursal->provincia ?? $empresa->provincia ?? 'LIMA')
-            ->setDistrito($venta->sucursal->distrito ?? $empresa->distrito ?? 'LIMA')
-            ->setUrbanizacion($venta->sucursal->urbanizacion ?? $empresa->urbanizacion ?? '-')
-            ->setDireccion($venta->sucursal->direccion ?? $empresa->direccion)
-            ->setCodLocal($venta->sucursal->cod_local ?? $empresa->cod_local ?? '0000');
+            ->setUbigueo($distrito->codigo_ubigeo)
+            ->setDepartamento($departamento->nombre)
+            ->setProvincia($provincia->nombre)
+            ->setDistrito($distrito->nombre)
+            ->setDireccion($venta->sucursal->direccion)
+            ->setCodLocal('0000');
 
         $company = (new Company())
             ->setRuc($empresa->documento)
@@ -81,19 +88,27 @@ class VentaDocumentBuilder
 
     protected function buildNotaCredito(Venta $venta, $empresa, $persona): Note
     {
+        $venta->loadMissing([
+            'sucursal.distrito.provincia.departamento'
+        ]);
+
+        $distrito = $venta->sucursal->distrito;
+        $provincia = $distrito->provincia;
+        $departamento = $provincia->departamento;
+
+
         $client = (new Client())
             ->setTipoDoc($this->resolverTipoDocCliente($persona))
             ->setNumDoc($persona->documento ?? '-')
             ->setRznSocial($persona->nombre_facturacion ?? 'CLIENTE VARIOS');
 
         $address = (new Address())
-            ->setUbigueo($venta->sucursal->ubigueo ?? $empresa->ubigueo ?? '150101')
-            ->setDepartamento($venta->sucursal->departamento ?? $empresa->departamento ?? 'LIMA')
-            ->setProvincia($venta->sucursal->provincia ?? $empresa->provincia ?? 'LIMA')
-            ->setDistrito($venta->sucursal->distrito ?? $empresa->distrito ?? 'LIMA')
-            ->setUrbanizacion($venta->sucursal->urbanizacion ?? $empresa->urbanizacion ?? '-')
-            ->setDireccion($venta->sucursal->direccion ?? $empresa->direccion)
-            ->setCodLocal($venta->sucursal->cod_local ?? $empresa->cod_local ?? '0000');
+            ->setUbigueo($distrito->codigo_ubigeo)
+            ->setDepartamento($departamento->nombre)
+            ->setProvincia($provincia->nombre)
+            ->setDistrito($distrito->nombre)
+            ->setDireccion($venta->sucursal->direccion)
+            ->setCodLocal('0000');
 
         $company = (new Company())
             ->setRuc($empresa->documento)
@@ -110,7 +125,7 @@ class VentaDocumentBuilder
                 ? $venta->fecha_emision
                 : new DateTime($venta->fecha_emision))
             ->setTipDocAfectado($this->resolverDocumentoAfectadoTipo($venta))
-            ->setNumDocfectado($venta->documento_referencia)
+            ->setNumDocAfectado($venta->documento_referencia)
             ->setCodMotivo('01')
             ->setDesMotivo($venta->observacion ?: 'ANULACION DE LA OPERACION')
             ->setTipoMoneda('PEN')
@@ -180,18 +195,7 @@ class VentaDocumentBuilder
 
     protected function resolverTipoDocumento(Venta $venta): string
     {
-        if (!empty($venta->tipoDocumentoFactura?->codigo)) {
-            return $venta->tipoDocumentoFactura->codigo;
-        }
-
-        $nombre = strtolower($venta->tipoDocumentoFactura->nombre ?? '');
-
-        return match (true) {
-            str_contains($nombre, 'factura') => '01',
-            str_contains($nombre, 'boleta') => '03',
-            str_contains($nombre, 'nota') && str_contains($nombre, 'credito') => '07',
-            default => '01',
-        };
+        return $venta->tipoDocumentoFactura->codigo_sunat;
     }
 
     protected function resolverTipoDocCliente($persona): string

@@ -27,6 +27,7 @@
         $gestionOpen = request()->routeIs('clientes.*', 'descuentos.*', 'reportes.*');
         $encomiendasOpen = request()->routeIs('encomiendas.*');
         $cajaOpen = request()->routeIs('caja.*');
+        $facturacion = request()->routeIs('facturacion.*');
         $route = Auth::user()->hasRole('Administrador') ? 'dashboard.admin' : 'dashboard.vendedor';
     @endphp
 
@@ -43,6 +44,12 @@
                 <a href="{{ route('caja.index') }}" class="nav-link">
                     <i class="link-icon" data-lucide="piggy-bank"></i>
                     <span class="link-title">Caja</span>
+                </a>
+            </li>
+            <li class="nav-item {{ request()->is('facturacion*') ? 'active' : '' }}">
+                <a href="{{ route('facturacion.index') }}" class="nav-link">
+                    <i class="link-icon" data-lucide="ticket-check"></i>
+                    <span class="link-title">Validar pasaje</span>
                 </a>
             </li>
 

@@ -138,15 +138,14 @@
                         </div>
 
                         <div class="row g-2 mt-2">
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">DEPARTAMENTO</label>
-                                <select name="receptor_departamento_id" id="departamento_id" class="form-select"
-                                >
+                                <select name="receptor_departamento_id" id="departamento_id" class="form-select">
                                     <option value="">Seleccione</option>
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">PROVINCIA</label>
                                 <select name="receptor_provincia_id" id="provincia_id" class="form-select">
                                     <option value="">Seleccione</option>
@@ -154,50 +153,10 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">DISTRITO</label>
                                 <select name="receptor_distrito_id" id="distrito_id" class="form-select">
                                     <option value="">Seleccione</option>
-                                </select>
-                            </div>
-
-
-                            <div class="col-md-3">
-                                <label class="form-label">Ubigeo</label>
-                                <input type="text" class="form-control form-control-sm" id="receptor_ubigeo"
-                                    name="receptor_ubigeo" readonly>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6>Ruta</h6>
-                        <hr>
-
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <label class="form-label">PARADA ORIGEN <span style="color: red">*</span></label>
-                                <select id="origen" class="form-select" name="origen_pueblito_id">
-                                    <option value="">Seleccione una sucursal</option>
-                                    @foreach ($pueblitos as $pueblito)
-                                        <option value="{{ $pueblito->id }}">
-                                            {{ $pueblito->descripcion }}
-                                        </option>
-                                    @endforeach
-                                </select>
-
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">PARADA DESTINO <span style="color: red">*</span></label>
-                                <select id="destino" class="form-select" name="destino_pueblito_id" required>
-                                    <option value="" selected>Seleccione una sucursal</option>
-                                    @foreach ($pueblitos as $pueblito)
-                                        <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
-                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -226,7 +185,6 @@
                             </thead>
                             <tbody></tbody>
                         </table>
-
                     </div>
                 </div>
             </div>
@@ -250,6 +208,29 @@
                                 <input type="number" id="cantidad_bultos"
                                     class="form-control form-control-sm form-control form-control-sm-xs" readonly>
                             </div>
+                        </div>
+
+                        <div class="row mb-1">
+                            <label class="form-label">ORIGEN <span style="color: red">*</span></label>
+                            <select id="origen" class="form-select" name="origen_pueblito_id">
+                                <option value="">Seleccione una parada</option>
+                                @foreach ($pueblitos as $pueblito)
+                                    <option value="{{ $pueblito->id }}">
+                                        {{ $pueblito->descripcion }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                        </div>
+
+                        <div class="row mb-1">
+                            <label class="form-label">DESTINO <span style="color: red">*</span></label>
+                            <select id="destino" class="form-select" name="destino_pueblito_id" required>
+                                <option value="" selected>Seleccione una parada</option>
+                                @foreach ($pueblitos as $pueblito)
+                                    <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>

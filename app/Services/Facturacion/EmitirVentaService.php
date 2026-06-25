@@ -104,18 +104,7 @@ class EmitirVentaService
 
     protected function resolverTipoDocumento(Venta $venta): string
     {
-        if (!empty($venta->tipoDocumentoFactura?->codigo)) {
-            return $venta->tipoDocumentoFactura->codigo;
-        }
-
-        $nombre = strtolower($venta->tipoDocumentoFactura->nombre ?? '');
-
-        return match (true) {
-            str_contains($nombre, 'factura') => '01',
-            str_contains($nombre, 'boleta') => '03',
-            str_contains($nombre, 'nota') && str_contains($nombre, 'credito') => '07',
-            default => '01',
-        };
+        return $venta->tipoDocumentoFactura->codigo_sunat;
     }
 
     protected function notaDeBoleta(Venta $venta): bool

@@ -99,7 +99,16 @@ class PasajeController extends Controller
                     ($destino?->pueblito?->descripcion ?? '') .
                         ($destino?->sucursal ? ' - ' . $destino->sucursal->nombre_comercial : '')
                 );
+                $ruta = $salida->horario->ruta;
 
+                $puntosOrdenados = $ruta->puntos->sortBy('orden')->values();
+
+                $inicio = $puntosOrdenados->first()?->pueblito?->descripcion;
+                $fin    = $puntosOrdenados->last()?->pueblito?->descripcion;
+
+                $salida->ruta_completa = $inicio && $fin
+                    ? "{$inicio} → {$fin}"
+                    : '-';
                 $origenId = $puntos->first()?->pueblito_id;
                 $destinoId = $puntos->last()?->pueblito_id;
                 $asientosMap = $salida->asientosDisponibles($origenId, $destinoId);

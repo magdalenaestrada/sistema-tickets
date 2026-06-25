@@ -224,6 +224,28 @@
             border-top: 1px solid var(--gray-100);
         }
 
+        .hr-route-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hr-route-type {
+            font-size: 10px;
+            font-weight: 500;
+            color: #666;
+            font-family: "Inter", sans-serif;
+            /* o la que uses */
+        }
+
+        .hr-route-badge {
+            font-size: 10px;
+            font-weight: 600;
+            font-family: "JetBrains Mono", monospace;
+            /* otra tipografía */
+            letter-spacing: 0.3px;
+        }
+
         .leyenda-item {
             display: flex;
             align-items: center;
@@ -319,12 +341,21 @@
                                 data-destino-nombre="{{ $salida->destino_nombre }}">
 
                                 <div class="hr-route">
+
                                     <div class="hr-route-label">
                                         {{ $salida->origen_nombre }} → {{ $salida->destino_nombre }}
                                     </div>
-                                    <div class="hr-route-sub">
-                                        {{ $salida->horario->tipo_viaje->descripcion ?? '-' }}
+
+                                    <div class="hr-route-sub hr-route-row">
+                                        <span class="hr-route-type">
+                                            {{ $salida->horario->tipo_viaje->descripcion ?? '-' }}
+                                        </span>
+
+                                        <span class="hr-route-badge badge bg-dark">
+                                            {{ $salida->ruta_completa }} {{ $salida->hora_salida ?? '-' }}
+                                        </span>
                                     </div>
+
                                 </div>
                                 <div class="hr-date">
                                     <span class="hr-date-day">{{ optional($salida->fecha_salida)->format('d/m') }}</span>
