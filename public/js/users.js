@@ -11,7 +11,17 @@ $(function () {
         },
         dom: "rtip",
         columns: [
-            { data: "id" },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row, meta) {
+                    const api = $("#tablaUsuarios").DataTable();
+                    const info = api.page.info();
+
+                    return info.recordsTotal - (info.start + meta.row);
+                },
+            },
             { data: "empleado" },
             { data: "username" },
             { data: "estado" },

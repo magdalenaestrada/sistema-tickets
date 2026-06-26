@@ -91,7 +91,7 @@ class FacturacionController extends Controller
             ->download($venta->ruta_pdf);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, EmitirVentaService $service)
     {
         $items = json_decode($request->items, true);
 
@@ -99,7 +99,7 @@ class FacturacionController extends Controller
             return back()->with('error', 'Debe agregar items');
         }
 
-        DB::transaction(function () use ($request, $items) {
+        DB::transaction(function () use ($request, $items, $service) {
 
             $subtotal = collect($items)->sum('precio');
             $igv = $subtotal * 0.18;
@@ -136,8 +136,7 @@ class FacturacionController extends Controller
                 ]);
             }
 
-            app(\App\Services\Facturacion\EmitirVentaService::class)
-                ->emitir($venta);
+            $service->emitir($venta);
         });
 
         return redirect()
@@ -160,15 +159,16 @@ class FacturacionController extends Controller
             $nc->sucursal_id = $venta->sucursal_id;
             $nc->persona_id = $venta->persona_id;
             $nc->tipo_servicio_id = $venta->tipo_servicio_id;
-            $nc->serie = "NC01";
-            $nc->numero = Venta::where('tipo_documento_factura_id', $tipoNC->id)
-                ->max('numero') + 1;
+            $nc->serie = $venta->serie;
+            $ultimo = Venta::where('tipo_documento_factura_id', $tipoNC->id)->max('numero') ?? 0;
+
+            $nc->numero = str_pad($ultimo + 1, 8, '0', STR_PAD_LEFT);
             $nc->usuario_id = auth()->id();
             $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
 
-            $nc->subtotal = -$venta->subtotal;
-            $nc->impuesto = -$venta->impuesto;
-            $nc->total = -$venta->total;
+            $nc->subtotal = $venta->subtotal;
+            $nc->impuesto = $venta->impuesto;
+            $nc->total = $venta->total;
 
             $nc->estado = 'GENERADA';
             $nc->fecha_emision = now();

@@ -19,6 +19,8 @@ class TipoCuponController extends Controller
         $tipo_cupones = TipoCupon::select(['id', 'descripcion', 'estado']);
 
         return DataTables::of($tipo_cupones)
+            ->addIndexColumn()
+
             ->addColumn('estado', function ($t) {
                 return $t->estado === 'A'
                     ? '<span class="badge bg-success">Activo</span>'
@@ -44,7 +46,8 @@ class TipoCuponController extends Controller
 
                 return $btnActivar . $btnDesactivar . $btnEditar;
             })
-            ->rawColumns(['acciones', 'estado'])
+            ->rawColumns(['acciones', 'estado'])->orderColumn('id', 'id $1')
+
             ->make(true);
     }
 

@@ -92,7 +92,7 @@
                                 <tr>
 
                                     <td class="text-muted">
-                                        {{ $venta->id }}
+                                        {{ $ventas->total() - (($ventas->currentPage() - 1) * $ventas->perPage() + $loop->index) }}
                                     </td>
 
                                     <td>

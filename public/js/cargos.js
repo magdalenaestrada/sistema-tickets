@@ -8,7 +8,11 @@ $(function () {
     let tabla = $("#tablaCargos").DataTable({
         ajax: route("cargos.datatable"), // ← cambio a Ziggy
         columns: [
-            { title: "ID", data: "id" },
+            {
+                data: "DT_RowIndex",
+                orderable: false,
+                searchable: false,
+            },
             { title: "Descripcion", data: "descripcion" },
             {
                 title: "Acciones",
@@ -17,16 +21,16 @@ $(function () {
                 searchable: false,
             },
         ],
-        order: [[0, "asc"]],
+        order: [[0, "desc"]],
         responsive: false,
-        
+
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
         },
         drawCallback: function () {
             lucide.createIcons();
         },
-        dom:'rtip'
+        dom: "rtip",
     });
 
     $("#btnNuevaCargo").click(function () {
@@ -43,7 +47,7 @@ $(function () {
         $.get(route("cargos.mostrar", id), function (data) {
             $("#cargo_id").val(id);
             $("#descripcion").val(data.descripcion);
-            $("#rol_id").val(data.rol_id); 
+            $("#rol_id").val(data.rol_id);
             $("#modalTitulo").text("Editar Cargo");
             $("#btnGuardarCargo").text("Actualizar");
             $("#modalCargo").modal("show");

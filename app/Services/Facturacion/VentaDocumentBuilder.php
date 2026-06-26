@@ -65,7 +65,7 @@ class VentaDocumentBuilder
             ->setTipoOperacion('0101')
             ->setTipoDoc($tipoDoc)
             ->setSerie($venta->serie)
-            ->setCorrelativo((string) $venta->numero)
+            ->setCorrelativo(str_pad($venta->numero, 8, '0', STR_PAD_LEFT))
             ->setFechaEmision($venta->fecha_emision instanceof \DateTimeInterface
                 ? $venta->fecha_emision
                 : new DateTime($venta->fecha_emision))
@@ -73,12 +73,12 @@ class VentaDocumentBuilder
             ->setTipoMoneda('PEN')
             ->setCompany($company)
             ->setClient($client)
-            ->setMtoOperGravadas((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0))
-            ->setMtoIGV((float) ($venta->impuesto ?? 0))
-            ->setTotalImpuestos((float) ($venta->impuesto ?? 0))
-            ->setValorVenta((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0))
-            ->setSubTotal((float) ($venta->subtotal ?? $venta->total ?? 0))
-            ->setMtoImpVenta((float) ($venta->total ?? 0));
+            ->setMtoOperGravadas(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
+            ->setMtoIGV(abs((float) ($venta->impuesto ?? 0)))
+            ->setTotalImpuestos(abs((float) ($venta->impuesto ?? 0)))
+            ->setValorVenta(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
+            ->setSubTotal(abs((float) ($venta->subtotal ?? $venta->total ?? 0)))
+            ->setMtoImpVenta(abs((float) ($venta->total ?? 0)));
 
         $invoice->setDetails($this->buildDetallesVenta($venta))
             ->setLegends([$this->buildLeyenda($venta)]);
@@ -125,7 +125,7 @@ class VentaDocumentBuilder
                 ? $venta->fecha_emision
                 : new DateTime($venta->fecha_emision))
             ->setTipDocAfectado($this->resolverDocumentoAfectadoTipo($venta))
-            ->setNumDocfectado($venta->documento_referencia)
+            ->setNumDocfectado($venta->serie)
             ->setCodMotivo('01')
             ->setDesMotivo($venta->observacion ?: 'ANULACION DE LA OPERACION')
             ->setTipoMoneda('PEN')
@@ -151,7 +151,7 @@ class VentaDocumentBuilder
             $details[] = (new SaleDetail())
                 ->setCodProducto($d->codigo ?? 'ITEM')
                 ->setUnidad($d->unidad ?? 'NIU')
-                ->setCantidad((float) $d->cantidad ?? 0)
+                ->setCantidad((float) ($d->cantidad ?? 0))
                 ->setDescripcion($d->descripcion ?? 'ITEM')
                 ->setMtoValorUnitario((float) $d->valor_unitario ?? 0)
                 ->setMtoBaseIgv((float) $d->base_igv ?? 0)
@@ -225,10 +225,10 @@ class VentaDocumentBuilder
 
     protected function resolverDocumentoAfectadoTipo(Venta $venta): string
     {
-        if (!$venta->documento_referencia) {
+        if (!$venta->serie) {
             return '01';
         }
 
-        return str_starts_with($venta->documento_referencia, 'B') ? '03' : '01';
+        return str_starts_with($venta->serie, 'B') ? '03' : '01';
     }
 }

@@ -166,8 +166,7 @@ class PasajeController extends Controller
             ->orderBy('salidas.fecha_salida', 'desc')
             ->orderBy('pasajes.asiento_numero', 'asc')
             ->select('pasajes.*')
-            ->simplePaginate(20)
-            ->withQueryString();
+            ->paginate(20)->withQueryString();
 
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')

@@ -20,7 +20,7 @@ $(document).ready(async function () {
         },
 
         columns: [
-            { data: "id" },
+            { data: "DT_RowIndex" },
             { data: "nombre" },
             { data: "puntos" },
             { data: "estado" },
@@ -30,6 +30,7 @@ $(document).ready(async function () {
         responsive: true,
         info: false,
         dom: "rtip",
+        order: [[0, "desc"]],
 
         drawCallback: function () {
             lucide.createIcons();

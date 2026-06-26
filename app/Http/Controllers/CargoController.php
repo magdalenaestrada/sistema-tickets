@@ -21,6 +21,8 @@ class CargoController extends Controller
         $cargos = Cargo::select(['id', 'descripcion', 'rol_id'])->with('rol');
 
         return DataTables::of($cargos)
+            ->addIndexColumn()
+
             ->addColumn('rol', function ($cargo) {
                 return $cargo->rol->name ?? '-';
             })
@@ -35,6 +37,8 @@ class CargoController extends Controller
 
                 ';
             })
+            ->orderColumn('id', 'id $1')
+
             ->rawColumns(['acciones'])
             ->make(true);
     }

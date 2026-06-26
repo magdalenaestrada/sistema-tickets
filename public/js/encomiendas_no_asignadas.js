@@ -34,7 +34,17 @@ $(function () {
         },
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
-            { data: "id" },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row, meta) {
+                    const api = $("#tablaEncomiendas").DataTable();
+                    const info = api.page.info();
+
+                    return info.recordsTotal - (info.start + meta.row);
+                },
+            },
             { data: "fecha" },
             { data: "emisor" },
             { data: "dni_emisor" },

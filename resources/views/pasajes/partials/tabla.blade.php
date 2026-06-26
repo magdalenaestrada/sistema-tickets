@@ -18,7 +18,8 @@
         <tbody>
             @forelse($pasajes as $pasaje)
                 <tr>
-                    <td>{{ $pasaje->id }}</td>
+                    <td>{{ $pasajes->total() - (($pasajes->currentPage() - 1) * $pasajes->perPage() + $loop->index) }}
+                    </td>
                     <td>
                         @if ($pasaje->venta)
                             {{ $pasaje->venta->serie ?? '' }}-{{ $pasaje->venta->numero ?? '' }}

@@ -50,7 +50,17 @@ $(function () {
         },
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
-            { data: "id", name: "id" },
+            {
+                data: null,
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row, meta) {
+                    const api = $("#tablaEncomiendas").DataTable();
+                    const info = api.page.info();
+
+                    return info.recordsTotal - (info.start + meta.row);
+                },
+            },
             { data: "fecha", name: "fecha" },
             { data: "receptor", name: "receptor" },
             { data: "dni_receptor", name: "dni_receptor" },
@@ -219,7 +229,6 @@ $(function () {
             });
         });
     });
-    
 
     $(document).on("click", ".imprimir", function () {
         const id = $(this).data("id");

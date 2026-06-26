@@ -64,11 +64,22 @@ class SalidaController extends Controller
 
     public function datatable(Request $request)
     {
+        $nowDate = now()->format('Y-m-d');
+        $nowTime = now()->format('H:i:s');
+
         $salidas = Salida::with([
             'horario.ruta',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
-        ]);
+        ])
+            ->select('salidas.*')
+            ->selectRaw("
+        CASE 
+            WHEN fecha_salida < ? THEN 1
+            WHEN fecha_salida = ? AND hora_salida < ? THEN 1
+            ELSE 0
+        END as vencida
+    ", [$nowDate, $nowDate, $nowTime]);
 
         if ($request->filled('estado')) {
             $salidas->where('estado', $request->estado);
@@ -80,11 +91,13 @@ class SalidaController extends Controller
             });
         }
 
-        $salidas = $salidas
-            ->orderBy('fecha_salida')
-            ->get();
-
         return DataTables::of($salidas)
+            ->orderColumn('vencida', 'vencida $1')
+            ->order(function ($query) {
+                $query->orderBy('vencida', 'asc')
+                    ->orderBy('fecha_salida', 'asc')
+                    ->orderBy('hora_salida', 'asc');
+            })
             ->addColumn('ruta', function ($salida) {
                 return $salida->horario?->ruta?->nombre ?? '-';
             })
@@ -98,37 +111,29 @@ class SalidaController extends Controller
                 return $salida->fecha_formateada;
             })
             ->addColumn('estado_badge', function ($salida) {
-                if ($salida->estado == 'en_ruta') {
-                    return '<span class="badge bg-warning">EN RUTA</span>';
-                }
-                if ($salida->estado == 'programado') {
-                    return '<span class="badge bg-primary">PROGRAMADO</span>';
-                }
-                if ($salida->estado == 'finalizado') {
-                    return '<span class="badge bg-success">FINALIZADO</span>';
-                }
-                if ($salida->estado == 'cancelado') {
-                    return '<span class="badge bg-danger">CANCELADO</span>';
-                }
-                if ($salida->estado == 'reprogramado') {
-                    return '<span class="badge bg-info">REPROGRAMADO</span>';
-                }
+                return match ($salida->estado) {
+                    'en_ruta' => '<span class="badge bg-warning">EN RUTA</span>',
+                    'programado' => '<span class="badge bg-primary">PROGRAMADO</span>',
+                    'finalizado' => '<span class="badge bg-success">FINALIZADO</span>',
+                    'cancelado' => '<span class="badge bg-danger">CANCELADO</span>',
+                    'reprogramado' => '<span class="badge bg-info">REPROGRAMADO</span>',
+                    default => '',
+                };
             })
             ->addColumn('acciones', function ($salida) {
                 return '
-                    <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
-                        <i class="link-icon" data-lucide="info"></i>
-                    </button>
-
-                    <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
-                        <i class="link-icon" data-lucide="pen"></i>
-                    </button>
-                ';
+                <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
+                    <i class="link-icon" data-lucide="info"></i>
+                </button>
+                <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
+                    <i class="link-icon" data-lucide="pen"></i>
+                </button>
+            ';
             })
             ->rawColumns(['acciones', 'estado_badge'])
             ->make(true);
     }
-
+    
     public function manifiestoPasajeros(Salida $salida, PdfService $pdfService)
     {
         $salida->load([

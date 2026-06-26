@@ -11,26 +11,46 @@
             width: 260px;
             height: 100vh;
             z-index: 1000;
-        }
-
-        .sidebar-body {
-            height: calc(100vh - 64px);
-            overflow-y: auto;
+            transition: width 0.3s ease;
+            overflow-x: hidden;
         }
 
         .page-wrapper {
             margin-left: 260px;
             min-height: 100vh;
+            transition: margin-left 0.3s ease;
         }
 
-        .sidebar,
-        .page-wrapper {
-            transition: all 0.3s ease;
+        body.sidebar-collapsed .sidebar {
+            width: 70px;
         }
 
-        @media (min-width: 769px) {
-            .sidebar-toggler {
-                display: none !important;
+        body.sidebar-collapsed .page-wrapper {
+            margin-left: 70px;
+        }
+
+        body.sidebar-collapsed .link-title,
+        body.sidebar-collapsed .link-arrow,
+        body.sidebar-collapsed .sidebar-brand span {
+            display: none;
+        }
+
+        body.sidebar-collapsed .nav-link {
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 0;
+                overflow: hidden;
+            }
+
+            .page-wrapper {
+                margin-left: 0;
+            }
+
+            body.sidebar-open .sidebar {
+                width: 260px;
             }
         }
     </style>
@@ -56,8 +76,9 @@
 
 <body>
     <div class="main-wrapper">
+        <x-sidebar />
+
         <div class="page-wrapper">
-            <x-sidebar />
             <x-navbar />
             <div id="loaderOverlay"
                 style="
@@ -87,7 +108,28 @@
     @include('layouts.partials.scripts')
 
     @stack('scripts')
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const toggler = document.querySelector(".sidebar-toggler");
+
+            if (toggler) {
+                toggler.addEventListener("click", function() {
+                    document.body.classList.toggle("sidebar-collapsed");
+                });
+            }
+
+            // móvil
+            const sidebarToggler = document.querySelector(".sidebar-toggler");
+
+            if (sidebarToggler && window.innerWidth < 768) {
+                sidebarToggler.addEventListener("click", function() {
+                    document.body.classList.toggle("sidebar-open");
+                });
+            }
+
+        });
+    </script>
 </body>
 
 </html>
-@routes

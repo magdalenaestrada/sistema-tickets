@@ -207,4 +207,11 @@ class Salida extends Model
 
         return $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)->isNotEmpty();
     }
+
+    public function getEsVencidaAttribute()
+    {
+        return $this->fecha_salida < now()->toDateString()
+            || ($this->fecha_salida == now()->toDateString()
+                && $this->hora_salida < now()->format('H:i:s'));
+    }
 }

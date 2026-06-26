@@ -8,7 +8,11 @@ $(function () {
     let tabla = $("#tablaTipoCupones").DataTable({
         ajax: route("tipo-cupones.datatable"),
         columns: [
-            { title: "ID", data: "id" },
+            {
+                data: "DT_RowIndex",
+                orderable: false,
+                searchable: false,
+            },
             { title: "Descripción", data: "descripcion" },
             { title: "Estado", data: "estado" },
             {
@@ -18,7 +22,7 @@ $(function () {
                 searchable: false,
             },
         ],
-        order: [[0, "asc"]],
+        order: [[0, "desc"]],
         responsive: false,
         scpermisolX: true,
         language: {
