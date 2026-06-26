@@ -9,13 +9,15 @@ $(document).ready(async function () {
             url: route("horarios.datatable"),
         },
         columns: [
-            { data: "id" },
+            { data: "DT_RowIndex" },
             { data: "ruta" },
             { data: "hora_salida_formateada" },
             { data: "hora_llegada_formateada" },
             { data: "duracion" },
             { data: "acciones" },
         ],
+        order: [[0, "desc"]],
+
         responsive: true,
         info: false,
         dom: "rtip",

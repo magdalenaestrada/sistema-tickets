@@ -26,6 +26,7 @@ class RutaController extends Controller
         $rutas = Ruta::with('puntos.distrito', 'puntos.pueblito', 'puntos.sucursal');
 
         return DataTables::of($rutas)
+            ->addIndexColumn()
 
             ->addColumn('puntos', function ($ruta) {
                 return $ruta->puntos->count();

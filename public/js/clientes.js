@@ -55,7 +55,7 @@ $(document).ready(async function () {
             },
         },
         columns: [
-            { data: "id" },
+            { data: "DT_RowIndex" },
             { data: "documento" },
             { data: "nombre" },
             { data: "telefono" },

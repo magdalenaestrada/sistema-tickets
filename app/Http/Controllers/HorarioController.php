@@ -29,6 +29,8 @@ class HorarioController extends Controller
         ]);
 
         return DataTables::of($horarios)
+            ->addIndexColumn()
+
             ->addColumn('ruta', function ($horario) {
                 return $horario->ruta?->nombre ?? '-';
             })
@@ -59,6 +61,8 @@ class HorarioController extends Controller
                 </button>
             ';
             })
+            ->orderColumn('id', 'id $1')
+
             ->rawColumns(['acciones'])
             ->make(true);
     }

@@ -208,6 +208,7 @@ class FacturacionController extends Controller
                 'detalles'
             ]);
 
+            dd($nc);
             $documento = app(VentaDocumentBuilder::class)->build($nc);
             $see = app(GreenterService::class)->getSee($empresa);
 

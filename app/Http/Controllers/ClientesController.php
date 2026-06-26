@@ -50,6 +50,8 @@ class ClientesController extends Controller
         }
 
         return datatables()->of($query)
+            ->addIndexColumn()
+
             ->addColumn('tipo_doc', fn($c) => $c->persona->tipoDocumento->codigo ?? '-')
             ->addColumn('documento', fn($c) => $c->persona->documento ?? '-')
             ->addColumn(
@@ -80,6 +82,8 @@ class ClientesController extends Controller
 
                 return $botones;
             })
+            ->orderColumn('id', 'id $1')
+
             ->rawColumns(['acciones'])
             ->make(true);
     }
