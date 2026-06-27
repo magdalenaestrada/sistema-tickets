@@ -11,7 +11,7 @@ $(document).ready(function () {
         ajax: route("descuentos.datatable"),
         dom: "rtip",
         columns: [
-            { data: "id" },
+            { data: "DT_RowIndex" },
             { data: "tipo_cupon" },
             { data: "codigo" },
             { data: "cantidad_usos" },
@@ -21,6 +21,8 @@ $(document).ready(function () {
             { data: "activo" },
             { data: "acciones", orderable: false, searchable: false },
         ],
+        order: [[0, "desc"]],
+
         drawCallback: function () {
             lucide.createIcons();
         },

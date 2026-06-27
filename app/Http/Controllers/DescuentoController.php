@@ -14,6 +14,7 @@ use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class DescuentoController extends Controller
@@ -53,6 +54,7 @@ class DescuentoController extends Controller
         $data = Descuento::with('personas', 'cargos')->orderBy('id', 'asc');
 
         return DataTables::of($data)
+            ->addIndexColumn()
             ->addColumn('tipo_cupon', fn($d) => $d->tipo_cupon?->descripcion ?? '-')
             ->addColumn('descuento', function ($d) {
                 return $d->monto_efectivo > 0
@@ -115,6 +117,8 @@ class DescuentoController extends Controller
 
                 return $btnActivar . $btnDesactivar . $btnEditar . $btnEliminar;
             })
+            ->orderColumn('id', 'id $1')
+
             ->rawColumns(['activo', 'acciones', 'asignado_a'])
             ->make(true);
     }
@@ -253,9 +257,18 @@ class DescuentoController extends Controller
 
     public function eliminar($id)
     {
-        $descuento = Descuento::findOrFail($id);
-        $descuento->delete();
-        return response()->json(['success' => true]);
+        DB::transaction(function () use ($id) {
+
+            DescuentoPersona::where('descuento_id', $id)->delete();
+
+            DescuentoCargo::where('descuento_id', $id)->delete();
+
+            Descuento::findOrFail($id)->delete();
+        });
+
+        return response()->json([
+            'success' => true
+        ]);
     }
 
     public function buscar(Request $request)
