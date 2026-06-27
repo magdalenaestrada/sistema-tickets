@@ -126,6 +126,9 @@ document.addEventListener("DOMContentLoaded", function () {
         "contenedor-tabla-movimientos",
     );
 
+    // 1. Al inicio del evento submit (o fuera de él), asegúrate de tener la referencia al modal
+    const modalIngresoElemento = document.getElementById("modalIngreso");
+
     if (formIngreso) {
         formIngreso.addEventListener("submit", async function (e) {
             e.preventDefault();
@@ -148,28 +151,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    if (data.errors) {
-                        let errores = Object.values(data.errors)
-                            .flat()
-                            .join("<br>");
-                        Swal.fire({
-                            icon: "error",
-                            title: "Errores de validación",
-                            html: errores,
-                        });
-                        return;
-                    }
-
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text:
-                            data.message ||
-                            "Ocurrió un error al registrar el ingreso.",
-                    });
+                    // ... (Tu código actual para manejar errores de validación)
                     return;
                 }
 
+                // --- AQUÍ OCURRE EL ÉXITO ---
+
+                // 2. Ocultar el modal de Bootstrap de forma automática
+                if (modalIngresoElemento) {
+                    const modalInstancia =
+                        bootstrap.Modal.getInstance(modalIngresoElemento) ||
+                        new bootstrap.Modal(modalIngresoElemento);
+                    modalInstancia.hide();
+                }
+
+                // Muestra la alerta de éxito
                 Swal.fire({
                     icon: "success",
                     title: "Correcto",
@@ -186,10 +182,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 document.getElementById("total_ingresos").textContent =
                     `S/ ${parseFloat(data.total_ingresos).toFixed(2)}`;
-
                 document.getElementById("total_egresos").textContent =
                     `S/ ${parseFloat(data.total_salidas).toFixed(2)}`;
-
                 document.getElementById("efectivo_esperado").textContent =
                     `S/ ${parseFloat(data.efectivo_esperado).toFixed(2)}`;
 
@@ -197,12 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     lucide.createIcons();
                 }
             } catch (error) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error inesperado",
-                    text: "No se pudo procesar la solicitud.",
-                });
-                console.error(error);
+                // ... (Tu código actual para el catch)
             }
         });
     }
