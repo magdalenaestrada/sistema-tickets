@@ -4,12 +4,13 @@ $(function () {
         serverSide: true,
         ajax: route("tipo-encomienda.datatable"),
         columns: [
-            { data: "id" },
+            { data: "DT_RowIndex" },
             { data: "descripcion" },
             { data: "precio_base" },
             { data: "acciones", orderable: false, searchable: false },
         ],
         dom: "rtip",
+        order: [[0, "desc"]],
         drawCallback: function () {
             lucide.createIcons();
         },

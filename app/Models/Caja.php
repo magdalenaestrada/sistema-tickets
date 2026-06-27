@@ -105,43 +105,43 @@ class Caja extends Model
         return $this->hasMany(CajaDetalle::class, 'caja_id');
     }
 
-    public function getIngresosYapeAttribute()
+    public function getIngresosYapeAttribute(): float
     {
-            return (float) $this->detallesActivos()
-
+        return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 1)
+            ->where('amount', '>', 0)
             ->sum('amount');
     }
 
-    public function getIngresosPlinAttribute()
+    public function getIngresosPlinAttribute(): float
     {
-            return (float) $this->detallesActivos()
-
+        return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 2)
+            ->where('amount', '>', 0)
             ->sum('amount');
     }
 
-    public function getIngresosTarjetaAttribute()
+    public function getIngresosTarjetaAttribute(): float
     {
-            return (float) $this->detallesActivos()
-
+        return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 3)
+            ->where('amount', '>', 0)
             ->sum('amount');
     }
 
-    public function getIngresosTransferenciaAttribute()
+    public function getIngresosTransferenciaAttribute(): float
     {
-            return (float) $this->detallesActivos()
-
+        return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 4)
+            ->where('amount', '>', 0)
             ->sum('amount');
     }
-
-    public function getIngresosEfectivoAttribute()
+    public function getIngresosEfectivoAttribute(): float
     {
-            return (float) $this->detallesActivos()
+        return (float) $this->detallesActivos()
             ->where('metodo_pago_id', 1)
-            ->where('subtipo_movimiento_caja_id', '!=', 10) // apertura
+            ->where('subtipo_movimiento_caja_id', '!=', 10)
+            ->where('amount', '>', 0)
             ->sum('amount');
     }
 }

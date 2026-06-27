@@ -23,6 +23,7 @@ class TipoEncomiendaController extends Controller
             ->editColumn('precio_base', function ($t) {
                 return $t->precio_base ?? '-';
             })
+            ->addIndexColumn()
             ->addColumn('acciones', function ($t) {
                 return '
                 <button class="btn btn-warning btn-xs editar" data-id="' . $t->id . '">
@@ -33,6 +34,7 @@ class TipoEncomiendaController extends Controller
                 </button>
             ';
             })
+            ->orderColumn('id', 'id $1')
             ->rawColumns(['acciones'])
             ->make(true);
     }
@@ -89,30 +91,30 @@ class TipoEncomiendaController extends Controller
     }
 
     public function destroy($id)
-{
-    try {
-        $tipo = TipoEncomienda::findOrFail($id);
-        $tipo->delete();
+    {
+        try {
+            $tipo = TipoEncomienda::findOrFail($id);
+            $tipo->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tipo de encomienda eliminado correctamente.'
-        ]);
-    } catch (QueryException $e) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tipo de encomienda eliminado correctamente.'
+            ]);
+        } catch (QueryException $e) {
 
-        if ($e->errorInfo[1] == 1451) {
+            if ($e->errorInfo[1] == 1451) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lo sentimos, este tipo de encomienda está siendo utilizado y no puede eliminarse.'
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Lo sentimos, este tipo de encomienda está siendo utilizado y no puede eliminarse.'
-            ], 422);
+                'message' => 'Ocurrió un error al eliminar el registro.'
+            ], 500);
         }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Ocurrió un error al eliminar el registro.'
-        ], 500);
     }
-}
     public function listarTodos()
     {
         $tipos = TipoEncomienda::all();

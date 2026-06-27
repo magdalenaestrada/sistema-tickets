@@ -170,6 +170,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
+                formIngreso.reset();
+                actualizarIngreso();
+
+                const modalEl = document.getElementById("modalIngreso");
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                modal.hide();
+
                 Swal.fire({
                     icon: "success",
                     title: "Correcto",
@@ -178,13 +186,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     showConfirmButton: false,
                 });
 
-                formIngreso.reset();
-                actualizarIngreso();
-
-                const modalEl = document.getElementById("modalIngreso");
-                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-                modal.hide();
                 if (tablaContenedor && data.tabla) {
                     tablaContenedor.innerHTML = data.tabla;
                 }
@@ -229,33 +230,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (select) select.value = "";
             });
         });
+
+      
+        modalIngreso.addEventListener("hidden.bs.modal", function () {
+            document
+                .querySelectorAll(".modal-backdrop")
+                .forEach((el) => el.remove());
+            document.body.classList.remove("modal-open");
+            document.body.style.removeProperty("overflow");
+            document.body.style.removeProperty("padding-right");
+        });
     }
 
-    const salidaSimple = document.getElementById("salida_monto_simple");
-    const salidaEfectivo = document.getElementById("salida_monto_efectivo");
-    const salidaDigital = document.getElementById("salida_monto_digital");
-    const salidaBilletera = document.getElementById("salida_billetera");
-
-    function actualizarSalida() {
-        ocultarSalida();
-
-        if (!tipoSalida) return;
-
-        const value = tipoSalida.value;
-
-        if (value === "1") {
-            salidaSimple?.classList.remove("d-none");
-        } else if (value === "2") {
-            salidaSimple?.classList.remove("d-none");
-            salidaBilletera?.classList.remove("d-none");
-        } else if (value === "3") {
-            salidaEfectivo?.classList.remove("d-none");
-            salidaDigital?.classList.remove("d-none");
-            salidaBilletera?.classList.remove("d-none");
-        }
-    }
-
-    tipoSalida?.addEventListener("change", actualizarSalida);
     document
         .getElementById("modalSalida")
         ?.addEventListener("show.bs.modal", function () {
