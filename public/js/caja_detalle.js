@@ -179,7 +179,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 formIngreso.reset();
+                actualizarIngreso();
 
+                const modalEl = document.getElementById("modalIngreso");
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                modal.hide();
                 if (tablaContenedor && data.tabla) {
                     tablaContenedor.innerHTML = data.tabla;
                 }
