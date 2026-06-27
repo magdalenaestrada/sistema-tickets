@@ -197,6 +197,21 @@ function opcionesEstados(selected = "programado") {
     return html;
 }
 
+function opcionesTiposVehiculo(selected = "") {
+    let html = `<option value="">Seleccione tipo de vehículo</option>`;
+
+    window.TIPOS_VEHICULO.forEach((t) => {
+        html += `
+            <option value="${t.id}"
+                ${String(selected) === String(t.id) ? "selected" : ""}>
+                ${t.descripcion}
+            </option>
+        `;
+    });
+
+    return html;
+}
+
 window.modoCrearSalida = function () {
     let html = `
         <div id="contenedorRuta">
@@ -210,7 +225,15 @@ window.modoCrearSalida = function () {
                 </select>
             </div>
         </div>
+<div class="mb-3">
+    <label class="form-label">
+        Tipo de vehículo <span class="text-danger">*</span>
+    </label>
 
+    <select id="tipo_vehiculo_id" class="form-select">
+        ${opcionesTiposVehiculo()}
+    </select>
+</div>
         <div class="mb-3">
             <label class="form-label">
                 Fecha <span style="color:red">*</span>
@@ -233,7 +256,7 @@ window.modoCrearSalida = function () {
 
         <button
             class="btn btn-primary w-100"
-            onclick="guardarSalida()">
+            onclick="guardarSalidaDirecta()">
             Guardar salida
         </button>
     `;
@@ -258,17 +281,19 @@ window.modoCrearSalida = function () {
     });
 };
 
-window.guardarSalida = function () {
+window.guardarSalidaDirecta = function () {
     const data = {
         ruta_id: $("#ruta_id").val(),
+        tipo_vehiculo_id: $("#tipo_vehiculo_id").val(),
         fecha_salida: $("#fecha_salida").val(),
         hora_salida: $("#hora_salida").val(),
         _token: $('meta[name="csrf-token"]').attr("content"),
     };
 
     $.post(route("salidas.store.directa"), data)
-        .done(function (res) {
+        .done(function () {
             Swal.fire("Correcto", "Salida creada", "success");
+            tablaSalidas.ajax.reload();
         })
         .fail(function (xhr) {
             Swal.fire(

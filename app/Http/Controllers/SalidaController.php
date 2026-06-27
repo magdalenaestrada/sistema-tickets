@@ -7,6 +7,7 @@ use App\Models\Empresa;
 use App\Models\Horario;
 use App\Models\Ruta;
 use App\Models\Salida;
+use App\Models\TipoVehiculo;
 use App\Models\Vehiculo;
 use App\Services\PdfService;
 use Carbon\Carbon;
@@ -24,6 +25,7 @@ class SalidaController extends Controller
 
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
         $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
+        $tiposVehiculo = TipoVehiculo::all();
         $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
             ->get()
             ->map(function ($h) {
@@ -37,7 +39,7 @@ class SalidaController extends Controller
                         ($h->tipo_vehiculo?->descripcion ?? ''),
                 ];
             });
-        return view('salidas.index', compact('vehiculos', 'conductores', 'horariosSalida', 'rutas'));
+        return view('salidas.index', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
     }
 
     public function index_vendedor()
@@ -133,7 +135,7 @@ class SalidaController extends Controller
             ->rawColumns(['acciones', 'estado_badge'])
             ->make(true);
     }
-    
+
     public function manifiestoPasajeros(Salida $salida, PdfService $pdfService)
     {
         $salida->load([
@@ -397,12 +399,12 @@ class SalidaController extends Controller
 
     public function storeDirecta(Request $request)
     {
-        dd($request->all());
         $salida = DB::transaction(function () use ($request) {
 
             $horario = Horario::create([
                 'ruta_id' => $request->ruta_id,
                 'tipo_viaje_id' => 1,
+                'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
                 'hora_salida' => $request->hora_salida,
             ]);
 
