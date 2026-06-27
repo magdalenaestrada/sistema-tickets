@@ -86,7 +86,7 @@
                                     <th>Cajero</th>
                                     <th>Sucursal</th>
                                     <th>Apertura</th>
-                                    <th>Cierre</th>
+                                    <th>Monto de caja</th>
                                     <th>Apertura</th>
                                     <th> cierre</th>
                                     <th>Estado</th>
@@ -106,7 +106,16 @@
                                         </td>
                                         <td>S/ {{ number_format($caja->monto_apertura, 2) }}</td>
                                         <td>
-                                            {{ $caja->monto_cierre !== null ? 'S/ ' . number_format($caja->monto_cierre, 2) : '---' }}
+                                            <span
+                                                class="fw-bold
+        @if ($caja->monto_caja > 0) text-success
+        @elseif($caja->monto_caja < 0)
+            text-danger
+        @else
+            text-secondary @endif
+    ">
+                                                S/ {{ number_format($caja->monto_caja, 2) }}
+                                            </span>
                                         </td>
                                         <td>
                                             @if (in_array($caja->estado, ['C', 'cerrada']))

@@ -144,4 +144,11 @@ class Caja extends Model
             ->where('amount', '>', 0)
             ->sum('amount');
     }
+
+    public function getMontoCajaAttribute()
+    {
+        return $this->monto_apertura
+            + $this->total_ingresos
+            - $this->total_salidas;
+    }
 }
