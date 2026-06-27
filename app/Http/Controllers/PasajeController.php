@@ -1222,12 +1222,13 @@ class PasajeController extends Controller
             'salida.horario.ruta',
         ]);
 
-        return view('caja.ticket', compact('pasaje'));
+        return view('pasajes.ticket', compact('pasaje'));
     }
 
     public function ticketsVenta(Venta $venta)
     {
         $venta->load([
+            'caja.sucursal.empresa',
             'pasajes.persona',
             'pasajes.usuario.persona',
             'pasajes.origen',
@@ -1235,6 +1236,6 @@ class PasajeController extends Controller
             'pagos.metodoPago',
         ]);
 
-        return view('pasajes.ticket', compact('venta'));
+        return view('caja.ticket', compact('venta'));
     }
 }

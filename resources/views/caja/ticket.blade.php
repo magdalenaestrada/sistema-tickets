@@ -1,17 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
     <meta charset="utf-8">
-    <title>Ticket #{{ $detalle->numero_ticket }}</title>
+    <title>{{ $venta->serie }}-{{ $venta->numero }}</title>
 
     <style>
+        /* CONFIGURACIÓN CRUCIAL PARA PDF / IMPRESIÓN DE TICKETERA */
+        @page {
+            /* 80mm de ancho. Si usas papel de 58mm, cambia a '58mm auto' */
+            size: 80mm auto;
+            margin: 0;
+            /* Elimina los márgenes del PDF (encabezados de fecha/URL del navegador) */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', Courier, monospace;
+            /* Ancho fijo para simular el rollo en pantalla y centrar el contenido */
             width: 260px;
-            /* 80mm = 280px, 58mm = 200px */
-            margin: auto;
-            font-size: 13px;
+            margin: 0 auto;
+            padding: 10px 5px;
+            font-size: 11px;
+            color: #000;
+            line-height: 1.2;
+            background-color: #fff;
         }
 
         .center {
@@ -22,28 +40,102 @@
             font-weight: bold;
         }
 
+        .right {
+            text-align: right;
+        }
+
+        .left {
+            text-align: left;
+        }
+
+        /* Contenedor del Logo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .logo-container img {
+            max-width: 110px;
+            height: auto;
+            display: inline-block;
+        }
+
+        /* Líneas discontinuas idénticas a las de tu imagen */
         .line {
             border-top: 1px dashed #000;
-            margin: 8px 0;
+            margin: 5px 0;
+            height: 0;
         }
 
         .anulado {
-            color: red;
+            border: 1px solid #000;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 13px;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            padding: 2px;
         }
 
+        .w-100 {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* Tablas de datos clave-valor */
+        .table-data td {
+            padding: 1px 0;
+            vertical-align: top;
+            font-size: 11px;
+        }
+
+        /* Tabla de ítems */
+        .table-items th {
+            border-bottom: 1px dashed #000;
+            font-weight: bold;
+            font-size: 11px;
+            padding-bottom: 2px;
+        }
+
+        .table-items td {
+            padding: 3px 0;
+            vertical-align: top;
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        /* Botón de control en pantalla */
+        .btn-print {
+            display: block;
+            width: 100%;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            padding: 6px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        /* Comportamiento estricto al generar el PDF / Imprimir */
         @media print {
-            button {
-                display: none;
+            .btn-print {
+                display: none !important;
+            }
+
+            body {
+                width: 100%;
+                /* Toma el ancho definido en @page */
+                padding: 5px;
+                /* Pequeño colchón interno para que no pegue al borde del papel */
             }
         }
     </style>
 
     <script>
-        // Abre el modal de impresión automáticamente
         window.onload = function() {
             window.print();
         };
@@ -52,102 +144,126 @@
 
 <body>
 
-    {{-- Mostrar si está anulado --}}
-    @if ($detalle->anulado)
-        <div class="anulado">TICKET ANULADO</div>
-        <div class="line"></div>
+    @if ($venta->estado == 'ANULADO' || $venta->fecha_anulacion)
+        <div class="anulado">*** ANULADO ***</div>
     @endif
 
     @php
-        $empresa = $detalle->caja->sucursal?->empresa;
+        $empresa = $venta->sucursal?->empresa;
+        $cliente = $venta->persona;
     @endphp
 
-    {{-- ENCABEZADO DE LA EMPRESA --}}
+    {{-- ENCABEZADO --}}
     <div class="center">
-
-        <div class="bold" style="font-size:16px;">
-            {{ $empresa->razon_social }}
-        </div>
-
-        <div class="bold">
-            RUC: {{ $empresa->documento }}
-        </div>
-
-        <div>
-            {{ $empresa->direccion }}
-        </div>
-
-        @if ($empresa->telefono)
-            <div>
-                Tel: {{ $empresa->telefono }}
+        @if ($empresa && $empresa->logo)
+            <div class="logo-container">
+                <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
             </div>
         @endif
 
+        <div class="bold" style="font-size: 12px;">{{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}</div>
+        <div class="bold">RUC: {{ $empresa->documento ?? '20513247495' }}</div>
+        <div style="font-size: 10px;">{{ $venta->sucursal->direccion ?? ($empresa->direccion ?? 'Av. El Sol 789') }}
+        </div>
+
+        <div class="line"></div>
+
+        <div class="bold" style="text-transform: uppercase;">
+            {{ $venta->tipoDocumentoFactura->descripcion ?? 'NOTA DE VENTA' }}</div>
+        <div class="bold" style="font-size: 12px;">{{ $venta->serie }} - {{ $venta->numero }}</div>
+
         <div class="line"></div>
     </div>
 
-
-    {{-- INFO DE TICKET --}}
-    <p><strong>Ticket:</strong> {{ $detalle->numero_ticket }}</p>
-    <p><strong>Fecha:</strong> {{ $detalle->created_at->format('d/m/Y H:i:s') }}</p>
-    <p><strong>Tipo:</strong> {{ $detalle->subtipo->tipo_movimiento->descripcion ?? 'N/A' }}</p>
-    <p><strong>Descripción:</strong> {{ $detalle->description }}</p>
+    {{-- EMISIÓN --}}
+    <table class="table-data w-100">
+        <tr>
+            <td class="bold">F. Emisión:</td>
+            <td class="right">
+                {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
+            </td>
+        </tr>
+        <tr>
+            <td class="bold">Cajero:</td>
+            <td class="right">{{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}</td>
+        </tr>
+    </table>
 
     <div class="line"></div>
 
-    <p><strong>Monto:</strong> S/ {{ number_format($detalle->amount, 2) }}</p>
-    <p><strong>Método Pago:</strong> {{ $detalle->metodoPago->descripcion }}</p>
+    {{-- CLIENTE --}}
+    <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL CLIENTE</div>
+    <table class="table-data w-100">
+        <tr>
+            <td class="bold" style="width: 30%;">Cliente:</td>
+            <td class="right">{{ $cliente ? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}</td>
+        </tr>
+        <tr>
+            <td class="bold">Documento:</td>
+            <td class="right">{{ $cliente->documento ?? '00000000' }}</td>
+        </tr>
+    </table>
 
     <div class="line"></div>
 
-    @php
-        $servicio = $detalle->servicio;
-    @endphp
-
-    @if ($servicio)
-
-        <div class="bold">DETALLES DEL SERVICIO</div>
-        <div class="line"></div>
-
-        {{-- SI ES ENCOMIENDA --}}
-        @if ($servicio instanceof \App\Models\Encomienda)
-            <p><strong>Tipo servicio:</strong> Encomienda</p>
-            <p><strong>Origen:</strong> {{ $servicio->sucursal_origen->nombre_comercial }}</p>
-            <p><strong>Destino:</strong> {{ $servicio->sucursal_destino->nombre_comercial }}</p>
-
-            <div class="bold" style="margin-top:5px;">DETALLES</div>
-
-            @foreach ($servicio->detalles as $d)
-                <p>- {{ $d->tip }} ({{ $d->peso }} kg): S/ {{ number_format($d->costo, 2) }}</p>
+    {{-- ÍTEMS --}}
+    <table class="table-items w-100">
+        <thead>
+            <tr>
+                <th class="left" style="width: 65%;">Descripción</th>
+                <th class="center" style="width: 10%;">Cant</th>
+                <th class="right" style="width: 25%;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($venta->detalles as $detalle)
+                <tr>
+                    <td class="left">
+                        {{ $detalle->descripcion }}
+                       
+                    </td>
+                    <td class="center">{{ number_format($detalle->cantidad, 0) }}</td>
+                    <td class="right">S/ {{ number_format($detalle->total, 2) }}</td>
+                </tr>
             @endforeach
-        @endif
+        </tbody>
+    </table>
 
+    <div class="line"></div>
 
-        {{-- SI ES PASAJE --}}
-        @if ($servicio instanceof \App\Models\Pasaje)
-            <p><strong>Tipo servicio:</strong> Pasaje</p>
-            <p><strong>Pasajero:</strong> {{ $servicio->persona->nombres }} {{ $servicio->persona->apellidos }}</p>
-            <p><strong>Origen:</strong> {{ $servicio->horario->punto_origen->nombre_comercial }}</p>
-            <p><strong>Destino:</strong> {{ $servicio->horario->punto_destino->nombre_comercial }}</p>
-            <p><strong>Asiento:</strong> {{ $servicio->asiento_numero }}</p>
-        @endif
+    {{-- TOTALES --}}
+    <table class="table-data w-100">
+        <tr>
+            <td class="bold">Op. Gravada:</td>
+            <td class="right">S/ {{ number_format($venta->subtotal ?? $venta->total - $venta->impuesto, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">IGV ({{ $empresa->igv ?? 18 }}.00%):</td>
+            <td class="right">S/ {{ number_format($venta->impuesto, 2) }}</td>
+        </tr>
+        <tr style="font-size: 12px;">
+            <td class="bold">TOTAL A PAGAR:</td>
+            <td class="right bold">S/ {{ number_format($venta->total, 2) }}</td>
+        </tr>
+    </table>
 
+    <div class="line"></div>
 
-        {{-- SI ES EQUIPAJE --}}
-        @if ($servicio instanceof \App\Models\EquipajeExtra)
-            <p><strong>Tipo servicio:</strong> Equipaje Extra</p>
-            <p><strong>Peso:</strong> {{ $servicio->peso }} kg</p>
-            <p><strong>Costo:</strong> S/ {{ number_format($servicio->costo, 2) }}</p>
-        @endif
-
+    {{-- PIE DE PÁGINA --}}
+    @if ($venta->observacion)
+        <div style="font-size: 10px; font-style: italic; margin-bottom: 5px; word-break: break-word;">
+            <strong>Obs:</strong> {{ $venta->observacion }}
+        </div>
+        <div class="line"></div>
     @endif
 
-
-    <div class="center">
-        ¡Gracias por su preferencia!
+    <div class="center" style="font-size: 10px;">
+        <div>¡Gracias por su compra!</div>
+        <div>Representación impresa de la</div>
+        <div class="bold">{{ $venta->tipoDocumentoFactura->descripcion ?? 'Nota de venta' }} Electrónica.</div>
     </div>
 
-    <button onclick="window.print()">Reimprimir</button>
+    <button class="btn-print" onclick="window.print()">Imprimir Ticket</button>
 
 </body>
 

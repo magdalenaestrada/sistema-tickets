@@ -1,47 +1,321 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // ===========================================================
+    // Helpers genéricos
+    // ===========================================================
+
+    function getCsrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute("content") : null;
+    }
+
+    function mostrarError(mensaje) {
+        Swal.fire({
+            icon: "error",
+            title: "Ocurrió un error",
+            text:
+                mensaje ||
+                "No se pudo completar la operación. Intenta nuevamente.",
+        });
+    }
+
+    function bloquearBoton(form, bloquear) {
+        if (!form) return;
+        const btn = form.querySelector('[type="submit"]');
+        if (!btn) return;
+
+        btn.disabled = bloquear;
+
+        if (bloquear) {
+            btn.dataset.textoOriginal = btn.innerHTML;
+            btn.innerHTML =
+                '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+        } else if (btn.dataset.textoOriginal) {
+            btn.innerHTML = btn.dataset.textoOriginal;
+            delete btn.dataset.textoOriginal;
+        }
+    }
+
+    // Envía el formulario por fetch y SIEMPRE da feedback al usuario.
+    // Devuelve los datos de la respuesta si todo salió bien, o null si hubo error
+    // (en cuyo caso ya se mostró el mensaje correspondiente).
+    async function enviarFormulario(form) {
+        const token = getCsrfToken();
+        if (!token) {
+            mostrarError(
+                "No se encontró el token CSRF. Recarga la página e intenta de nuevo.",
+            );
+            return null;
+        }
+
+        const formData = new FormData(form);
+        let response;
+
+        try {
+            response = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": token,
+                    Accept: "application/json",
+                },
+                body: formData,
+            });
+        } catch (error) {
+            console.error(error);
+            mostrarError(
+                "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.",
+            );
+            return null;
+        }
+
+        let data = null;
+        try {
+            data = await response.json();
+        } catch (error) {
+            console.error("Respuesta no es JSON válido:", error);
+        }
+
+        if (!response.ok) {
+            let mensaje = data?.message;
+
+            if (!mensaje && data?.errors) {
+                mensaje = Object.values(data.errors).flat().join("\n");
+            }
+
+            mostrarError(mensaje);
+            return null;
+        }
+
+        return data;
+    }
+
+    function actualizarTotales(data) {
+        if (!data) return;
+
+        const tablaContenedor = document.getElementById(
+            "contenedor-tabla-movimientos",
+        );
+        if (tablaContenedor && data.tabla) {
+            tablaContenedor.innerHTML = data.tabla;
+        }
+
+        const totalIngresos = document.getElementById("total_ingresos");
+        const totalEgresos = document.getElementById("total_egresos");
+        const efectivoEsperado = document.getElementById("efectivo_esperado");
+
+        if (totalIngresos && data.total_ingresos !== undefined) {
+            totalIngresos.textContent = `S/ ${parseFloat(data.total_ingresos).toFixed(2)}`;
+        }
+
+        if (totalEgresos && data.total_salidas !== undefined) {
+            totalEgresos.textContent = `S/ ${parseFloat(data.total_salidas).toFixed(2)}`;
+        }
+
+        if (efectivoEsperado && data.efectivo_esperado !== undefined) {
+            efectivoEsperado.textContent = `S/ ${parseFloat(data.efectivo_esperado).toFixed(2)}`;
+        }
+
+        if (typeof lucide !== "undefined") {
+            lucide.createIcons();
+        }
+    }
+
+    function limpiarCampos(elementos) {
+        elementos.forEach((el) => {
+            if (!el) return;
+            el.classList.add("d-none");
+            el.querySelectorAll("input, select").forEach((input) => {
+                input.value = "";
+            });
+        });
+    }
+
+    // ===========================================================
+    // SALIDA (egreso)
+    // ===========================================================
+
     const tipoSalida = document.getElementById("tipo_salida");
-    const campoMontoSimple = document.getElementById("campo_monto_simple");
-    const campoMontoEfectivo = document.getElementById("campo_monto_efectivo");
-    const campoMontoDigital = document.getElementById("campo_monto_digital");
-    const campoBilletera = document.getElementById("campo_billetera");
+    const campoMontoSimple = document.getElementById("salida_monto_simple");
+    const campoMontoEfectivo = document.getElementById("salida_monto_efectivo");
+    const campoMontoDigital = document.getElementById("salida_monto_digital");
+    const campoBilletera = document.getElementById("salida_billetera");
+    const formSalida = document.getElementById("form-salida");
+    const modalSalidaElemento = document.getElementById("modalSalida");
 
     function ocultarSalida() {
-        if (campoMontoSimple) {
-            campoMontoSimple.classList.add("d-none");
-            campoMontoSimple.querySelector("input").value = "";
-        }
-
-        if (campoMontoEfectivo) {
-            campoMontoEfectivo.classList.add("d-none");
-            campoMontoEfectivo.querySelector("input").value = "";
-        }
-
-        if (campoMontoDigital) {
-            campoMontoDigital.classList.add("d-none");
-            campoMontoDigital.querySelector("input").value = "";
-        }
-
-        if (campoBilletera) {
-            campoBilletera.classList.add("d-none");
-            campoBilletera.querySelector("select").value = "";
-        }
+        limpiarCampos([
+            campoMontoSimple,
+            campoMontoEfectivo,
+            campoMontoDigital,
+            campoBilletera,
+        ]);
     }
 
     function actualizarSalida() {
         ocultarSalida();
         if (!tipoSalida) return;
 
-        if (tipoSalida.value === "1") {
-            campoMontoSimple.classList.remove("d-none");
-        } else if (tipoSalida.value === "2") {
-            campoMontoSimple.classList.remove("d-none");
-            campoBilletera.classList.remove("d-none");
-        } else if (tipoSalida.value === "3") {
-            campoMontoEfectivo.classList.remove("d-none");
-            campoMontoDigital.classList.remove("d-none");
-            campoBilletera.classList.remove("d-none");
+        const value = tipoSalida.value;
+
+        if (value === "1") {
+            campoMontoSimple?.classList.remove("d-none");
+        }
+
+        if (value === "2") {
+            campoMontoSimple?.classList.remove("d-none");
+            campoBilletera?.classList.remove("d-none");
+        }
+
+        if (value === "3") {
+            campoMontoEfectivo?.classList.remove("d-none");
+            campoMontoDigital?.classList.remove("d-none");
+            campoBilletera?.classList.remove("d-none");
         }
     }
+
+    if (tipoSalida) {
+        tipoSalida.addEventListener("change", actualizarSalida);
+        actualizarSalida();
+    }
+
+    if (modalSalidaElemento) {
+        modalSalidaElemento.addEventListener("shown.bs.modal", function () {
+            const form = this.querySelector("form");
+            if (form) form.reset();
+            ocultarSalida();
+        });
+
+        modalSalidaElemento.addEventListener("hidden.bs.modal", function () {
+            document.body.classList.remove("modal-open");
+            document.body.style.removeProperty("padding-right");
+            document
+                .querySelectorAll(".modal-backdrop")
+                .forEach((el) => el.remove());
+        });
+    }
+
+    if (formSalida) {
+        formSalida.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            bloquearBoton(formSalida, true);
+            const data = await enviarFormulario(formSalida);
+            bloquearBoton(formSalida, false);
+
+            if (!data) return; // ya se mostró el error, el modal queda abierto para corregir
+
+            const modal =
+                bootstrap.Modal.getOrCreateInstance(modalSalidaElemento);
+            modal.hide();
+
+            Swal.fire({
+                icon: "success",
+                title: "Correcto",
+                text: data.message,
+                timer: 1500,
+                showConfirmButton: false,
+            });
+
+            formSalida.reset();
+            ocultarSalida();
+            actualizarTotales(data);
+        });
+    }
+
+    // ===========================================================
+    // INGRESO
+    // ===========================================================
+
+    const tipoIngreso = document.getElementById("tipo_ingreso");
+    const ingresoMontoSimple = document.getElementById("ingreso_monto_simple");
+    const ingresoMontoEfectivo = document.getElementById(
+        "ingreso_monto_efectivo",
+    );
+    const ingresoMontoDigital = document.getElementById(
+        "ingreso_monto_digital",
+    );
+    const ingresoBilletera = document.getElementById("ingreso_billetera");
+    const formIngreso = document.getElementById("form-ingreso");
+    const modalIngresoElemento = document.getElementById("modalIngreso");
+    const modalIngreso = modalIngresoElemento
+        ? bootstrap.Modal.getOrCreateInstance(modalIngresoElemento)
+        : null;
+
+    function ocultarIngreso() {
+        limpiarCampos([
+            ingresoMontoSimple,
+            ingresoMontoEfectivo,
+            ingresoMontoDigital,
+            ingresoBilletera,
+        ]);
+    }
+
+    function actualizarIngreso() {
+        ocultarIngreso();
+        if (!tipoIngreso) return;
+
+        if (tipoIngreso.value === "1") {
+            ingresoMontoSimple?.classList.remove("d-none");
+        } else if (tipoIngreso.value === "2") {
+            ingresoMontoSimple?.classList.remove("d-none");
+            ingresoBilletera?.classList.remove("d-none");
+        } else if (tipoIngreso.value === "3") {
+            ingresoMontoEfectivo?.classList.remove("d-none");
+            ingresoMontoDigital?.classList.remove("d-none");
+            ingresoBilletera?.classList.remove("d-none");
+        }
+    }
+
+    if (tipoIngreso) {
+        tipoIngreso.addEventListener("change", actualizarIngreso);
+        actualizarIngreso();
+    }
+
+    if (modalIngresoElemento) {
+        modalIngresoElemento.addEventListener("shown.bs.modal", function () {
+            const form = this.querySelector("form");
+            if (form) form.reset();
+            ocultarIngreso();
+        });
+
+        modalIngresoElemento.addEventListener("hidden.bs.modal", function () {
+            document.body.classList.remove("modal-open");
+            document.body.style.removeProperty("padding-right");
+            document
+                .querySelectorAll(".modal-backdrop")
+                .forEach((el) => el.remove());
+        });
+    }
+
+    if (formIngreso) {
+        formIngreso.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            bloquearBoton(formIngreso, true);
+            const data = await enviarFormulario(formIngreso);
+            bloquearBoton(formIngreso, false);
+
+            if (!data) return; // ya se mostró el error, el modal queda abierto para corregir
+
+            modalIngreso?.hide();
+
+            Swal.fire({
+                icon: "success",
+                title: "Correcto",
+                text: data.message,
+                timer: 1500,
+                showConfirmButton: false,
+            });
+
+            formIngreso.reset();
+            ocultarIngreso();
+            actualizarTotales(data);
+        });
+    }
+
+    // ===========================================================
+    // Anular ticket
+    // ===========================================================
 
     document.querySelectorAll(".btn-anular-ticket").forEach(function (btn) {
         btn.addEventListener("click", function () {
@@ -63,189 +337,4 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     });
-
-    if (tipoSalida) {
-        tipoSalida.addEventListener("change", actualizarSalida);
-        actualizarSalida();
-    }
-
-    const tipoIngreso = document.getElementById("tipo_ingreso");
-    const ingresoMontoSimple = document.getElementById("ingreso_monto_simple");
-    const ingresoMontoEfectivo = document.getElementById(
-        "ingreso_monto_efectivo",
-    );
-    const ingresoMontoDigital = document.getElementById(
-        "ingreso_monto_digital",
-    );
-    const ingresoBilletera = document.getElementById("ingreso_billetera");
-
-    function ocultarIngreso() {
-        if (ingresoMontoSimple) {
-            ingresoMontoSimple.classList.add("d-none");
-            ingresoMontoSimple.querySelector("input").value = "";
-        }
-
-        if (ingresoMontoEfectivo) {
-            ingresoMontoEfectivo.classList.add("d-none");
-            ingresoMontoEfectivo.querySelector("input").value = "";
-        }
-
-        if (ingresoMontoDigital) {
-            ingresoMontoDigital.classList.add("d-none");
-            ingresoMontoDigital.querySelector("input").value = "";
-        }
-        if (ingresoBilletera) {
-            ingresoBilletera.classList.add("d-none");
-            ingresoBilletera.querySelector("select").value = "";
-        }
-    }
-
-    function actualizarIngreso() {
-        ocultarIngreso();
-        if (!tipoIngreso) return;
-
-        if (tipoIngreso.value === "1") {
-            ingresoMontoSimple.classList.remove("d-none");
-        } else if (tipoIngreso.value === "2") {
-            ingresoMontoSimple.classList.remove("d-none");
-            ingresoBilletera.classList.remove("d-none");
-        } else if (tipoIngreso.value === "3") {
-            ingresoMontoEfectivo.classList.remove("d-none");
-            ingresoMontoDigital.classList.remove("d-none");
-            ingresoBilletera.classList.remove("d-none");
-        }
-    }
-
-    if (tipoIngreso) {
-        tipoIngreso.addEventListener("change", actualizarIngreso);
-        actualizarIngreso();
-    }
-
-    const formIngreso = document.getElementById("form-ingreso");
-    const tablaContenedor = document.getElementById(
-        "contenedor-tabla-movimientos",
-    );
-
-    // 1. Al inicio del evento submit (o fuera de él), asegúrate de tener la referencia al modal
-    const modalIngresoElemento = document.getElementById("modalIngreso");
-
-    if (formIngreso) {
-        formIngreso.addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(formIngreso);
-
-            try {
-                const response = await fetch(formIngreso.action, {
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            .getAttribute("content"),
-                        Accept: "application/json",
-                    },
-                    body: formData,
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    // ... (Tu código actual para manejar errores de validación)
-                    return;
-                }
-
-                // --- AQUÍ OCURRE EL ÉXITO ---
-
-                // 2. Ocultar el modal de Bootstrap de forma automática
-                if (modalIngresoElemento) {
-                    const modalInstancia =
-                        bootstrap.Modal.getInstance(modalIngresoElemento) ||
-                        new bootstrap.Modal(modalIngresoElemento);
-                    modalInstancia.hide();
-                }
-
-                // Muestra la alerta de éxito
-                Swal.fire({
-                    icon: "success",
-                    title: "Correcto",
-                    text: data.message,
-                    timer: 1500,
-                    showConfirmButton: false,
-                });
-
-                formIngreso.reset();
-
-                if (tablaContenedor && data.tabla) {
-                    tablaContenedor.innerHTML = data.tabla;
-                }
-
-                document.getElementById("total_ingresos").textContent =
-                    `S/ ${parseFloat(data.total_ingresos).toFixed(2)}`;
-                document.getElementById("total_egresos").textContent =
-                    `S/ ${parseFloat(data.total_salidas).toFixed(2)}`;
-                document.getElementById("efectivo_esperado").textContent =
-                    `S/ ${parseFloat(data.efectivo_esperado).toFixed(2)}`;
-
-                if (typeof lucide !== "undefined") {
-                    lucide.createIcons();
-                }
-            } catch (error) {
-                // ... (Tu código actual para el catch)
-            }
-        });
-    }
-
-    const modalIngreso = document.getElementById("modalIngreso");
-
-    if (modalIngreso) {
-        modalIngreso.addEventListener("show.bs.modal", function () {
-            const form = modalIngreso.querySelector("form");
-            if (form) form.reset();
-
-            document.querySelectorAll(".ingreso-campo").forEach((el) => {
-                el.classList.add("d-none");
-
-                const input = el.querySelector("input");
-                const select = el.querySelector("select");
-
-                if (input) input.value = "";
-                if (select) select.value = "";
-            });
-        });
-    }
-
-    const salidaSimple = document.getElementById("salida_monto_simple");
-    const salidaEfectivo = document.getElementById("salida_monto_efectivo");
-    const salidaDigital = document.getElementById("salida_monto_digital");
-    const salidaBilletera = document.getElementById("salida_billetera");
-
-    function actualizarSalida() {
-        ocultarSalida();
-
-        if (!tipoSalida) return;
-
-        const value = tipoSalida.value;
-
-        if (value === "1") {
-            salidaSimple?.classList.remove("d-none");
-        } else if (value === "2") {
-            salidaSimple?.classList.remove("d-none");
-            salidaBilletera?.classList.remove("d-none");
-        } else if (value === "3") {
-            salidaEfectivo?.classList.remove("d-none");
-            salidaDigital?.classList.remove("d-none");
-            salidaBilletera?.classList.remove("d-none");
-        }
-    }
-
-    tipoSalida?.addEventListener("change", actualizarSalida);
-    document
-        .getElementById("modalSalida")
-        ?.addEventListener("show.bs.modal", function () {
-            const form = document.getElementById("form-salida");
-            if (form) form.reset();
-
-            ocultarSalida();
-        });
 });

@@ -901,22 +901,29 @@ $(function () {
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
-        if (!datosPasajerosCompletos()) return;
-        if (!validarClienteFacturacion()) return;
-        if (!validarMenores()) {
-            Swal.fire(
-                "Atención",
-                "Los pasajeros menores deben adjuntar autorización PDF.",
-                "warning",
-            );
+        const btn = $(this);
+        if (btn.prop("disabled")) return;
+        btn.prop("disabled", true).text("Procesando...");
+
+        if (!datosPasajerosCompletos()) {
+            btn.prop("disabled", false).text("Terminar Venta");
             return;
         }
+
+        if (!validarClienteFacturacion()) {
+            btn.prop("disabled", false).text("Terminar Venta");
+            return;
+        }
+
+        if (!validarMenores()) {
+            Swal.fire("Atención", "Adjunta autorización PDF.", "warning");
+            btn.prop("disabled", false).text("Terminar Venta");
+            return;
+        }
+
         if (!validarSumaPagos()) {
-            Swal.fire(
-                "Atención",
-                "La suma de pagos no coincide con el total.",
-                "warning",
-            );
+            Swal.fire("Atención", "La suma de pagos no coincide.", "warning");
+            btn.prop("disabled", false).text("Terminar Venta");
             return;
         }
 
@@ -963,27 +970,33 @@ $(function () {
             contentType: false,
             headers: { "X-CSRF-TOKEN": csrfToken },
             success: function (res) {
-                if (!res.success) return;
-
+                if (!res.success) {
+                    $("#btnConfirmarVenta")
+                        .prop("disabled", false)
+                        .text("Terminar Venta");
+                    return;
+                }
                 const win = window.open(
                     res.ticket_url,
                     "_blank",
                     "width=420,height=700",
                 );
 
-                if (win) {
-                    win.onload = function () {
-                        win.print();
-
-                        setTimeout(() => {
-                            window.location.href = res.redirect;
-                        }, 1000);
-                    };
-                } else {
+                setTimeout(() => {
+                    if (win && !win.closed) {
+                        try {
+                            win.focus();
+                            win.print();
+                        } catch (e) {}
+                    }
                     window.location.href = res.redirect;
-                }
+                }, 1200);
             },
             error: function (xhr) {
+                $("#btnConfirmarVenta")
+                    .prop("disabled", false)
+                    .text("Terminar Venta");
+
                 Swal.fire(
                     "Error",
                     xhr.responseJSON?.message || "Error al procesar la venta",
