@@ -4,7 +4,11 @@ $(function () {
         serverSide: true,
         ajax: route("tipo-encomienda.datatable"),
         columns: [
-            { data: "DT_RowIndex" },
+            {
+                data: "DT_RowIndex",
+                orderable: false,
+                searchable: false,
+            },
             { data: "descripcion" },
             { data: "precio_base" },
             { data: "acciones", orderable: false, searchable: false },
