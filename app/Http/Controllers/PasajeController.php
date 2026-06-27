@@ -25,6 +25,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -363,15 +364,21 @@ class PasajeController extends Controller
             'billetera_id' => 'nullable|integer',
             'pago_efectivo' => 'nullable|numeric|min:0',
             'pago_billetera' => 'nullable|numeric|min:0',
-            'caja_id' => Auth::user()->hasRole('Administrador')
-                ? 'required|exists:caja,id'
-                : 'nullable|exists:caja,id',
+            'caja_id' => 'nullable|exists:caja,id',
             'pago_tarjeta' => 'nullable|numeric|min:0',
             'pago_yape' => 'nullable|numeric|min:0',
             'pago_plin' => 'nullable|numeric|min:0',
             'pago_transferencia' => 'nullable|numeric|min:0',
         ]);
-
+        if (
+            $request->accion === 'vender' &&
+            Auth::user()->hasRole('Administrador') &&
+            !$request->caja_id
+        ) {
+            throw ValidationException::withMessages([
+                'caja_id' => 'Debe seleccionar una caja para realizar la venta.',
+            ]);
+        }
         try {
             DB::beginTransaction();
 
@@ -674,9 +681,7 @@ class PasajeController extends Controller
             if ($accion === 'reservar') {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Reserva realizada correctamente.',
-                    'ticket_url' => route('ventas.tickets', $venta->id),
-
+                    'ticket_url' => route('pasajes.ticket', $pasajesCreados[0]),
                     'redirect' => route('pasajes.index'),
                 ]);
             }
@@ -687,7 +692,8 @@ class PasajeController extends Controller
                     ? 'Reserva realizada correctamente.'
                     : 'Venta realizada correctamente.',
                 'venta_id' => $venta->id,
-                'tickets' => $pasajesCreados,
+                'tickets' => collect($pasajesCreados)->map(fn($id) => route('ventas.tickets', $id)),
+                'ticket_url' => route('ventas.tickets', $venta->id),
                 'comprobante' => $emision['nombre'] ?? null,
                 'xml_path' => $emision['xml_path'] ?? null,
                 'cdr_path' => $emision['cdr_path'] ?? null,
@@ -1216,7 +1222,7 @@ class PasajeController extends Controller
             'salida.horario.ruta',
         ]);
 
-        return view('pasajes.ticket', compact('pasaje'));
+        return view('caja.ticket', compact('pasaje'));
     }
 
     public function ticketsVenta(Venta $venta)

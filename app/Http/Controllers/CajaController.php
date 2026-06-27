@@ -432,7 +432,8 @@ class CajaController extends Controller
     public function reimprimir(CajaDetalle $detalle)
     {
         $detalle->load([
-            'caja.usuario.sucursal.empresa',
+            'caja.sucursal.empresa',
+            'caja.usuario',
             'subtipo.tipo_movimiento',
             'metodoPago'
         ]);
@@ -442,7 +443,7 @@ class CajaController extends Controller
         if (!$this->esAdmin($user) && $detalle->caja->usuario_id !== $user->id) {
             abort(403, 'No tienes permiso para reimprimir este ticket.');
         }
-
+      
         return view('caja.ticket', compact('detalle'));
     }
 

@@ -59,7 +59,7 @@
     @endif
 
     @php
-        $empresa = $detalle->caja->usuario->sucursal->empresa;
+        $empresa = $detalle->caja->sucursal?->empresa;
     @endphp
 
     {{-- ENCABEZADO DE LA EMPRESA --}}
