@@ -93,8 +93,9 @@ $(function () {
                     },
                     error: function (xhr) {
                         Swal.fire(
-                            "Error!",
-                            "Ocurrió un error al eliminar.",
+                            "No se pudo eliminar",
+                            xhr.responseJSON?.message ||
+                                "Ocurrió un error inesperado.",
                             "error",
                         );
                     },

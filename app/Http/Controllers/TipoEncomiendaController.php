@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TipoEncomienda;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Yajra\DataTables\DataTables;
@@ -88,13 +89,30 @@ class TipoEncomiendaController extends Controller
     }
 
     public function destroy($id)
-    {
-        TipoEncomienda::destroy($id);
+{
+    try {
+        $tipo = TipoEncomienda::findOrFail($id);
+        $tipo->delete();
 
-        return redirect()->route('tipo-encomienda.index')
-            ->with('success', 'Tipo de encomienda eliminado correctamente');
+        return response()->json([
+            'success' => true,
+            'message' => 'Tipo de encomienda eliminado correctamente.'
+        ]);
+    } catch (QueryException $e) {
+
+        if ($e->errorInfo[1] == 1451) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lo sentimos, este tipo de encomienda está siendo utilizado y no puede eliminarse.'
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Ocurrió un error al eliminar el registro.'
+        ], 500);
     }
-
+}
     public function listarTodos()
     {
         $tipos = TipoEncomienda::all();

@@ -257,11 +257,13 @@ $(document).ready(function () {
 
                         tabla.ajax.reload(null, false);
                     },
-                    error: function () {
+                    error: function (xhr) {
                         Swal.fire({
                             icon: "error",
-                            title: "Error",
-                            text: "No se pudo eliminar el descuento",
+                            title: "No se pudo eliminar",
+                            text:
+                                xhr.responseJSON?.message ||
+                                "Ocurrió un error inesperado.",
                         });
                     },
                 });

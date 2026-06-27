@@ -13,6 +13,7 @@ use App\Models\TipoCupon;
 use App\Models\TipoDocumentoFactura;
 use App\Models\TipoDocumentoPersona;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -254,21 +255,44 @@ class DescuentoController extends Controller
 
         return 'T';
     }
-
     public function eliminar($id)
     {
-        DB::transaction(function () use ($id) {
+        try {
 
-            DescuentoPersona::where('descuento_id', $id)->delete();
+            DB::transaction(function () use ($id) {
 
-            DescuentoCargo::where('descuento_id', $id)->delete();
+                $descuento = Descuento::findOrFail($id);
 
-            Descuento::findOrFail($id)->delete();
-        });
+                $descuento->personas()->delete();
+                $descuento->cargos()->delete();
 
-        return response()->json([
-            'success' => true
-        ]);
+                $descuento->delete();
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cupón eliminado correctamente.'
+            ]);
+        } catch (QueryException $e) {
+
+            if ($e->errorInfo[1] == 1451) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lo sentimos, este cupón está siendo utilizado y no puede eliminarse.'
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al eliminar el cupón.'
+            ], 500);
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error inesperado.'
+            ], 500);
+        }
     }
 
     public function buscar(Request $request)
