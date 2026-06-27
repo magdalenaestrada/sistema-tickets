@@ -354,6 +354,10 @@
                     <td class="val">S/ {{ number_format($caja->ingresos_yape, 2) }}</td>
                 </tr>
                 <tr>
+                    <td class="lbl">Plin</td>
+                    <td class="val">S/ {{ number_format($caja->ingresos_plin, 2) }}</td>
+                </tr>
+                <tr>
                     <td class="lbl">Transferencia</td>
                     <td class="val">S/ {{ number_format($caja->ingresos_transferencia, 2) }}</td>
                 </tr>
