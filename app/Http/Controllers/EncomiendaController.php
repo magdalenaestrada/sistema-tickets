@@ -616,16 +616,14 @@ class EncomiendaController extends Controller
         return response()->json(['success' => true]);
     }
 
+
     public function salidasDisponibles(Request $request)
     {
         $request->validate([
+            'fecha_salida' => 'required|date',
             'origen_id' => 'nullable|exists:pueblitos,id',
             'destino_id' => 'nullable|exists:pueblitos,id',
         ]);
-
-        if (!$request->origen_id || !$request->destino_id) {
-            return response()->json([]);
-        }
 
         $salidas = Salida::with([
             'horario.ruta.puntos.sucursal',
@@ -633,33 +631,35 @@ class EncomiendaController extends Controller
             'horario.tipo_vehiculo',
         ])
             ->whereIn('estado', ['activo', 'programado'])
-            ->whereDate('fecha_salida', '>=', now()->toDateString())
+            ->whereDate('fecha_salida', $request->fecha_salida) // <- filtro que faltaba
             ->orderBy('fecha_salida')
-            ->get()
-            ->filter(function ($salida) use ($request) {
+            ->get();
+
+        if ($request->origen_id && $request->destino_id) {
+            $salidas = $salidas->filter(function ($salida) use ($request) {
                 return $salida->puedeTransportarEncomienda(
                     $request->origen_id,
                     $request->destino_id
                 );
             });
+        }
 
         return response()->json(
             $salidas->map(function ($salida) {
-
                 $ruta = $salida->horario?->ruta;
                 $puntos = $ruta?->puntos?->sortBy('orden')->values();
 
+                $origenNombre = $puntos?->first()?->pueblito?->descripcion ?? 'Origen' ;
+                $hora = $salida->horario?->hora_formateada ?? '-';
+
                 return [
                     'value' => $salida->id,
-                    'text' => ($salida->fecha_salida?->format('d/m/Y') ?? '-') .
-                        ' | ' .
-                        ($salida->horario?->hora_formateada ?? '-') .
-                        ' | ' .
-                        ($ruta?->nombre ?? 'Ruta') .
-                        ' | ' .
-                        ($puntos->first()?->sucursal?->nombre_comercial ?? 'Origen') .
-                        ' → ' .
-                        ($puntos->last()?->sucursal?->nombre_comercial ?? 'Destino'),
+                    'text' => strtoupper($origenNombre) . ' - PARTIDA ' . $hora .
+                        ($ruta?->nombre ? ' (' . $ruta->nombre . ')' : ''),
+                    'puntos' => $puntos
+                        ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
+                        ->values()
+                        ->all() ?? [],
                 ];
             })->values()
         );

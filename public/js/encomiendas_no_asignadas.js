@@ -4,6 +4,10 @@ $(function () {
     const csrf = $('meta[name="csrf-token"]').attr("content");
     let timer = null;
 
+    // Guardamos los puntos de cada ruta para no tener que pedirlos otra vez
+    // cuando el usuario cambia de horario en el mismo listado.
+    let puntosPorSalida = {};
+
     const tsOrigen = new TomSelect("#filtroOrigen", {
         create: false,
         allowEmptyOption: true,
@@ -17,17 +21,25 @@ $(function () {
     const tsSalida = new TomSelect("#salidaAsignar", {
         create: false,
         allowEmptyOption: true,
+        valueField: "value",
+        labelField: "text",
+        searchField: "text",
     });
 
+    // ======================================================
+    // TABLA: "Buscar encomienda" SOLO filtra esta tabla.
+    // Nunca depende de la fecha de salida ni del horario.
+    // ======================================================
     const tabla = $("#tablaEncomiendas").DataTable({
         processing: true,
         serverSide: true,
-        dom: "rtip",
+        dom: "rtip", // l = selector de cantidad de registros visible
+        lengthMenu: [25, 50, 100],
+        pageLength: 50, // mínimo pedido: 25, por defecto mostramos 50
         ajax: {
             url: route("encomiendas.datatable-no-asignadas"),
             data: function (d) {
                 d.documento = $("#filtroDocumento").val();
-                d.fecha = $("#filtroFecha").val();
                 d.origen_id = $("#filtroOrigen").val();
                 d.destino_id = $("#filtroDestino").val();
             },
@@ -82,45 +94,92 @@ $(function () {
         clearTimeout(timer);
         timer = setTimeout(() => {
             tabla.ajax.reload(null, false);
-            cargarSalidasDisponibles();
         }, 300);
     }
 
+    function ocultarPuntosRuta() {
+        $("#boxPuntosRuta").hide();
+        $("#boxPuntosRutaVacio").show();
+        $("#listaPuntosRuta").empty();
+    }
+
+    function mostrarPuntosRuta(salidaId) {
+        const puntos = puntosPorSalida[salidaId] || [];
+        const $lista = $("#listaPuntosRuta").empty();
+
+        if (puntos.length === 0) {
+            $lista.append('<li class="text-muted">Sin puntos registrados</li>');
+        } else {
+            puntos.forEach((p) => $lista.append(`<li>${p}</li>`));
+        }
+
+        $("#boxPuntosRutaVacio").hide();
+        $("#boxPuntosRuta").show();
+    }
+
+    // ======================================================
+    // ASIGNAR ENCOMIENDA: SOLO depende de la fecha de salida.
+    // Ya NO depende de filtroOrigen / filtroDestino.
+    // ======================================================
     function cargarSalidasDisponibles() {
-        const origen = $("#filtroOrigen").val();
-        const destino = $("#filtroDestino").val();
+        const fechaSalida = $("#filtroFechaSalida").val();
 
         tsSalida.clear();
         tsSalida.clearOptions();
+        puntosPorSalida = {};
+        ocultarPuntosRuta();
 
-        if (!origen || !destino) return;
+        if (!fechaSalida) {
+            tsSalida.addOption({ value: "", text: "Seleccione una fecha" });
+            tsSalida.refreshOptions(false);
+            return;
+        }
 
         $.get(route("encomiendas.salidas-disponibles"), {
-            origen_id: origen,
-            destino_id: destino,
+            fecha_salida: fechaSalida,
         }).done(function (resp) {
+            if (!resp.length) {
+                tsSalida.addOption({ value: "", text: "No hay horarios programados para esa fecha" });
+                tsSalida.refreshOptions(false);
+                return;
+            }
+
+            resp.forEach((s) => {
+                puntosPorSalida[s.value] = s.puntos || [];
+            });
+
             tsSalida.addOptions(resp);
             tsSalida.refreshOptions(false);
         });
     }
 
+    tsSalida.on("change", function (value) {
+        if (!value) {
+            ocultarPuntosRuta();
+            return;
+        }
+        mostrarPuntosRuta(value);
+    });
+
+    // ======================================================
+    // EVENTOS
+    // ======================================================
     $("#filtroDocumento").on("input", function () {
         const valor = $(this).val().trim();
         if (valor.length > 0 && valor.length < 3) return;
         debounceReload();
     });
 
-    $("#filtroFecha").on("change", debounceReload);
     $("#filtroOrigen").on("change", debounceReload);
     $("#filtroDestino").on("change", debounceReload);
 
+    $("#filtroFechaSalida").on("change", cargarSalidasDisponibles);
+
     $("#btnLimpiar").on("click", function () {
+        // Limpia SOLO el bloque "Buscar encomienda" (filtros de tabla).
         $("#filtroDocumento").val("");
-        $("#filtroFecha").val("");
         tsOrigen.clear();
         tsDestino.clear();
-        tsSalida.clear();
-        tsSalida.clearOptions();
         $("#checkAll").prop("checked", false);
         tabla.ajax.reload(null, false);
     });
