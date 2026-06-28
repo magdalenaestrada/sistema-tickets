@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Empresa;
 use App\Models\Persona;
+use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
@@ -23,9 +25,20 @@ class FacturacionController extends Controller
         ])
             ->orderByDesc('fecha_emision')
             ->paginate(20);
+        $sucursales = Sucursal::with('serie')->get();
+        $empresa = Empresa::first();
+
+        $porcentajeIgv = $empresa->igv; //18
         $tiposDocumento = TipoDocumentoFactura::all();
         $personas = Persona::all();
-        return view('facturacion.index', compact('ventas', 'tiposDocumento', 'personas'));
+        return view('facturacion.index', compact(
+            'ventas',
+            'tiposDocumento',
+            'personas',
+            'sucursales',
+            'empresa',
+            'porcentajeIgv'
+        ));
     }
 
     public function show(Venta $venta)

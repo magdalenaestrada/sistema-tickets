@@ -210,8 +210,9 @@
     @push('scripts')
         <script>
             let items = [];
-            const IGV = 0.18;
             const urlAnular = "{{ route('facturacion.anular', ':id') }}";
+            const IGV_ENTERO = {{ $empresa->igv }};
+            const IGV = IGV_ENTERO / 100;
 
             function buscarCliente() {
 
@@ -255,6 +256,36 @@
                         $("#btnBuscarCliente").prop("disabled", false);
                     });
             }
+
+            function obtenerSerie() {
+
+                const descripcion = $("#sucursal_id option:selected").data("series");
+
+                if (!descripcion) return "";
+
+                const [boleta, factura, nota] =
+                descripcion.split("/").map(s => s.trim());
+
+                const tipo = $('select[name="tipo_documento_factura_id"] option:selected')
+                    .text()
+                    .toLowerCase();
+
+                if (tipo.includes("boleta")) return boleta;
+                if (tipo.includes("factura")) return factura;
+
+                return nota;
+            }
+
+            function actualizarSerie() {
+                $("#serie").val(obtenerSerie());
+            }
+
+            $("#sucursal_id").on("change", actualizarSerie);
+
+            $('select[name="tipo_documento_factura_id"]').on("change", actualizarSerie);
+
+            $(document).ready(actualizarSerie);
+            
 
             function anularVenta(id, url) {
 
@@ -368,7 +399,6 @@
         `);
                 });
 
-                // 🔥 PRECIO YA INCLUYE IGV
                 let base = total / (1 + IGV);
                 let igv = total - base;
 

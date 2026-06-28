@@ -3,9 +3,6 @@ $(function () {
 
     const csrf = $('meta[name="csrf-token"]').attr("content");
     let timer = null;
-
-    // Guardamos los puntos de cada ruta para no tener que pedirlos otra vez
-    // cuando el usuario cambia de horario en el mismo listado.
     let puntosPorSalida = {};
 
     const tsOrigen = new TomSelect("#filtroOrigen", {
@@ -26,16 +23,11 @@ $(function () {
         searchField: "text",
     });
 
-    // ======================================================
-    // TABLA: "Buscar encomienda" SOLO filtra esta tabla.
-    // Nunca depende de la fecha de salida ni del horario.
-    // ======================================================
+    
     const tabla = $("#tablaEncomiendas").DataTable({
         processing: true,
         serverSide: true,
-        dom: "rtip", // l = selector de cantidad de registros visible
-        lengthMenu: [25, 50, 100],
-        pageLength: 50, // mínimo pedido: 25, por defecto mostramos 50
+        dom: "rtip", 
         ajax: {
             url: route("encomiendas.datatable-no-asignadas"),
             data: function (d) {
