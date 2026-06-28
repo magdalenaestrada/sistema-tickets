@@ -44,8 +44,8 @@
 
 
                 </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
+                <div class="row mb-2">
+                    <div class="col-md-4">
                         <label>Documento</label>
 
                         <div class="input-group">
@@ -62,12 +62,19 @@
 
                     </div>
 
-                    <div class="col-md-6">
-                        <label>Cliente</label>
-                        <input type="text" id="razon_social" name="razon_social" class="form-control">
+
+                    <div class="col-md-4">
+                        <label id="lblNombre">Nombres</label>
+                        <input type="text" id="nombres" name="nombres" class="form-control">
+                    </div>
+
+                    <div class="col-md-4" id="divApellidos">
+                        <label>Apellidos</label>
+                        <input type="text" id="apellidos" name="apellidos" class="form-control">
                     </div>
 
                 </div>
+
 
                 <div class="row mb-3">
 

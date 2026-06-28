@@ -113,14 +113,31 @@ class FacturacionController extends Controller
         }
 
         DB::transaction(function () use ($request, $items, $service) {
-
+            $empresa = Empresa::first();
+            $porcentaje = $empresa->igv / 100;
             $subtotal = collect($items)->sum('precio');
-            $igv = $subtotal * 0.18;
+            $igv = $subtotal * $porcentaje;
             $total = $subtotal + $igv;
 
+            $persona = Persona::updateOrCreate(
+                ['documento' => $request->documento],
+                [
+                    'tipo_documento_id' => $request->tipo_documento_id,
+                    'nombres' => $request->nombres,
+                    'apellidos' => $request->apellidos,
+                    'celular' => $request->celular,
+                    'telefono' => $request->telefono,
+                    'direccion' => $request->direccion,
+                    'correo' => $request->correo,
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
+                ]
+            );
+
             $venta = Venta::create([
+                'sucursal_id' => $request->sucursal_id,
                 'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
-                'persona_id' => $request->persona_id,
+                'persona_id' => $persona->id,
                 'fecha_emision' => now(),
 
                 'subtotal_sin_igv' => $subtotal,

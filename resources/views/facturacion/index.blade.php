@@ -217,7 +217,6 @@
             function buscarCliente() {
 
                 let documento = $("#doc_cliente").val().trim();
-                if (!documento) return;
 
                 $("#btnBuscarCliente").prop("disabled", true);
 
@@ -226,35 +225,48 @@
                     .done(function(data) {
 
                         if (data.error) {
-                            Swal.fire("Aviso", data.error, "warning");
+                            alert(data.error);
                             return;
                         }
 
+                        // RUC
                         if (data.razon_social) {
 
-                            $("#razon_social").val(data.razon_social);
+                            $("#nombres").val(data.razon_social);
+                            $("#apellidos").val("");
+
                             $("#direccion").val(data.direccion || "-");
 
-                        } else {
+                        }
+                        // DNI
+                        else {
 
-                            let nombreCompleto =
-                                ((data.nombres || "") + " " +
-                                    (data.apellido_paterno || "") + " " +
-                                    (data.apellido_materno || "")).trim();
+                            $("#nombres").val(data.nombres || "");
 
-                            $("#razon_social").val(nombreCompleto);
+                            $("#apellidos").val(
+                                ((data.apellido_paterno || "") + " " +
+                                    (data.apellido_materno || "")).trim()
+                            );
+
                             $("#direccion").val("-");
                         }
+
+                        actualizarCamposCliente();
 
                     })
 
                     .fail(function() {
-                        Swal.fire("Error", "No se encontró el documento", "error");
+
+                        alert("No se encontró el documento.");
+
                     })
 
                     .always(function() {
+
                         $("#btnBuscarCliente").prop("disabled", false);
+
                     });
+
             }
 
             function obtenerSerie() {
@@ -285,7 +297,30 @@
             $('select[name="tipo_documento_factura_id"]').on("change", actualizarSerie);
 
             $(document).ready(actualizarSerie);
-            
+
+            function actualizarCamposCliente() {
+
+                const documento = $("#doc_cliente").val().trim();
+
+                if (documento.length === 11) {
+
+                    $("#lblNombre").text("Razón Social");
+                    $("#divApellidos").hide();
+                    $("#apellidos").val("");
+
+                } else {
+
+                    $("#lblNombre").text("Nombres");
+                    $("#divApellidos").show();
+
+                }
+            }
+
+            $("#doc_cliente").on("keyup change", actualizarCamposCliente);
+
+            $(document).ready(function() {
+                actualizarCamposCliente();
+            });
 
             function anularVenta(id, url) {
 
