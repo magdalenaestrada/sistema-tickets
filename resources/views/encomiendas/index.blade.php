@@ -12,12 +12,10 @@
                     <label class="form-label">Documento</label>
                     <input type="text" id="filtroDocumento" class="form-control" placeholder="Emisor o receptor">
                 </div>
-
                 <div class="col-md-2">
-                    <label class="form-label">Fecha</label>
-                    <input type="date" id="filtroFecha" class="form-control">
+                    <label class="form-label">Fecha salida</label>
+                    <input type="date" id="filtroFechaSalida" class="form-control">
                 </div>
-
                 <div class="col-md-2">
                     <label class="form-label">Origen</label>
                     <select id="filtroOrigen">

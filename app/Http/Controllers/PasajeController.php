@@ -334,7 +334,6 @@ class PasajeController extends Controller
 
     public function store(Request $request)
     {
-
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'salida_id' => 'required|exists:salidas,id',
@@ -642,10 +641,12 @@ class PasajeController extends Controller
                     'persona_id' => $pasajeroData['persona']->id,
                     'pasajero_menor' => $pasajeroData['pasajero_menor'],
                     'autorizacion_pdf' => $pasajeroData['autorizacion_pdf'],
+                    'descuento_id' => $pasajeroData['descuento_id'],
                     'asiento_numero' => $pasajeroData['asiento_numero'],
                     'salida_id' => $salida->id,
                     'origen_pueblito_id' => $request->origen_id,
                     'destino_pueblito_id' => $request->destino_id,
+                    'precio_pasaje' => $request->precio_manual,
                     'estado' => $estadoPasaje,
                     'es_promocion' => $pasajeroData['es_promocion'],
                     'precio_cobrado' => $pasajeroData['precio_final'],
@@ -762,17 +763,20 @@ class PasajeController extends Controller
         $pasaje->load([
             'persona',
             'salida.horario',
+            'sobreEquipajes',
+            'descuento',
         ]);
 
         $salida  = $pasaje->salida;
         $origen  = Pueblito::find($pasaje->origen_pueblito_id);
         $destino = Pueblito::find($pasaje->destino_pueblito_id);
+        $sobreEquipajes = $pasaje->sobreEquipajes;
 
-        // Un solo asiento, el del pasaje
         $asientos = [$pasaje->asiento_numero];
         $user = Auth::user();
 
-        $precioUnitario   = $pasaje->precio_cobrado;
+        // precio_manual = SIEMPRE precio_pasaje (el precio base del asiento, sin descuento)
+        $precioUnitario   = $pasaje->precio_pasaje;
         $tiposEncomienda  = TipoEncomienda::all();
         $cajas_emision = Caja::with('sucursal.serie')
             ->where('usuario_id', $user->id)
@@ -780,6 +784,29 @@ class PasajeController extends Controller
             ->get();
         $tipos_documentos = TipoDocumentoPersona::all();
         $user             = auth()->user();
+
+        // El monto del descuento se CALCULA contra precio_pasaje, no se guarda en BD
+        $descuentosConfig = [];
+        if ($pasaje->descuento_id && $pasaje->descuento) {
+            $tipo  = $pasaje->descuento->tipo;            // 'porcentaje' | 'monto_fijo'
+            $valor = (float) $pasaje->descuento->valor;
+
+            $monto = $tipo === 'porcentaje'
+                ? $precioUnitario * ($valor / 100)
+                : $valor;
+
+            $descuentosConfig[(string) $pasaje->asiento_numero] = [
+                'descuento_id' => $pasaje->descuento->id,
+                'codigo'       => $pasaje->descuento->codigo,
+                'tipo'         => $tipo,
+                'valor'        => $valor,
+                'monto'        => $monto,
+            ];
+        }
+
+        // Ya no usamos precio_cobrado aquí: es el total de la venta, no el precio del asiento.
+        // El precio final del asiento lo calcula el JS = precio_pasaje - monto_descuento
+        $preciosFinales = [];
 
         return view('pasajes.editar', compact(
             'pasaje',
@@ -792,6 +819,9 @@ class PasajeController extends Controller
             'tiposEncomienda',
             'cajas_emision',
             'user',
+            'sobreEquipajes',
+            'descuentosConfig',
+            'preciosFinales'
         ));
     }
 

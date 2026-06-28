@@ -23,6 +23,31 @@ $(function () {
         };
     });
 
+    function bloquearDatosPersonales() {
+        selectedSeatNumbers.forEach((_, i) => {
+            $(`#documento_${i}`).prop("readonly", true).addClass("bg-light");
+
+            $(`#nombres_${i}`).prop("readonly", true).addClass("bg-light");
+
+            $(`#apellidos_${i}`).prop("readonly", true).addClass("bg-light");
+
+            $(`#celular_${i}`).prop("readonly", true).addClass("bg-light");
+
+            $(`#telefono_${i}`).prop("readonly", true).addClass("bg-light");
+
+            $(`#correo_${i}`).prop("readonly", true).addClass("bg-light");
+
+            $(`#tipo_documento_id_${i}`).prop("disabled", true);
+
+            $(`#pasajero_menor_${i}`).prop("disabled", true);
+
+            $(`.btn-buscar-documento[data-index="${i}"]`).prop(
+                "disabled",
+                true,
+            );
+        });
+    }
+
     document.addEventListener("change", function (e) {
         if (e.target.matches("[id^='tipo_documento_id_']")) {
             const index = e.target.id.split("_").pop();
@@ -584,9 +609,15 @@ $(function () {
         msg.text("");
 
         if (!codigo) {
-            delete descuentosAplicados[asiento];
-            seatPrices[asiento] = precioBase;
+            descuentosAplicados[asiento] = {
+                descuento_id: null,
+                codigo: null,
+                tipo: null,
+                valor: 0,
+                monto: 0,
+            };
 
+            seatPrices[asiento] = precioBase;
             msg.text("");
 
             actualizarCostoTotal();
@@ -612,16 +643,15 @@ $(function () {
 
             console.log(res);
 
-            if (res.errpor) {
+            if (res.error) {
                 Swal.fire("Atención", res.error, "warning");
                 input.val("");
                 return;
             }
 
             let descuentoAplicado = 0;
-            let descuentoId = res.id || null;
-
-            // REEMPLAZA donde calculas descuentoAplicado y guardas en descuentosAplicados:
+            const descuentoId =
+                res.descuento_id ?? res.id ?? res.data?.id ?? null;
 
             if (parseInt(descuentoId) === parseInt(descuentoPromoId)) {
                 const promo = await verificarPromo10(index, codigo, dni);
@@ -710,8 +740,19 @@ $(function () {
 
         selectedSeatNumbers.forEach((asiento) => {
             const desc = descuentosAplicados[asiento] || {};
-            formData.append("descuento_ids[]", desc.descuento_id || "");
+
+            console.log("Asiento:", asiento);
+            console.log("Descuento:", desc);
+
+            formData.append(
+                "descuento_ids[]",
+                desc.descuento_id !== null && desc.descuento_id !== undefined
+                    ? desc.descuento_id
+                    : "",
+            );
+
             formData.append("descuento_montos[]", desc.monto || 0);
+
             formData.append(
                 "precios_finales[]",
                 seatPrices[asiento] || precioBase,

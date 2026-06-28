@@ -151,9 +151,7 @@ class EncomiendaController extends Controller
                 <button class="btn btn-xs btn-info imprimir" data-id="' . $e->id . '" title="Imprimir">
                     <i class="link-icon" data-lucide="printer"></i>
                 </button>
-                <button class="btn btn-xs btn-warning editar" data-id="' . $e->id . '" title="Editar">
-                    <i class="link-icon" data-lucide="pencil"></i>
-                </button>
+                
             ';
             })
             ->rawColumns(['checkbox', 'estado', 'acciones'])
@@ -617,12 +615,17 @@ class EncomiendaController extends Controller
 
         return response()->json(['success' => true]);
     }
+
     public function salidasDisponibles(Request $request)
     {
         $request->validate([
-            'origen_id' => 'required|exists:pueblitos,id',
-            'destino_id' => 'required|exists:pueblitos,id',
+            'origen_id' => 'nullable|exists:pueblitos,id',
+            'destino_id' => 'nullable|exists:pueblitos,id',
         ]);
+
+        if (!$request->origen_id || !$request->destino_id) {
+            return response()->json([]);
+        }
 
         $salidas = Salida::with([
             'horario.ruta.puntos.sucursal',
@@ -638,14 +641,16 @@ class EncomiendaController extends Controller
                     $request->origen_id,
                     $request->destino_id
                 );
-            })
-            ->values()
-            ->map(function ($salida) {
+            });
+
+        return response()->json(
+            $salidas->map(function ($salida) {
+
                 $ruta = $salida->horario?->ruta;
                 $puntos = $ruta?->puntos?->sortBy('orden')->values();
 
                 return [
-                    'id' => $salida->id,
+                    'value' => $salida->id,
                     'text' => ($salida->fecha_salida?->format('d/m/Y') ?? '-') .
                         ' | ' .
                         ($salida->horario?->hora_formateada ?? '-') .
@@ -656,9 +661,8 @@ class EncomiendaController extends Controller
                         ' → ' .
                         ($puntos->last()?->sucursal?->nombre_comercial ?? 'Destino'),
                 ];
-            });
-
-        return response()->json($salidas);
+            })->values()
+        );
     }
 
     public function asignarSalida(Request $request)

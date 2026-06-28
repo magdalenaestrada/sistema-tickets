@@ -46,7 +46,8 @@
                         <div class="resumen-item resumen-item-precio">
                             <div class="resumen-label">Costo por asiento:</div>
                             <div class="resumen-value">
-                                <input type="number" step="0.01" id="precio_manual" class="form-control form-control-sm"
+                                <input type="number" step="0.01" id="precio_manual" name="precio_manual"
+                                    class="form-control form-control-sm"
                                     value="{{ number_format($precioUnitario, 2, '.', '') }}">
                             </div>
                         </div>

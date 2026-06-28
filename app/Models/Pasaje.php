@@ -25,6 +25,9 @@ class Pasaje extends Model
         'precio_cobrado',
         'fecha_creacion',
         'fecha_inactivacion',
+        'descuento_id',
+        'precio_pasaje'
+
     ];
 
     public function tramos()
@@ -64,6 +67,11 @@ class Pasaje extends Model
     public function venta()
     {
         return $this->belongsTo(Venta::class, 'venta_id');
+    }
+
+    public function descuento()
+    {
+        return $this->belongsTo(Descuento::class, 'descuento_id');
     }
 
     public function sobreEquipajes()

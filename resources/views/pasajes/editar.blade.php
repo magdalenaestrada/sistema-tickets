@@ -308,7 +308,7 @@
                             </div>
 
                             <div class="d-grid gap-2">
-                    
+
                                 <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
                                     Terminar Venta
                                 </button>
@@ -441,8 +441,10 @@
             precioUnitario: @json((float) $precioUnitario),
             descuentoPromoId: 1,
             volverAsientosUrl: @json(url()->previous()),
-            tiposEncomienda: @json($tiposEncomienda ?? [])
-
+            tiposEncomienda: @json($tiposEncomienda ?? []),
+            sobreEquipajes: @json($sobreEquipajes),
+            preciosFinales: @json($preciosFinales), 
+            descuentos: @json($descuentosConfig), 
         };
     </script>
     <script src="{{ asset('js/pasajes_editar.js') }}"></script>

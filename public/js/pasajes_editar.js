@@ -1,69 +1,505 @@
-/**
- * editar_pasaje.js
- * Solo permite: pagar, cancelar reserva, agregar sobre equipaje, cupones y cambiar precio.
- * Bloquea toda edición de datos personales del pasajero.
- */
-
 $(function () {
     const config = window.VENTA_CONFIG || {};
     const csrfToken = $('meta[name="csrf-token"]').attr("content");
     const tiposEncomienda = config.tiposEncomienda || [];
+    const sobreEquipajes = config.sobreEquipajes || [];
     const salidaId = config.salidaId;
     const origenId = config.origenId;
     const destinoId = config.destinoId;
     const selectedSeatNumbers = config.asientos || [];
     let precioBase = parseFloat(config.precioUnitario || 0);
     const descuentoPromoId = config.descuentoPromoId || 1;
-
+    const preciosFinales = config.preciosFinales || {};
+    const descuentosConfig = config.descuentos || {};
     const costoTotalInput = $("#costo_total");
 
     let seatPrices = {};
     let descuentosAplicados = {};
 
-    selectedSeatNumbers.forEach((num) => {
-        seatPrices[num] = precioBase;
-        descuentosAplicados[num] = {
+    selectedSeatNumbers.forEach((num, i) => {
+        const key = String(num);
+        const documento = $(`#documento_${i}`).val().trim();
+        const codigoGuardado = descuentosConfig[key]?.codigo || null;
+
+        descuentosAplicados[key] = {
             descuento_id: null,
             codigo: null,
+            tipo: null,
+            valor: 0,
             monto: 0,
         };
-    });
+        seatPrices[key] = precioBase;
 
-    // ─────────────────────────────────────────────────────────────
-    // BLOQUEAR datos personales (solo lectura)
-    // ─────────────────────────────────────────────────────────────
+        if (documento) {
+            cargarCuponesPersona(i, documento, codigoGuardado);
+        }
+    });
     function bloquearDatosPersonales() {
         selectedSeatNumbers.forEach((_, i) => {
-            // Campos de texto / email
-            $(`#documento_${i}`)
-                .prop("readonly", true)
-                .prop("disabled", false)
-                .addClass("bg-light");
+            $(`#documento_${i}`).prop("readonly", true).addClass("bg-light");
+
             $(`#nombres_${i}`).prop("readonly", true).addClass("bg-light");
+
             $(`#apellidos_${i}`).prop("readonly", true).addClass("bg-light");
+
             $(`#celular_${i}`).prop("readonly", true).addClass("bg-light");
+
             $(`#telefono_${i}`).prop("readonly", true).addClass("bg-light");
+
             $(`#correo_${i}`).prop("readonly", true).addClass("bg-light");
 
-            // Select tipo documento
             $(`#tipo_documento_id_${i}`).prop("disabled", true);
 
-            // Botón buscar documento
+            $(`#pasajero_menor_${i}`).prop("disabled", true);
+
             $(`.btn-buscar-documento[data-index="${i}"]`).prop(
                 "disabled",
                 true,
             );
-
-            // Checkbox menor de edad y su contenedor
-            $(`#pasajero_menor_${i}`).prop("disabled", true);
         });
     }
 
-    bloquearDatosPersonales();
+    document.addEventListener("change", function (e) {
+        if (e.target.matches("[id^='tipo_documento_id_']")) {
+            const index = e.target.id.split("_").pop();
+            const input = document.querySelector(`#documento_${index}`);
+            if (!input) return;
 
-    // ─────────────────────────────────────────────────────────────
-    // PRECIO MANUAL
-    // ─────────────────────────────────────────────────────────────
+            input.value = "";
+
+            let max = 15;
+
+            if (e.target.value == 1) max = 8;
+            else if (e.target.value == 2) max = 11;
+            else if (e.target.value == 3) max = 9;
+            else if (e.target.value == 6) max = 0;
+
+            input.setAttribute("maxlength", max);
+
+            if (max === 0) {
+                input.value = "";
+                input.disabled = true;
+            } else {
+                input.disabled = false;
+            }
+        }
+    });
+
+    document.addEventListener("input", function (e) {
+        if (e.target.matches(".solo-numeros")) {
+            e.target.value = e.target.value.replace(/\D/g, "");
+        }
+    });
+
+    document.addEventListener("input", function (e) {
+        if (e.target.matches(".solo-letras")) {
+            e.target.value = e.target.value.replace(
+                /[^A-Za-zÁÉÍÓÚáéíóúÑñ ]/g,
+                "",
+            );
+        }
+    });
+
+    function obtenerCodigoSucursal() {
+        const option = $("#caja_id option:selected");
+        return String(option.data("serie") || "").trim();
+    }
+
+    function generarSeriePorTipo(tipo) {
+        const codigo = obtenerCodigoSucursal();
+
+        if (!codigo || isNaN(Number(codigo))) {
+            return "Seleccione una sucursal";
+        }
+
+        const numero = Number(codigo);
+
+        if (tipo === "boleta") return `BBB${numero}`;
+        if (tipo === "factura") return `FFF${numero}`;
+        return `NNN${numero}`;
+    }
+
+    function actualizarResumenTotales() {
+        let subtotalOriginal = 0;
+        let totalDescuento = 0;
+        let totalPagar = 0;
+
+        selectedSeatNumbers.forEach((num, i) => {
+            const precioFinal = parseFloat(seatPrices[num]) || 0;
+            const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
+
+            // sobre equipaje
+            let totalSobre = 0;
+            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
+                totalSobre +=
+                    parseFloat($(this).find(".sobre-costo").val()) || 0;
+            });
+
+            subtotalOriginal += precioBase + totalSobre;
+            totalDescuento += descuento;
+            totalPagar += precioFinal + totalSobre;
+
+            $(`#precio_asiento_${i}`).text(`S/ ${precioFinal.toFixed(2)}`);
+
+            if ($(`#descuento_asiento_${i}`).length) {
+                $(`#descuento_asiento_${i}`).text(`S/ ${descuento.toFixed(2)}`);
+            }
+        });
+
+        $("#subtotal").text(subtotalOriginal.toFixed(2));
+        $("#total_descuento").text(totalDescuento.toFixed(2));
+        $("#total_pagar").text(totalPagar.toFixed(2));
+        $("#modal_total_pagar").text(totalPagar.toFixed(2));
+        costoTotalInput.val(totalPagar.toFixed(2));
+    }
+
+    const volverAsientosUrl = route("pasajes.index", {
+        salida_id: salidaId,
+        origen_id: origenId,
+        destino_id: destinoId,
+    });
+
+    function limpiarClienteFacturacion() {
+        $("#doc_cliente").val("").prop("readonly", false);
+        $("#razon_social").val("").prop("readonly", false);
+        $("#direccion_cliente").val("");
+    }
+
+    function ponerClienteVariosNotaVenta() {
+        $("#doc_cliente").val("00000000").prop("readonly", true);
+        $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
+        $("#direccion_cliente").val("-");
+    }
+
+    function datosPasajerosCompletos() {
+        const form = document.getElementById("formVenta");
+
+        for (let i = 0; i < selectedSeatNumbers.length; i++) {
+            const documento = $(`#documento_${i}`).val().trim();
+            const nombres = $(`#nombres_${i}`).val().trim();
+            const apellidos = $(`#apellidos_${i}`).val().trim();
+
+            if (!documento || !nombres || !apellidos) {
+                form.reportValidity();
+                Swal.fire(
+                    "Atención",
+                    `Completa los datos del pasajero del asiento ${selectedSeatNumbers[i]}.`,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function validarClienteFacturacion() {
+        const tipo = $("#tipo_doc_sunat").val();
+        const doc = $("#doc_cliente").val().trim();
+        const razon = $("#razon_social").val().trim();
+
+        if (tipo === "nota_venta") return true;
+
+        if (!doc || !razon) {
+            Swal.fire(
+                "Atención",
+                "Ingresa y busca el cliente a quien se va a boletear o facturar.",
+                "warning",
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    function buscarCliente() {
+        let documento = $("#doc_cliente").val().trim();
+
+        $("#btnBuscarCliente").prop("disabled", true);
+
+        $.getJSON(route("buscar.buscar") + "?documento=" + documento)
+            .done(function (data) {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // RUC
+                if (data.razon_social) {
+                    $("#razon_social").val(data.razon_social);
+                    $("#direccion").val(data.direccion || "-");
+                }
+                // DNI
+                else {
+                    let nombreCompleto = (
+                        (data.nombres || "") +
+                        " " +
+                        (data.apellido_paterno || "") +
+                        " " +
+                        (data.apellido_materno || "")
+                    ).trim();
+
+                    $("#razon_social").val(nombreCompleto);
+                    $("#direccion").val("-");
+                }
+            })
+            .fail(function () {
+                alert("No se encontró el documento.");
+            })
+            .always(function () {
+                $("#btnBuscarCliente").prop("disabled", false);
+            });
+    }
+
+    $(document).on("click", "#btnBuscarCliente", function () {
+        buscarCliente();
+    });
+
+    $(document).on("keypress", "#doc_cliente", function (e) {
+        if (e.which === 13) {
+            e.preventDefault();
+            buscarCliente();
+        }
+    });
+
+    function cargarSobreEquipajesGuardados() {
+        if (!sobreEquipajes || !sobreEquipajes.length) return;
+
+        const index = 0;
+
+        $(`#toggle_sobre_equipaje_${index}`).prop("checked", true);
+        $(`#card_sobre_equipaje_${index}`).show();
+
+        sobreEquipajes.forEach((item) => {
+            agregarFilaSobreEquipaje(index);
+
+            const fila = $(`#tablaSobreEquipaje_${index} tbody tr`).last();
+            fila.find(".sobre-tipo").val(item.tipo_encomienda_id);
+            fila.find(".sobre-desc").val(item.descripcion);
+            fila.find(".sobre-peso").val(item.peso);
+            fila.find(".sobre-costo").val(item.costo);
+        });
+
+        recalcularTotalSobre($(`#tablaSobreEquipaje_${index}`));
+    }
+
+    function actualizarCostoTotal() {
+        actualizarResumenTotales();
+    }
+
+    function limpiarPagosModal() {
+        $("#modal_pago_efectivo").val("0");
+        $("#modal_pago_tarjeta").val("0");
+        $("#modal_pago_yape").val("0");
+        $("#modal_pago_plin").val("0");
+        $("#modal_pago_transferencia").val("0");
+        $("#alerta_pago").addClass("d-none");
+    }
+
+    function distribuirPagosPorMetodo() {
+        const metodo = parseInt($("#modal_metodo_pago").val() || 1);
+        const total = parseFloat($("#costo_total").val()) || 0;
+
+        const efectivo = $("#modal_pago_efectivo");
+        const tarjeta = $("#modal_pago_tarjeta");
+        const yape = $("#modal_pago_yape");
+        const plin = $("#modal_pago_plin");
+        const transferencia = $("#modal_pago_transferencia");
+
+        // Reiniciar
+        [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
+            input.prop("disabled", true);
+            input.val("0.00");
+        });
+
+        switch (metodo) {
+            case 1:
+                efectivo.prop("disabled", false);
+                efectivo.val(total.toFixed(2));
+                break;
+
+            case 2:
+                yape.prop("disabled", false);
+                plin.prop("disabled", false);
+                transferencia.prop("disabled", false);
+                tarjeta.prop("disabled", false);
+
+                yape.val(total.toFixed(2));
+                break;
+
+            case 3:
+                efectivo.prop("disabled", false);
+                tarjeta.prop("disabled", false);
+                yape.prop("disabled", false);
+                plin.prop("disabled", false);
+                transferencia.prop("disabled", false);
+
+                efectivo.val(total.toFixed(2));
+                break;
+        }
+
+        validarSumaPagos();
+    }
+
+    function sumarPagosModal() {
+        return (
+            (parseFloat($("#modal_pago_efectivo").val()) || 0) +
+            (parseFloat($("#modal_pago_tarjeta").val()) || 0) +
+            (parseFloat($("#modal_pago_yape").val()) || 0) +
+            (parseFloat($("#modal_pago_plin").val()) || 0) +
+            (parseFloat($("#modal_pago_transferencia").val()) || 0)
+        );
+    }
+
+    function validarSumaPagos() {
+        const total = parseFloat($("#costo_total").val()) || 0;
+        const totalPagado = sumarPagosModal();
+
+        if (Math.abs(totalPagado - total) > 0.01) {
+            $("#alerta_pago").removeClass("d-none");
+            return false;
+        }
+
+        $("#alerta_pago").addClass("d-none");
+        return true;
+    }
+
+    function marcarTipoDocumento(tipo) {
+        $(".doc-btn")
+            .removeClass("active btn-primary btn-success btn-warning")
+            .addClass("btn-outline-secondary");
+
+        const serie = generarSeriePorTipo(tipo);
+
+        if (tipo === "boleta") {
+            $("#tipo_doc_sunat").val("2");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11);
+            limpiarClienteFacturacion();
+
+            $("#btn_boleta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-primary");
+        } else if (tipo === "factura") {
+            $("#tipo_doc_sunat").val("1");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 11);
+            limpiarClienteFacturacion();
+
+            $("#btn_factura")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-success");
+        } else {
+            $("#tipo_doc_sunat").val("4");
+            $("#serie_doc").text(serie);
+            $("#doc_cliente").attr("maxlength", 8);
+            ponerClienteVariosNotaVenta();
+
+            $("#btn_nota_venta")
+                .removeClass("btn-outline-secondary")
+                .addClass("active btn-warning");
+        }
+    }
+
+    function actualizarEstadoSunat() {
+        const sunatActivo = $("#emitir_sunat").is(":checked");
+        $("#emitir_sunat_estado").val(sunatActivo ? "1" : "0");
+
+        if (sunatActivo) {
+            $("#btn_boleta").prop("disabled", false);
+            $("#btn_factura").prop("disabled", false);
+            $("#btn_nota_venta")
+                .prop("disabled", true)
+                .removeClass("active btn-success btn-dark")
+                .addClass("btn-outline-secondary");
+
+            const actual = $("#tipo_doc_sunat").val();
+            if (actual === "factura") {
+                marcarTipoDocumento("factura");
+            } else {
+                marcarTipoDocumento("boleta");
+            }
+        } else {
+            $("#btn_boleta")
+                .prop("disabled", true)
+                .removeClass("active btn-primary")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_factura")
+                .prop("disabled", true)
+                .removeClass("active btn-success")
+                .addClass("btn-outline-secondary");
+
+            $("#btn_nota_venta").prop("disabled", false);
+            marcarTipoDocumento("nota_venta");
+        }
+    }
+
+    $("#emitir_sunat").on("change", function () {
+        actualizarEstadoSunat();
+    });
+
+    $("#caja_id").on("change", function () {
+        const tipoActual = $("#tipo_doc_sunat").val() || "nota_venta";
+        marcarTipoDocumento(tipoActual);
+    });
+
+    $(".doc-btn").on("click", function () {
+        if ($(this).prop("disabled")) return;
+        const tipo = $(this).data("doc");
+        marcarTipoDocumento(tipo);
+    });
+
+    $("#doc_cliente").on("input", function () {
+        if ($("#tipo_doc_sunat").val() !== "nota_venta") {
+            $("#razon_social").val("");
+        }
+    });
+
+    $("#doc_cliente").on("blur", function () {
+        const valor = $(this).val().trim();
+        const tipo = $("#tipo_doc_sunat").val();
+
+        if (!valor || tipo === "nota_venta") return;
+
+        if (tipo === "factura" && valor.length !== 11) {
+            Swal.fire(
+                "Atención",
+                "Para factura el RUC debe tener 11 dígitos.",
+                "warning",
+            );
+            return;
+        }
+
+        if (tipo === "boleta" && !(valor.length === 8 || valor.length === 11)) {
+            Swal.fire(
+                "Atención",
+                "Para boleta usa DNI de 8 dígitos o RUC de 11.",
+                "warning",
+            );
+            return;
+        }
+    });
+
+    $("#btnRegresarAsientos").on("click", function () {
+        window.location.href = volverAsientosUrl;
+    });
+
+    $("#btnCancelarVenta").on("click", function () {
+        Swal.fire({
+            title: "Cancelar venta",
+            text: "Se liberarán los asientos seleccionados y volverás a escoger asientos.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, cancelar",
+            cancelButtonText: "No",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = volverAsientosUrl;
+            }
+        });
+    });
+
     $("#precio_manual").on("input", function () {
         const nuevoPrecio = parseFloat($(this).val());
         if (isNaN(nuevoPrecio) || nuevoPrecio < 0) return;
@@ -92,45 +528,56 @@ $(function () {
         actualizarCostoTotal();
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // TOTALES
-    // ─────────────────────────────────────────────────────────────
-    function actualizarResumenTotales() {
-        let subtotalOriginal = 0;
-        let totalDescuento = 0;
-        let totalPagar = 0;
+    $(".pasajero-menor-check").on("change", function () {
+        const index = $(this).data("index");
+        const container = $(`#autorizacion_container_${index}`);
+        const fileInput = $(`#autorizacion_pdf_${index}`);
 
-        selectedSeatNumbers.forEach((num, i) => {
-            const precioFinal = parseFloat(seatPrices[num]) || 0;
-            const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
+        if (this.checked) {
+            container.slideDown();
+            fileInput.prop("required", true);
+        } else {
+            container.slideUp();
+            fileInput.prop("required", false);
+            fileInput.val("");
+        }
+    });
 
-            let totalSobre = 0;
-            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
-                totalSobre +=
-                    parseFloat($(this).find(".sobre-costo").val()) || 0;
+    function buscarDocumento(index) {
+        const input = $(`#documento_${index}`);
+        const documento = input.val().trim();
+        limpiarCupones(index);
+
+        input.prop("disabled", true);
+
+        $.getJSON(route("buscar.buscar") + `?documento=${documento}`)
+            .done((data) => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                if (data.razon_social) {
+                    $(`#nombres_${index}`).val(data.razon_social);
+                    $(`#apellidos_${index}`).val("");
+                    $(`#correo_${index}`).val(data.direccion || "");
+                } else {
+                    $(`#nombres_${index}`).val(data.nombres || "");
+
+                    const apellidos =
+                        `${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
+
+                    $(`#apellidos_${index}`).val(apellidos);
+                    $(`#correo_${index}`).val(data.direccion || "");
+                }
+
+                cargarCuponesPersona(index, documento);
+            })
+            .always(() => {
+                input.prop("disabled", false);
             });
-
-            subtotalOriginal += precioBase + totalSobre;
-            totalDescuento += descuento;
-            totalPagar += precioFinal + totalSobre;
-
-            $(`#precio_asiento_${i}`).text(`S/ ${precioFinal.toFixed(2)}`);
-        });
-
-        $("#subtotal").text(subtotalOriginal.toFixed(2));
-        $("#total_descuento").text(totalDescuento.toFixed(2));
-        $("#total_pagar").text(totalPagar.toFixed(2));
-        $("#modal_total_pagar").text(totalPagar.toFixed(2));
-        costoTotalInput.val(totalPagar.toFixed(2));
     }
 
-    function actualizarCostoTotal() {
-        actualizarResumenTotales();
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // CUPONES
-    // ─────────────────────────────────────────────────────────────
     function limpiarCupones(index) {
         const asiento = selectedSeatNumbers[index];
 
@@ -147,42 +594,21 @@ $(function () {
         };
 
         seatPrices[asiento] = precioBase;
+
         actualizarCostoTotal();
     }
 
-    // Carga cupones al iniciar (ya hay DNI guardado en el input)
-    function cargarCuponesPersona(index, documento) {
-        const select = $(`#descuento_${index}`);
-        select.html(`<option value="">Cargando cupones...</option>`);
-
-        $.getJSON(route("descuentos.persona", { documento }))
-            .done((cupones) => {
-                select.html(`<option value="">Seleccionar</option>`);
-
-                cupones.forEach((cupon) => {
-                    let texto = cupon.codigo;
-                    if (cupon.monto_efectivo) {
-                        texto += ` - S/ ${parseFloat(cupon.monto_efectivo).toFixed(2)}`;
-                    }
-                    if (cupon.porcentaje) {
-                        texto += ` - ${cupon.porcentaje}%`;
-                    }
-                    select.append(
-                        `<option value="${cupon.codigo}">${texto}</option>`,
-                    );
-                });
-            })
-            .fail(() => {
-                select.html(`<option value="">Sin cupón</option>`);
-            });
+    function buscarYLimpiar(index) {
+        limpiarCupones(index);
+        buscarDocumento(index);
     }
 
-    // Cargar cupones automáticamente al iniciar con los DNI ya cargados
-    selectedSeatNumbers.forEach((_, i) => {
-        const documento = $(`#documento_${i}`).val().trim();
-        if (documento) {
-            cargarCuponesPersona(i, documento);
-        }
+    $(document).on("blur", ".documento-input", function () {
+        buscarYLimpiar($(this).data("index"));
+    });
+
+    $(document).on("click", ".btn-buscar-documento", function () {
+        buscarYLimpiar($(this).data("index"));
     });
 
     async function verificarPromo10(index, codigo, dni) {
@@ -215,8 +641,17 @@ $(function () {
         msg.text("");
 
         if (!codigo) {
-            delete descuentosAplicados[asiento];
+            descuentosAplicados[asiento] = {
+                descuento_id: null,
+                codigo: null,
+                tipo: null,
+                valor: 0,
+                monto: 0,
+            };
+
             seatPrices[asiento] = precioBase;
+            msg.text("");
+
             actualizarCostoTotal();
             return;
         }
@@ -224,7 +659,7 @@ $(function () {
         if (!dni) {
             Swal.fire(
                 "Atención",
-                "No se encontró el DNI del pasajero.",
+                "Primero ingresa el DNI del pasajero.",
                 "warning",
             );
             input.val("");
@@ -238,13 +673,17 @@ $(function () {
                 route("descuentos.buscar") + `?codigo=${codigo}`,
             );
 
+            console.log(res);
+
             if (res.error) {
                 Swal.fire("Atención", res.error, "warning");
                 input.val("");
                 return;
             }
 
-            let descuentoId = res.id || null;
+            let descuentoAplicado = 0;
+            const descuentoId =
+                res.descuento_id ?? res.id ?? res.data?.id ?? null;
 
             if (parseInt(descuentoId) === parseInt(descuentoPromoId)) {
                 const promo = await verificarPromo10(index, codigo, dni);
@@ -257,6 +696,7 @@ $(function () {
                     input.val("");
                     return;
                 }
+                // Promo = 100% del precio
                 descuentosAplicados[asiento] = {
                     descuento_id: descuentoId,
                     codigo: codigo,
@@ -305,188 +745,144 @@ $(function () {
         }
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // SOBRE EQUIPAJE
-    // ─────────────────────────────────────────────────────────────
-    function agregarFilaSobreEquipaje(index) {
-        const fila = $("<tr>");
-        const tipoSelect = $(
-            '<select class="form-select form-select-sm sobre-tipo"></select>',
-        );
+    function validarMenores() {
+        let valido = true;
 
-        tipoSelect.append('<option value="" disabled selected>Tipo</option>');
+        $(".pasajero-menor-check").each(function () {
+            const index = $(this).data("index");
 
-        tiposEncomienda.forEach((t) => {
-            tipoSelect.append(`
-                <option value="${t.id}"
-                    data-precio="${t.precio_base}"
-                    data-peso-limite="${t.peso_limite}"
-                    data-costo-extra="${t.costo_kilo_extra}">
-                    ${t.descripcion}
-                </option>
-            `);
+            if (this.checked) {
+                const fileInput = document.getElementById(
+                    `autorizacion_pdf_${index}`,
+                );
+                if (!fileInput || !fileInput.files.length) {
+                    valido = false;
+                }
+            }
         });
 
-        fila.append($("<td>").append(tipoSelect));
-        fila.append(
-            $("<td>").append(
-                '<input type="text" class="form-control form-control-sm sobre-desc">',
-            ),
-        );
-        fila.append(
-            $("<td>").append(
-                '<input type="number" step="0.01" class="form-control form-control-sm sobre-peso">',
-            ),
-        );
-        fila.append(
-            $("<td>").append(
-                '<input type="number" step="0.01" class="form-control form-control-sm sobre-costo">',
-            ),
-        );
-        fila.append(
-            $("<td>").append(
-                '<button type="button" class="btn btn-danger btn-sm btnQuitarSobre">X</button>',
-            ),
-        );
-
-        $(`#tablaSobreEquipaje_${index} tbody`).append(fila);
+        return valido;
     }
 
-    $(document).on("change", ".toggle-sobre-equipaje", function () {
-        const index = $(this).data("index");
-        $(`#card_sobre_equipaje_${index}`).toggle(this.checked);
+    function construirPayload(accion) {
+        const form = document.getElementById("formVenta");
+        const formData = new FormData(form);
 
-        if (
-            this.checked &&
-            $(`#tablaSobreEquipaje_${index} tbody tr`).length === 0
-        ) {
-            agregarFilaSobreEquipaje(index);
-        }
-    });
+        formData.append("accion", accion);
 
-    $(document).on("click", ".btn-agregar-sobre", function () {
-        const index = $(this).data("index");
-        agregarFilaSobreEquipaje(index);
-    });
+        selectedSeatNumbers.forEach((asiento) => {
+            const desc = descuentosAplicados[asiento] || {};
 
-    function calcularCostoFila(tr) {
-        const option = tr.find(".sobre-tipo option:selected");
-        const peso = parseFloat(tr.find(".sobre-peso").val()) || 0;
-        const precioBaseFila = parseFloat(option.data("precio")) || 0;
-        const pesoLimite = parseFloat(option.data("peso-limite")) || 0;
-        const costoExtra = parseFloat(option.data("costo-extra")) || 0;
+            console.log("Asiento:", asiento);
+            console.log("Descuento:", desc);
 
-        let costo = precioBaseFila;
-        if (pesoLimite && peso > pesoLimite && costoExtra) {
-            costo += (peso - pesoLimite) * costoExtra;
-        }
+            formData.append(
+                "descuento_ids[]",
+                desc.descuento_id !== null && desc.descuento_id !== undefined
+                    ? desc.descuento_id
+                    : "",
+            );
 
-        tr.find(".sobre-costo").val(costo.toFixed(2));
-    }
+            formData.append("descuento_montos[]", desc.monto || 0);
 
-    $(document).on("change", ".sobre-tipo", function () {
-        calcularCostoFila($(this).closest("tr"));
-    });
-
-    $(document).on("input", ".sobre-peso", function () {
-        calcularCostoFila($(this).closest("tr"));
-    });
-
-    $(document).on("click", ".btnQuitarSobre", function () {
-        const tr = $(this).closest("tr");
-        const table = tr.closest("table");
-        tr.remove();
-        recalcularTotalSobre(table);
-    });
-
-    function recalcularTotalSobre(table) {
-        let total = 0;
-        table.find("tbody tr").each(function () {
-            total += parseFloat($(this).find(".sobre-costo").val()) || 0;
+            formData.append(
+                "precios_finales[]",
+                seatPrices[asiento] || precioBase,
+            );
         });
 
-        const index = table.data("index");
-        $(`#total_sobre_equipaje_${index}`).text(total.toFixed(2));
+        $(".tabla-sobre-equipaje").each(function () {
+            const index = $(this).data("index");
+
+            $(this)
+                .find("tbody tr")
+                .each(function (i) {
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][tipo_encomienda_id]`,
+                        $(this).find(".sobre-tipo").val(),
+                    );
+
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][descripcion]`,
+                        $(this).find(".sobre-desc").val(),
+                    );
+
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][peso]`,
+                        $(this).find(".sobre-peso").val(),
+                    );
+
+                    formData.append(
+                        `sobre_equipaje_detalles[${index}][${i}][costo]`,
+                        $(this).find(".sobre-costo").val(),
+                    );
+                });
+        });
+        return formData;
+    }
+
+    $("#btnReservar").on("click", function (e) {
+        e.preventDefault();
+        if (!datosPasajerosCompletos()) return;
+        if (!validarMenores()) {
+            Swal.fire(
+                "Atención",
+                "Los pasajeros menores deben adjuntar autorización PDF.",
+                "warning",
+            );
+            return;
+        }
+
+        const formData = construirPayload("reservar");
+
+        $.ajax({
+            url: route("pasajes.store"),
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-CSRF-TOKEN": csrfToken },
+            success: function (res) {
+                if (res.success) {
+                    Swal.fire(
+                        "Éxito",
+                        res.message || "Reserva realizada correctamente",
+                        "success",
+                    ).then(() => {
+                        window.location.href = res.redirect;
+                    });
+                }
+            },
+            error: function (xhr) {
+                Swal.fire(
+                    "Error",
+                    xhr.responseJSON?.message || "Error al reservar",
+                    "error",
+                );
+            },
+        });
+    });
+
+    $("#btnAbrirPago").on("click", function (e) {
+        e.preventDefault();
+        if (!datosPasajerosCompletos()) return;
+        if (!validarMenores()) {
+            Swal.fire(
+                "Atención",
+                "Los pasajeros menores deben adjuntar autorización PDF.",
+                "warning",
+            );
+            return;
+        }
+
         actualizarCostoTotal();
-    }
+        limpiarPagosModal();
+        distribuirPagosPorMetodo();
 
-    $(document).on("input", ".sobre-costo", function () {
-        const table = $(this).closest("table");
-        recalcularTotalSobre(table);
+        const modalEl = document.getElementById("modalPago");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
     });
-
-    // ─────────────────────────────────────────────────────────────
-    // MODAL DE PAGO
-    // ─────────────────────────────────────────────────────────────
-    function limpiarPagosModal() {
-        $("#modal_pago_efectivo").val("0");
-        $("#modal_pago_tarjeta").val("0");
-        $("#modal_pago_yape").val("0");
-        $("#modal_pago_plin").val("0");
-        $("#modal_pago_transferencia").val("0");
-        $("#alerta_pago").addClass("d-none");
-    }
-
-    function distribuirPagosPorMetodo() {
-        const metodo = parseInt($("#modal_metodo_pago").val() || 1);
-        const total = parseFloat($("#costo_total").val()) || 0;
-
-        const efectivo = $("#modal_pago_efectivo");
-        const tarjeta = $("#modal_pago_tarjeta");
-        const yape = $("#modal_pago_yape");
-        const plin = $("#modal_pago_plin");
-        const transferencia = $("#modal_pago_transferencia");
-
-        [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
-            input.prop("disabled", true).val("0.00");
-        });
-
-        switch (metodo) {
-            case 1:
-                efectivo.prop("disabled", false).val(total.toFixed(2));
-                break;
-            case 2:
-                yape.prop("disabled", false);
-                plin.prop("disabled", false);
-                transferencia.prop("disabled", false);
-                tarjeta.prop("disabled", false);
-                yape.val(total.toFixed(2));
-                break;
-            case 3:
-                efectivo.prop("disabled", false);
-                tarjeta.prop("disabled", false);
-                yape.prop("disabled", false);
-                plin.prop("disabled", false);
-                transferencia.prop("disabled", false);
-                efectivo.val(total.toFixed(2));
-                break;
-        }
-
-        validarSumaPagos();
-    }
-
-    function sumarPagosModal() {
-        return (
-            (parseFloat($("#modal_pago_efectivo").val()) || 0) +
-            (parseFloat($("#modal_pago_tarjeta").val()) || 0) +
-            (parseFloat($("#modal_pago_yape").val()) || 0) +
-            (parseFloat($("#modal_pago_plin").val()) || 0) +
-            (parseFloat($("#modal_pago_transferencia").val()) || 0)
-        );
-    }
-
-    function validarSumaPagos() {
-        const total = parseFloat($("#costo_total").val()) || 0;
-        const totalPagado = sumarPagosModal();
-
-        if (Math.abs(totalPagado - total) > 0.01) {
-            $("#alerta_pago").removeClass("d-none");
-            return false;
-        }
-
-        $("#alerta_pago").addClass("d-none");
-        return true;
-    }
 
     $("#modal_metodo_pago").on("change", function () {
         distribuirPagosPorMetodo();
@@ -504,6 +900,13 @@ $(function () {
             }
 
             const total = parseFloat($("#costo_total").val()) || 0;
+
+            const efectivo = $("#modal_pago_efectivo");
+            const tarjeta = $("#modal_pago_tarjeta");
+            const yape = $("#modal_pago_yape");
+            const plin = $("#modal_pago_plin");
+            const transferencia = $("#modal_pago_transferencia");
+
             const campoEditado = $(this).attr("id");
 
             if (campoEditado === "modal_pago_efectivo") {
@@ -511,17 +914,17 @@ $(function () {
                 return;
             }
 
-            const vTarjeta = parseFloat($("#modal_pago_tarjeta").val()) || 0;
-            const vYape = parseFloat($("#modal_pago_yape").val()) || 0;
-            const vPlin = parseFloat($("#modal_pago_plin").val()) || 0;
-            const vTransferencia =
-                parseFloat($("#modal_pago_transferencia").val()) || 0;
+            const vTarjeta = parseFloat(tarjeta.val()) || 0;
+            const vYape = parseFloat(yape.val()) || 0;
+            const vPlin = parseFloat(plin.val()) || 0;
+            const vTransferencia = parseFloat(transferencia.val()) || 0;
 
             const otros = vTarjeta + vYape + vPlin + vTransferencia;
 
             if (otros > total) {
                 const valorActual = parseFloat($(this).val()) || 0;
                 const sumaSinActual = otros - valorActual;
+
                 const maxPermitido = Math.max(0, total - sumaSinActual);
 
                 $(this).val(maxPermitido.toFixed(2));
@@ -535,13 +938,9 @@ $(function () {
                             ? vTarjeta + vYape + maxPermitido + vTransferencia
                             : vTarjeta + vYape + vPlin + maxPermitido;
 
-                $("#modal_pago_efectivo").val(
-                    Math.max(0, total - nuevosOtros).toFixed(2),
-                );
+                efectivo.val(Math.max(0, total - nuevosOtros).toFixed(2));
             } else {
-                $("#modal_pago_efectivo").val(
-                    Math.max(0, total - otros).toFixed(2),
-                );
+                efectivo.val(Math.max(0, total - otros).toFixed(2));
             }
 
             validarSumaPagos();
@@ -552,260 +951,52 @@ $(function () {
         "input",
         "#modal_pago_tarjeta, #modal_pago_plin, #modal_pago_transferencia",
         function () {
-            if (parseInt($("#modal_metodo_pago").val()) !== 2) return;
+            if (parseInt($("#modal_metodo_pago").val()) !== 2) {
+                return;
+            }
 
             const total = parseFloat($("#costo_total").val()) || 0;
+
             const tarjeta = parseFloat($("#modal_pago_tarjeta").val()) || 0;
             const plin = parseFloat($("#modal_pago_plin").val()) || 0;
             const transferencia =
                 parseFloat($("#modal_pago_transferencia").val()) || 0;
 
             const sumaOtros = tarjeta + plin + transferencia;
+
             $("#modal_pago_yape").val(
                 Math.max(0, total - sumaOtros).toFixed(2),
             );
+
             validarSumaPagos();
         },
     );
 
-    // ─────────────────────────────────────────────────────────────
-    // SUNAT / SERIE (solo visual, igual que ventas.js)
-    // ─────────────────────────────────────────────────────────────
-    function obtenerCodigoSucursal() {
-        const option = $("#caja_id option:selected");
-        return String(option.data("serie") || "").trim();
-    }
-
-    function generarSeriePorTipo(tipo) {
-        const codigo = obtenerCodigoSucursal();
-        if (!codigo || isNaN(Number(codigo))) return "Seleccione una sucursal";
-        const numero = Number(codigo);
-        if (tipo === "boleta") return `BBB${numero}`;
-        if (tipo === "factura") return `FFF${numero}`;
-        return `NNN${numero}`;
-    }
-
-    function limpiarClienteFacturacion() {
-        $("#doc_cliente").val("").prop("readonly", false);
-        $("#razon_social").val("").prop("readonly", false);
-    }
-
-    function ponerClienteVariosNotaVenta() {
-        $("#doc_cliente").val("00000000").prop("readonly", true);
-        $("#razon_social").val("CLIENTE VARIOS").prop("readonly", true);
-    }
-
-    function marcarTipoDocumento(tipo) {
-        $(".doc-btn")
-            .removeClass("active btn-primary btn-success btn-warning")
-            .addClass("btn-outline-secondary");
-
-        const serie = generarSeriePorTipo(tipo);
-
-        if (tipo === "boleta") {
-            $("#tipo_doc_sunat").val("2");
-            $("#serie_doc").text(serie);
-            $("#doc_cliente").attr("maxlength", 11);
-            limpiarClienteFacturacion();
-            $("#btn_boleta")
-                .removeClass("btn-outline-secondary")
-                .addClass("active btn-primary");
-        } else if (tipo === "factura") {
-            $("#tipo_doc_sunat").val("1");
-            $("#serie_doc").text(serie);
-            $("#doc_cliente").attr("maxlength", 11);
-            limpiarClienteFacturacion();
-            $("#btn_factura")
-                .removeClass("btn-outline-secondary")
-                .addClass("active btn-success");
-        } else {
-            $("#tipo_doc_sunat").val("4");
-            $("#serie_doc").text(serie);
-            $("#doc_cliente").attr("maxlength", 8);
-            ponerClienteVariosNotaVenta();
-            $("#btn_nota_venta")
-                .removeClass("btn-outline-secondary")
-                .addClass("active btn-warning");
-        }
-    }
-
-    function actualizarEstadoSunat() {
-        const sunatActivo = $("#emitir_sunat").is(":checked");
-        $("#emitir_sunat_estado").val(sunatActivo ? "1" : "0");
-
-        if (sunatActivo) {
-            $("#btn_boleta").prop("disabled", false);
-            $("#btn_factura").prop("disabled", false);
-            $("#btn_nota_venta")
-                .prop("disabled", true)
-                .removeClass("active btn-success btn-dark")
-                .addClass("btn-outline-secondary");
-
-            const actual = $("#tipo_doc_sunat").val();
-            marcarTipoDocumento(actual === "1" ? "factura" : "boleta");
-        } else {
-            $("#btn_boleta")
-                .prop("disabled", true)
-                .removeClass("active btn-primary")
-                .addClass("btn-outline-secondary");
-            $("#btn_factura")
-                .prop("disabled", true)
-                .removeClass("active btn-success")
-                .addClass("btn-outline-secondary");
-            $("#btn_nota_venta").prop("disabled", false);
-            marcarTipoDocumento("nota_venta");
-        }
-    }
-
-    $("#emitir_sunat").on("change", function () {
-        actualizarEstadoSunat();
-    });
-
-    $("#caja_id").on("change", function () {
-        const tipoActual = $("#tipo_doc_sunat").val() || "nota_venta";
-        marcarTipoDocumento(tipoActual);
-    });
-
-    $(".doc-btn").on("click", function () {
-        if ($(this).prop("disabled")) return;
-        marcarTipoDocumento($(this).data("doc"));
-    });
-
-    function buscarCliente() {
-        const documento = $("#doc_cliente").val().trim();
-        $("#btnBuscarCliente").prop("disabled", true);
-
-        $.getJSON(route("buscar.buscar") + "?documento=" + documento)
-            .done(function (data) {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-                if (data.razon_social) {
-                    $("#razon_social").val(data.razon_social);
-                    $("#direccion").val(data.direccion || "-");
-                } else {
-                    let nombre =
-                        `${data.nombres || ""} ${data.apellido_paterno || ""} ${data.apellido_materno || ""}`.trim();
-                    $("#razon_social").val(nombre);
-                    $("#direccion").val("-");
-                }
-            })
-            .fail(() => alert("No se encontró el documento."))
-            .always(() => $("#btnBuscarCliente").prop("disabled", false));
-    }
-
-    $(document).on("click", "#btnBuscarCliente", buscarCliente);
-    $(document).on("keypress", "#doc_cliente", function (e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            buscarCliente();
-        }
-    });
-
-    // ─────────────────────────────────────────────────────────────
-    // CONSTRUIR PAYLOAD
-    // ─────────────────────────────────────────────────────────────
-    function construirPayload(accion) {
-        const form = document.getElementById("formVenta");
-
-        // Habilitar temporalmente los selects deshabilitados para que entren al FormData
-        const selectsDeshabilitados = $("select[disabled]");
-        selectsDeshabilitados.prop("disabled", false);
-
-        const formData = new FormData(form);
-
-        // Volver a deshabilitar
-        selectsDeshabilitados.prop("disabled", true);
-
-        formData.append("accion", accion);
-
-        selectedSeatNumbers.forEach((asiento) => {
-            const desc = descuentosAplicados[asiento] || {};
-            formData.append("descuento_ids[]", desc.descuento_id || "");
-            formData.append("descuento_montos[]", desc.monto || 0);
-            formData.append(
-                "precios_finales[]",
-                seatPrices[asiento] || precioBase,
-            );
-        });
-
-        $(".tabla-sobre-equipaje").each(function () {
-            const index = $(this).data("index");
-            $(this)
-                .find("tbody tr")
-                .each(function (i) {
-                    formData.append(
-                        `sobre_equipaje_detalles[${index}][${i}][tipo_encomienda_id]`,
-                        $(this).find(".sobre-tipo").val(),
-                    );
-                    formData.append(
-                        `sobre_equipaje_detalles[${index}][${i}][descripcion]`,
-                        $(this).find(".sobre-desc").val(),
-                    );
-                    formData.append(
-                        `sobre_equipaje_detalles[${index}][${i}][peso]`,
-                        $(this).find(".sobre-peso").val(),
-                    );
-                    formData.append(
-                        `sobre_equipaje_detalles[${index}][${i}][costo]`,
-                        $(this).find(".sobre-costo").val(),
-                    );
-                });
-        });
-
-        return formData;
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // VALIDACIÓN FACTURACIÓN
-    // ─────────────────────────────────────────────────────────────
-    function validarClienteFacturacion() {
-        const tipo = $("#tipo_doc_sunat").val();
-        if (tipo === "4") return true; // nota de venta
-
-        const doc = $("#doc_cliente").val().trim();
-        const razon = $("#razon_social").val().trim();
-
-        if (!doc || !razon) {
-            Swal.fire(
-                "Atención",
-                "Ingresa y busca el cliente a quien se va a boletear o facturar.",
-                "warning",
-            );
-            return false;
-        }
-        return true;
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // BOTÓN: ABRIR PAGO
-    // ─────────────────────────────────────────────────────────────
-    $("#btnAbrirPago").on("click", function (e) {
-        e.preventDefault();
-
-        actualizarCostoTotal();
-        limpiarPagosModal();
-        distribuirPagosPorMetodo();
-
-        const modalEl = document.getElementById("modalPago");
-        bootstrap.Modal.getOrCreateInstance(modalEl).show();
-    });
-
-    // ─────────────────────────────────────────────────────────────
-    // BOTÓN: CONFIRMAR VENTA
-    // ─────────────────────────────────────────────────────────────
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
+        const btn = $(this);
+        if (btn.prop("disabled")) return;
+        btn.prop("disabled", true).text("Procesando...");
 
-        if (!validarClienteFacturacion()) return;
+        if (!datosPasajerosCompletos()) {
+            btn.prop("disabled", false).text("Terminar Venta");
+            return;
+        }
+
+        if (!validarClienteFacturacion()) {
+            btn.prop("disabled", false).text("Terminar Venta");
+            return;
+        }
+
+        if (!validarMenores()) {
+            Swal.fire("Atención", "Adjunta autorización PDF.", "warning");
+            btn.prop("disabled", false).text("Terminar Venta");
+            return;
+        }
 
         if (!validarSumaPagos()) {
-            Swal.fire(
-                "Atención",
-                "La suma de pagos no coincide con el total.",
-                "warning",
-            );
+            Swal.fire("Atención", "La suma de pagos no coincide.", "warning");
+            btn.prop("disabled", false).text("Terminar Venta");
             return;
         }
 
@@ -852,17 +1043,33 @@ $(function () {
             contentType: false,
             headers: { "X-CSRF-TOKEN": csrfToken },
             success: function (res) {
-                if (res.success) {
-                    Swal.fire(
-                        "Éxito",
-                        res.message || "Venta realizada correctamente",
-                        "success",
-                    ).then(() => {
-                        window.location.href = res.redirect;
-                    });
+                if (!res.success) {
+                    $("#btnConfirmarVenta")
+                        .prop("disabled", false)
+                        .text("Terminar Venta");
+                    return;
                 }
+                const win = window.open(
+                    res.ticket_url,
+                    "_blank",
+                    "width=420,height=700",
+                );
+
+                setTimeout(() => {
+                    if (win && !win.closed) {
+                        try {
+                            win.focus();
+                            win.print();
+                        } catch (e) {}
+                    }
+                    window.location.href = res.redirect;
+                }, 1200);
             },
             error: function (xhr) {
+                $("#btnConfirmarVenta")
+                    .prop("disabled", false)
+                    .text("Terminar Venta");
+
                 Swal.fire(
                     "Error",
                     xhr.responseJSON?.message || "Error al procesar la venta",
@@ -872,36 +1079,160 @@ $(function () {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // BOTÓN: CANCELAR RESERVA
-    // ─────────────────────────────────────────────────────────────
-    const volverAsientosUrl = route("pasajes.index", {
-        salida_id: salidaId,
-        origen_id: origenId,
-        destino_id: destinoId,
-    });
-
-    $("#btnCancelarVenta").on("click", function () {
-        Swal.fire({
-            title: "Cancelar reserva",
-            text: "Se liberarán los asientos y se cancelará la reserva.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sí, cancelar",
-            cancelButtonText: "No",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = volverAsientosUrl;
-            }
-        });
-    });
-
-    // Ocultar botón "Reservar" en el modo edición (ya es una reserva)
-    $("#btnReservar").hide();
-
-    // ─────────────────────────────────────────────────────────────
-    // INIT
-    // ─────────────────────────────────────────────────────────────
     actualizarCostoTotal();
     actualizarEstadoSunat();
+    cargarSobreEquipajesGuardados();
+
+    function cargarCuponesPersona(index, documento, codigoSeleccionado = null) {
+        const select = $(`#descuento_${index}`);
+        select.html(`<option value="">Cargando cupones...</option>`);
+
+        $.getJSON(route("descuentos.persona", { documento }))
+            .done((cupones) => {
+                select.html(`<option value="">Seleccionar</option>`);
+
+                cupones.forEach((cupon) => {
+                    let texto = cupon.codigo;
+                    if (cupon.monto_efectivo)
+                        texto += ` - S/ ${parseFloat(cupon.monto_efectivo).toFixed(2)}`;
+                    if (cupon.porcentaje) texto += ` - ${cupon.porcentaje}%`;
+                    select.append(
+                        `<option value="${cupon.codigo}">${texto}</option>`,
+                    );
+                });
+
+                if (codigoSeleccionado) {
+                    select.val(codigoSeleccionado);
+                    if (select.val() !== codigoSeleccionado) {
+                        select.append(
+                            `<option value="${codigoSeleccionado}">${codigoSeleccionado}</option>`,
+                        );
+                        select.val(codigoSeleccionado);
+                    }
+                    select.trigger("change"); 
+                }
+            })
+            .fail(() => {
+                select.html(`<option value="">Sin cupón</option>`);
+                if (codigoSeleccionado) {
+                    select.append(
+                        `<option value="${codigoSeleccionado}">${codigoSeleccionado}</option>`,
+                    );
+                    select.val(codigoSeleccionado);
+                    select.trigger("change");
+                }
+            });
+    }
+
+    function agregarFilaSobreEquipaje(index) {
+        const fila = $("<tr>");
+        const tipoSelect = $(
+            '<select class="form-select form-select-sm sobre-tipo"></select>',
+        );
+
+        tipoSelect.append('<option value="" disabled selected>Tipo</option>');
+
+        tiposEncomienda.forEach((t) => {
+            tipoSelect.append(`
+            <option value="${t.id}"
+                data-precio="${t.precio_base}"
+                data-peso-limite="${t.peso_limite}"
+                data-costo-extra="${t.costo_kilo_extra}">
+                ${t.descripcion}
+            </option>
+        `);
+        });
+
+        fila.append($("<td>").append(tipoSelect));
+        fila.append(
+            $("<td>").append(
+                '<input type="text" class="form-control form-control-sm sobre-desc">',
+            ),
+        );
+        fila.append(
+            $("<td>").append(
+                '<input type="number" step="0.01" class="form-control form-control-sm sobre-peso">',
+            ),
+        );
+        fila.append(
+            $("<td>").append(
+                '<input type="number" step="0.01" class="form-control form-control-sm sobre-costo">',
+            ),
+        );
+        fila.append(
+            $("<td>").append(
+                '<button type="button" class="btn btn-danger btn-sm btnQuitarSobre">X</button>',
+            ),
+        );
+
+        $(`#tablaSobreEquipaje_${index} tbody`).append(fila);
+    }
+
+    $(document).on("change", ".toggle-sobre-equipaje", function () {
+        const index = $(this).data("index");
+
+        $(`#card_sobre_equipaje_${index}`).toggle(this.checked);
+
+        if (
+            this.checked &&
+            $(`#tablaSobreEquipaje_${index} tbody tr`).length === 0
+        ) {
+            agregarFilaSobreEquipaje(index);
+        }
+    });
+
+    $(document).on("click", ".btn-agregar-sobre", function () {
+        const index = $(this).data("index");
+        agregarFilaSobreEquipaje(index);
+    });
+
+    function calcularCostoFila(tr) {
+        const option = tr.find(".sobre-tipo option:selected");
+
+        const peso = parseFloat(tr.find(".sobre-peso").val()) || 0;
+        const precioBase = parseFloat(option.data("precio")) || 0;
+        const pesoLimite = parseFloat(option.data("peso-limite")) || 0;
+        const costoExtra = parseFloat(option.data("costo-extra")) || 0;
+
+        let costo = precioBase;
+
+        if (pesoLimite && peso > pesoLimite && costoExtra) {
+            costo += (peso - pesoLimite) * costoExtra;
+        }
+
+        tr.find(".sobre-costo").val(costo.toFixed(2));
+    }
+
+    $(document).on("change", ".sobre-tipo", function () {
+        calcularCostoFila($(this).closest("tr"));
+    });
+
+    $(document).on("input", ".sobre-peso", function () {
+        calcularCostoFila($(this).closest("tr"));
+    });
+
+    $(document).on("click", ".btnQuitarSobre", function () {
+        const tr = $(this).closest("tr");
+        const table = tr.closest("table");
+        tr.remove();
+        recalcularTotalSobre(table);
+    });
+
+    function recalcularTotalSobre(table) {
+        let total = 0;
+
+        table.find("tbody tr").each(function () {
+            total += parseFloat($(this).find(".sobre-costo").val()) || 0;
+        });
+
+        const index = table.data("index");
+        $(`#total_sobre_equipaje_${index}`).text(total.toFixed(2));
+
+        actualizarCostoTotal();
+    }
+
+    $(document).on("input", ".sobre-costo", function () {
+        const table = $(this).closest("table");
+        recalcularTotalSobre(table);
+    });
 });

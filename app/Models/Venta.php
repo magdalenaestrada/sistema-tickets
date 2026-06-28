@@ -35,7 +35,7 @@ class Venta extends Model
         'estado',
         'fecha_emision',
         'fecha_anulacion',
-        'caja_id'
+        'caja_id',
     ];
 
     protected $casts = [

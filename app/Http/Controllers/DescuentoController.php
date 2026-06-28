@@ -309,6 +309,7 @@ class DescuentoController extends Controller
         }
 
         return response()->json([
+            'id' => $descuento->id,
             'monto_efectivo' => $descuento->monto_efectivo,
             'porcentaje' => $descuento->porcentaje,
         ]);
