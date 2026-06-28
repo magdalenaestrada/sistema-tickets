@@ -994,7 +994,7 @@ class PasajeController extends Controller
                 'message' => 'Solo se pueden editar pasajes reservados. Este pasaje ya fue vendido o no está disponible para edición.'
             ], 422);
         }
-        
+
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'tipo_documento_id' => 'required|array',

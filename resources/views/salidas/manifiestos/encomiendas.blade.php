@@ -56,16 +56,17 @@
 
 <body>
 
-    <div class="title-box">MANIFIESTO DE ENCOMIENDAS - SALIDA #{{ $salida->id }}</div>
+    <div class="title-box">MANIFIESTO DE ENCOMIENDAS | SALIDA {{ $origenNombre }} - {{ $destinoNombre }}</div>
 
     <table class="mt-2">
         <tr>
-            <td><strong>Ruta:</strong> {{ $salida->horario?->ruta?->nombre }}</td>
+            <td><strong>Ruta: </strong>{{ $origenNombre }} - {{ $destinoNombre }}</td>
             <td><strong>Fecha:</strong> {{ $salida->fecha_salida?->format('Y-m-d') }}</td>
             <td><strong>Hora:</strong> {{ $salida->horario?->hora_formateada }}</td>
         </tr>
         <tr>
-            <td><strong>Vehículo:</strong> {{ $salida->vehiculo->placa ?? '-' }}</td>
+            <td><strong>Vehículo:</strong> {{ $salida->vehiculo->tipo_vehiculo->descripcion ?? '' }} -
+                {{ $salida->vehiculo->numero_placa ?? '' }} </td>
             <td><strong>Conductor 1:</strong> {{ $salida->conductorPrincipal?->nombres }}
                 {{ $salida->conductorPrincipal?->apellidos }}</td>
             <td><strong>Conductor 2:</strong> {{ $salida->conductorSecundario?->nombres }}
@@ -92,8 +93,8 @@
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
                     <td>{{ $encomienda->receptor?->nombre_completo ?? '-' }}</td>
-                    <td>{{ $encomienda->sucursal_origen?->nombre_comercial ?? '-' }}</td>
-                    <td>{{ $encomienda->sucursal_destino?->nombre_comercial ?? '-' }}</td>
+                    <td>{{ $encomienda->origenPueblito->descripcion ?? '-' }}</td>
+                    <td>{{ $encomienda->destinoPueblito->descripcion ?? '-' }}</td>
                     <td>{{ $encomienda->detalles->first()?->descripcion ?? '-' }}</td>
                     <td>{{ $encomienda->detalles->first()?->peso ?? '-' }}</td>
                     <td>{{ number_format((float) ($encomienda->venta?->importe ?? 0), 2) }}</td>

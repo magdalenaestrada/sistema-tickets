@@ -87,16 +87,18 @@
 
                 <hr>
 
-                {{-- ITEMS --}}
                 <h6>Detalle de servicio</h6>
 
                 <div class="row mb-2">
 
-                    <div class="col-md-7">
+                    <div class="col-md-6">
                         <input type="text" id="descripcion" class="form-control" placeholder="Escribir descripción">
                     </div>
-
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <input type="number" step="0.01" id="unidad" class="form-control"
+                            placeholder="Unidades">
+                    </div>
+                    <div class="col-md-2">
                         <input type="number" step="0.01" id="precio" class="form-control"
                             placeholder="Precio (incluye IGV)">
                     </div>
@@ -115,8 +117,10 @@
                     <thead class="table-light">
                         <tr>
                             <th>Descripción</th>
-                            <th width="120">Precio</th>
-                            <th width="80"></th>
+                            <th width="120">Unidades</th>
+                            <th width="120">Precio Unitario</th>
+                            <th width="120">Subtotal</th>
+                            <th width="80">Acciones</th>
                         </tr>
                     </thead>
 
@@ -130,7 +134,7 @@
                 {{-- TOTALES --}}
                 <div class="text-end">
 
-                    <h6>Base: S/ <span id="subtotal">0.00</span></h6>
+                    <h6>Subtotal: S/ <span id="subtotal">0.00</span></h6>
                     <h6>IGV ({{ $empresa->igv }}%): S/ <span id="igv">0.00</span></h6>
                     <h4>Total: S/ <span id="total">0.00</span></h4>
 

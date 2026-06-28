@@ -11,6 +11,7 @@ use App\Models\Horario;
 use App\Models\HorarioFecha;
 use App\Models\Salida;
 use Carbon\Carbon;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Paginator::useBootstrapFive();
+
         view()->composer('*', function ($view) {
 
             $empresaGlobal = Empresa::first();

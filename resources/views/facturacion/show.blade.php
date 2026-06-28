@@ -188,18 +188,6 @@
 
                         <div class="d-flex gap-2 flex-wrap">
 
-                            @if (!in_array($venta->estado, ['ACEPTADA', 'PENDIENTE_RESUMEN']))
-                                <form action="{{ route('facturacion.emitir', $venta) }}" method="POST">
-
-                                    @csrf
-
-                                    <button type="submit" class="btn btn-success">
-
-                                        Emitir SUNAT
-                                    </button>
-
-                                </form>
-                            @endif
 
                             @if ($venta->ruta_xml)
                                 <a href="{{ route('facturacion.xml', $venta) }}" class="btn btn-info">

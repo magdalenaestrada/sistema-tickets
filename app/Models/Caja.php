@@ -41,12 +41,15 @@ class Caja extends Model
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
+
     public function detallesActivos()
     {
         return $this->hasMany(CajaDetalle::class, 'caja_id')
             ->where(function ($q) {
-                $q->whereNull('anulado')->orWhere('anulado', false);
-            });
+                $q->whereNull('anulado')
+                    ->orWhere('anulado', false);
+            })
+            ->where('subtipo_movimiento_caja_id', '!=', '10');
     }
 
     public function getTotalIngresosAttribute(): float

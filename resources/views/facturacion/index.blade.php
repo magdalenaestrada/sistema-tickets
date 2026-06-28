@@ -37,7 +37,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h6>Emitidas</h6>
-                        <h4>{{ $ventas->where('estado', 'ACEPTADA')->count() }}</h4>
+                        <h4>{{ $ventas->where('estado', 'ACEPTADA', 'E')->count() }}</h4>
                     </div>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h6>Pendientes</h6>
-                        <h4>{{ $ventas->where('estado', 'PENDIENTE_RESUMEN')->count() }}</h4>
+                        <h4>{{ $ventas->where('estado', 'GENERADA')->count() }}</h4>
                     </div>
                 </div>
             </div>
@@ -187,13 +187,9 @@
                                         </td>
                                     </tr>
                                 @endforelse
-
                             </tbody>
-
                         </table>
-
                     </div>
-
                 </div>
 
                 <div class="card-footer">
@@ -388,17 +384,32 @@
             function agregarItem() {
 
                 let descripcion = $("#descripcion").val().trim();
-                let precio = parseFloat($("#precio").val());
 
-                if (!descripcion || isNaN(precio)) return;
+                const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.-]+$/;
+                
+                if (!regex.test(descripcion)) {
+                    Swal.fire(
+                        "Error",
+                        "La descripción solo puede contener letras, números y espacios.",
+                        "error"
+                    );
+                    return;
+                }
+                let precio = parseFloat($("#precio").val());
+                let unidad = parseFloat($("#unidad").val());
+                let subtotal = unidad * precio;
+                if (!descripcion || isNaN(precio) || isNaN(precio)) return;
 
                 items.push({
                     descripcion,
-                    precio
+                    precio,
+                    unidad,
+                    subtotal
                 });
 
                 $("#descripcion").val("");
                 $("#precio").val("");
+                $("#unidad").val("");
 
                 render();
             }
@@ -417,12 +428,14 @@
 
                 items.forEach((item, i) => {
 
-                    total += item.precio;
+                    total += item.subtotal;
 
                     tbody.append(`
             <tr>
                 <td>${item.descripcion}</td>
+                <td>${item.unidad}</td>
                 <td>${item.precio.toFixed(2)}</td>
+                <td>${item.subtotal.toFixed(2)}</td>
                 <td>
                     <button type="button"
                             class="btn btn-danger btn-sm"

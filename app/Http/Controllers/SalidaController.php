@@ -153,8 +153,8 @@ class SalidaController extends Controller
         $empresa = Empresa::first();
 
         $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
-        $origenNombre = $puntos->first()?->sucursal?->distrito?->nombre ?? '-';
-        $destinoNombre = $puntos->last()?->sucursal?->distrito?->nombre ?? '-';
+        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
+        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
 
         $pasajes = $salida->pasajes
             ->whereIn('estado', ['V', 'F'])
@@ -204,13 +204,20 @@ class SalidaController extends Controller
             'encomiendas',
         ]);
 
+        $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
+        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
+        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
+
+
         $encomiendas = $salida->encomiendas()
             ->wherePivot('estado', 'A')
             ->get();
 
         $html = view('salidas.manifiestos.encomiendas', compact(
             'salida',
-            'encomiendas'
+            'encomiendas',
+            'origenNombre',
+            'destinoNombre'
         ))->render();
 
         return $pdfService->generar(
@@ -229,8 +236,8 @@ class SalidaController extends Controller
         ]);
 
         $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
-        $origenNombre = $puntos->first()?->sucursal?->nombre_comercial ?? '-';
-        $destinoNombre = $puntos->last()?->sucursal?->nombre_comercial ?? '-';
+        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
+        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
 
         $html = view('salidas.manifiestos.conductores', compact(
             'salida',
@@ -303,6 +310,7 @@ class SalidaController extends Controller
             $existe = Salida::where('horario_id', $request->horario_id)
                 ->where('fecha_salida', $request->fecha_salida)
                 ->where('hora_salida', $request->hora_salida)
+
                 ->exists();
 
             if ($existe) {
@@ -451,6 +459,8 @@ class SalidaController extends Controller
             $existe = Salida::where('horario_id', $request->horario_id)
                 ->where('fecha_salida', $request->fecha_salida)
                 ->where('hora_salida', $request->hora_salida)
+                ->where('id', '!=', $id) // 👈 IMPORTANTE
+
                 ->exists();
 
             if ($existe) {

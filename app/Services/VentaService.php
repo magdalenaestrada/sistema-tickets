@@ -263,7 +263,7 @@ class VentaService
 
         if ((string) $tipo->codigo === 'NV') {
             $venta->update([
-                'estado' => 'E',
+                'estado' => 'ACEPTADA',
                 'observacion' => 'Nota de venta emitida internamente.',
             ]);
 
@@ -359,7 +359,7 @@ class VentaService
     {
         $venta->loadMissing(['persona', 'detalles']);
 
-        if (!in_array($venta->estado, ['E', 'O'], true)) {
+        if (!in_array($venta->estado, ['ACEPTADA', 'O'], true)) {
             throw new Exception('Solo se puede anular en SUNAT una venta emitida.');
         }
 

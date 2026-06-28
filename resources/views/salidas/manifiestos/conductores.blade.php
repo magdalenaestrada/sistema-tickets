@@ -43,16 +43,16 @@
 
 <body>
 
-    <div class="title-box">MANIFIESTO DE CONDUCTORES - SALIDA #{{ $salida->id }}</div>
+    <div class="title-box">MANIFIESTO DE CONDUCTORES | {{ $origenNombre }} - {{$destinoNombre}}</div>
 
     <table class="mt-2">
         <tr>
-            <td><strong>Ruta:</strong> {{ $salida->horario?->ruta?->nombre }}</td>
-            <td><strong>Fecha:</strong> {{ $salida->fecha_salida?->format('Y-m-d') }}</td>
-            <td><strong>Hora:</strong> {{ $salida->horario?->hora_formateada }}</td>
+            <td><strong>Ruta: </strong>{{ $origenNombre }} - {{$destinoNombre}}</td>
+            <td><strong>Fecha:  </strong> {{ $salida->fecha_salida?->format('Y-m-d') }}</td>
+            <td><strong>Hora: </strong> {{ $salida->horario?->hora_formateada }}</td>
         </tr>
         <tr>
-            <td><strong>Vehículo:</strong> {{ $salida->vehiculo->marca ?? '-' }} - {{ $salida->vehiculo->placa ?? '-' }}
+            <td><strong>Vehículo:</strong> {{ strtoupper($salida->vehiculo->tipo_vehiculo->descripcion) ?? '-' }} - {{ $salida->vehiculo->numero_placa ?? '-' }}
             </td>
             <td><strong>Origen:</strong> {{ $origenNombre }}</td>
             <td><strong>Destino:</strong> {{ $destinoNombre }}</td>

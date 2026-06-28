@@ -91,6 +91,8 @@
             font-size: 10px;
             font-weight: bold;
             padding: 5px 6px;
+            text-align: center;
+
         }
 
         @page {
@@ -285,6 +287,11 @@
             text-align: center;
         }
 
+        .col-origen {
+            width: 9%;
+            text-align: center;
+        }
+
         .col-doc {
             width: 12%;
             text-align: center;
@@ -392,7 +399,7 @@
                     </tr>
                     <tr>
                         <td class="titulo-sub">
-                            SALIDA #{{ $salida->id }}
+                            SALIDA | {{ $origenNombre }} - {{ $destinoNombre }}
                         </td>
                     </tr>
                 </table>
@@ -444,6 +451,7 @@
                 <th class="col-name">NOMBRES Y APELLIDOS</th>
                 <th class="col-doc-type">TIPO DOC.</th>
                 <th class="col-doc">N° DOC</th>
+                <th class="col-dest">ORIGEN</th>
                 <th class="col-dest">DESTINO</th>
                 <th class="col-ticket">N° BOLETO</th>
                 <th class="col-amount">IMPORTE S/</th>
@@ -459,7 +467,8 @@
                     </td>
                     <td class="col-doc-type">{{ $pasaje->persona?->tipoDocumento?->codigo ?? 'DNI' }}</td>
                     <td class="col-doc">{{ $pasaje->persona?->documento }}</td>
-                    <td class="col-dest">{{ $pasaje->destino?->distrito->nombre }}</td>
+                    <td class="col-origen">{{ $origenNombre }}</td>
+                    <td class="col-dest">{{ $destinoNombre }}</td>
                     <td class="col-ticket">{{ $pasaje->venta?->serie }} - {{ $pasaje->venta?->numero }}</td>
                     <td class="col-amount">{{ number_format((float) $pasaje->precio_cobrado, 2) }}</td>
                 </tr>
@@ -472,6 +481,7 @@
                     <td class="col-name"></td>
                     <td class="col-doc-type"></td>
                     <td class="col-doc"></td>
+                    <td class="col-origen"></td>
                     <td class="col-dest"></td>
                     <td class="col-ticket"></td>
                     <td class="col-amount"></td>

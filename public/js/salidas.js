@@ -667,12 +667,11 @@ function editarSalida(id) {
 
     </div>
 
-    <button
-        class="btn btn-success w-100 mt-2"
-        onclick="guardarEdicionSalida(${salida.id})">
-
-        Guardar cambios
-    </button>
+  <button
+    class="btn btn-success w-100 mt-2"
+    onclick="guardarEdicionSalida(${salida.id}, ${salida.horario_id})">
+    Guardar cambios
+</button>
 `;
 
         $("#tituloPanelSalida").text("Editar salida");
@@ -751,7 +750,7 @@ function editarSalida(id) {
     });
 }
 
-window.guardarEdicionSalida = function (id) {
+window.guardarEdicionSalida = function (id, horarioOriginal) {
     let horario_id = $("#horario_id").val();
     let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
@@ -761,12 +760,8 @@ window.guardarEdicionSalida = function (id) {
     let vehiculo_id = $("#vehiculo_id").val();
     let conductor_principal_id = $("#conductor_principal_id").val();
     let conductor_secundario_id = $("#conductor_secundario_id").val();
-    let cambioHora = hora_salida !== salida.hora_salida;
 
-    if (!horario_id || !fecha_salida || !estado) {
-        Swal.fire("Error", "Todos los campos son obligatorios", "error");
-        return;
-    }
+    let cambioHora = String(horario_id) !== String(horarioOriginal);
 
     if (cambioHora && estado !== "reprogramado") {
         Swal.fire(
@@ -774,6 +769,10 @@ window.guardarEdicionSalida = function (id) {
             "No puedes cambiar la hora sin reprogramar",
             "error",
         );
+        return;
+    }
+    if (!horario_id || !fecha_salida || !estado) {
+        Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
 
