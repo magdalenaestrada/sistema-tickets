@@ -37,7 +37,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h6>Emitidas</h6>
-                        <h4>{{ $ventas->where('estado', 'ACEPTADA', 'E')->count() }}</h4>
+                        <h4>{{ $emitidas }}</h4>
                     </div>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h6>Pendientes</h6>
-                        <h4>{{ $ventas->where('estado', 'GENERADA')->count() }}</h4>
+                        <h4>{{ $pendientes }}</h4>
                     </div>
                 </div>
             </div>
@@ -55,7 +55,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h6>Rechazadas</h6>
-                        <h4>{{ $ventas->where('estado', 'RECHAZADA')->count() }}</h4>
+                        <h4>{{ $rechazadas }}</h4>
                     </div>
                 </div>
             </div>

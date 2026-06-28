@@ -25,14 +25,30 @@ class FacturacionController extends Controller
         ])
             ->orderByDesc('fecha_emision')
             ->paginate(20);
+
+        $totalVentas = Venta::count();
+
+        $emitidas = Venta::whereIn('estado', [
+            'ACEPTADA',
+            'E'
+        ])->count();
+
+        $pendientes = Venta::where('estado', 'GENERADA')->count();
+
+        $rechazadas = Venta::where('estado', 'RECHAZADA')->count();
+
         $sucursales = Sucursal::with('serie')->get();
         $empresa = Empresa::first();
-
-        $porcentajeIgv = $empresa->igv; //18
+        $porcentajeIgv = $empresa->igv;
         $tiposDocumento = TipoDocumentoFactura::all();
         $personas = Persona::all();
+
         return view('facturacion.index', compact(
             'ventas',
+            'totalVentas',
+            'emitidas',
+            'pendientes',
+            'rechazadas',
             'tiposDocumento',
             'personas',
             'sucursales',
