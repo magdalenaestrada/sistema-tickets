@@ -351,25 +351,16 @@ class DescuentoController extends Controller
             $empleado = Empleado::where('persona_id', $persona->id)->first();
             $cargoId = $empleado?->cargo_id;
         }
-
-
-
         $descuentos = Descuento::query()
             ->where('activo', 1)
             ->where(function ($q) {
                 $q->whereNull('fecha_maxima')
                     ->orWhereDate('fecha_maxima', '>=', now());
             })
-            ->where(function ($q) {
-                $q->whereNull('cantidad_usos')
-                    ->orWhere('cantidad_usos', '>', 0);
-            })
             ->where(function ($q) use ($persona, $cargoId, $cliente) {
 
-                // TODOS
                 $q->where('tipo_asignacion_id', 'T');
 
-                // PERSONA
                 if ($persona) {
                     $q->orWhereHas(
                         'personas',
@@ -377,7 +368,6 @@ class DescuentoController extends Controller
                     );
                 }
 
-                // CARGO
                 if ($cargoId) {
                     $q->orWhereHas(
                         'cargos',
@@ -389,7 +379,21 @@ class DescuentoController extends Controller
                     $q->orWhere('tipo_asignacion_id', 'C');
                 }
             })
-            ->get();
+            ->withCount([
+                'pasajes as usos_persona' => function ($q) use ($persona) {
+                    if ($persona) {
+                        $q->where('persona_id', $persona->id);
+                    } else {
+                        $q->whereRaw('1 = 0');
+                    }
+                }
+            ])
+            ->get()
+            ->filter(function ($descuento) {
+                return is_null($descuento->cantidad_usos)
+                    || $descuento->usos_persona < $descuento->cantidad_usos;
+            })
+            ->values();
 
         return response()->json($descuentos);
     }

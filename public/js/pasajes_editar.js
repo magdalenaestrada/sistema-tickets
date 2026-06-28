@@ -1035,8 +1035,38 @@ $(function () {
 
         const formData = construirPayload("vender");
 
+        $("#btnGuardarReserva").on("click", function (e) {
+            e.preventDefault();
+            if (!datosPasajerosCompletos()) return;
+
+            const formData = construirPayload("reservar");
+
+            $.ajax({
+                url: route("pasajes.actualizar_venta", config.pasajeId),
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: { "X-CSRF-TOKEN": csrfToken },
+                success: function (res) {
+                    if (res.success) {
+                        Swal.fire("Éxito", res.message, "success").then(() => {
+                            window.location.href = res.redirect;
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    Swal.fire(
+                        "Error",
+                        xhr.responseJSON?.message || "Error al guardar",
+                        "error",
+                    );
+                },
+            });
+        });
+
         $.ajax({
-            url: route("pasajes.store"),
+            url: route("pasajes.actualizar_venta", config.pasajeId),
             type: "POST",
             data: formData,
             processData: false,
@@ -1109,7 +1139,7 @@ $(function () {
                         );
                         select.val(codigoSeleccionado);
                     }
-                    select.trigger("change"); 
+                    select.trigger("change");
                 }
             })
             .fail(() => {

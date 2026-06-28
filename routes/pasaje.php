@@ -14,10 +14,8 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::get('/{pasaje}', [PasajeController::class, 'show'])->name('show');
     Route::get('/{pasaje}/editar', [PasajeController::class, 'editar'])->name('editar');
     Route::get('/{pasaje}/ticket', [PasajeController::class, 'ticket'])->name('ticket');
-    Route::put('/{pasaje}', [PasajeController::class, 'actualizar'])->name('actualizar');
-    Route::put('/{pasaje}/horario', [PasajeController::class, 'actualizarHorario'])->name('actualizar_horario');
-    Route::put('/{pasaje}/venta', [PasajeController::class, 'actualizarVenta'])->name('actualizar_venta');
-
+    Route::post('/{pasaje}/actualizar-venta', [PasajeController::class, 'actualizarVentaReserva'])
+        ->name('actualizar_venta');
     Route::post('/{pasaje}/abordo', [PasajeController::class, 'abordo'])->name('abordo');
     Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('noAbordo');
     Route::get('/{pasaje}/cambiar-horario', [PasajeController::class, 'cambiarHorario'])->name('cambiarHorario');

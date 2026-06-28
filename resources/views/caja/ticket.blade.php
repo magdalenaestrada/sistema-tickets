@@ -238,7 +238,7 @@
             <td class="right">S/ {{ number_format($venta->subtotal ?? $venta->total - $venta->impuesto, 2) }}</td>
         </tr>
         <tr>
-            <td class="bold">IGV ({{ $empresa->igv ?? 18 }}.00%):</td>
+            <td class="bold">IGV ({{ $empresa->igv ?? 18 }}.%):</td>
             <td class="right">S/ {{ number_format($venta->impuesto, 2) }}</td>
         </tr>
         <tr style="font-size: 12px;">

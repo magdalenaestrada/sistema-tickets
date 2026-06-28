@@ -44,4 +44,9 @@ class Descuento extends Model
     {
         return $this->hasMany(DescuentoCargo::class, "descuento_id");
     }
+
+    public function pasajes()
+    {
+        return $this->hasMany(Pasaje::class, 'descuento_id');
+    }
 }

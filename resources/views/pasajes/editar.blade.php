@@ -81,7 +81,7 @@
                                     <div class="col-md-2">
                                         <label class="form-label">Tipo</label>
                                         <select class="form-select" name="tipo_documento_id[]"
-                                            id="tipo_documento_id_{{ $index }}" disabled>
+                                            id="tipo_documento_id_{{ $index }}" readonly>
                                             @foreach ($tipos_documentos as $tipo_documento)
                                                 <option value="{{ $tipo_documento->id }}"
                                                     {{ $persona->tipo_documento_id == $tipo_documento->id ? 'selected' : '' }}>
@@ -98,7 +98,7 @@
                                                 id="documento_{{ $index }}" name="documento[]"
                                                 value="{{ $persona->documento }}" readonly>
                                             <button type="button" class="btn btn-primary btn-buscar-documento"
-                                                data-index="{{ $index }}" disabled>
+                                                data-index="{{ $index }}" readonly>
                                                 <i class="link-icon" data-lucide="search"></i>
                                             </button>
                                         </div>
@@ -156,7 +156,7 @@
                                         <div class="form-check">
                                             <input type="checkbox" class="form-check-input"
                                                 id="pasajero_menor_{{ $index }}"
-                                                {{ $pasaje->pasajero_menor ? 'checked' : '' }} disabled>
+                                                {{ $pasaje->pasajero_menor ? 'checked' : '' }} readonly>
                                             <label class="form-check-label" for="pasajero_menor_{{ $index }}">
                                                 ¿Pasajero menor de edad?
                                             </label>
@@ -308,7 +308,9 @@
                             </div>
 
                             <div class="d-grid gap-2">
-
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="btnGuardarReserva">
+                                    Guardar Reserva 
+                                </button>
                                 <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
                                     Terminar Venta
                                 </button>
@@ -434,6 +436,7 @@
 @push('scripts')
     <script>
         window.VENTA_CONFIG = {
+            pasajeId: @json($pasaje->id),
             salidaId: @json($salida->id),
             origenId: @json($origen->id),
             destinoId: @json($destino->id),
@@ -443,8 +446,8 @@
             volverAsientosUrl: @json(url()->previous()),
             tiposEncomienda: @json($tiposEncomienda ?? []),
             sobreEquipajes: @json($sobreEquipajes),
-            preciosFinales: @json($preciosFinales), 
-            descuentos: @json($descuentosConfig), 
+            preciosFinales: @json($preciosFinales),
+            descuentos: @json($descuentosConfig),
         };
     </script>
     <script src="{{ asset('js/pasajes_editar.js') }}"></script>

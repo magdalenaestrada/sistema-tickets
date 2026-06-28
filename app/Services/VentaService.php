@@ -790,7 +790,7 @@ class VentaService
 
         $detalles = [];
         $mtoOperGravadas = 0;
-        $mtoIGV = 0;
+        $mtoIGV = $empresa->igv;
         $valorVenta = 0;
         $subTotal = 0;
         $totalVenta = 0;

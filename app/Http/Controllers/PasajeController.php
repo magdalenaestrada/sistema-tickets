@@ -890,98 +890,6 @@ class PasajeController extends Controller
         return view('pasajes.cambiar-horario', compact('pasaje', 'salidas'));
     }
 
-    public function actualizarHorario(Request $request, Pasaje $pasaje)
-    {
-        $request->validate([
-            'nueva_salida_id' => 'required|exists:salidas,id',
-            'nuevo_asiento_numero' => 'required|integer|min:1',
-            'origen_id' => 'required|exists:pueblitos,id',
-            'destino_id' => 'required|exists:pueblitos,id',
-        ]);
-
-        if (!in_array($pasaje->estado, ['R', 'V'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Solo se puede cambiar horario a pasajes reservados o vendidos.'
-            ], 422);
-        }
-
-        try {
-            return DB::transaction(function () use ($request, $pasaje) {
-                $pasaje->load(['salida.horario.ruta', 'tramos']);
-
-                $nuevaSalida = Salida::with([
-                    'horario.tipo_vehiculo',
-                    'horario.ruta.puntos.sucursal',
-                    'horario.ruta.tramos.origen',
-                    'horario.ruta.tramos.destino',
-                ])->findOrFail($request->nueva_salida_id);
-
-                $rutaActualId = $pasaje->salida?->horario?->ruta_id;
-                $nuevaRutaId = $nuevaSalida->horario?->ruta_id;
-
-                if (!$rutaActualId || !$nuevaRutaId || $rutaActualId != $nuevaRutaId) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Solo puedes cambiar el pasaje a una salida de la misma ruta.'
-                    ], 422);
-                }
-
-                $asientos = $nuevaSalida->asientosDisponibles(
-                    $request->origen_id,
-                    $request->destino_id
-                );
-
-                if (($asientos[$request->nuevo_asiento_numero] ?? 'ocupado') !== 'libre') {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El asiento seleccionado ya no está disponible.'
-                    ], 422);
-                }
-
-                $tramos = $nuevaSalida->obtenerTramosDeViaje(
-                    $request->origen_id,
-                    $request->destino_id
-                );
-
-                if ($tramos->isEmpty()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No se pudieron determinar los tramos del nuevo viaje.'
-                    ], 422);
-                }
-
-                $nuevoPrecio = $tramos->sum('costo_tramo');
-
-                $descuentoMonto = (float) ($request->descuento_monto ?? 0);
-                $nuevoPrecio = max(0, $tramos->sum('costo_tramo') - $descuentoMonto);
-
-
-                $pasaje->update([
-                    'salida_id' => $nuevaSalida->id,
-                    'origen_pueblito_id' => $request->origen_id,
-                    'destino_pueblito_id' => $request->destino_id,
-                    'asiento_numero' => $request->nuevo_asiento_numero,
-                    'precio_cobrado' => $nuevoPrecio,
-                    'es_promocion' => (int) $request->descuento_id === 1,
-                    'fecha_inactivacion' => null,
-                ]);
-
-                $pasaje->tramos()->sync($tramos->pluck('id')->toArray());
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pasaje actualizado correctamente.',
-                ]);
-            });
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al cambiar la salida: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
     public function cancelar(Pasaje $pasaje)
     {
         if (!in_array($pasaje->estado, ['R', 'V'])) {
@@ -1078,135 +986,265 @@ class PasajeController extends Controller
         ));
     }
 
-    public function actualizar(Request $request, Pasaje $pasaje)
+    public function actualizarVentaReserva(Request $request, Pasaje $pasaje)
     {
-        if (!in_array($pasaje->estado, ['R', 'V'])) {
+        if ($pasaje->estado !== 'R') {
             return response()->json([
                 'success' => false,
-                'message' => 'Solo se pueden editar pasajes reservados o vendidos.'
+                'message' => 'Solo se pueden editar pasajes reservados. Este pasaje ya fue vendido o no está disponible para edición.'
             ], 422);
         }
-
+        
         $request->validate([
-            'tipo_documento_id' => 'required|integer',
-            'documento' => 'required|string|max:20',
-            'nombres' => 'required|string|max:200',
-            'apellidos' => 'required|string|max:200',
-            'celular' => 'nullable|string|max:20',
-            'telefono' => 'nullable|string|max:20',
-            'correo' => 'nullable|email|max:255',
-            'pasajero_menor' => 'nullable|boolean',
-            'descuento_id' => 'nullable|exists:descuentos,id',
+            'accion' => 'required|in:reservar,vender',
+            'tipo_documento_id' => 'required|array',
+            'tipo_documento_id.*' => 'required|integer',
+            'documento' => 'required|array',
+            'documento.*' => 'required|string|max:20',
+            'nombres' => 'required|array',
+            'nombres.*' => 'required|string|max:200',
+            'apellidos' => 'required|array',
+            'apellidos.*' => 'required|string|max:200',
+            'celular' => 'nullable|array',
+            'telefono' => 'nullable|array',
+            'correo' => 'nullable|array',
+            'descuento_ids' => 'nullable|array',
+            'precios_finales' => 'nullable|array',
+            'sobre_equipaje_detalles' => 'nullable|array',
+            'tipo_doc_sunat' => 'nullable',
+            'numero_documento_id' => 'nullable|string|max:20',
+            'razon_social' => 'nullable|string|max:255',
+            'caja_id' => 'nullable|exists:caja,id',
+            'metodo_pago_id' => 'nullable|integer',
+            'pago_efectivo' => 'nullable|numeric|min:0',
+            'pago_tarjeta' => 'nullable|numeric|min:0',
+            'pago_yape' => 'nullable|numeric|min:0',
+            'pago_plin' => 'nullable|numeric|min:0',
+            'pago_transferencia' => 'nullable|numeric|min:0',
         ]);
+
+        if (
+            $request->accion === 'vender' &&
+            Auth::user()->hasRole('Administrador') &&
+            !$request->caja_id
+        ) {
+            throw ValidationException::withMessages([
+                'caja_id' => 'Debe seleccionar una caja para realizar la venta.',
+            ]);
+        }
 
         try {
             DB::beginTransaction();
 
+            $accion = $request->accion;
+            $index = 0; // un solo pasajero en edición
+
+            $documento = trim($request->documento[$index] ?? '');
+            $nombres = trim($request->nombres[$index] ?? '');
+            $apellidos = trim($request->apellidos[$index] ?? '');
+            $celular = trim($request->celular[$index] ?? '');
+            $telefono = $request->telefono[$index] ?? null;
+            $correo = $request->correo[$index] ?? null;
+
+            if (!$documento || !$nombres || !$apellidos) {
+                throw ValidationException::withMessages([
+                    "documento.$index" => "Faltan datos del pasajero.",
+                ]);
+            }
+
             $persona = Persona::updateOrCreate(
-                ['documento' => $request->documento],
+                ['documento' => $documento],
                 [
-                    'tipo_documento_id' => $request->tipo_documento_id,
-                    'nombres' => $request->nombres,
-                    'apellidos' => $request->apellidos,
-                    'celular' => $request->celular,
-                    'telefono' => $request->telefono,
+                    'tipo_documento_id' => $request->tipo_documento_id[$index],
+                    'nombres' => $nombres,
+                    'apellidos' => $apellidos,
                     'direccion' => $request->direccion,
-                    'correo' => $request->correo,
+                    'celular' => $celular,
+                    'telefono' => $telefono,
+                    'correo' => $correo,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
                 ]
             );
 
-            $autorizacionPdf = $pasaje->autorizacion_pdf;
+            Cliente::updateOrCreate(
+                ['persona_id' => $persona->id],
+                ['user_id' => Auth::id()]
+            );
 
-            $esMenor = (bool) $request->pasajero_menor;
+            // --- descuento, recalculado contra precio_pasaje guardado ---
+            $precioBase = (float) $pasaje->precio_pasaje;
+            $descuentoId = $request->descuento_ids[$index] ?? null;
+            $precioFinalFront = (float) ($request->precios_finales[$index] ?? $precioBase);
+            $descuentoMontoReal = 0;
+            $esPromocion = false;
 
-            if ($esMenor) {
-                if ($request->hasFile('autorizacion_pdf')) {
-                    $autorizacionPdf = $request->file('autorizacion_pdf')->store('pasajes', 'public');
-                } elseif (!$autorizacionPdf) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El pasajero menor requiere autorización PDF.'
-                    ], 422);
+            if ($descuentoId) {
+                $descuento = Descuento::find($descuentoId);
+
+                if (!$descuento) {
+                    throw ValidationException::withMessages([
+                        "descuento_ids.$index" => "El descuento no existe.",
+                    ]);
                 }
-            } else {
-                $autorizacionPdf = null;
+
+                if ((int) $descuento->id === 1) {
+                    $cantidad = Pasaje::whereHas('persona', function ($q) use ($documento) {
+                        $q->where('documento', $documento);
+                    })
+                        ->where('origen_pueblito_id', $pasaje->origen_pueblito_id)
+                        ->where('destino_pueblito_id', $pasaje->destino_pueblito_id)
+                        ->whereIn('estado', ['V', 'F'])
+                        ->where('id', '!=', $pasaje->id)
+                        ->count();
+
+                    if (($cantidad + 1) % 10 !== 0) {
+                        throw ValidationException::withMessages([
+                            "descuento_ids.$index" => "El descuento promocional solo aplica en el viaje número 10 del mismo tramo.",
+                        ]);
+                    }
+
+                    $descuentoMontoReal = $precioBase;
+                    $esPromocion = true;
+                } elseif (!empty($descuento->monto_efectivo)) {
+                    $descuentoMontoReal = (float) $descuento->monto_efectivo;
+                } elseif (!empty($descuento->porcentaje)) {
+                    $descuentoMontoReal = $precioBase * ((float) $descuento->porcentaje / 100);
+                }
+            }
+
+            $precioFinalReal = max(0, $precioFinalFront);
+
+            $totalSobreEquipaje = 0;
+            $detallesEquipaje = $request->sobre_equipaje_detalles[$index] ?? [];
+
+            foreach ($detallesEquipaje as $item) {
+                $totalSobreEquipaje += (float) ($item['costo'] ?? 0);
+            }
+
+            $totalVenta = $precioFinalReal + $totalSobreEquipaje;
+            $venta = $pasaje->venta; // null si nunca se vendió
+
+            $emision = null;
+
+            if ($accion === 'vender') {
+                $origenNombre = Pueblito::find($pasaje->origen_pueblito_id)?->descripcion;
+                $destinoNombre = Pueblito::find($pasaje->destino_pueblito_id)?->descripcion;
+
+                $detalle = [[
+                    'descripcion' => "Pasaje {$origenNombre} - {$destinoNombre} | Asiento {$pasaje->asiento_numero}",
+                    'costo' => $precioFinalReal,
+                    'descuento' => $descuentoMontoReal,
+                ]];
+
+                if ($request->filled('numero_documento_id')) {
+                    $personaFacturacion = Persona::updateOrCreate(
+                        ['documento' => $request->numero_documento_id],
+                        [
+                            'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
+                            'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
+                            'direccion' => $request->direccion,
+                            'estado' => 'A',
+                            'fecha_creacion' => now(),
+                        ]
+                    );
+                } else {
+                    $personaFacturacion = $persona;
+                }
+
+                if (!$venta) {
+                    $ventaService = app(VentaService::class);
+
+                    $ventaData = $ventaService->crearVenta(
+                        new Request([
+                            'tipo_servicio_id' => 1,
+                            'tipo_documento_factura_id' => $request->tipo_doc_sunat,
+                            'numero_documento_id' => $personaFacturacion->documento,
+                            'razon_social' => $personaFacturacion->nombres,
+                            'total' => $totalVenta,
+                            'caja_id' => $request->caja_id,
+                            'detalles' => $detalle,
+                            'origen_nombre' => $origenNombre,
+                            'destino_nombre' => $destinoNombre,
+                        ]),
+                        Pasaje::class,
+                        null
+                    );
+
+                    $venta = $ventaData['venta'];
+                    $emision = app(VentaService::class)->emitirVenta($venta);
+                } else {
+                    $venta->update(['total' => $totalVenta]);
+                }
+
+                $pagos = [
+                    1 => (float) $request->pago_efectivo,
+                    2 => (float) $request->pago_tarjeta,
+                    3 => (float) $request->pago_yape,
+                    4 => (float) $request->pago_plin,
+                    5 => (float) $request->pago_transferencia,
+                ];
+
+                $sumaPagos = array_sum($pagos);
+
+                if (round($sumaPagos, 2) !== round($totalVenta, 2)) {
+                    throw ValidationException::withMessages([
+                        'pagos' => 'La suma de pagos no coincide con el total a cobrar.',
+                    ]);
+                }
+
+                foreach ($pagos as $metodoPagoId => $monto) {
+                    if ($monto <= 0) continue;
+
+                    CajaDetalle::create([
+                        'caja_id' => $request->caja_id,
+                        'subtipo_movimiento_caja_id' => 1,
+                        'metodo_pago_id' => $metodoPagoId,
+                        'amount' => $monto,
+                        'description' => "Venta de pasaje #{$venta->id}",
+                        'anulado' => false,
+                    ]);
+                }
             }
 
             $pasaje->update([
                 'persona_id' => $persona->id,
-                'pasajero_menor' => $esMenor,
-                'autorizacion_pdf' => $autorizacionPdf,
+                'venta_id' => $venta?->id,
+                'descuento_id' => $descuentoId,
+                'es_promocion' => $esPromocion,
+                'precio_cobrado' => $precioFinalReal,
+                'estado' => $accion === 'vender' ? 'V' : 'R',
             ]);
+
+            $pasaje->sobreEquipajes()->delete();
+
+            foreach ($detallesEquipaje as $sobre) {
+                PasajeSobreEquipaje::create([
+                    'pasaje_id' => $pasaje->id,
+                    'tipo_encomienda_id' => $sobre['tipo_encomienda_id'] ?? null,
+                    'descripcion' => $sobre['descripcion'] ?? null,
+                    'peso' => $sobre['peso'] ?? 0,
+                    'costo' => $sobre['costo'] ?? 0,
+                ]);
+            }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pasaje actualizado correctamente.',
+                'message' => $accion === 'vender' ? 'Venta confirmada.' : 'Reserva actualizada.',
+                'ticket_url' => $venta ? route('ventas.tickets', $venta->id) : route('pasajes.ticket', $pasaje->id),
                 'redirect' => route('pasajes.index'),
             ]);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (Throwable $e) {
             DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function actualizarVenta(Request $request, Pasaje $pasaje)
-    {
-        if (!$pasaje->venta_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Este pasaje no tiene venta asociada.'
-            ], 422);
-        }
-
-        if ($pasaje->estado !== 'V') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Solo se puede editar la venta de pasajes vendidos.'
-            ], 422);
-        }
-
-        $request->validate([
-            'tipo_documento_factura_id' => 'required|integer',
-            'numero_documento_id' => 'nullable|string|max:20',
-            'razon_social' => 'nullable|string|max:255',
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            $personaVenta = Persona::updateOrCreate(
-                ['documento' => $request->numero_documento_id ?: 'SIN-DOC-' . $pasaje->venta_id],
-                [
-                    'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
-                    'nombres' => $request->razon_social ?: 'CLIENTE',
-                    'direccion' => $request->direccion,
-                    'estado' => 'A',
-                    'fecha_creacion' => now(),
-                ]
-            );
-
-            $pasaje->venta->update([
-                'persona_id' => $personaVenta->id,
-                'tipo_documento_factura_id' => $request->tipo_documento_factura_id ?? 1,
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Venta actualizada correctamente.',
-            ]);
-        } catch (Throwable $e) {
-            DB::rollBack();
-
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

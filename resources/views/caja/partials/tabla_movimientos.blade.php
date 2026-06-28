@@ -28,7 +28,7 @@
                         @foreach ($caja->detalles as $detalle)
                             <tr class="{{ $detalle->anulado ? 'table-danger' : '' }}">
                                 <td>{{ $detalle->created_at?->format('d/m/Y h:i A') }}</td>
-                                <td>{{ $detalle->numero_ticket }}</td>
+                                <td>{{ $detalle->numero_ticket ?? $detalle->numero_ticket }}</td>
                                 <td>
                                     @if ($detalle->amount > 0)
                                         <span class="badge bg-success">Ingreso</span>
