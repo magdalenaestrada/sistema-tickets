@@ -17,7 +17,7 @@
 
                         <select id="sucursal_id" name="sucursal_id" class="form-control">
                             @foreach ($sucursales as $sucursal)
-                                <option value="{{ $sucursal->id }}" data-series="{{ $sucursal->serie->descripcion }}">
+                                <option value="{{ $sucursal->id }}" data-series="{{ $sucursal->serie?->descripcion }}">
                                     {{ $sucursal->nombre_comercial }}
                                 </option>
                             @endforeach
@@ -95,8 +95,7 @@
                         <input type="text" id="descripcion" class="form-control" placeholder="Escribir descripción">
                     </div>
                     <div class="col-md-2">
-                        <input type="number" step="0.01" id="unidad" class="form-control"
-                            placeholder="Unidades">
+                        <input type="number" step="0.01" id="unidad" class="form-control" placeholder="Unidades">
                     </div>
                     <div class="col-md-2">
                         <input type="number" step="0.01" id="precio" class="form-control"
