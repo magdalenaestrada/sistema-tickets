@@ -112,6 +112,7 @@ class EncomiendaService
                     'subtipo_movimiento_caja_id' => 1, // venta
                     'metodo_pago_id' => $pago['metodo_pago_id'],
                     'amount' => $pago['total'],
+                    'venta_id' =>$venta->id,
                     'description' => "Venta de encomienda #{$venta->id}",
                     'anulado' => false,
                     'billetera_digital_id' => $pago['billetera_id'] ?? null,

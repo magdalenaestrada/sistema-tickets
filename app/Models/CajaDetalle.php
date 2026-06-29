@@ -16,8 +16,7 @@ class CajaDetalle extends Model
         'subtipo_movimiento_caja_id',
         'metodo_pago_id',
         'billetera_digital_id',
-        'table_name',
-        'table_id',
+      
         'amount',
         'description',
         'numero_ticket',
@@ -55,35 +54,4 @@ class CajaDetalle extends Model
         return $this->belongsTo(BilleteraDigital::class, 'billetera_digital_id');
     }
 
-    public function servicio()
-    {
-        return $this->morphTo(null, 'table_name', 'table_id');
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($detalle) {
-            if (!empty($detalle->numero_ticket)) {
-                return;
-            }
-
-            $prefijo = match ($detalle->table_name) {
-                'App\Models\Pasaje'     => 'P',
-                'App\Models\Encomienda' => 'E',
-                default                 => 'X',
-            };
-
-            $fecha = now()->format('dmy');
-
-            $count = self::where('table_name', $detalle->table_name)
-                ->whereDate('created_at', today())
-                ->count();
-
-            $correlativo = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
-
-            $detalle->numero_ticket = "{$prefijo}-{$fecha}-{$correlativo}";
-        });
-    }
 }

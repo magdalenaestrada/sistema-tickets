@@ -437,8 +437,7 @@ class VentaService
                 'estado' => 'AN',
             ]);
 
-            CajaDetalle::where('table_name', Venta::class)
-                ->where('table_id', $venta->id)
+            CajaDetalle::where('venta_id', $venta->id)
                 ->update([
                     'anulado' => true,
                 ]);
@@ -674,7 +673,7 @@ class VentaService
                 $valorVentaLinea / $cantidad,
                 10
             );
-            
+
             $detalles[] = (new SaleDetail())
                 ->setCodProducto((string) ($detalle->id ?? 'ITEM'))
                 ->setUnidad('NIU')

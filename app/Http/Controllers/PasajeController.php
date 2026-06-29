@@ -523,7 +523,7 @@ class PasajeController extends Controller
                 }
 
                 $totalVenta += $precioFinalReal;
-
+                dd($pagos);
                 $pasajeros[] = [
                     'index' => $index,
                     'persona' => $persona,
@@ -614,7 +614,7 @@ class PasajeController extends Controller
                         'billetera_digital_id' => $pago['billetera_id'] ?? null,
                     ]);
                 }
-                
+
                 $emision = $ventaService->emitirVenta($venta);
             }
 
