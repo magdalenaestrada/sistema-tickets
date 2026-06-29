@@ -93,14 +93,16 @@ class EncomiendaService
             );
 
             $venta = $ventaData['venta'];
-
+            $encomienda->update([
+                'venta_id' => $venta->id
+            ]);
             $pagos = $request->pagos ?? [];
 
             $sumaPagos = collect($pagos)->sum(function ($pago) {
                 return (float) $pago['total'];
             });
 
-            if (round($sumaPagos, 2) !== round((float)$request->total, 2)) {
+            if (round($sumaPagos, 2) !== round((float)$venta->total, 2)) {
                 throw ValidationException::withMessages([
                     'pagos' => 'La suma de pagos no coincide con el total.',
                 ]);
@@ -112,7 +114,7 @@ class EncomiendaService
                     'subtipo_movimiento_caja_id' => 1, // venta
                     'metodo_pago_id' => $pago['metodo_pago_id'],
                     'amount' => $pago['total'],
-                    'venta_id' =>$venta->id,
+                    'venta_id' => $venta->id,
                     'description' => "Venta de encomienda #{$venta->id}",
                     'anulado' => false,
                     'billetera_digital_id' => $pago['billetera_id'] ?? null,

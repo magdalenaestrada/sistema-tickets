@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\AsignarHorario;
 use App\Models\BilleteraDigital;
 use App\Models\Caja;
+use App\Models\CajaDetalle;
 use App\Models\Cliente;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Encomienda;
+use App\Models\EncomiendaDetalle;
 use App\Models\EncomiendaSalida;
 use App\Models\MetodoPago;
 use App\Models\Persona;
@@ -505,7 +507,6 @@ class EncomiendaController extends Controller
         }
     }
 
-
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
         $request->validate([
@@ -649,7 +650,7 @@ class EncomiendaController extends Controller
                 $ruta = $salida->horario?->ruta;
                 $puntos = $ruta?->puntos?->sortBy('orden')->values();
 
-                $origenNombre = $puntos?->first()?->pueblito?->descripcion ?? 'Origen' ;
+                $origenNombre = $puntos?->first()?->pueblito?->descripcion ?? 'Origen';
                 $hora = $salida->horario?->hora_formateada ?? '-';
 
                 return [
@@ -741,9 +742,13 @@ class EncomiendaController extends Controller
             'detalles.tipo_encomienda',
             'origenPueblito',
             'destinoPueblito',
+            'sucursal_origen.empresa', 
+            'sucursal_destino',
+            'venta.tipoDocumentoFactura',
+            'venta.sucursal.empresa',  
             'venta.pagos.metodoPago',
         ]);
-
-        return view('encomiendas.ticket', compact('encomienda'));
+        $venta = $encomienda->venta;
+        return view('encomiendas.ticket', compact('encomienda', 'venta'));
     }
 }

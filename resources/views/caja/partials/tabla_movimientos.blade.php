@@ -28,7 +28,11 @@
                         @foreach ($caja->detalles as $detalle)
                             <tr class="{{ $detalle->anulado ? 'table-danger' : '' }}">
                                 <td>{{ $detalle->created_at?->format('d/m/Y h:i A') }}</td>
-                                <td>{{ $detalle->venta->serie . '-' . $detalle->venta->numero ?? $detalle->numero_ticket }}
+                                <td>
+                                    {{ optional($detalle->venta)->serie
+                                        ? optional($detalle->venta)->serie . '-' . optional($detalle->venta)->numero
+                                        : $detalle->numero_ticket }}
+                                </td>
                                 </td>
                                 <td>
                                     @if ($detalle->amount > 0)

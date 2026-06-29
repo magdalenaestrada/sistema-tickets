@@ -523,7 +523,6 @@ class PasajeController extends Controller
                 }
 
                 $totalVenta += $precioFinalReal;
-                dd($pagos);
                 $pasajeros[] = [
                     'index' => $index,
                     'persona' => $persona,
@@ -596,7 +595,7 @@ class PasajeController extends Controller
                     return (float) $pago['total'];
                 });
 
-                if (round($sumaPagos, 2) !== round((float)$request->total, 2)) {
+                if (round($sumaPagos, 2) !== round($totalVenta, 2)) {
                     throw ValidationException::withMessages([
                         'pagos' => 'La suma de pagos no coincide con el total.',
                     ]);
@@ -610,7 +609,7 @@ class PasajeController extends Controller
                         'amount' => $pago['total'],
                         'description' => "Venta de pasaje #{$venta->id}",
                         'anulado' => false,
-                        'venta_id' =>$venta->id,
+                        'venta_id' => $venta->id,
                         'billetera_digital_id' => $pago['billetera_id'] ?? null,
                     ]);
                 }

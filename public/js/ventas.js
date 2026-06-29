@@ -737,7 +737,6 @@ $(function () {
         const formData = new FormData(form);
 
         formData.append("accion", accion);
-
         selectedSeatNumbers.forEach((asiento) => {
             const desc = descuentosAplicados[asiento] || {};
 
@@ -1002,6 +1001,56 @@ $(function () {
         $("#pago_transferencia_hidden").val(pagoTransferencia.toFixed(2));
 
         const formData = construirPayload("vender");
+
+        const pagos = [];
+
+        if (pagoEfectivo > 0) {
+            pagos.push({
+                metodo_pago_id: 1,
+                total: pagoEfectivo,
+            });
+        }
+
+        if (pagoYape > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 1,
+                total: pagoYape,
+            });
+        }
+
+        if (pagoPlin > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 2,
+                total: pagoPlin,
+            });
+        }
+
+        if (pagoTarjeta > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 3,
+                total: pagoTarjeta,
+            });
+        }
+
+        if (pagoTransferencia > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 4,
+                total: pagoTransferencia,
+            });
+        }
+
+        pagos.forEach((pago, i) => {
+            formData.append(`pagos[${i}][metodo_pago_id]`, pago.metodo_pago_id);
+            formData.append(
+                `pagos[${i}][billetera_id]`,
+                pago.billetera_id ?? "",
+            );
+            formData.append(`pagos[${i}][total]`, pago.total);
+        });
 
         $.ajax({
             url: route("pasajes.store"),

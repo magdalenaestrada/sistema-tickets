@@ -220,7 +220,7 @@
                 <tr>
                     <td class="left">
                         {{ $detalle->descripcion }}
-                       
+
                     </td>
                     <td class="center">{{ number_format($detalle->cantidad, 0) }}</td>
                     <td class="right">S/ {{ number_format($detalle->total, 2) }}</td>

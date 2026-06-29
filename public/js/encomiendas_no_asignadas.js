@@ -23,11 +23,10 @@ $(function () {
         searchField: "text",
     });
 
-    
     const tabla = $("#tablaEncomiendas").DataTable({
         processing: true,
         serverSide: true,
-        dom: "rtip", 
+        dom: "rtip",
         ajax: {
             url: route("encomiendas.datatable-no-asignadas"),
             data: function (d) {
@@ -131,7 +130,10 @@ $(function () {
             fecha_salida: fechaSalida,
         }).done(function (resp) {
             if (!resp.length) {
-                tsSalida.addOption({ value: "", text: "No hay horarios programados para esa fecha" });
+                tsSalida.addOption({
+                    value: "",
+                    text: "No hay horarios programados para esa fecha",
+                });
                 tsSalida.refreshOptions(false);
                 return;
             }
@@ -175,6 +177,11 @@ $(function () {
         $("#checkAll").prop("checked", false);
         tabla.ajax.reload(null, false);
     });
+    document
+        .getElementById("filtroDocumento")
+        .addEventListener("input", function () {
+            this.value = this.value.replace(/\D/g, "");
+        });
 
     $("#checkAll").on("change", function () {
         $(".check-encomienda").prop("checked", $(this).is(":checked"));

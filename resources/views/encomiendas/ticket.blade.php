@@ -2,196 +2,271 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Ticket Encomienda</title>
+    <meta charset="utf-8">
+    <title>{{ $venta->serie }}-{{ $venta->numero }}</title>
+
     <style>
+        /* CONFIGURACIÓN CRUCIAL PARA PDF / IMPRESIÓN DE TICKETERA */
+        @page {
+            /* 80mm de ancho. Si usas papel de 58mm, cambia a '58mm auto' */
+            size: 80mm auto;
+            margin: 0;
+            /* Elimina los márgenes del PDF (encabezados de fecha/URL del navegador) */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: monospace;
-            font-size: 12px;
-            width: 80mm;
+            font-family: 'Courier New', Courier, monospace;
+            /* Ancho fijo para simular el rollo en pantalla y centrar el contenido */
+            width: 260px;
             margin: 0 auto;
+            padding: 10px 5px;
+            font-size: 11px;
             color: #000;
+            line-height: 1.2;
+            background-color: #fff;
         }
 
         .center {
             text-align: center;
         }
 
-        .right {
-            text-align: right;
-        }
-
         .bold {
             font-weight: bold;
         }
 
-        .small {
-            font-size: 11px;
+        .right {
+            text-align: right;
         }
 
-        .xs {
-            font-size: 10px;
+        .left {
+            text-align: left;
         }
 
-        .mt-1 {
-            margin-top: 4px;
+        /* Contenedor del Logo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 4px;
         }
 
-        .mt-2 {
-            margin-top: 8px;
+        .logo-container img {
+            max-width: 110px;
+            height: auto;
+            display: inline-block;
         }
 
-        .mt-3 {
-            margin-top: 12px;
-        }
-
+        /* Líneas discontinuas idénticas a las de tu imagen */
         .line {
             border-top: 1px dashed #000;
-            margin: 6px 0;
+            margin: 5px 0;
+            height: 0;
         }
 
-        table {
+        .anulado {
+            border: 1px solid #000;
+            font-weight: bold;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 5px;
+            padding: 2px;
+        }
+
+        .w-100 {
             width: 100%;
             border-collapse: collapse;
         }
 
-        td {
+        /* Tablas de datos clave-valor */
+        .table-data td {
             padding: 1px 0;
             vertical-align: top;
+            font-size: 11px;
         }
 
-        .logo {
-            max-width: 140px;
-            max-height: 70px;
-            margin-bottom: 5px;
+        /* Tabla de ítems */
+        .table-items th {
+            border-bottom: 1px dashed #000;
+            font-weight: bold;
+            font-size: 11px;
+            padding-bottom: 2px;
         }
 
+        .table-items td {
+            padding: 3px 0;
+            vertical-align: top;
+            font-size: 11px;
+            word-break: break-word;
+        }
+
+        /* Botón de control en pantalla */
+        .btn-print {
+            display: block;
+            width: 100%;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            padding: 6px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        /* Comportamiento estricto al generar el PDF / Imprimir */
         @media print {
-            @page {
-                size: 80mm auto;
-                margin: 3mm;
+            .btn-print {
+                display: none !important;
             }
 
-            .no-print {
-                display: none;
+            body {
+                width: 100%;
+                /* Toma el ancho definido en @page */
+                padding: 5px;
+                /* Pequeño colchón interno para que no pegue al borde del papel */
             }
         }
     </style>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
 </head>
 
-<body onload="window.print()">
+<body>
+
+    @if ($venta->estado == 'ANULADO' || $venta->fecha_anulacion)
+        <div class="anulado">*** ANULADO ***</div>
+    @endif
+
     @php
-        $empresa = $encomienda->sucursal_origen?->empresa;
-        $venta = $encomienda->venta;
+        $empresa = $venta->sucursal?->empresa;
+        $cliente = $venta->persona;
     @endphp
 
+    {{-- ENCABEZADO --}}
     <div class="center">
-        {{-- @if ($empresa?->logo)
-            <img src="{{ asset('storage/' . $empresa->logo) }}" class="logo" alt="Logo">
-        @endif --}}
+        @if ($empresa && $empresa->logo)
+            <div class="logo-container">
+                <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+            </div>
+        @endif
+
+        <div class="bold" style="font-size: 12px;">{{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}</div>
+        <div class="bold">RUC: {{ $empresa->documento ?? '20513247495' }}</div>
+        <div style="font-size: 10px;">{{ $venta->sucursal->direccion ?? ($empresa->direccion ?? 'Av. El Sol 789') }}
+        </div>
+
+        <div class="line"></div>
+
+        <div class="bold" style="text-transform: uppercase;">
+            {{ $venta->tipoDocumentoFactura->descripcion ?? 'NOTA DE VENTA' }}</div>
+        <div class="bold" style="font-size: 12px;">{{ $venta->serie }} - {{ $venta->numero }}</div>
+
+        <div class="line"></div>
     </div>
 
-    <div class="center bold">{{ $empresa->razon_social ?? 'EMPRESA' }}</div>
-    <div class="center small">RUC: {{ $empresa->documento ?? '-' }}</div>
-    <div class="center small">{{ $empresa->direccion ?? '-' }}</div>
-    <div class="center small">Sucursal: {{ $encomienda->sucursal_origen?->nombre_comercial ?? '-' }}</div>
-
-    <div class="line"></div>
-
-    <div class="center bold">TICKET DE ENCOMIENDA</div>
-    <div class="center small">
-        {{ $venta?->serie ? $venta->serie . '-' . $venta->numero : 'Sin comprobante' }}
-    </div>
-
-    <div class="line"></div>
-
-    <table>
+    {{-- EMISIÓN --}}
+    <table class="table-data w-100">
         <tr>
-            <td><strong>Fecha emisión:</strong></td>
+            <td class="bold">F. Emisión:</td>
             <td class="right">
-                {{ optional($venta?->fecha_emision)->format('d/m/Y H:i') ?? (optional($encomienda->fecha_creacion)->format('d/m/Y H:i') ?? '-') }}
+                {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
             </td>
         </tr>
         <tr>
-            <td><strong>Estado:</strong></td>
-            <td class="right">{{ $encomienda->estado ?? '-' }}</td>
-        </tr>
-        <tr>
-            <td><strong>Cajero:</strong></td>
-            <td class="right">{{ $encomienda->usuario?->persona?->nombres ?? ($encomienda->usuario?->username ?? '-') }}
-            </td>
+            <td class="bold">Cajero:</td>
+            <td class="right">{{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}</td>
         </tr>
     </table>
 
     <div class="line"></div>
 
-    <div><strong>Remitente:</strong></div>
-    <div>{{ $encomienda->emisor?->nombres }} {{ $encomienda->emisor?->apellidos }}</div>
-    <div><strong>Doc:</strong> {{ $encomienda->emisor?->documento ?? '-' }}</div>
-
-    <div class="mt-2"><strong>Destinatario:</strong></div>
-    <div>{{ $encomienda->receptor?->nombres }} {{ $encomienda->receptor?->apellidos }}</div>
-    <div><strong>Doc:</strong> {{ $encomienda->receptor?->documento ?? '-' }}</div>
-
-    <div class="line"></div>
-
-    <table>
+    {{-- CLIENTE --}}
+    <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL CLIENTE</div>
+    <table class="table-data w-100">
         <tr>
-            <td><strong>Origen:</strong></td>
-            <td class="right">{{ $encomienda->sucursal_origen?->nombre_comercial ?? '-' }}</td>
+            <td class="bold" style="width: 30%;">Cliente:</td>
+            <td class="right">{{ $cliente ? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}</td>
         </tr>
         <tr>
-            <td><strong>Destino:</strong></td>
-            <td class="right">{{ $encomienda->sucursal_destino?->nombre_comercial ?? '-' }}</td>
+            <td class="bold">Documento:</td>
+            <td class="right">{{ $cliente->documento ?? '00000000' }}</td>
         </tr>
     </table>
 
     <div class="line"></div>
 
-    <div class="bold">DETALLE</div>
-    @foreach ($encomienda->detalles as $detalle)
-        <div class="mt-1">
-            <div><strong>Tipo:</strong> {{ $detalle->tipo_encomienda?->descripcion ?? '-' }}</div>
-            <div><strong>Descripción:</strong> {{ $detalle->descripcion ?? '-' }}</div>
-            <table>
+    {{-- ÍTEMS --}}
+    <table class="table-items w-100">
+        <thead>
+            <tr>
+                <th class="left" style="width: 65%;">Descripción</th>
+                <th class="center" style="width: 10%;">Peso</th>
+                <th class="right" style="width: 25%;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($encomienda->detalles as $detalle)
                 <tr>
-                    <td>Peso: {{ number_format($detalle->peso ?? 0, 2) }} kg</td>
-                    <td class="right">S/ {{ number_format($detalle->costo ?? 0, 2) }}</td>
+                    <td class="left">
+                        {{ $detalle->tipo_encomienda?->descripcion ?? '-' }}
+                        @if ($detalle->descripcion)
+                            <br><span style="font-size: 10px;">{{ $detalle->descripcion }}</span>
+                        @endif
+                    </td>
+                    <td class="center">{{ number_format($detalle->peso, 0) }}</td>
+                    <td class="right">S/ {{ number_format($detalle->costo, 2) }}</td>
                 </tr>
-            </table>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div class="line"></div>
+
+    {{-- TOTALES --}}
+    <table class="table-data w-100">
+        <tr>
+            <td class="bold">Op. Gravada:</td>
+            <td class="right">S/ {{ number_format($venta->subtotal ?? $venta->total - $venta->impuesto, 2) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">IGV ({{ $empresa->igv ?? 18 }}.%):</td>
+            <td class="right">S/ {{ number_format($venta->impuesto, 2) }}</td>
+        </tr>
+        <tr style="font-size: 12px;">
+            <td class="bold">TOTAL A PAGAR:</td>
+            <td class="right bold">S/ {{ number_format($venta->total, 2) }}</td>
+        </tr>
+    </table>
+
+    <div class="line"></div>
+
+    {{-- PIE DE PÁGINA --}}
+    @if ($venta->observacion)
+        <div style="font-size: 10px; font-style: italic; margin-bottom: 5px; word-break: break-word;">
+            <strong>Obs:</strong> {{ $venta->observacion }}
         </div>
         <div class="line"></div>
-    @endforeach
+    @endif
 
-    <div class="bold">PAGOS</div>
-    @forelse($venta?->pagos ?? [] as $pago)
-        <table>
-            <tr>
-                <td>{{ $pago->metodoPago?->descripcion ?? 'Método' }}</td>
-                <td class="right">S/ {{ number_format($pago->total, 2) }}</td>
-            </tr>
-        </table>
-    @empty
-        <div class="small">Sin pagos registrados</div>
-    @endforelse
-
-    <div class="line"></div>
-
-    <table>
-        <tr>
-            <td class="bold">TOTAL</td>
-            <td class="right bold">S/ {{ number_format($encomienda->total ?? 0, 2) }}</td>
-        </tr>
-    </table>
-
-    <div class="line"></div>
-
-    <div class="center xs">Gracias por su preferencia</div>
-    <div class="center xs">Conserve este comprobante</div>
-
-    <div class="mt-3 center no-print">
-        <button onclick="window.print()">Imprimir</button>
+    <div class="center" style="font-size: 10px;">
+        <div>¡Gracias por su compra!</div>
+        <div>Representación impresa de la</div>
+        <div class="bold">{{ $venta->tipoDocumentoFactura->descripcion ?? 'Nota de venta' }} Electrónica.</div>
     </div>
+
+    <button class="btn-print" onclick="window.print()">Imprimir Ticket</button>
+
 </body>
 
 </html>
