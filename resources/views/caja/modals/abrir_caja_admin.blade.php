@@ -12,7 +12,7 @@
 
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="sucursal_id_open" class="form-label">Sucursal</label>
+                        <label for="sucursal_id_open" class="form-label">Sucursal<span style="color: red">*</span></label>
                         <select name="sucursal_id" id="sucursal_id_open" class="form-select" required>
                             <option value="">Seleccione una sucursal</option>
                             @foreach ($sucursales as $sucursal)
@@ -24,7 +24,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="monto_apertura" class="form-label">Monto de apertura</label>
+                        <label for="monto_apertura" class="form-label">Monto de apertura <span style="color: red">*</span></label>
                         <input type="number" step="0.01" min="0" name="monto_apertura" id="monto_apertura"
                             class="form-control" required>
                     </div>
