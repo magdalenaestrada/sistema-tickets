@@ -617,13 +617,13 @@ class VentaService
         $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
 
         $companyAddress = (new Address())
-            ->setUbigueo($empresa->ubigueo ?? '150101')
-            ->setDepartamento($empresa->departamento ?? 'LIMA')
-            ->setProvincia($empresa->provincia ?? 'LIMA')
-            ->setDistrito($empresa->distrito ?? 'LIMA')
+            ->setUbigueo($venta->sucursal->distrito->ubigeo)
+            ->setDepartamento($venta->sucursal->distrito->departamento->nombre ?? 'LIMA')
+            ->setProvincia($venta->sucursal->distrito->provincia->nombre ?? 'LIMA')
+            ->setDistrito($venta->sucursal->distrito->nombre ?? 'LIMA')
             ->setUrbanizacion($empresa->urbanizacion ?? '-')
-            ->setDireccion($empresa->direccion ?? $empresa->razon_social)
-            ->setCodLocal($empresa->cod_local ?? '0000');
+            ->setDireccion($venta->sucursal->direccion)
+            ->setCodLocal($venta->sucursal->codigo_sucursal ?? '0000');
 
         $company = (new Company())
             ->setRuc($empresa->documento)
@@ -656,10 +656,7 @@ class VentaService
 
             $igv = (float) $empresa->igv;
 
-            if ($igv > 1) {
-                $igv = $igv / 100;
-            }
-            $porcentajeIgv = 0.18;
+            $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
             $totalLinea = round($totalLinea, 2);
             $valorVentaLinea = round(
                 $totalLinea / (1 + $porcentajeIgv),
@@ -677,6 +674,7 @@ class VentaService
                 $valorVentaLinea / $cantidad,
                 10
             );
+            
             $detalles[] = (new SaleDetail())
                 ->setCodProducto((string) ($detalle->id ?? 'ITEM'))
                 ->setUnidad('NIU')
@@ -684,8 +682,8 @@ class VentaService
                 ->setMtoValorUnitario($valorUnitarioSinIgv)
                 ->setDescripcion($detalle->descripcion)
                 ->setMtoBaseIgv($valorVentaLinea)
-                ->setPorcentajeIgv($igv * 100)->setIgv($igvLinea)
-                ->setTipAfeIgv('10')
+                ->setPorcentajeIgv($porcentajeIgv * 100)->setIgv($igvLinea)
+                ->setTipAfeIgv('20')
                 ->setTotalImpuestos($igvLinea)
                 ->setMtoValorVenta($valorVentaLinea)
                 ->setMtoPrecioUnitario($precioUnitario);
@@ -818,7 +816,7 @@ class VentaService
                 ->setMtoBaseIgv($valorVentaLinea)
                 ->setPorcentajeIgv(18.00)
                 ->setIgv($igvLinea)
-                ->setTipAfeIgv('10')
+                ->setTipAfeIgv('20')
                 ->setTotalImpuestos($igvLinea)
                 ->setMtoValorVenta($valorVentaLinea)
                 ->setMtoPrecioUnitario($precioUnitario);

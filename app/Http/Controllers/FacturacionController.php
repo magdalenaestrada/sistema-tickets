@@ -192,7 +192,6 @@ class FacturacionController extends Controller
 
     public function anularVenta(Venta $venta)
     {
-
         return DB::transaction(function () use ($venta) {
 
             $empresa = $venta->sucursal->empresa;
@@ -201,7 +200,6 @@ class FacturacionController extends Controller
             $tipoNC = TipoDocumentoFactura::where('codigo', '07')->first();
 
             $nc->tipo_documento_factura_id = $tipoNC->id;
-
             $nc->sucursal_id = $venta->sucursal_id;
             $nc->persona_id = $venta->persona_id;
             $nc->tipo_servicio_id = $venta->tipo_servicio_id;
@@ -211,7 +209,7 @@ class FacturacionController extends Controller
             $nc->numero = str_pad($ultimo + 1, 8, '0', STR_PAD_LEFT);
             $nc->usuario_id = auth()->id();
             $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
-
+            $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
             $nc->subtotal = $venta->subtotal;
             $nc->impuesto = $venta->impuesto;
             $nc->total = $venta->total;
@@ -254,7 +252,6 @@ class FacturacionController extends Controller
                 'detalles'
             ]);
 
-            dd($nc);
             $documento = app(VentaDocumentBuilder::class)->build($nc);
             $see = app(GreenterService::class)->getSee($empresa);
 

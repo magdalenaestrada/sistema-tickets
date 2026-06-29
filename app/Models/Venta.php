@@ -58,6 +58,11 @@ class Venta extends Model
         return $this->belongsTo(TipoServicio::class, 'tipo_servicio_id');
     }
 
+    public function cajaDetalles()
+    {
+        return $this->hasMany(CajaDetalle::class);
+    }
+
     public function persona()
     {
         return $this->belongsTo(Persona::class);

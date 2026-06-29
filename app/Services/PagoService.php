@@ -13,7 +13,7 @@ use Exception;
 
 class PagoService
 {
-    public function registrarPagos($ventaId, $pagos, $servicio_model, $servicio_id): void
+    public function registrarPagos(Venta $venta, array $pagos): void
     {
         $userId = Auth::id();
 
@@ -47,14 +47,6 @@ class PagoService
                 'estado'          => 'PA',
                 'fecha_pago'      => now(),
                 'fecha_creacion'  => now(),
-            ]);
-
-            Log::info('Pago a registrar', [
-                'venta_id'        => $ventaId,
-                'caja_id'         => $caja->id,
-                'metodo_pago_id'  => $pago['metodo_pago_id'],
-                'billetera_id'    => $pago['billetera_id'] ?? null,
-                'total'           => $monto,
             ]);
 
             CajaDetalle::create([

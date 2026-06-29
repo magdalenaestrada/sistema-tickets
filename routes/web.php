@@ -5,6 +5,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardVendedorController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Caja;
+use App\Models\Venta;
+use App\Services\FixService;
 use App\Services\VentaService;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +37,12 @@ Route::middleware('auth')->group(function () {
 Route::get('factura', function () {
     $service = new VentaService;
     $service->prueba();
+});
+
+Route::get('fix', function () {
+    $service = new FixService();
+    //$service->anular('BBB1', '14', '15');
+    //$service->fix(14);
 });
 
 Route::get('/caja/verificar', function () {

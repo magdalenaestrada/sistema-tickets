@@ -73,12 +73,19 @@ class VentaDocumentBuilder
             ->setTipoMoneda('PEN')
             ->setCompany($company)
             ->setClient($client)
-            ->setMtoOperGravadas(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
+
+
+            ->setMtoOperExoneradas(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
+
+
+            
+            ->setMtoOperGravadas(0)
             ->setMtoIGV(abs((float) ($venta->impuesto ?? 0)))
             ->setTotalImpuestos(abs((float) ($venta->impuesto ?? 0)))
             ->setValorVenta(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
             ->setSubTotal(abs((float) ($venta->subtotal ?? $venta->total ?? 0)))
             ->setMtoImpVenta(abs((float) ($venta->total ?? 0)));
+
 
         $invoice->setDetails($this->buildDetallesVenta($venta))
             ->setLegends([$this->buildLeyenda($venta)]);
@@ -124,8 +131,8 @@ class VentaDocumentBuilder
             ->setFechaEmision($venta->fecha_emision instanceof \DateTimeInterface
                 ? $venta->fecha_emision
                 : new DateTime($venta->fecha_emision))
-            ->setTipDocAfectado($this->resolverDocumentoAfectadoTipo($venta))
-            ->setNumDocfectado($venta->serie)
+            ->setTipDocAfectado($venta->tipo_documento_referencia)
+            ->setNumDocfectado($venta->documento_referencia)
             ->setCodMotivo('01')
             ->setDesMotivo($venta->observacion ?: 'ANULACION DE LA OPERACION')
             ->setTipoMoneda('PEN')

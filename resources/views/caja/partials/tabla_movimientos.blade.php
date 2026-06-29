@@ -14,7 +14,7 @@
                     <thead class="table-primary position-sticky top-0" style="z-index: 1;">
                         <tr>
                             <th>Fecha</th>
-                            <th>Ticket</th>
+                            <th>Referencia</th>
                             <th>Tipo</th>
                             <th>Subtipo</th>
                             <th>Método</th>
@@ -51,11 +51,6 @@
                                 </td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-1">
-                                        <a href="{{ route('caja.reimprimir', $detalle->id) }}" target="_blank"
-                                            class="btn btn-dark btn-xs">
-                                            <i data-lucide="printer"></i>
-                                        </a>
-
                                         @if (!$detalle->anulado && !in_array($caja->estado, ['C', 'cerrada']))
                                             <form action="{{ route('caja.anular', $detalle->id) }}" method="POST"
                                                 class="d-inline form-anular-ticket">

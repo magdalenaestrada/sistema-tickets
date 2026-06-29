@@ -602,17 +602,11 @@ class PasajeController extends Controller
                     ]);
                 }
 
-                foreach ($pagos as $pago) {
-                    CajaDetalle::create([
-                        'caja_id' => $request->caja_id,
-                        'subtipo_movimiento_caja_id' => 1, // venta
-                        'metodo_pago_id' => $pago['metodo_pago_id'],
-                        'amount' => $pago['total'],
-                        'description' => "Venta de pasaje #{$venta->id}",
-                        'anulado' => false,
-                        'billetera_digital_id' => $pago['billetera_id'] ?? null,
-                    ]);
-                }
+                $pagoService->registrarPagos(
+                    $venta,
+                    $request->pagos
+                );
+
                 $emision = $ventaService->emitirVenta($venta);
             }
 

@@ -21,7 +21,8 @@ class CajaDetalle extends Model
         'amount',
         'description',
         'numero_ticket',
-        'anulado'
+        'anulado',
+        'venta_id'
     ];
 
     protected $casts = [
@@ -34,6 +35,11 @@ class CajaDetalle extends Model
         return $this->belongsTo(Caja::class, 'caja_id');
     }
 
+    public function venta()
+    {
+        return $this->belongsTo(Venta::class, 'venta_id');
+    }
+
     public function subtipo()
     {
         return $this->belongsTo(SubtipoMovimientoCaja::class, 'subtipo_movimiento_caja_id');
@@ -44,7 +50,7 @@ class CajaDetalle extends Model
         return $this->belongsTo(MetodoPago::class, 'metodo_pago_id');
     }
 
-     public function billetera_digital()
+    public function billetera_digital()
     {
         return $this->belongsTo(BilleteraDigital::class, 'billetera_digital_id');
     }
