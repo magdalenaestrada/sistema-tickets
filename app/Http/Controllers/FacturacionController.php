@@ -300,4 +300,44 @@ class FacturacionController extends Controller
             ]);
         });
     }
+
+
+    public function ticket(Venta $venta)
+    {
+        $venta->load([
+            'persona',
+            'usuario.persona',
+            'detalles',
+            'sucursal.empresa',
+            'tipoDocumentoFactura',
+
+            'pasajes.salida',
+            'pasajes.origen',
+            'pasajes.destino',
+            'pasajes.descuento',
+            'pasajes.sobreEquipajes.encomienda.detalles',
+            'pasajes.sobreEquipajes.encomienda.emisor',
+            'pasajes.sobreEquipajes.encomienda.origenPueblito',
+            'pasajes.sobreEquipajes.encomienda.destinoPueblito',
+        ]);
+
+        if ($venta->pasajes->count() > 0) {
+            return view('tickets.pasaje', compact('venta'));
+        }
+
+        switch ($venta->tipo_servicio_id) {
+
+            case 1:
+                return view('tickets.pasaje', compact('venta'));
+
+            case 2:
+                return view('tickets.encomienda', compact('venta'));
+
+            case 3:
+                return view('tickets.sobreequipaje', compact('venta'));
+
+            default:
+                return view('tickets.venta', compact('venta'));
+        }
+    }
 }
