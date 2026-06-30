@@ -13,6 +13,8 @@ use App\Models\Caja;
 use App\Models\CajaDetalle;
 use App\Models\Cliente;
 use App\Models\Descuento;
+use App\Models\Encomienda;
+use App\Models\EncomiendaDetalle;
 use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\Pueblito;
@@ -571,6 +573,26 @@ class PasajeController extends Controller
                 $ventaService = app(VentaService::class);
                 $pagoService = app(PagoService::class);
 
+                $totalSobreEquipaje = 0;
+
+                foreach ($request->sobre_equipaje_detalles ?? [] as $grupo) {
+
+                    foreach ($grupo as $item) {
+
+                        $costo = (float)$item['costo'];
+
+                        $detalles[] = [
+                            'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
+                            'costo' => $costo,
+                            'descuento' => 0,
+                        ];
+
+                        $totalSobreEquipaje += $costo;
+                    }
+                }
+
+                $totalVenta += $totalSobreEquipaje;
+
                 $ventaData = $ventaService->crearVenta(
                     new Request([
                         'tipo_servicio_id' => 1,
@@ -617,25 +639,9 @@ class PasajeController extends Controller
                 $emision = $ventaService->emitirVenta($venta);
             }
 
-            $totalSobreEquipaje = 0;
-
-            if ($request->has('sobre_equipaje_detalles')) {
-
-                foreach ($request->sobre_equipaje_detalles as $grupo) {
-
-                    foreach ($grupo as $item) {
-
-                        $totalSobreEquipaje +=
-                            (float) ($item['costo'] ?? 0);
-                    }
-                }
-            }
-
-            $totalVenta += $totalSobreEquipaje;
             $pasajesCreados = [];
 
             foreach ($pasajeros as $pasajeroData) {
-
                 $pasaje = Pasaje::create([
                     'venta_id' => $venta?->id ?? null,
                     'usuario_id' => Auth::id(),
@@ -667,12 +673,31 @@ class PasajeController extends Controller
 
                     foreach ($request->sobre_equipaje_detalles[$index] as $sobre) {
 
+                        $encomienda = Encomienda::create([
+                            'usuario_id' => Auth::id(),
+                            'emisor_persona_id' => $pasajeroData['persona']->id,
+                            'venta_id' => $venta->id,
+                            'estado' => "A",
+                            'total' => $sobre['costo'],
+                            'fecha_creacion' => now(),
+                            'pago_instantaneo' => true,
+                            'sobre_equipaje' => true,
+                            'origen_pueblito_id' => $request->origen_id,
+                            'destino_pueblito_id' => $request->destino_id,
+                        ]);
+
+                        EncomiendaDetalle::create([
+                            'encomienda_id' => $encomienda->id,
+                            'tipo_encomienda_id' => $sobre['tipo_encomienda_id'],
+                            'descripcion'        => $sobre['descripcion'],
+                            'peso'               => $sobre['peso'],
+                            'costo'              => $sobre['costo'],
+
+                        ]);
+
                         PasajeSobreEquipaje::create([
-                            'pasaje_id' => $pasaje->id,
-                            'tipo_encomienda_id' => $sobre['tipo_encomienda_id'] ?? null,
-                            'descripcion' => $sobre['descripcion'] ?? null,
-                            'peso' => $sobre['peso'] ?? 0,
-                            'costo' => $sobre['costo'] ?? 0,
+                            'pasaje_id'     => $pasaje->id,
+                            'encomienda_id' => $encomienda->id,
                         ]);
                     }
                 }
@@ -750,7 +775,7 @@ class PasajeController extends Controller
     public function showSobreEquipaje(Pasaje $pasaje)
     {
         $pasaje->load([
-            'sobreEquipajes.tipoEncomienda'
+            'sobreEquipajes.encomienda.detalles.tipo_encomienda'
         ]);
 
         return response()->json([
@@ -1155,6 +1180,26 @@ class PasajeController extends Controller
 
                 if (!$venta) {
                     $ventaService = app(VentaService::class);
+
+                    $totalSobreEquipaje = 0;
+
+                    foreach ($request->sobre_equipaje_detalles ?? [] as $grupo) {
+
+                        foreach ($grupo as $item) {
+
+                            $costo = (float)$item['costo'];
+
+                            $detalles[] = [
+                                'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
+                                'costo' => $costo,
+                                'descuento' => 0,
+                            ];
+
+                            $totalSobreEquipaje += $costo;
+                        }
+                    }
+
+                    $totalVenta += $totalSobreEquipaje;
 
                     $ventaData = $ventaService->crearVenta(
                         new Request([

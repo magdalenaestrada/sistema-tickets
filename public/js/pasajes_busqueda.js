@@ -56,23 +56,33 @@ document.addEventListener("DOMContentLoaded", function () {
         $.get(route("pasajes.sobre-equipaje", pasajeId), function (res) {
             let html = "";
 
-            res.data.forEach((item) => {
-                html += `
+            res.data.forEach((relacion) => {
+                relacion.encomienda.detalles.forEach((detalle) => {
+                    html += `
                     <tr>
-                        <td>${item.tipo_encomienda?.descripcion ?? "-"}</td>
-                        <td>${item.descripcion ?? "-"}</td>
-                        <td>${item.peso}</td>
-                        <td>S/ ${item.costo}</td>
+                        <td>${detalle.tipo_encomienda?.descripcion ?? "-"}</td>
+                        <td>${detalle.descripcion ?? "-"}</td>
+                        <td>${detalle.peso}</td>
+                        <td>S/ ${parseFloat(detalle.costo).toFixed(2)}</td>
                     </tr>
                 `;
+                });
             });
 
-            $("#tbodySobreEquipaje").html(html);
+            if (html === "") {
+                html = `
+                <tr>
+                    <td colspan="4" class="text-center">
+                        No hay sobreequipaje registrado.
+                    </td>
+                </tr>
+            `;
+            }
 
+            $("#tbodySobreEquipaje").html(html);
             $("#modalSobreEquipaje").modal("show");
         });
     });
-
     function cargarResultados(url = null) {
         const dni = (document.getElementById("filtroDNI")?.value || "").trim();
 

@@ -10,10 +10,7 @@ class PasajeSobreEquipaje extends Model
 
     protected $fillable = [
         'pasaje_id',
-        'tipo_encomienda_id',
-        'descripcion',
-        'peso',
-        'costo',
+        'encomienda_id',
     ];
 
     public function pasaje()
@@ -21,8 +18,8 @@ class PasajeSobreEquipaje extends Model
         return $this->belongsTo(Pasaje::class);
     }
 
-    public function tipoEncomienda()
+    public function encomienda()
     {
-        return $this->belongsTo(TipoEncomienda::class);
+        return $this->belongsTo(Encomienda::class);
     }
 }

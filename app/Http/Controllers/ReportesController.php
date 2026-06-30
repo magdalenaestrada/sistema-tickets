@@ -24,6 +24,11 @@ use Yajra\DataTables\DataTables;
 class ReportesController extends Controller
 {
 
+    public function index()
+    {
+        return view('reportes.index');
+    }
+
     public function resumenVentas(Request $request)
     {
         $query = Venta::query();
