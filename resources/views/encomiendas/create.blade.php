@@ -10,7 +10,10 @@
                         <h6>Datos del Emisor</h6>
                         <hr>
                         <input type="hidden" name="tipo_doc_sunat" id="tipo_doc_sunat">
-
+                        @if ($esSobreequipaje)
+                            <input type="hidden" name="pasaje_id" value="{{ $pasaje->id }}">
+                            <input type="hidden" name="sobrequipaje" value="true">
+                        @endif
                         <div class="row g-2">
                             <div class="col-md-2">
                                 <label class="form-label">Tipo de documento <span style="color: red">*</span></label>
@@ -26,7 +29,9 @@
                                 <label class="form-label">Documento <span style="color: red">*</span></label>
                                 <div class="input-group">
                                     <input type="text" class="form-control form-control-sm solo-numeros"
-                                        id="emisor_documento" name="emisor_documento" required>
+                                        id="emisor_documento" name="emisor_documento"
+                                        value="{{ $esSobreequipaje ? $pasaje->persona->documento : '' }}"
+                                        {{ $esSobreequipaje ? 'readonly' : 'required' }}>
                                     <button type="button" class="btn btn-primary btn-buscar-persona" data-tipo="emisor"
                                         title="Buscar emisor">
                                         <i data-lucide="search"></i>
@@ -37,13 +42,16 @@
                             <div class="col-md-4">
                                 <label class="form-label">Nombres <span style="color: red">*</span></label>
                                 <input type="text" class="form-control form-control-sm solo-letras" id="emisor_nombres"
-                                    name="emisor_nombres" required>
+                                    name="emisor_nombres" value="{{ $esSobreequipaje ? $pasaje->persona->nombres : '' }}"
+                                    {{ $esSobreequipaje ? 'readonly' : 'required' }}>
                             </div>
 
                             <div class="col-md-4">
                                 <label class="form-label">Apellidos <span style="color: red">*</span></label>
                                 <input type="text" class="form-control form-control-sm solo-letras" id="emisor_apellidos"
-                                    name="emisor_apellidos" required>
+                                    name="emisor_apellidos"
+                                    value="{{ $esSobreequipaje ? $pasaje->persona->apellidos : '' }}"
+                                    {{ $esSobreequipaje ? 'readonly' : 'required' }}>
                             </div>
                         </div>
 
@@ -74,99 +82,103 @@
                         </div>
                     </div>
                 </div>
+                @if (!$esSobreequipaje)
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>Datos del Receptor</h6>
+                            <hr>
 
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6>Datos del Receptor</h6>
-                        <hr>
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <label class="form-label">Tipo de documento <span style="color: red">*</span></label>
+                                    <select class="form-select" name="receptor_tipo_documento_id"
+                                        id="receptor_tipo_documento_id" required>
+                                        @foreach ($tipos_documentos as $tipo_documento)
+                                            <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
-                        <div class="row g-2">
-                            <div class="col-md-2">
-                                <label class="form-label">Tipo de documento <span style="color: red">*</span></label>
-                                <select class="form-select" name="receptor_tipo_documento_id"
-                                    id="receptor_tipo_documento_id" required>
-                                    @foreach ($tipos_documentos as $tipo_documento)
-                                        <option value="{{ $tipo_documento->id }}">{{ $tipo_documento->codigo }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Documento</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm solo-numeros"
+                                            id="receptor_documento" name="receptor_documento">
+                                        <button type="button" class="btn btn-primary btn-buscar-persona"
+                                            data-tipo="receptor" title="Buscar receptor">
+                                            <i data-lucide="search"></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <div class="col-md-2">
-                                <label class="form-label">Documento</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control form-control-sm solo-numeros"
-                                        id="receptor_documento" name="receptor_documento">
-                                    <button type="button" class="btn btn-primary btn-buscar-persona" data-tipo="receptor"
-                                        title="Buscar receptor">
-                                        <i data-lucide="search"></i>
-                                    </button>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Nombres <span style="color: red">*</span></label>
+                                    <input type="text" class="form-control form-control-sm  solo-letras"
+                                        id="receptor_nombres" name="receptor_nombres" required>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Apellidos <span style="color: red">*</span></label>
+                                    <input type="text" class="form-control form-control-sm solo-letras"
+                                        id="receptor_apellidos" name="receptor_apellidos" required>
                                 </div>
                             </div>
 
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-3">
+                                    <label class="form-label">Celular</label>
+                                    <input type="text" class="form-control form-control-sm solo-numeros"
+                                        id="receptor_celular" maxlength="9" name="receptor_celular">
+                                </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">Nombres <span style="color: red">*</span></label>
-                                <input type="text" class="form-control form-control-sm  solo-letras"
-                                    id="receptor_nombres" name="receptor_nombres" required>
+                                <div class="col-md-3">
+                                    <label class="form-label">Telefono</label>
+                                    <input type="text" class="form-control form-control-sm solo-numeros"
+                                        maxlength="9" id="receptor_telefono" name="receptor_telefono">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Correo electrónico</label>
+                                    <input type="text" class="form-control form-control-sm" id="receptor_direccion"
+                                        name="receptor_direccion">
+                                </div>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">Apellidos <span style="color: red">*</span></label>
-                                <input type="text" class="form-control form-control-sm solo-letras"
-                                    id="receptor_apellidos" name="receptor_apellidos" required>
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">DEPARTAMENTO</label>
+                                    <select name="receptor_departamento_id" id="departamento_id" class="form-select">
+                                        <option value="">Seleccione</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">PROVINCIA</label>
+                                    <select name="receptor_provincia_id" id="provincia_id" class="form-select">
+                                        <option value="">Seleccione</option>
+
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">DISTRITO</label>
+                                    <select name="receptor_distrito_id" id="distrito_id" class="form-select">
+                                        <option value="">Seleccione</option>
+                                    </select>
+                                </div>
                             </div>
+
                         </div>
-
-                        <div class="row g-2 mt-2">
-                            <div class="col-md-3">
-                                <label class="form-label">Celular</label>
-                                <input type="text" class="form-control form-control-sm solo-numeros"
-                                    id="receptor_celular" maxlength="9" name="receptor_celular">
-                            </div>
-
-                            <div class="col-md-3">
-                                <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control form-control-sm solo-numeros" maxlength="9"
-                                    id="receptor_telefono" name="receptor_telefono">
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Correo electrónico</label>
-                                <input type="text" class="form-control form-control-sm" id="receptor_direccion"
-                                    name="receptor_direccion">
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mt-2">
-                            <div class="col-md-4">
-                                <label class="form-label">DEPARTAMENTO</label>
-                                <select name="receptor_departamento_id" id="departamento_id" class="form-select">
-                                    <option value="">Seleccione</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">PROVINCIA</label>
-                                <select name="receptor_provincia_id" id="provincia_id" class="form-select">
-                                    <option value="">Seleccione</option>
-
-                                </select>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="form-label">DISTRITO</label>
-                                <select name="receptor_distrito_id" id="distrito_id" class="form-select">
-                                    <option value="">Seleccione</option>
-                                </select>
-                            </div>
-                        </div>
-
                     </div>
-                </div>
-
+                @endif
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h6>Detalles de Encomienda <span style="color: red">*</span></h6>
+                        <h6>
+                            {{ $esSobreequipaje ? 'Detalles de Sobreequipaje' : 'Detalles de Encomienda' }} <span
+                                style="color: red">*</span>
+                        </h6>
                         <hr>
 
                         <button type="button" class="btn btn-success btn-sm mb-1" id="btnAgregarDetalle">
@@ -212,26 +224,31 @@
 
                         <div class="row mb-1">
                             <label class="form-label">ORIGEN <span style="color: red">*</span></label>
-                            <select id="origen" class="form-select" name="origen_pueblito_id">
+                            <select id="origen" class="form-select" name="origen_pueblito_id"
+                                {{ $esSobreequipaje ? 'readonlyd' : 'required' }}>
                                 <option value="">Seleccione una parada</option>
                                 @foreach ($pueblitos as $pueblito)
-                                    <option value="{{ $pueblito->id }}">
+                                    <option value="{{ $pueblito->id }}"
+                                        {{ ($esSobreequipaje ? $pasaje->origen_pueblito_id : old('origen_pueblito_id')) == $pueblito->id ? 'selected' : '' }}>
                                         {{ $pueblito->descripcion }}
                                     </option>
                                 @endforeach
                             </select>
-
                         </div>
-
                         <div class="row mb-1">
                             <label class="form-label">DESTINO <span style="color: red">*</span></label>
-                            <select id="destino" class="form-select" name="destino_pueblito_id" required>
-                                <option value="" selected>Seleccione una parada</option>
+                            <select id="destino" class="form-select" name="destino_pueblito_id"
+                                {{ $esSobreequipaje ? 'readonlyd' : 'required' }}>
+                                <option value="">Seleccione una parada</option>
                                 @foreach ($pueblitos as $pueblito)
-                                    <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
+                                    <option value="{{ $pueblito->id }}"
+                                        {{ ($esSobreequipaje ? $pasaje->destino_pueblito_id : old('destino_pueblito_id')) == $pueblito->id ? 'selected' : '' }}>
+                                        {{ $pueblito->descripcion }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
+
                     </div>
                 </div>
                 <div class="card mb-3">
@@ -265,19 +282,20 @@
                             <div class="mb-1 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span>
                             </div>
 
+
                             <div class="mb-1">
-                                <select name="caja_id" id="caja_id" class="form-select">
+                                <select name="caja_id" id="caja_id" class="form-select"
+                                    {{ $esSobreequipaje ? 'readonlyd' : 'required' }}>
                                     <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
                                         <option value="{{ $caja->id }}"
                                             data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
-                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
+                                            {{ ($esSobreequipaje ? $pasaje->venta->caja_id : $user->sucursal_id) == $caja->id ? 'selected' : '' }}>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-
                             <div class="mb-1 fw-semibold">Serie sucursal:</div>
                             <div class="panel-box mb-1 text-center" id="serie_doc">Seleccionar sucursal</div>
 

@@ -1022,6 +1022,9 @@ $(async function () {
             destino_pueblito_id: $("#destino").val(),
             distrito_id: $("#distrito_id").val(),
             // Facturación
+            sobrequipaje: $("input[name='sobrequipaje']").val(),
+            pasaje_id: $("input[name='pasaje_id']").val(),
+
             emitir_sunat_estado: $("#emitir_sunat_estado").val(),
             tipo_doc_sunat: $("#tipo_doc_sunat").val(),
             caja_id: $("#caja_id").val(),

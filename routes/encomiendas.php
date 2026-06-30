@@ -21,6 +21,11 @@ Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(
         Route::post('/{id}/entregar', [EncomiendaController::class, 'entregar'])->name('entregar');
     });
 
+    Route::get(
+        '/sobreequipaje/{pasaje}/crear',
+        [EncomiendaController::class, 'formularioSobrequipaje']
+    )->name('sobreequipaje.formulario');
+
     Route::middleware('can:eliminar encomiendas')->group(function () {
         Route::post('/anular/{id}', [EncomiendaController::class, 'anular'])->name('anular');
     });

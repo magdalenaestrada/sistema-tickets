@@ -13,6 +13,7 @@ use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\EncomiendaSalida;
 use App\Models\MetodoPago;
+use App\Models\Pasaje;
 use App\Models\Persona;
 use App\Models\Provincia;
 use App\Models\Pueblito;
@@ -99,8 +100,66 @@ class EncomiendaController extends Controller
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
-        return view('encomiendas.create', compact('sucursales', 'tipos_documentos', 'pueblitos', 'user', 'tipo_encomiendas', 'tipos_documentos_facturas', 'metodos_pago', 'billeteras_digitales', 'cajas_emision'));
+        return view('encomiendas.create', array_merge(
+            compact(
+                'sucursales',
+                'tipos_documentos',
+                'pueblitos',
+                'user',
+                'tipo_encomiendas',
+                'tipos_documentos_facturas',
+                'metodos_pago',
+                'billeteras_digitales',
+                'cajas_emision'
+            ),
+            [
+                'esSobreequipaje' => false,
+                'pasaje' => null,
+            ]
+        ));
     }
+
+    public function formularioSobrequipaje(Pasaje $pasaje)
+    {
+        Carbon::now();
+        $user = Auth::user();
+        $metodos_pago = MetodoPago::all();
+        $sucursales = Sucursal::with('distrito')
+            ->where('estado', 'A')
+            ->select('id', 'nombre_comercial', 'distrito_id')
+            ->orderBy('nombre_comercial')
+            ->get();
+        $cajas_emision = Caja::with('sucursal')
+            ->where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->get();
+        $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
+        $tipos_documentos = TipoDocumentoPersona::all();
+        $tipos_documentos_facturas = TipoDocumentoFactura::all();
+        $tipo_encomiendas = TipoEncomienda::all();
+        $billeteras_digitales = BilleteraDigital::all();
+        return view(
+            'encomiendas.create',
+            array_merge(
+                compact(
+                    'sucursales',
+                    'tipos_documentos',
+                    'pueblitos',
+                    'user',
+                    'tipo_encomiendas',
+                    'tipos_documentos_facturas',
+                    'metodos_pago',
+                    'billeteras_digitales',
+                    'cajas_emision'
+                ),
+                [
+                    'esSobreequipaje' => true,
+                    'pasaje' => $pasaje,
+                ]
+            )
+        );
+    }
+
 
     public function datatable_no_asignadas(Request $request)
     {
@@ -509,11 +568,12 @@ class EncomiendaController extends Controller
 
     public function guardar(Request $request, EncomiendaService $encomiendaService)
     {
+
         $request->validate([
             'emisor.documento' => 'required|string|max:20',
             'emisor.nombres' => 'required|string|max:200',
             'receptor.documento' => 'nullable|string|max:20',
-            'receptor.nombres' => 'required|string|max:200',
+            'receptor.nombres' => 'nullable|string|max:200',
             'total' => 'required|numeric|min:0',
             'detalles' => 'required|array|min:1',
         ]);
@@ -538,16 +598,32 @@ class EncomiendaController extends Controller
             );
 
             $receptorDocumento = $request->input('receptor.documento');
-            $receptorTipo = $request->input('receptor.tipo_documento_id');
-
-            if ($receptorDocumento) {
-                $receptor = Persona::updateOrCreate(
-                    [
+            if ($request->boolean('sobrequipaje')) {
+                $receptor = null;
+            } else {
+                if ($receptorDocumento) {
+                    $receptor = Persona::updateOrCreate(
+                        [
+                            'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
+                            'documento' => $request->input('receptor.documento'),
+                        ],
+                        [
+                            'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
+                            'distrito_id' => $request->input('receptor.distrito_id'),
+                            'nombres' => $request->input('receptor.nombres'),
+                            'apellidos' => $request->input('receptor.apellidos'),
+                            'telefono' => $request->input('receptor.telefono'),
+                            'celular' => $request->input('receptor.celular'),
+                            'correo' => $request->input('receptor.correo'),
+                            'direccion' => $request->input('receptor.direccion'),
+                            'estado' => 'A',
+                            'fecha_creacion' => now(),
+                        ]
+                    );
+                } else {
+                    $receptor = Persona::create([
                         'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
-                        'documento' => $request->input('receptor.documento'),
-                    ],
-                    [
-                        'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
+                        'documento' => null,
                         'distrito_id' => $request->input('receptor.distrito_id'),
                         'nombres' => $request->input('receptor.nombres'),
                         'apellidos' => $request->input('receptor.apellidos'),
@@ -557,22 +633,8 @@ class EncomiendaController extends Controller
                         'direccion' => $request->input('receptor.direccion'),
                         'estado' => 'A',
                         'fecha_creacion' => now(),
-                    ]
-                );
-            } else {
-                $receptor = Persona::create([
-                    'tipo_documento_id' => $receptorTipo,
-                    'documento' => null,
-                    'distrito_id' => $request->input('receptor.distrito_id'),
-                    'nombres' => $request->input('receptor.nombres'),
-                    'apellidos' => $request->input('receptor.apellidos'),
-                    'telefono' => $request->input('receptor.telefono'),
-                    'celular' => $request->input('receptor.celular'),
-                    'correo' => $request->input('receptor.correo'),
-                    'direccion' => $request->input('receptor.direccion'),
-                    'estado' => 'A',
-                    'fecha_creacion' => now(),
-                ]);
+                    ]);
+                }
             }
 
             $user_id = Auth::id();
@@ -582,12 +644,21 @@ class EncomiendaController extends Controller
                 ['user_id' => $user_id]
             );
 
-            Cliente::updateOrCreate(
-                ['persona_id' => $receptor->id],
-                ['user_id' => $user_id]
-            );
+            if ($receptor) {
+                Cliente::updateOrCreate(
+                    ['persona_id' => $receptor->id],
+                    ['user_id' => $user_id]
+                );
+            }
 
-            $encomienda = $encomiendaService->crearEncomienda($request, $emisor->id, $receptor->id, $user_id);
+            $receptorId = $receptor ? $receptor->id : null;
+
+            $encomienda = $encomiendaService->crearEncomienda(
+                $request,
+                $emisor->id,
+                $receptorId,
+                $user_id
+            );
 
             return response()->json([
                 'success' => true,
@@ -742,10 +813,10 @@ class EncomiendaController extends Controller
             'detalles.tipo_encomienda',
             'origenPueblito',
             'destinoPueblito',
-            'sucursal_origen.empresa', 
+            'sucursal_origen.empresa',
             'sucursal_destino',
             'venta.tipoDocumentoFactura',
-            'venta.sucursal.empresa',  
+            'venta.sucursal.empresa',
             'venta.pagos.metodoPago',
         ]);
         $venta = $encomienda->venta;

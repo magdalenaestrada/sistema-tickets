@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CajaDetalle;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
+use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\Pueblito;
 use App\Models\Venta;
@@ -52,11 +53,11 @@ class EncomiendaService
             $ventaData = null;
 
             $ventaService = app(VentaService::class);
-
+            $tipo_documento_persona =  $request->tipo_doc_sunat == 1 ? 2 : 1;
             $personaFacturacion = Persona::updateOrCreate(
                 ['documento' => $request->numero_documento_id],
                 [
-                    'tipo_documento_id' => $request->tipo_documento_factura_id ?? 1,
+                    'tipo_documento_id' => $tipo_documento_persona ?? 1,
                     'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
                     'direccion' => $request->direccion,
                     'estado' => 'A',
@@ -122,6 +123,14 @@ class EncomiendaService
             }
 
             $emision = $ventaService->emitirVenta($venta);
+            if ($request->boolean('sobrequipaje')) {
+                PasajeSobreEquipaje::create([
+                    'pasaje_id'     => $request->pasaje_id,
+                    'encomienda_id' => $encomienda->id,
+                ]);
+            } else {
+                return;
+            }
 
             return [
                 'encomienda' => $encomienda,

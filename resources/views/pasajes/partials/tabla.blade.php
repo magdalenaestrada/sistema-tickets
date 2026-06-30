@@ -70,6 +70,12 @@
                                     <i data-lucide="baggage-claim"></i>
                                 </button>
                             @endif
+                            @if ($pasaje->venta_id)
+                                <a href="{{ route('encomiendas.sobreequipaje.formulario', $pasaje->id) }}"
+                                    class="btn btn-warning btn-xs" title="Agregar sobre equipaje">
+                                    <i data-lucide="plus"></i>
+                                </a>
+                            @endif
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
                                 <button class="btn btn-xs btn-secondary imprimir-pasaje" data-id="{{ $pasaje->id }}">
                                     <i data-lucide="printer"></i>
