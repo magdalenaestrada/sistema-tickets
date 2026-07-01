@@ -1051,8 +1051,8 @@ $(async function () {
                     Swal.fire({
                         icon: "success",
                         title: encomiendaId
-                            ? "Encomienda actualizada"
-                            : "Encomienda creada",
+                            ? "Actualizada con éxito"
+                            : "Creada con éxito",
                         timer: 1200,
                         showConfirmButton: false,
                     });
