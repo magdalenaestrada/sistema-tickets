@@ -16,6 +16,8 @@ class PdfService
             'margin_bottom' => 6,
             'margin_left' => 6,
             'margin_right' => 6,
+            'tempDir' => storage_path('app/mpdf'),
+
         ]);
 
         $mpdf->SetDisplayMode('fullpage');
