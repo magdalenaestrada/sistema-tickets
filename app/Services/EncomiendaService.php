@@ -128,8 +128,7 @@ class EncomiendaService
                     'pasaje_id'     => $request->pasaje_id,
                     'encomienda_id' => $encomienda->id,
                 ]);
-            } else {
-                return;
+
             }
 
             return [

@@ -31,7 +31,7 @@
                                     <input type="text" class="form-control form-control-sm solo-numeros"
                                         id="emisor_documento" name="emisor_documento"
                                         value="{{ $esSobreequipaje ? $pasaje->persona->documento : '' }}"
-                                        {{ $esSobreequipaje ? 'readonly' : 'required' }}>
+                                        {{ $esSobreequipaje ? 'disable' : 'required' }}>
                                     <button type="button" class="btn btn-primary btn-buscar-persona" data-tipo="emisor"
                                         title="Buscar emisor">
                                         <i data-lucide="search"></i>
@@ -43,7 +43,7 @@
                                 <label class="form-label">Nombres <span style="color: red">*</span></label>
                                 <input type="text" class="form-control form-control-sm solo-letras" id="emisor_nombres"
                                     name="emisor_nombres" value="{{ $esSobreequipaje ? $pasaje->persona->nombres : '' }}"
-                                    {{ $esSobreequipaje ? 'readonly' : 'required' }}>
+                                    {{ $esSobreequipaje ? 'disable' : 'required' }}>
                             </div>
 
                             <div class="col-md-4">
@@ -51,7 +51,7 @@
                                 <input type="text" class="form-control form-control-sm solo-letras" id="emisor_apellidos"
                                     name="emisor_apellidos"
                                     value="{{ $esSobreequipaje ? $pasaje->persona->apellidos : '' }}"
-                                    {{ $esSobreequipaje ? 'readonly' : 'required' }}>
+                                    {{ $esSobreequipaje ? 'disable' : 'required' }}>
                             </div>
                         </div>
 
@@ -224,31 +224,26 @@
 
                         <div class="row mb-1">
                             <label class="form-label">ORIGEN <span style="color: red">*</span></label>
-                            <select id="origen" class="form-select" name="origen_pueblito_id"
-                                {{ $esSobreequipaje ? 'readonlyd' : 'required' }}>
+                            <select id="origen" class="form-select" name="origen_pueblito_id">
                                 <option value="">Seleccione una parada</option>
                                 @foreach ($pueblitos as $pueblito)
-                                    <option value="{{ $pueblito->id }}"
-                                        {{ ($esSobreequipaje ? $pasaje->origen_pueblito_id : old('origen_pueblito_id')) == $pueblito->id ? 'selected' : '' }}>
+                                    <option value="{{ $pueblito->id }}">
                                         {{ $pueblito->descripcion }}
                                     </option>
                                 @endforeach
                             </select>
-                        </div>
-                        <div class="row mb-1">
-                            <label class="form-label">DESTINO <span style="color: red">*</span></label>
-                            <select id="destino" class="form-select" name="destino_pueblito_id"
-                                {{ $esSobreequipaje ? 'readonlyd' : 'required' }}>
-                                <option value="">Seleccione una parada</option>
-                                @foreach ($pueblitos as $pueblito)
-                                    <option value="{{ $pueblito->id }}"
-                                        {{ ($esSobreequipaje ? $pasaje->destino_pueblito_id : old('destino_pueblito_id')) == $pueblito->id ? 'selected' : '' }}>
-                                        {{ $pueblito->descripcion }}
-                                    </option>
-                                @endforeach
-                            </select>
+
                         </div>
 
+                        <div class="row mb-1">
+                            <label class="form-label">DESTINO <span style="color: red">*</span></label>
+                            <select id="destino" class="form-select" name="destino_pueblito_id" required>
+                                <option value="" selected>Seleccione una parada</option>
+                                @foreach ($pueblitos as $pueblito)
+                                    <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="card mb-3">
@@ -282,20 +277,19 @@
                             <div class="mb-1 text-center fw-semibold">Sucursal de venta: <span style="color: red">*</span>
                             </div>
 
-
                             <div class="mb-1">
-                                <select name="caja_id" id="caja_id" class="form-select"
-                                    {{ $esSobreequipaje ? 'readonlyd' : 'required' }}>
+                                <select name="caja_id" id="caja_id" class="form-select">
                                     <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
                                         <option value="{{ $caja->id }}"
                                             data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
-                                            {{ ($esSobreequipaje ? $pasaje->venta->caja_id : $user->sucursal_id) == $caja->id ? 'selected' : '' }}>
+                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
+
                             <div class="mb-1 fw-semibold">Serie sucursal:</div>
                             <div class="panel-box mb-1 text-center" id="serie_doc">Seleccionar sucursal</div>
 
