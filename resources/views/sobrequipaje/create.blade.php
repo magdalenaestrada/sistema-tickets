@@ -7,21 +7,41 @@
             <div class="col-md-9">
 
                 @if ($esSobreequipaje)
-                    {{-- ================= BLOQUE "TICKET ENCONTRADO" =================
-                         El pasaje ya llega resuelto por route model binding, así que
-                         no hace falta buscar: solo mostramos el resumen ya encontrado,
-                         tal como en el mockup. --}}
+                    {{-- ================= INFORMACIÓN DEL VIAJE =================
+                         TODO: ajusta las rutas de acceso (->salida->horario, ->asiento,
+                         ->codigo_boleto) a los nombres reales de tu modelo Pasaje. --}}
                     <div class="card mb-3">
                         <div class="card-body">
-                            <h6><i data-lucide="search"></i> Ticket / Pasajero</h6>
+                            <h6><i data-lucide="bus"></i> Información del viaje</h6>
                             <hr>
-                            <div class="row g-2 align-items-end">
-                                <div class="col-md-3">
-                                    <label class="form-label">Ticket</label>
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-0">Fecha de viaje</label>
                                     <input type="text" class="form-control form-control-sm"
-                                        value="{{ $pasaje->codigo_boleto ?? $pasaje->id }}" readonly>
+                                        value="{{ optional($pasaje->salida->fecha_salida ?? null)->format('d/m/Y') }}"
+                                        readonly>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-0">Hora</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                        value="{{ $pasaje->salida->horario->hora_formateada ?? '' }}" readonly>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-0">Origen</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                        value="{{ $pasaje->origen->descripcion ?? '' }}" readonly>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-0">Destino</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                        value="{{ $pasaje->destino->descripcion ?? '' }}" readonly>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-0">Asiento</label>
+                                    <input type="text" class="form-control form-control-sm"
+                                        value="{{ $pasaje->asiento_numero ?? '' }}" readonly>
+                                </div>
+                                <div class="col-md-2 d-flex justify-content-center align-items-center">
                                     <span class="badge bg-success">
                                         <i data-lucide="check-circle"></i> Ticket encontrado
                                     </span>
@@ -99,8 +119,8 @@
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
-                                <input type="text" class="form-control form-control-sm solo-numeros" id="emisor_telefono"
-                                    name="emisor_telefono" maxlength="9">
+                                <input type="text" class="form-control form-control-sm solo-numeros"
+                                    id="emisor_telefono" name="emisor_telefono" maxlength="9">
                             </div>
 
                             <div class="col-md-4">
@@ -119,50 +139,6 @@
                     </div>
                 </div>
 
-                @if ($esSobreequipaje)
-                    {{-- ================= INFORMACIÓN DEL VIAJE =================
-                         TODO: ajusta las rutas de acceso (->salida->horario, ->asiento,
-                         ->codigo_boleto) a los nombres reales de tu modelo Pasaje. --}}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h6><i data-lucide="bus"></i> Información del viaje</h6>
-                            <hr>
-                            <div class="row g-2">
-                                <div class="col-md-2">
-                                    <label class="form-label small mb-0">Fecha de viaje</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        value="{{ optional($pasaje->salida->fecha_salida ?? null)->format('d/m/Y') }}"
-                                        readonly>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small mb-0">Hora</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        value="{{ $pasaje->salida->horario->hora_formateada ?? '' }}" readonly>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small mb-0">Origen</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        value="{{ $pasaje->origenPueblito->descripcion ?? '' }}" readonly>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small mb-0">Destino</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        value="{{ $pasaje->destinoPueblito->descripcion ?? '' }}" readonly>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small mb-0">Asiento</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        value="{{ $pasaje->asiento ?? '' }}" readonly>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label small mb-0">Código de boleto</label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        value="{{ $pasaje->codigo_boleto ?? $pasaje->id }}" readonly>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
 
                 @if (!$esSobreequipaje)
                     <div class="card mb-3">
@@ -283,29 +259,7 @@
                             <tbody></tbody>
                         </table>
 
-                        @if ($esSobreequipaje)
-                            <div class="row g-2 mt-2">
-                                <div class="col-md-6">
-                                    <label class="form-label">Observaciones (opcional)</label>
-                                    <textarea class="form-control form-control-sm" name="observaciones" rows="3"
-                                        placeholder="Ejemplo: caña de pescar, instrumento musical, etc."></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Últimos sobreequipajes del pasajero</label>
-                                    <div class="border rounded p-2" style="max-height: 100px; overflow-y: auto;">
-                                        @forelse (($historialSobreequipaje ?? []) as $registro)
-                                            <div class="d-flex justify-content-between small border-bottom py-1">
-                                                <span>{{ optional($registro->fecha_creacion)->format('d/m/Y') }}</span>
-                                                <span>Ticket {{ $registro->id }}</span>
-                                                <span>S/ {{ number_format($registro->total, 2) }}</span>
-                                            </div>
-                                        @empty
-                                            <span class="text-muted small">Sin historial previo</span>
-                                        @endforelse
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
+                     
                     </div>
                 </div>
             </div>
@@ -350,7 +304,7 @@
                             </div>
                         </div>
 
-                        <div class="row mb-1">
+                        <div class="row mb-1" hidden>
                             <label class="form-label">ORIGEN <span style="color: red">*</span></label>
                             <select id="origen" class="form-select" name="origen_pueblito_id"
                                 {{ $esSobreequipaje ? 'disabled' : 'required' }}>
@@ -367,7 +321,7 @@
                                     value="{{ $pasaje->origen_pueblito_id }}">
                             @endif
                         </div>
-                        <div class="row mb-1">
+                        <div class="row mb-1" hidden>
                             <label class="form-label">DESTINO <span style="color: red">*</span></label>
                             <select id="destino" class="form-select" name="destino_pueblito_id"
                                 {{ $esSobreequipaje ? 'disabled' : 'required' }}>

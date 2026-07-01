@@ -139,7 +139,7 @@ class EncomiendaController extends Controller
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
         return view(
-            'sobreequipaje.create',
+            'sobrequipaje.create',
             array_merge(
                 compact(
                     'sucursales',
