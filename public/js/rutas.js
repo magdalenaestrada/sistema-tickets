@@ -102,10 +102,10 @@ function guardarRuta() {
     let costo = [];
 
     $("#contenedorPuntos .punto").each(function () {
-        console.log("TRAMOS", tramosActuales);
-        console.log("ORIGEN", origenActual);
-        console.log("DESTINO", destinoActual);
-        console.log("tramoExistente", tramoExistente);
+        // console.log("TRAMOS", tramosActuales);
+        // console.log("ORIGEN", origenActual);
+        // console.log("DESTINO", destinoActual);
+        // console.log("tramoExistente", tramoExistente);
         let pueblitoId = $(this).find(".pueblito").val();
 
         let pueblito = pueblitos.find((p) => p.id == pueblitoId);

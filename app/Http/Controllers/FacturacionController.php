@@ -11,6 +11,8 @@ use App\Models\VentaDetalle;
 use App\Services\Facturacion\EmitirVentaService;
 use App\Services\Facturacion\GreenterService;
 use App\Services\Facturacion\VentaDocumentBuilder;
+use App\Services\VentaService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -198,23 +200,32 @@ class FacturacionController extends Controller
 
             $nc = new Venta();
             $tipoNC = TipoDocumentoFactura::where('codigo', '07')->first();
+            $serie = null;
+            if ($venta->tipoDocumentoFactura->codigo === '01') {
+                $serie = 'FC01';
 
+            } else if ($venta->tipoDocumentoFactura->codigo === '03') {
+                $serie = 'BC01';
+            }
+            if (!$serie) {
+                throw new Exception('No se pudo determinar la serie para la nota de crédito');
+            }
             $nc->tipo_documento_factura_id = $tipoNC->id;
             $nc->sucursal_id = $venta->sucursal_id;
             $nc->persona_id = $venta->persona_id;
             $nc->tipo_servicio_id = $venta->tipo_servicio_id;
-            $nc->serie = $venta->serie;
+            $nc->serie = $serie;
             $ultimo = Venta::where('tipo_documento_factura_id', $tipoNC->id)->max('numero') ?? 0;
 
             $nc->numero = str_pad($ultimo + 1, 8, '0', STR_PAD_LEFT);
             $nc->usuario_id = auth()->id();
             $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
-            $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
+            // $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
             $nc->subtotal = $venta->subtotal;
             $nc->impuesto = $venta->impuesto;
             $nc->total = $venta->total;
 
-            $nc->estado = 'GENERADA';
+            $nc->estado = 'ACEPTADA';
             $nc->fecha_emision = now();
             $nc->observacion = 'ANULACION DE OPERACION';
 
@@ -252,52 +263,58 @@ class FacturacionController extends Controller
                 'detalles'
             ]);
 
-            $documento = app(VentaDocumentBuilder::class)->build($nc);
-            $see = app(GreenterService::class)->getSee($empresa);
+            // user metodo correcto
+            $result = app(VentaService::class)->anularVentaSunat($nc);
+            // $see = app(GreenterService::class)->getSee($empresa);
 
-            $result = $see->send($documento);
+            // $result = $see->send($documento);
 
-            $folder = 'xml/' . now()->format('Y-m-d');
+            // $folder = 'xml/' . now()->format('Y-m-d');
 
-            Storage::disk('public')->put(
-                "{$folder}/{$documento->getName()}.xml",
-                $see->getFactory()->getLastXml()
-            );
+            // Storage::disk('public')->put(
+            //     "{$folder}/{$documento->getName()}.xml",
+            //     $see->getFactory()->getLastXml()
+            // );
 
-            $nc->ruta_xml = "{$folder}/{$documento->getName()}.xml";
+            // $nc->ruta_xml = "{$folder}/{$documento->getName()}.xml";
 
-            if (!$result->isSuccess()) {
+            // if (!$result->isSuccess()) {
 
-                $nc->estado = 'RECHAZADA';
-                $nc->observacion = $result->getError()->getMessage();
-                $nc->save();
+            //     $nc->estado = 'RECHAZADA';
+            //     $nc->observacion = $result->getError()->getMessage();
+            //     $nc->save();
 
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => $result->getError()->getMessage()
+            //     ], 500);
+            // }
+
+            // $cdr = $result->getCdrResponse();
+
+            // Storage::disk('public')->put(
+            //     "{$folder}/R-{$documento->getName()}.zip",
+            //     $result->getCdrZip()
+            // );
+
+            // $nc->ruta_cdr = "{$folder}/R-{$documento->getName()}.zip";
+
+            // $nc->estado = ((int) $cdr->getCode() === 0)
+            //     ? 'ACEPTADA'
+            //     : 'RECHAZADA';
+
+            // $venta->estado = 'ANULADA';
+            // $venta->save();
+            if ($result['success']) {
                 return response()->json([
-                    'success' => false,
-                    'message' => $result->getError()->getMessage()
-                ], 500);
+                    'success' => true,
+                    'message' => 'Venta anulada correctamente'
+                ]);
             }
-
-            $cdr = $result->getCdrResponse();
-
-            Storage::disk('public')->put(
-                "{$folder}/R-{$documento->getName()}.zip",
-                $result->getCdrZip()
-            );
-
-            $nc->ruta_cdr = "{$folder}/R-{$documento->getName()}.zip";
-
-            $nc->estado = ((int) $cdr->getCode() === 0)
-                ? 'ACEPTADA'
-                : 'RECHAZADA';
-
-            $venta->estado = 'ANULADA';
-            $venta->save();
-
             return response()->json([
-                'success' => true,
-                'message' => 'Venta anulada correctamente'
-            ]);
+                'success' => false,
+                'message' => 'Error al anular la venta'
+            ], 500);
         });
     }
 

@@ -74,17 +74,17 @@ class VentaService
             );
 
             $venta = Venta::create([
-                'tipo_servicio_id'          => $tipoServicioId,
-                'sucursal_id'               => $sucursalId,
-                'usuario_id'                => $user->id,
-                'persona_id'                => $personaVenta->id,
+                'tipo_servicio_id' => $tipoServicioId,
+                'sucursal_id' => $sucursalId,
+                'usuario_id' => $user->id,
+                'persona_id' => $personaVenta->id,
                 'tipo_documento_factura_id' => $tipoDocumentoFacturaId,
-                'serie'                     => $comprobante['serie'],
-                'numero'                    => $comprobante['numero'],
-                'total'                     => $total,
-                'caja_id'                   => $cajaId,
-                'estado'                    => 'P',
-                'fecha_emision'             => now(),
+                'serie' => $comprobante['serie'],
+                'numero' => $comprobante['numero'],
+                'total' => $total,
+                'caja_id' => $cajaId,
+                'estado' => 'P',
+                'fecha_emision' => now(),
             ]);
 
             foreach ($detalles as $detalle) {
@@ -113,20 +113,20 @@ class VentaService
 
                 $venta->detalles()->create([
                     'tipo_servicio_id' => $tipoServicioDetalle,
-                    'descripcion'      => $descripcion,
-                    'cantidad'         => 1,
-                    'precio_venta'     => (float) ($detalle['costo'] ?? 0),
-                    'total'            => (float) ($detalle['costo'] ?? 0),
-                    'descuento'        => (float) ($detalle['descuento'] ?? 0),
+                    'descripcion' => $descripcion,
+                    'cantidad' => 1,
+                    'precio_venta' => (float) ($detalle['costo'] ?? 0),
+                    'total' => (float) ($detalle['costo'] ?? 0),
+                    'descuento' => (float) ($detalle['descuento'] ?? 0),
                 ]);
             }
 
             $venta->load(['persona', 'detalles']);
 
             return [
-                'venta'          => $venta,
+                'venta' => $venta,
                 'servicio_model' => $servicio_model,
-                'servicio_id'    => $servicio_id,
+                'servicio_id' => $servicio_id,
             ];
         });
     }
@@ -200,17 +200,17 @@ class VentaService
             $comprobante = $this->reservarSerieYNumero((int) $tipo_documento_factura_id, $sucursalId);
 
             $venta = Venta::create([
-                'tipo_servicio_id'          => 1,
-                'sucursal_id'               => $sucursalId,
-                'usuario_id'                => $user->id,
-                'persona_id'                => $user->persona_id,
+                'tipo_servicio_id' => 1,
+                'sucursal_id' => $sucursalId,
+                'usuario_id' => $user->id,
+                'persona_id' => $user->persona_id,
                 'tipo_documento_factura_id' => $tipo_documento_factura_id,
                 'caja_id' => $cajaId,
-                'serie'                     => $comprobante['serie'],
-                'numero'                    => $comprobante['numero'],
-                'total'                     => $precioFinal,
-                'estado'                    => 'P',
-                'fecha_emision'             => now(),
+                'serie' => $comprobante['serie'],
+                'numero' => $comprobante['numero'],
+                'total' => $precioFinal,
+                'estado' => 'P',
+                'fecha_emision' => now(),
             ]);
 
             $descripcion = $horario->punto_origen->nombre_comercial . ' - '
@@ -219,11 +219,11 @@ class VentaService
 
             $venta->detalles()->create([
                 'tipo_servicio_id' => 1,
-                'descripcion'      => $descripcion,
-                'cantidad'         => 1,
-                'precio_venta'     => $precio,
-                'total'            => $precioFinal,
-                'descuento'        => $descuento,
+                'descripcion' => $descripcion,
+                'cantidad' => 1,
+                'precio_venta' => $precio,
+                'total' => $precioFinal,
+                'descuento' => $descuento,
             ]);
 
             $venta->load(['persona', 'detalles']);
@@ -232,9 +232,9 @@ class VentaService
         });
 
         return [
-            'venta'          => $venta,
+            'venta' => $venta,
             'servicio_model' => Pasaje::class,
-            'servicio_id'    => null,
+            'servicio_id' => null,
         ];
     }
 
@@ -250,14 +250,14 @@ class VentaService
 
         if (in_array($venta->estado, ['E', 'O'], true)) {
             return [
-                'success'     => true,
-                'estado'      => 'YA_EMITIDA',
-                'codigo'      => null,
+                'success' => true,
+                'estado' => 'YA_EMITIDA',
+                'codigo' => null,
                 'descripcion' => 'La venta ya fue emitida previamente.',
-                'notas'       => [],
-                'xml_path'    => $venta->ruta_xml,
-                'cdr_path'    => $venta->ruta_cdr,
-                'nombre'      => $venta->serie . '-' . $venta->numero,
+                'notas' => [],
+                'xml_path' => $venta->ruta_xml,
+                'cdr_path' => $venta->ruta_cdr,
+                'nombre' => $venta->serie . '-' . $venta->numero,
             ];
         }
 
@@ -268,14 +268,14 @@ class VentaService
             ]);
 
             return [
-                'success'     => true,
-                'estado'      => 'EMITIDA_INTERNA',
-                'codigo'      => null,
+                'success' => true,
+                'estado' => 'EMITIDA_INTERNA',
+                'codigo' => null,
                 'descripcion' => 'La nota de venta fue emitida internamente y no se envía a SUNAT.',
-                'notas'       => [],
-                'xml_path'    => null,
-                'cdr_path'    => null,
-                'nombre'      => $venta->serie . '-' . $venta->numero,
+                'notas' => [],
+                'xml_path' => null,
+                'cdr_path' => null,
+                'nombre' => $venta->serie . '-' . $venta->numero,
             ];
         }
 
@@ -333,9 +333,9 @@ class VentaService
         if (!$correlativo) {
             $correlativo = CorrelativoVenta::create([
                 'tipo_documento_factura_id' => $tipo_documento_factura_id,
-                'sucursal_id'               => $sucursal_id,
-                'serie'                     => $serie,
-                'ultimo_numero'             => 0,
+                'sucursal_id' => $sucursal_id,
+                'serie' => $serie,
+                'ultimo_numero' => 0,
             ]);
 
             $correlativo = CorrelativoVenta::whereKey($correlativo->id)
@@ -350,7 +350,7 @@ class VentaService
         ]);
 
         return [
-            'serie'  => $serie,
+            'serie' => $serie,
             'numero' => $nuevoNumero,
         ];
     }
@@ -380,7 +380,7 @@ class VentaService
             (int) $venta->sucursal_id
         );
 
-        $see = $this->crearSee();
+        $see = $this->crearSee($tipoNotaCredito->codigo);
 
         $note = $this->buildNotaCreditoAnulacion(
             $venta,
@@ -388,7 +388,7 @@ class VentaService
             $comprobanteNC['serie'],
             $comprobanteNC['numero']
         );
-
+        dd($note);
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -477,6 +477,7 @@ class VentaService
         $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
         $see = $this->crearSee($tipo->codigo);
         $invoice = $this->buildInvoice($venta, $empresa);
+        // dd($invoice);
         $result = $see->send($invoice);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -494,17 +495,17 @@ class VentaService
 
             Log::error('Error SUNAT/OSE', [
                 'venta_id' => $venta->id,
-                'serie'    => $venta->serie,
-                'numero'   => $venta->numero,
-                'codigo'   => $errorCode,
-                'mensaje'  => $errorMessage,
+                'serie' => $venta->serie,
+                'numero' => $venta->numero,
+                'codigo' => $errorCode,
+                'mensaje' => $errorMessage,
             ]);
 
             $venta->update([
-                'ruta_xml'    => $xmlPath,
-                'ruta_cdr'    => null,
-                'hash'        => null,
-                'estado'      => 'R',
+                'ruta_xml' => $xmlPath,
+                'ruta_cdr' => null,
+                'hash' => null,
+                'estado' => 'R',
                 'observacion' => trim($errorCode . ' - ' . $errorMessage, ' -'),
             ]);
 
@@ -540,31 +541,31 @@ class VentaService
         };
 
         $venta->update([
-            'ruta_xml'    => $xmlPath,
-            'ruta_cdr'    => $cdrPath,
-            'hash'        => method_exists($result, 'getHashCdr') ? $result->getHashCdr() : null,
-            'estado'      => $estadoInterno,
+            'ruta_xml' => $xmlPath,
+            'ruta_cdr' => $cdrPath,
+            'hash' => method_exists($result, 'getHashCdr') ? $result->getHashCdr() : null,
+            'estado' => $estadoInterno,
             'observacion' => $cdr->getDescription(),
         ]);
 
         Log::info('Comprobante emitido', [
-            'venta_id'     => $venta->id,
-            'comprobante'  => $invoice->getName(),
+            'venta_id' => $venta->id,
+            'comprobante' => $invoice->getName(),
             'estado_sunat' => $estadoSunat,
-            'code'         => $code,
-            'descripcion'  => $cdr->getDescription(),
-            'notas'        => $cdr->getNotes(),
+            'code' => $code,
+            'descripcion' => $cdr->getDescription(),
+            'notas' => $cdr->getNotes(),
         ]);
 
         return [
-            'success'     => true,
-            'estado'      => $estadoSunat,
-            'codigo'      => $code,
+            'success' => true,
+            'estado' => $estadoSunat,
+            'codigo' => $code,
             'descripcion' => $cdr->getDescription(),
-            'notas'       => $cdr->getNotes(),
-            'xml_path'    => $xmlPath,
-            'cdr_path'    => $cdrPath,
-            'nombre'      => $invoice->getName(),
+            'notas' => $cdr->getNotes(),
+            'xml_path' => $xmlPath,
+            'cdr_path' => $cdrPath,
+            'nombre' => $invoice->getName(),
         ];
     }
 
@@ -578,9 +579,13 @@ class VentaService
             throw new Exception('No existe configuración de empresa.');
         }
 
-        if (trim(strtoupper($tipoDocumento)) === '07') {
-            return $see;
-        }
+        /**
+         * PORQUE CAUDNO ES 07 RETORNAS SEE????
+         */
+
+        // if (trim(strtoupper($tipoDocumento)) === '07') {
+        //     return $see;
+        // }
 
         $certDisk = config('services.greenter.cert_disk', 'public');
         $certPath = $empresa->certificado_path;
@@ -623,6 +628,7 @@ class VentaService
             ->setUrbanizacion($empresa->urbanizacion ?? '-')
             ->setDireccion($venta->sucursal->direccion)
             ->setCodLocal($venta->sucursal->codigo_sucursal ?? '0000');
+        // venta->sucursal->codigo_sucursal te falta llenar
 
         $company = (new Company())
             ->setRuc($empresa->documento)
@@ -638,41 +644,50 @@ class VentaService
                 (new Address())->setDireccion($cliente->direccion ?? '-')
             );
 
+        /**
+         * MODIFICADO PARA AMBAS OPERACIONES
+         */
+        $mtoOperGravadas = 0.0;
+        $mtoOperExoneradas = 0.0;
+        $mtoOperInafectas = 0.0; // por si acaso también manejas inafectas o si german dice que las boletas son inafectas jsjs
+        $mtoIGV = 0.0;
+        $valorVenta = 0.0;
+        $subTotal = 0.0;
+        $totalVenta = 0.0;
         $detalles = [];
-        $mtoOperGravadas = 0;
-        $mtoIGV = 0;
-        $valorVenta = 0;
-        $subTotal = 0;
-        $totalVenta = 0;
+
+        $igv = (float) $empresa->igv; // 18, 10.5, etc. — tasa vigente para líneas gravadas
+        $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
 
         foreach ($venta->detalles as $detalle) {
             $cantidad = (float) ($detalle->cantidad ?? 1);
-            $totalLinea = (float) ($detalle->total ?? 0);
+            $totalLinea = round((float) ($detalle->total ?? 0), 2);
 
             if ($cantidad <= 0) {
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
             }
 
-            $igv = (float) $empresa->igv;
+            // Determina el tipo de afectación de ESTA línea.
+            // hay que ponerlo en algun lado el ->exonerado, de momento true
+            $esExonerado = (bool) true;
+            // $esExonerado = (bool) ($detalle->exonerado ?? false);
 
-            $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
-            $totalLinea = round($totalLinea, 2);
-            $valorVentaLinea = round(
-                $totalLinea / (1 + $porcentajeIgv),
-                2
-            );
-            $igvLinea = round(
-                $totalLinea - $valorVentaLinea,
-                2
-            );
-            $precioUnitario = round(
-                $totalLinea / $cantidad,
-                10
-            );
-            $valorUnitarioSinIgv = round(
-                $valorVentaLinea / $cantidad,
-                10
-            );
+            if ($esExonerado) {
+                // Exonerado (tipAfeIgv 20): el total de línea ES el valor de venta, IGV = 0
+                $valorVentaLinea = $totalLinea;
+                $igvLinea = 0.0;
+                $porcentajeLinea = 0.0;
+                $tipAfeIgv = '20';
+            } else {
+                // Gravado (tipAfeIgv 10): se extrae el IGV del total
+                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgv), 2);
+                $igvLinea = round($totalLinea - $valorVentaLinea, 2);
+                $porcentajeLinea = $porcentajeIgv * 100;
+                $tipAfeIgv = '10';
+            }
+
+            $precioUnitario = round($totalLinea / $cantidad, 10);
+            $valorUnitarioSinIgv = round($valorVentaLinea / $cantidad, 10);
 
             $detalles[] = (new SaleDetail())
                 ->setCodProducto((string) ($detalle->id ?? 'ITEM'))
@@ -681,13 +696,19 @@ class VentaService
                 ->setMtoValorUnitario($valorUnitarioSinIgv)
                 ->setDescripcion($detalle->descripcion)
                 ->setMtoBaseIgv($valorVentaLinea)
-                ->setPorcentajeIgv($porcentajeIgv * 100)->setIgv($igvLinea)
-                ->setTipAfeIgv('20')
+                ->setPorcentajeIgv($porcentajeLinea)
+                ->setIgv($igvLinea)
+                ->setTipAfeIgv($tipAfeIgv)
                 ->setTotalImpuestos($igvLinea)
                 ->setMtoValorVenta($valorVentaLinea)
                 ->setMtoPrecioUnitario($precioUnitario);
 
-            $mtoOperGravadas += $valorVentaLinea;
+            if ($esExonerado) {
+                $mtoOperExoneradas += $valorVentaLinea;
+            } else {
+                $mtoOperGravadas += $valorVentaLinea;
+            }
+
             $mtoIGV += $igvLinea;
             $valorVenta += $valorVentaLinea;
             $subTotal += $totalLinea;
@@ -700,7 +721,7 @@ class VentaService
             ->setCode('1000')
             ->setValue($formatter->toInvoice($totalVenta, 2, 'SOLES'));
 
-        return (new Invoice())
+        $invoice = (new Invoice())
             ->setUblVersion('2.1')
             ->setTipoOperacion('0101')
             ->setTipoDoc($tipoDocComprobante)
@@ -712,6 +733,7 @@ class VentaService
             ->setCompany($company)
             ->setClient($client)
             ->setMtoOperGravadas(round($mtoOperGravadas, 2))
+            ->setMtoOperExoneradas(round($mtoOperExoneradas, 2))
             ->setMtoIGV(round($mtoIGV, 2))
             ->setTotalImpuestos(round($mtoIGV, 2))
             ->setValorVenta(round($valorVenta, 2))
@@ -719,6 +741,8 @@ class VentaService
             ->setMtoImpVenta(round($totalVenta, 2))
             ->setDetails($detalles)
             ->setLegends([$legend]);
+
+        return $invoice;
     }
 
     private function resolverTipoDocumentoCliente(?string $numeroDocumento, ?int $tipoDocumentoFacturaId): int
@@ -763,13 +787,14 @@ class VentaService
         $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
 
         $companyAddress = (new Address())
-            ->setUbigueo($empresa->ubigueo ?? '150101')
-            ->setDepartamento($empresa->departamento ?? 'LIMA')
-            ->setProvincia($empresa->provincia ?? 'LIMA')
-            ->setDistrito($empresa->distrito ?? 'LIMA')
+            ->setUbigueo($venta->sucursal->distrito->ubigeo)
+            ->setDepartamento($venta->sucursal->distrito->departamento->nombre ?? 'LIMA')
+            ->setProvincia($venta->sucursal->distrito->provincia->nombre ?? 'LIMA')
+            ->setDistrito($venta->sucursal->distrito->nombre ?? 'LIMA')
             ->setUrbanizacion($empresa->urbanizacion ?? '-')
-            ->setDireccion($empresa->direccion ?? $empresa->razon_social)
-            ->setCodLocal($empresa->cod_local ?? '0000');
+            ->setDireccion($venta->sucursal->direccion)
+            ->setCodLocal($venta->sucursal->codigo_sucursal ?? '0000');
+        // venta->sucursal->codigo_sucursal te falta llenar
 
         $company = (new Company())
             ->setRuc($empresa->documento)
@@ -785,24 +810,46 @@ class VentaService
                 (new Address())->setDireccion($cliente->direccion ?? '-')
             );
 
+        /**
+         * MODIFICADO PARA AMBAS OPERACIONES Y SEA EL CALCULO CORRECTO
+         */
+        $mtoOperGravadas = 0.0;
+        $mtoOperExoneradas = 0.0;
+        $mtoOperInafectas = 0.0;
+        $mtoIGV = 0.0;
+        $valorVenta = 0.0;
+        $subTotal = 0.0;
+        $totalVenta = 0.0;
         $detalles = [];
-        $mtoOperGravadas = 0;
-        $mtoIGV = $empresa->igv;
-        $valorVenta = 0;
-        $subTotal = 0;
-        $totalVenta = 0;
+
+        $igv = (float) $empresa->igv;
+        $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
 
         foreach ($venta->detalles as $detalle) {
             $cantidad = (float) ($detalle->cantidad ?? 1);
-            $totalLinea = (float) ($detalle->total ?? 0);
+            $totalLinea = round((float) ($detalle->total ?? 0), 2);
 
             if ($cantidad <= 0) {
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
             }
 
-            $valorUnitario = round($totalLinea / 1.18, 10);
-            $igvLinea = round($totalLinea - $valorUnitario, 2);
-            $valorVentaLinea = round($totalLinea - $igvLinea, 2);
+            // Debe coincidir con el mismo criterio usado en buildInvoice
+            // para el comprobante original que se está anulando.
+            $esExonerado = (bool) true;
+            // $esExonerado = (bool) ($detalle->exonerado ?? false);
+
+            if ($esExonerado) {
+                $valorVentaLinea = $totalLinea;
+                $igvLinea = 0.0;
+                $porcentajeLinea = 0.0;
+                $tipAfeIgv = '20';
+            } else {
+                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgv), 2);
+                $igvLinea = round($totalLinea - $valorVentaLinea, 2);
+                $porcentajeLinea = $porcentajeIgv * 100;
+                $tipAfeIgv = '10';
+            }
+
             $precioUnitario = round($totalLinea / $cantidad, 10);
             $valorUnitarioSinIgv = round($valorVentaLinea / $cantidad, 10);
 
@@ -813,14 +860,19 @@ class VentaService
                 ->setMtoValorUnitario($valorUnitarioSinIgv)
                 ->setDescripcion($detalle->descripcion)
                 ->setMtoBaseIgv($valorVentaLinea)
-                ->setPorcentajeIgv(18.00)
+                ->setPorcentajeIgv($porcentajeLinea)
                 ->setIgv($igvLinea)
-                ->setTipAfeIgv('20')
+                ->setTipAfeIgv($tipAfeIgv)
                 ->setTotalImpuestos($igvLinea)
                 ->setMtoValorVenta($valorVentaLinea)
                 ->setMtoPrecioUnitario($precioUnitario);
 
-            $mtoOperGravadas += $valorVentaLinea;
+            if ($esExonerado) {
+                $mtoOperExoneradas += $valorVentaLinea;
+            } else {
+                $mtoOperGravadas += $valorVentaLinea;
+            }
+
             $mtoIGV += $igvLinea;
             $valorVenta += $valorVentaLinea;
             $subTotal += $totalLinea;
@@ -831,7 +883,7 @@ class VentaService
 
         $legend = (new Legend())
             ->setCode('1000')
-            ->setValue($formatter->toInvoice($totalVenta, 2, 'SOLES'));
+            ->setValue($formatter->toInvoice(abs($totalVenta), 2, 'SOLES'));
 
         return (new Note())
             ->setUblVersion('2.1')
@@ -847,6 +899,7 @@ class VentaService
             ->setCompany($company)
             ->setClient($client)
             ->setMtoOperGravadas(round($mtoOperGravadas, 2))
+            ->setMtoOperExoneradas(round($mtoOperExoneradas, 2))
             ->setMtoIGV(round($mtoIGV, 2))
             ->setTotalImpuestos(round($mtoIGV, 2))
             ->setValorVenta(round($valorVenta, 2))
