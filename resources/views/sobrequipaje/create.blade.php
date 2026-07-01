@@ -7,9 +7,6 @@
             <div class="col-md-9">
 
                 @if ($esSobreequipaje)
-                    {{-- ================= INFORMACIÓN DEL VIAJE =================
-                         TODO: ajusta las rutas de acceso (->salida->horario, ->asiento,
-                         ->codigo_boleto) a los nombres reales de tu modelo Pasaje. --}}
                     <div class="card mb-3">
                         <div class="card-body">
                             <h6><i data-lucide="bus"></i> Información del viaje</h6>
@@ -138,8 +135,6 @@
                         </div>
                     </div>
                 </div>
-
-
                 @if (!$esSobreequipaje)
                     <div class="card mb-3">
                         <div class="card-body">
@@ -259,7 +254,7 @@
                             <tbody></tbody>
                         </table>
 
-                     
+
                     </div>
                 </div>
             </div>
@@ -269,7 +264,7 @@
                     <div class="card-body">
                         <h6 class="mb-1">Tipo de servicio: {{ $esSobreequipaje ? 'Sobreequipaje' : 'Encomienda' }}</h6>
 
-                       
+
                         <div class="row mb-1">
                             <label for="peso_total" class="col-6 col-form-label">Peso total <b>(KG)</b></label>
                             <div class="col-6">
@@ -286,7 +281,7 @@
                             </div>
                         </div>
 
-                        <div class="row mb-1" hidden>
+                        <div class="row mb-1">
                             <label class="form-label">ORIGEN <span style="color: red">*</span></label>
                             <select id="origen" class="form-select" name="origen_pueblito_id"
                                 {{ $esSobreequipaje ? 'disabled' : 'required' }}>
@@ -303,7 +298,7 @@
                                     value="{{ $pasaje->origen_pueblito_id }}">
                             @endif
                         </div>
-                        <div class="row mb-1" hidden>
+                        <div class="row mb-1">
                             <label class="form-label">DESTINO <span style="color: red">*</span></label>
                             <select id="destino" class="form-select" name="destino_pueblito_id"
                                 {{ $esSobreequipaje ? 'disabled' : 'required' }}>
@@ -435,11 +430,13 @@
 @endsection
 
 @push('scripts')
-    {{-- Bandera global para que encomiendas_create.js sepa si debe activar
-         la columna Precio/KG y el cálculo de excedente. --}}
     <script>
+        window.RUTAS = {
+            encomiendas: "{{ route('encomiendas.index-no-asignadas') }}",
+            sobreequipajes: "{{ route('pasajes.buscar') }}"
+        };
+
         window.ES_SOBREEQUIPAJE = @json($esSobreequipaje);
-        window.PESO_PERMITIDO_SOBREEQUIPAJE = @json($pesoPermitido ?? 0);
     </script>
     <script src="{{ asset('js/encomiendas_create.js') }}"></script>
 @endpush

@@ -40,7 +40,6 @@ class VentaDocumentBuilder
         $distrito = $venta->sucursal->distrito;
         $provincia = $distrito->provincia;
         $departamento = $provincia->departamento;
-
         $client = (new Client())
             ->setTipoDoc($this->resolverTipoDocCliente($persona))
             ->setNumDoc($persona->documento ?? '-')
