@@ -269,25 +269,7 @@
                     <div class="card-body">
                         <h6 class="mb-1">Tipo de servicio: {{ $esSobreequipaje ? 'Sobreequipaje' : 'Encomienda' }}</h6>
 
-                        @if ($esSobreequipaje)
-                            <div class="row mb-1">
-                                <label class="col-6 col-form-label">Peso permitido <b>(KG)</b></label>
-                                <div class="col-6">
-                                    <input type="text" id="peso_permitido" class="form-control form-control-sm"
-                                        value="{{ number_format($pesoPermitido ?? 0, 2) }}" readonly>
-                                    <input type="hidden" id="peso_permitido_valor" value="{{ $pesoPermitido ?? 0 }}">
-                                </div>
-                            </div>
-
-                            <div class="row mb-1">
-                                <label class="col-6 col-form-label text-danger">Peso excedente <b>(KG)</b></label>
-                                <div class="col-6">
-                                    <input type="number" id="peso_excedente"
-                                        class="form-control form-control-sm text-danger" readonly>
-                                </div>
-                            </div>
-                        @endif
-
+                       
                         <div class="row mb-1">
                             <label for="peso_total" class="col-6 col-form-label">Peso total <b>(KG)</b></label>
                             <div class="col-6">
