@@ -45,8 +45,10 @@ class SalidaController extends Controller
     public function index_vendedor()
     {
         $rutas = Ruta::all();
+
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
         $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
+        $tiposVehiculo = TipoVehiculo::all();
         $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
             ->get()
             ->map(function ($h) {
@@ -60,7 +62,7 @@ class SalidaController extends Controller
                         ($h->tipo_vehiculo?->descripcion ?? ''),
                 ];
             });
-        return view('salidas.index-vendedor', compact('vehiculos', 'conductores', 'horariosSalida', 'rutas'));
+        return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
     }
 
 
