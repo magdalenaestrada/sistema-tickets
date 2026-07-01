@@ -129,7 +129,6 @@ class FacturacionController extends Controller
         if (!$items || count($items) === 0) {
             return back()->with('error', 'Debe agregar items');
         }
-
         DB::transaction(function () use ($request, $items, $service) {
             $empresa = Empresa::first();
             $porcentaje = $empresa->igv / 100;
@@ -140,7 +139,7 @@ class FacturacionController extends Controller
             $persona = Persona::updateOrCreate(
                 ['documento' => $request->documento],
                 [
-                    'tipo_documento_id' => $request->tipo_documento_id,
+                    'tipo_documento_id' => strlen($request->documento) === 8 ? 1 : 2,
                     'nombres' => $request->nombres,
                     'apellidos' => $request->apellidos,
                     'celular' => $request->celular,

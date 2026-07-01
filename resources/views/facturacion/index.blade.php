@@ -203,9 +203,10 @@
     @endsection
     @push('scripts')
         <script>
+            let xd = 2;
             let items = [];
             const urlAnular = "{{ route('facturacion.anular', ':id') }}";
-            const IGV_ENTERO = {{ $empresa->igv }};
+            const IGV_ENTERO = "{{ $empresa->igv ?? 0 }}";
             const IGV = IGV_ENTERO / 100;
 
             function buscarCliente() {
