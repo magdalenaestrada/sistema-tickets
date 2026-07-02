@@ -14,6 +14,7 @@ use App\Services\Facturacion\VentaDocumentBuilder;
 use App\Services\VentaService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -195,115 +196,114 @@ class FacturacionController extends Controller
     {
         return DB::transaction(function () use ($venta) {
 
-            $empresa = $venta->sucursal->empresa;
-
-            $nc = new Venta();
-            $tipoNC = TipoDocumentoFactura::where('codigo', '07')->first();
             $serie = null;
+
+            $puedeAnularConResumen = false;
+            $anularConCredito = false;
             if ($venta->tipoDocumentoFactura->codigo === '01') {
-                $serie = 'FC01';
+                $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 2;
+                if (!$puedeAnularConResumen) {
+                    $serie = 'FC01';
+                    $anularConCredito = true;
+                }
 
             } else if ($venta->tipoDocumentoFactura->codigo === '03') {
-                $serie = 'BC01';
+                $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 7;
+                if (!$puedeAnularConResumen) {
+                    $serie = 'BC01';
+                    $anularConCredito = true;
+                }
+            } else if ($venta->tipoDocumentoFactura->codigo === '07') {
+                if (str_starts_with($venta->serie, "B")) {
+                    $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 2;
+                    if (!$puedeAnularConResumen) {
+                        throw new Exception("No se puede anular la NOTA DE CREDITO, han pasado mas de 2 dias");
+                    }
+                } else if (str_starts_with($venta->serie, "F")) {
+                    $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 7;
+                    if (!$puedeAnularConResumen) {
+                        throw new Exception("No se puede anular la NOTA DE CREDITO, han pasado mas de 7 dias");
+                    }
+                }
             }
-            if (!$serie) {
-                throw new Exception('No se pudo determinar la serie para la nota de crédito');
-            }
-            $nc->tipo_documento_factura_id = $tipoNC->id;
-            $nc->sucursal_id = $venta->sucursal_id;
-            $nc->persona_id = $venta->persona_id;
-            $nc->tipo_servicio_id = $venta->tipo_servicio_id;
-            $nc->serie = $serie;
-            $ultimo = Venta::where('tipo_documento_factura_id', $tipoNC->id)->max('numero') ?? 0;
+            $result = null;
+            // para test
+            // $puedeAnularConResumen = false;
+            // $anularConCredito = true;
+            // if ($venta->tipoDocumentoFactura->codigo === '01') {
+            //     $serie = 'FC01';
 
-            $nc->numero = str_pad($ultimo + 1, 8, '0', STR_PAD_LEFT);
-            $nc->usuario_id = auth()->id();
-            $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
-            // $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
-            $nc->subtotal = $venta->subtotal;
-            $nc->impuesto = $venta->impuesto;
-            $nc->total = $venta->total;
-
-            $nc->estado = 'ACEPTADA';
-            $nc->fecha_emision = now();
-            $nc->observacion = 'ANULACION DE OPERACION';
-
-            $nc->save();
-            $nc->load([
-                'tipoDocumentoFactura',
-                'persona.tipoDocumento',
-                'sucursal.empresa',
-                'detalles'
-            ]);
-            foreach ($venta->detalles as $d) {
-                $nc->detalles()->create([
-                    'descripcion' => $d->descripcion,
-                    'tipo_servicio_id' => $d->tipo_servicio_id,
-                    'descuento' => $d->descuento,
-                    'cantidad' => $d->cantidad,
-                    'precio_venta' => $d->precio_venta,
-                    'total' => -$d->total,
-                    'codigo' => $d->codigo,
-                    'unidad' => $d->unidad,
-                    'valor_unitario' => $d->valor_unitario,
-                    'precio_unitario' => $d->precio_unitario,
-                    'base_igv' => $d->base_igv,
-                    'porcentaje_igv' => $d->porcentaje_igv,
-                    'igv' => $d->igv,
-                    'valor_venta' => $d->valor_venta,
-                    'tipo_afectacion_igv' => $d->tipo_afectacion_igv,
-                ]);
-            }
-
-            $nc->load([
-                'tipoDocumentoFactura',
-                'persona.tipoDocumento',
-                'sucursal.empresa',
-                'detalles'
-            ]);
-
-            // user metodo correcto
-            $result = app(VentaService::class)->anularVentaSunat($nc);
-            // $see = app(GreenterService::class)->getSee($empresa);
-
-            // $result = $see->send($documento);
-
-            // $folder = 'xml/' . now()->format('Y-m-d');
-
-            // Storage::disk('public')->put(
-            //     "{$folder}/{$documento->getName()}.xml",
-            //     $see->getFactory()->getLastXml()
-            // );
-
-            // $nc->ruta_xml = "{$folder}/{$documento->getName()}.xml";
-
-            // if (!$result->isSuccess()) {
-
-            //     $nc->estado = 'RECHAZADA';
-            //     $nc->observacion = $result->getError()->getMessage();
-            //     $nc->save();
-
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => $result->getError()->getMessage()
-            //     ], 500);
+            // } else if ($venta->tipoDocumentoFactura->codigo === '03') {
+            //     $serie = 'BC01';
             // }
+            if ($puedeAnularConResumen) {
+                // anular todo lo que sea ... boleta, factura, nota de credito ...
+                $result = app(VentaService::class)->anularVentaDirecta($venta);
 
-            // $cdr = $result->getCdrResponse();
+            } else if ($anularConCredito) {
+                //anular la venta con nota de credito
+                if (!$serie) {
+                    throw new Exception("No se pudo obtener la serie para la nota de crédito");
+                }
+                $tipoNC = TipoDocumentoFactura::where('codigo', '07')->first();
+                $nc = new Venta();
+                $nc->tipo_documento_factura_id = $tipoNC->id;
+                $nc->sucursal_id = $venta->sucursal_id;
+                $nc->persona_id = $venta->persona_id;
+                $nc->tipo_servicio_id = $venta->tipo_servicio_id;
+                $nc->serie = $serie;
+                $ultimo = Venta::where('tipo_documento_factura_id', $tipoNC->id)->max('numero') ?? 0;
 
-            // Storage::disk('public')->put(
-            //     "{$folder}/R-{$documento->getName()}.zip",
-            //     $result->getCdrZip()
-            // );
+                $nc->numero = str_pad($ultimo + 1, 8, '0', STR_PAD_LEFT);
+                $nc->usuario_id = auth()->id();
+                $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
+                // $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
+                $nc->subtotal = $venta->subtotal;
+                $nc->impuesto = $venta->impuesto;
+                $nc->total = $venta->total;
 
-            // $nc->ruta_cdr = "{$folder}/R-{$documento->getName()}.zip";
+                $nc->estado = 'E';
+                $nc->fecha_emision = now();
+                $nc->observacion = 'ANULACION DE OPERACION';
 
-            // $nc->estado = ((int) $cdr->getCode() === 0)
-            //     ? 'ACEPTADA'
-            //     : 'RECHAZADA';
+                $nc->save();
+                $nc->load([
+                    'tipoDocumentoFactura',
+                    'persona.tipoDocumento',
+                    'sucursal.empresa',
+                    'detalles'
+                ]);
+                foreach ($venta->detalles as $d) {
+                    $nc->detalles()->create([
+                        'descripcion' => $d->descripcion,
+                        'tipo_servicio_id' => $d->tipo_servicio_id,
+                        'descuento' => $d->descuento,
+                        'cantidad' => $d->cantidad,
+                        'precio_venta' => $d->precio_venta,
+                        'total' => -$d->total,
+                        'codigo' => $d->codigo,
+                        'unidad' => $d->unidad,
+                        'valor_unitario' => $d->valor_unitario,
+                        'precio_unitario' => $d->precio_unitario,
+                        'base_igv' => $d->base_igv,
+                        'porcentaje_igv' => $d->porcentaje_igv,
+                        'igv' => $d->igv,
+                        'valor_venta' => $d->valor_venta,
+                        'tipo_afectacion_igv' => $d->tipo_afectacion_igv,
+                    ]);
+                }
 
-            // $venta->estado = 'ANULADA';
-            // $venta->save();
+                $nc->load([
+                    'tipoDocumentoFactura',
+                    'persona.tipoDocumento',
+                    'sucursal.empresa',
+                    'detalles'
+                ]);
+
+                $result = app(VentaService::class)->anularVentaSunat($nc, $venta, $serie);
+
+            }
+
             if ($result['success']) {
                 return response()->json([
                     'success' => true,

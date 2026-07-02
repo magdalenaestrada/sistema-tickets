@@ -318,7 +318,7 @@ class VentaService
         };
     }
 
-    private function reservarSerieYNumero(int $tipo_documento_factura_id, int $sucursal_id): array
+    private function reservarSerieYNumero(int $tipo_documento_factura_id, int $sucursal_id, ?string $serie = null): array
     {
         $tipo = TipoDocumentoFactura::find($tipo_documento_factura_id);
 
@@ -326,7 +326,7 @@ class VentaService
             throw new Exception('Tipo de documento de factura no válido.');
         }
 
-        $serie = $this->resolverSeriePorTipoYSucursal((string) $tipo->codigo, $sucursal_id);
+        $serie = $serie ?? $this->resolverSeriePorTipoYSucursal((string) $tipo->codigo, $sucursal_id);
 
         $correlativo = CorrelativoVenta::where('tipo_documento_factura_id', $tipo_documento_factura_id)
             ->where('sucursal_id', $sucursal_id)
@@ -359,11 +359,11 @@ class VentaService
         ];
     }
 
-    public function anularVentaSunat(Venta $venta): array
+    public function anularVentaSunat(Venta $notaCredito, Venta $ventaOriginal, ?string $serie = null): array
     {
-        $venta->loadMissing(['persona', 'detalles']);
+        $notaCredito->loadMissing(['persona', 'detalles']);
 
-        if (!in_array($venta->estado, ['ACEPTADA', 'O'], true)) {
+        if (!in_array($notaCredito->estado, ['E'], true)) {
             throw new Exception('Solo se puede anular en SUNAT una venta emitida.');
         }
 
@@ -381,18 +381,19 @@ class VentaService
 
         $comprobanteNC = $this->reservarSerieYNumero(
             (int) $tipoNotaCredito->id,
-            (int) $venta->sucursal_id
+            (int) $notaCredito->sucursal_id,
+            $serie
         );
 
         $see = $this->crearSee($tipoNotaCredito->codigo);
 
         $note = $this->buildNotaCreditoAnulacion(
-            $venta,
+            $notaCredito,
+            $ventaOriginal,
             $empresa,
             $comprobanteNC['serie'],
             $comprobanteNC['numero']
         );
-        dd($note);
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -409,7 +410,7 @@ class VentaService
             $errorMessage = optional($result->getError())->getMessage();
 
             Log::error('Error al anular venta en SUNAT', [
-                'venta_id' => $venta->id,
+                'venta_id' => $notaCredito->id,
                 'codigo' => $errorCode,
                 'mensaje' => $errorMessage,
             ]);
@@ -430,21 +431,21 @@ class VentaService
             throw new Exception('SUNAT no aceptó la nota de crédito: ' . $cdr->getDescription());
         }
 
-        DB::transaction(function () use ($venta, $xmlPath, $cdrPath, $cdr) {
-            $venta->update([
-                'estado' => 'A',
-                'fecha_anulacion' => now(),
-                'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
-            ]);
+        DB::transaction(function () use ($notaCredito, $xmlPath, $cdrPath, $cdr) {
+            // $notaCredito->update([
+            //     'estado' => 'A',
+            //     'fecha_anulacion' => now(),
+            //     'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
+            // ]);
 
-            $venta->pagos()->update([
-                'estado' => 'AN',
-            ]);
+            // $notaCredito->pagos()->update([
+            //     'estado' => 'AN',
+            // ]);
 
-            CajaDetalle::where('venta_id', $venta->id)
-                ->update([
-                    'anulado' => true,
-                ]);
+            // CajaDetalle::where('venta_id', $notaCredito->id)
+            //     ->update([
+            //         'anulado' => true,
+            //     ]);
         });
 
         return [
@@ -463,7 +464,7 @@ class VentaService
     {
         $venta->loadMissing(['persona', 'detalles']);
 
-        if (!in_array($venta->estado, ['ACEPTADA', 'O'], true)) {
+        if (!in_array($venta->estado, ['E'], true)) {
             throw new Exception('Solo se puede anular en SUNAT una venta emitida.');
         }
 
@@ -474,7 +475,7 @@ class VentaService
         // );
 
         $see = $this->crearSee();
-        $serie = 'RA' . str_pad($venta->id, 4, '0', STR_PAD_LEFT);
+        $serie = (str_starts_with($venta->serie, "F") ? 'RA' : 'RC') . str_pad($venta->id, 4, '0', STR_PAD_LEFT);
         $numero = str_pad($venta->id, 6, '0', STR_PAD_LEFT);
 
         $note = $this->buildResumenAnulacion(
@@ -483,7 +484,6 @@ class VentaService
             $numero
         );
         // para ver su funcionamiento
-        dd($note);
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -510,22 +510,11 @@ class VentaService
             );
         }
 
-        Storage::disk('public')->put(
-            $cdrPath,
-            $result->getCdrZip()
-        );
-
-        $cdr = $result->getCdrResponse();
-
-        if ((int) $cdr->getCode() !== 0) {
-            throw new Exception('SUNAT no aceptó la nota de crédito: ' . $cdr->getDescription());
-        }
-
-        DB::transaction(function () use ($venta, $xmlPath, $cdrPath, $cdr) {
+        DB::transaction(function () use ($venta) {
             $venta->update([
                 'estado' => 'A',
                 'fecha_anulacion' => now(),
-                'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
+                'observacion' => 'Venta anulada en SUNAT',
             ]);
 
             $venta->pagos()->update([
@@ -541,9 +530,9 @@ class VentaService
         return [
             'success' => true,
             'estado' => 'ANULADA_SUNAT',
-            'codigo' => $cdr->getCode(),
-            'descripcion' => $cdr->getDescription(),
-            'notas' => $cdr->getNotes(),
+            'codigo' => 200,
+            'descripcion' => 'Venta anulada en SUNAT',
+            'notas' => [],
             'xml_path' => $xmlPath,
             'cdr_path' => $cdrPath,
             'nombre' => $note->getName(),
@@ -867,28 +856,29 @@ class VentaService
     }
 
     private function buildNotaCreditoAnulacion(
-        Venta $venta,
+        Venta $notaCredito,
+        Venta $ventaOriginal,
         Empresa $empresa,
         string $serieNC,
         int $numeroNC
     ): Note {
-        $cliente = $venta->persona;
+        $cliente = $notaCredito->persona;
 
         if (!$cliente) {
             throw new Exception('La venta no tiene cliente asociado.');
         }
 
-        $tipoDocAfectado = $this->mapTipoDocumentoComprobante($venta->tipo_documento_factura_id);
+        $tipoDocAfectado = $this->mapTipoDocumentoComprobante($ventaOriginal->tipo_documento_factura_id);
         $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
 
         $companyAddress = (new Address())
-            ->setUbigueo($venta->sucursal->distrito->ubigeo)
-            ->setDepartamento($venta->sucursal->distrito->departamento->nombre ?? 'LIMA')
-            ->setProvincia($venta->sucursal->distrito->provincia->nombre ?? 'LIMA')
-            ->setDistrito($venta->sucursal->distrito->nombre ?? 'LIMA')
+            ->setUbigueo($notaCredito->sucursal->distrito->ubigeo)
+            ->setDepartamento($notaCredito->sucursal->distrito->departamento->nombre ?? 'LIMA')
+            ->setProvincia($notaCredito->sucursal->distrito->provincia->nombre ?? 'LIMA')
+            ->setDistrito($notaCredito->sucursal->distrito->nombre ?? 'LIMA')
             ->setUrbanizacion($empresa->urbanizacion ?? '-')
-            ->setDireccion($venta->sucursal->direccion)
-            ->setCodLocal($venta->sucursal->codigo_sucursal ?? '0000');
+            ->setDireccion($notaCredito->sucursal->direccion)
+            ->setCodLocal($notaCredito->sucursal->codigo_sucursal ?? '0000');
         // venta->sucursal->codigo_sucursal te falta llenar
 
         $company = (new Company())
@@ -920,9 +910,9 @@ class VentaService
         $igv = (float) $empresa->igv;
         $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
 
-        foreach ($venta->detalles as $detalle) {
-            $cantidad = (float) ($detalle->cantidad ?? 1);
-            $totalLinea = round((float) ($detalle->total ?? 0), 2);
+        foreach ($notaCredito->detalles as $detalle) {
+            $cantidad = abs((float) ($detalle->cantidad ?? 1));
+            $totalLinea = abs(round((float) ($detalle->total ?? 0), 2));
 
             if ($cantidad <= 0) {
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
@@ -987,19 +977,19 @@ class VentaService
             ->setCorrelativo((string) $numeroNC)
             ->setFechaEmision(new DateTime(now()->format('Y-m-d H:i:sP')))
             ->setTipDocAfectado($tipoDocAfectado)
-            ->setNumDocfectado($venta->serie . '-' . $venta->numero)
+            ->setNumDocfectado($ventaOriginal->serie . '-' . $ventaOriginal->numero)
             ->setCodMotivo('01')
             ->setDesMotivo('ANULACION DE LA OPERACION')
             ->setTipoMoneda('PEN')
             ->setCompany($company)
             ->setClient($client)
-            ->setMtoOperGravadas(round($mtoOperGravadas, 2))
-            ->setMtoOperExoneradas(round($mtoOperExoneradas, 2))
-            ->setMtoIGV(round($mtoIGV, 2))
-            ->setTotalImpuestos(round($mtoIGV, 2))
-            ->setValorVenta(round($valorVenta, 2))
-            ->setSubTotal(round($subTotal, 2))
-            ->setMtoImpVenta(round($totalVenta, 2))
+            ->setMtoOperGravadas(abs(round($mtoOperGravadas, 2)))
+            ->setMtoOperExoneradas(abs(round($mtoOperExoneradas, 2)))
+            ->setMtoIGV(abs(round($mtoIGV, 2)))
+            ->setTotalImpuestos(abs(round($mtoIGV, 2)))
+            ->setValorVenta(abs(round($valorVenta, 2)))
+            ->setSubTotal(abs(round($subTotal, 2)))
+            ->setMtoImpVenta(abs(round($totalVenta, 2)))
             ->setDetails($detalles)
             ->setLegends([$legend]);
     }

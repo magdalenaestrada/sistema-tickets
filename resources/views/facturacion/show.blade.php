@@ -79,10 +79,10 @@
                                         <td>{{ $venta->estado }}</td>
                                     </tr>
 
-                                    <tr>
+                                    {{-- <tr>
                                         <th>Hash</th>
                                         <td>{{ $venta->hash }}</td>
-                                    </tr>
+                                    </tr> --}}
 
                                 </table>
 

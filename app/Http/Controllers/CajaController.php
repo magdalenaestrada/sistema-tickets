@@ -10,6 +10,7 @@ use App\Models\MetodoPago;
 use App\Models\SubtipoMovimientoCaja;
 use App\Models\Sucursal;
 use App\Models\Venta;
+use App\Services\VentaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -464,7 +465,7 @@ class CajaController extends Controller
                     $venta = Venta::findOrFail($detalle->table_id);
 
                     if (in_array($venta->estado, ['E', 'O'], true)) {
-                        $ventaService->anularVentaSunat($venta);
+                        $ventaService->anularVentaDirecta($venta);
                     } else {
                         $venta->update([
                             'estado' => 'A',
