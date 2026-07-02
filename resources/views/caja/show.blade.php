@@ -39,10 +39,10 @@
                             </button>
 
 
-                            <form action="{{ route('caja.cerrar', $caja->id) }}" method="POST" class="d-inline">
+                            <form action="{{ route('caja.cerrar', $caja->id) }}" method="POST"
+                                class="cerrar-caja-form d-inline">
                                 @csrf
-                                <button type="submit" class="btn btn-primary btn-sm px-2"
-                                    onclick="return confirm('¿Cerrar caja?')">
+                                <button type="submit" class="btn btn-primary btn-sm px-2">
                                     Cerrar
                                 </button>
                             </form>

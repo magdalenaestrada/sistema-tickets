@@ -202,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = await enviarFormulario(formSalida);
             bloquearBoton(formSalida, false);
 
-            if (!data) return; // ya se mostró el error, el modal queda abierto para corregir
+            if (!data) return;
 
             const modal =
                 bootstrap.Modal.getOrCreateInstance(modalSalidaElemento);
@@ -334,6 +334,54 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (result.isConfirmed) {
                     form.submit();
                 }
+            });
+        });
+    });
+    $(document).on("submit", ".cerrar-caja-form", function (e) {
+        e.preventDefault();
+
+        let form = $(this);
+
+        Swal.fire({
+            title: "¿Cerrar caja?",
+            text: "Una vez cerrada no podrás seguir registrando movimientos.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, cerrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            $.ajax({
+                url: form.attr("action"),
+                type: "POST",
+                data: form.serialize(),
+                success: function (response) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Caja cerrada",
+                        text: response.message,
+                        timer: 1500,
+                        showConfirmButton: false,
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function (xhr) {
+                    let mensaje = "Ocurrió un error.";
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        mensaje = xhr.responseJSON.message;
+                    }
+
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: mensaje,
+                    });
+                },
             });
         });
     });

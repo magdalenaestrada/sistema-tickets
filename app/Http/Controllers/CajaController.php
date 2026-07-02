@@ -66,7 +66,11 @@ class CajaController extends Controller
 
             $sucursales = Sucursal::orderBy('nombre_comercial')->get();
 
-            return view('caja.index_admin', compact('cajas', 'sucursales', 'totalCajasAbiertas'));
+            return response()
+                ->view('caja.index_admin',  compact('cajas', 'sucursales', 'totalCajasAbiertas'))
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
         }
 
         $cajaAbierta = Caja::with(['sucursal', 'usuario.persona'])
@@ -84,7 +88,11 @@ class CajaController extends Controller
             ->orderByDesc('fecha_creacion')
             ->paginate(15);
 
-        return view('caja.index_cajero', compact('cajas'));
+        return response()
+            ->view('caja.index_cajero',  compact('cajas'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function store(Request $request)
@@ -107,6 +115,7 @@ class CajaController extends Controller
 
         if ($this->esAdmin($user)) {
             $cajaAbierta = Caja::where('sucursal_id', $sucursalId)
+                ->where('usuario_id', $user->id)
                 ->whereIn('estado', ['A', 'abierta'])
                 ->first();
 
@@ -393,6 +402,12 @@ class CajaController extends Controller
         $this->autorizarCaja($caja);
 
         if ($this->cajaCerrada($caja)) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'message' => 'La caja ya está cerrada.'
+                ], 422);
+            }
+
             return back()->with('error', 'La caja ya está cerrada.');
         }
 
@@ -404,9 +419,9 @@ class CajaController extends Controller
             'fecha_cierre' => now(),
         ]);
 
-        return redirect()
-            ->route('caja.show', $caja->id)
-            ->with('success', 'Caja cerrada correctamente.');
+        return response()->json([
+            'message' => 'Caja cerrada correctamente.'
+        ]);
     }
 
     public function print_corte(int $cajaId)
