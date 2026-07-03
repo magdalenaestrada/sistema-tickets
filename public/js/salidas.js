@@ -17,9 +17,6 @@ $(document).on("change", "#fecha_salida, #horario_id", function () {
 
 $(document).ready(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
-        rowGroup: {
-            dataSrc: "fecha_formateada",
-        },
 
         ajax: {
             url: route("salidas.datatable"),
@@ -52,7 +49,6 @@ $(document).ready(function () {
             { data: "acciones" },
         ],
 
-        order: [[2, "asc"]],
         responsive: true,
         info: false,
         dom: "rtip",

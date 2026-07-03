@@ -27,6 +27,9 @@ class SalidaController extends Controller
         $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
         $tiposVehiculo = TipoVehiculo::all();
         $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
+            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
+            ->orderBy('horarios.hora_salida', 'asc')
+            ->select('horarios.*')
             ->get()
             ->map(function ($h) {
                 return [
@@ -65,7 +68,6 @@ class SalidaController extends Controller
         return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
     }
 
-
     public function datatable(Request $request)
     {
         $nowDate = now()->format('Y-m-d');
@@ -76,44 +78,52 @@ class SalidaController extends Controller
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
+            ->join('horarios', 'salidas.horario_id', '=', 'horarios.id')
+            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
             ->select('salidas.*')
             ->selectRaw("
-        CASE 
-            WHEN fecha_salida < ? THEN 1
-            WHEN fecha_salida = ? AND hora_salida < ? THEN 1
-            ELSE 0
-        END as vencida
-    ", [$nowDate, $nowDate, $nowTime]);
+            CASE 
+                WHEN salidas.fecha_salida < ? THEN 1
+                WHEN salidas.fecha_salida = ? AND horarios.hora_salida < ? THEN 1
+                ELSE 0
+            END as vencida
+        ", [$nowDate, $nowDate, $nowTime])
+            ->selectRaw("
+            CASE 
+                WHEN (salidas.fecha_salida < ? OR (salidas.fecha_salida = ? AND horarios.hora_salida < ?)) 
+                     AND salidas.estado IN ('programado', 'reprogramado') THEN 2
+                WHEN salidas.estado = 'programado' THEN 0
+                ELSE 1
+            END as orden_prioridad
+        ", [$nowDate, $nowDate, $nowTime]);
 
         if ($request->filled('estado')) {
             if ($request->estado === 'vencido') {
                 $salidas->where(function ($q) use ($nowDate, $nowTime) {
-                    $q->whereIn('estado', ['programado', 'reprogramado'])
+                    $q->whereIn('salidas.estado', ['programado', 'reprogramado'])
                         ->where(function ($q2) use ($nowDate, $nowTime) {
-                            $q2->where('fecha_salida', '<', $nowDate)
+                            $q2->where('salidas.fecha_salida', '<', $nowDate)
                                 ->orWhere(function ($q3) use ($nowDate, $nowTime) {
-                                    $q3->where('fecha_salida', '=', $nowDate)
-                                        ->where('hora_salida', '<', $nowTime);
+                                    $q3->where('salidas.fecha_salida', '=', $nowDate)
+                                        ->where('horarios.hora_salida', '<', $nowTime);
                                 });
                         });
                 });
             } else {
-                $salidas->where('estado', $request->estado);
+                $salidas->where('salidas.estado', $request->estado);
             }
         }
 
         if ($request->filled('ruta_id')) {
-            $salidas->whereHas('horario.ruta', function ($q) use ($request) {
-                $q->where('id', $request->ruta_id);
-            });
+            $salidas->where('rutas.id', $request->ruta_id);
         }
 
         return DataTables::of($salidas)
             ->orderColumn('vencida', 'vencida $1')
             ->order(function ($query) {
-                $query->orderBy('vencida', 'asc')
-                    ->orderBy('fecha_salida', 'asc')
-                    ->orderBy('hora_salida', 'asc');
+                $query->orderBy('orden_prioridad', 'asc')
+                    ->orderBy('salidas.fecha_salida', 'asc')
+                    ->orderBy('horarios.hora_salida', 'asc');
             })
             ->addColumn('ruta', function ($salida) {
                 return $salida->horario?->ruta?->nombre ?? '-';
@@ -143,13 +153,13 @@ class SalidaController extends Controller
             })
             ->addColumn('acciones', function ($salida) {
                 return '
-                <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
-                    <i class="link-icon" data-lucide="info"></i>
-                </button>
-                <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
-                    <i class="link-icon" data-lucide="pen"></i>
-                </button>
-            ';
+            <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
+                <i class="link-icon" data-lucide="info"></i>
+            </button>
+            <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
+                <i class="link-icon" data-lucide="pen"></i>
+            </button>
+        ';
             })
             ->rawColumns(['acciones', 'estado_badge'])
             ->make(true);
