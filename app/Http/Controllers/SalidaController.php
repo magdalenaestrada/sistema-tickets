@@ -162,6 +162,7 @@ class SalidaController extends Controller
         ';
             })
             ->rawColumns(['acciones', 'estado_badge'])
+            ->addIndexColumn()
             ->make(true);
     }
 

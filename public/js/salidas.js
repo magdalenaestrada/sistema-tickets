@@ -34,7 +34,7 @@ $(document).ready(function () {
                     return `<input type="checkbox" class="chk-salida" value="${data.id}">`;
                 },
             },
-            { data: "id" },
+                       { data: "DT_RowIndex" },
             { data: "ruta" },
             { data: "fecha_formateada" },
             { data: "hora_salida" },
