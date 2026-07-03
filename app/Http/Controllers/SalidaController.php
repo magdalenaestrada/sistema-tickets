@@ -138,17 +138,25 @@ class SalidaController extends Controller
                 return $salida->fecha_formateada;
             })
             ->addColumn('estado_badge', function ($salida) {
-                if ($salida->vencida && in_array($salida->estado, ['programado', 'reprogramado'])) {
-                    return '<span class="badge bg-danger">VENCIDO</span>';
+
+                if ($salida->estado === 'programado' && $salida->horario) {
+
+                    $fechaHoraSalida = $salida->fecha_salida
+                        ->copy()
+                        ->setTimeFromTimeString($salida->horario->hora_formateada);
+
+                    if (now()->gte($fechaHoraSalida->copy()->addMinutes(20))) {
+                        return '<span class="badge bg-secondary">VENCIDO</span>';
+                    }
                 }
 
                 return match ($salida->estado) {
-                    'en_ruta' => '<span class="badge bg-warning">EN RUTA</span>',
-                    'programado' => '<span class="badge bg-primary">PROGRAMADO</span>',
-                    'finalizado' => '<span class="badge bg-success">FINALIZADO</span>',
-                    'cancelado' => '<span class="badge bg-danger">CANCELADO</span>',
+                    'en_ruta'      => '<span class="badge bg-warning">EN RUTA</span>',
+                    'programado'   => '<span class="badge bg-primary">PROGRAMADO</span>',
+                    'finalizado'   => '<span class="badge bg-success">FINALIZADO</span>',
+                    'cancelado'    => '<span class="badge bg-danger">CANCELADO</span>',
                     'reprogramado' => '<span class="badge bg-info">REPROGRAMADO</span>',
-                    default => '',
+                    default        => '',
                 };
             })
             ->addColumn('acciones', function ($salida) {
