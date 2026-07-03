@@ -54,11 +54,19 @@ class EncomiendaController extends Controller
         ])
             ->whereIn('estado', ['en_ruta'])
             ->whereDate('fecha_salida', '>=', Carbon::today()->subDay())
-            ->orderBy('fecha_salida')
-            ->get()
             ->filter(fn($s) => $s->horario?->ruta)
             ->values();
 
+        if ($user->hasRole('cajera')) {
+            $salidas->whereHas('horario.ruta.puntos', function ($q) use ($user) {
+                $q->where('orden', 1)
+                    ->where('sucursal_id', $user->sucursal_id);
+            });
+        }
+
+        $salidas = $salidas
+            ->orderBy('fecha_salida')
+            ->get();
         return view('encomiendas.index', compact(
             'sucursales',
             'user',

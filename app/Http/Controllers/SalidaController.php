@@ -86,7 +86,20 @@ class SalidaController extends Controller
     ", [$nowDate, $nowDate, $nowTime]);
 
         if ($request->filled('estado')) {
-            $salidas->where('estado', $request->estado);
+            if ($request->estado === 'vencido') {
+                $salidas->where(function ($q) use ($nowDate, $nowTime) {
+                    $q->whereIn('estado', ['programado', 'reprogramado'])
+                        ->where(function ($q2) use ($nowDate, $nowTime) {
+                            $q2->where('fecha_salida', '<', $nowDate)
+                                ->orWhere(function ($q3) use ($nowDate, $nowTime) {
+                                    $q3->where('fecha_salida', '=', $nowDate)
+                                        ->where('hora_salida', '<', $nowTime);
+                                });
+                        });
+                });
+            } else {
+                $salidas->where('estado', $request->estado);
+            }
         }
 
         if ($request->filled('ruta_id')) {
@@ -115,6 +128,10 @@ class SalidaController extends Controller
                 return $salida->fecha_formateada;
             })
             ->addColumn('estado_badge', function ($salida) {
+                if ($salida->vencida && in_array($salida->estado, ['programado', 'reprogramado'])) {
+                    return '<span class="badge bg-danger">VENCIDO</span>';
+                }
+
                 return match ($salida->estado) {
                     'en_ruta' => '<span class="badge bg-warning">EN RUTA</span>',
                     'programado' => '<span class="badge bg-primary">PROGRAMADO</span>',

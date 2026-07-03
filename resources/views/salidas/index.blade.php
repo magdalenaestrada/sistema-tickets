@@ -34,6 +34,8 @@
                                 <option value="en_ruta">En ruta</option>
                                 <option value="finalizado">Finalizado</option>
                                 <option value="cancelado">Cancelado</option>
+                                <option value="reprogramado">Reprogramado</option>
+                                <option value="vencido">Vencido</option>
                             </select>
                         </div>
 
