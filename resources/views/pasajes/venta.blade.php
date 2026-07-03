@@ -259,7 +259,6 @@
                                     <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
                                         <option value="{{ $caja->id }}"
-                                            data-serie="{{ $caja->sucursal->serie->codigo ?? '001' }}"
                                             @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>

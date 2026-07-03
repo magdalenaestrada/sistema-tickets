@@ -8,7 +8,16 @@ class SerieSucursal extends Model
 {
     protected $table = "series_sucursal";
     protected $fillable = [
-        "descripcion",
-        "codigo"
+        "sucursal_id",
+        "tipo_documento_factura_id",
+        "serie",
     ];
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
+    }
+    public function tipoDocumentoFactura()
+    {
+        return $this->belongsTo(TipoDocumentoFactura::class, 'tipo_documento_factura_id');
+    }
 }

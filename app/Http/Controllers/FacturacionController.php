@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EstadoVenta;
 use App\Models\Empresa;
 use App\Models\Persona;
 use App\Models\Sucursal;
@@ -24,7 +25,7 @@ class FacturacionController extends Controller
     {
         $ventas = Venta::with([
             'persona',
-            'tipoDocumentoFactura'
+            'tipoDocumentoFactura',
         ])
             ->orderByDesc('fecha_emision')
             ->paginate(20);
@@ -32,13 +33,12 @@ class FacturacionController extends Controller
         $totalVentas = Venta::count();
 
         $emitidas = Venta::whereIn('estado', [
-            'ACEPTADA',
-            'E'
+            EstadoVenta::EMITIDO
         ])->count();
 
-        $pendientes = Venta::where('estado', 'GENERADA')->count();
+        $pendientes = Venta::where('estado', EstadoVenta::GENERADO)->count();
 
-        $rechazadas = Venta::where('estado', 'RECHAZADA')->count();
+        $rechazadas = Venta::where('estado', EstadoVenta::RECHAZADO)->count();
 
         $sucursales = Sucursal::with('serie')->get();
         $empresa = Empresa::first();
@@ -122,7 +122,9 @@ class FacturacionController extends Controller
         return Storage::disk('public')
             ->download($venta->ruta_pdf);
     }
-
+    /**
+     * QUE SE SUPONE QUE ES ESTO!!!
+     */
     public function store(Request $request, EmitirVentaService $service)
     {
         $items = json_decode($request->items, true);
@@ -196,21 +198,17 @@ class FacturacionController extends Controller
     {
         return DB::transaction(function () use ($venta) {
 
-            $serie = null;
-
             $puedeAnularConResumen = false;
             $anularConCredito = false;
             if ($venta->tipoDocumentoFactura->codigo === '01') {
                 $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 2;
                 if (!$puedeAnularConResumen) {
-                    $serie = 'FC01';
                     $anularConCredito = true;
                 }
 
             } else if ($venta->tipoDocumentoFactura->codigo === '03') {
                 $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 7;
                 if (!$puedeAnularConResumen) {
-                    $serie = 'BC01';
                     $anularConCredito = true;
                 }
             } else if ($venta->tipoDocumentoFactura->codigo === '07') {
@@ -227,34 +225,33 @@ class FacturacionController extends Controller
                 }
             }
             $result = null;
-            // para test
-            // $puedeAnularConResumen = false;
-            // $anularConCredito = true;
-            // if ($venta->tipoDocumentoFactura->codigo === '01') {
-            //     $serie = 'FC01';
-
-            // } else if ($venta->tipoDocumentoFactura->codigo === '03') {
-            //     $serie = 'BC01';
-            // }
+            $metodo = 'Error';
             if ($puedeAnularConResumen) {
                 // anular todo lo que sea ... boleta, factura, nota de credito ...
                 $result = app(VentaService::class)->anularVentaDirecta($venta);
+                $metodo = 'Anulación directa';
 
             } else if ($anularConCredito) {
+                // elegir si es nota de credito de boleta o factura
+                $ventaOGEstatus = mb_substr($venta->serie, 0, 1) === 'B' ? 4 : 7;
                 //anular la venta con nota de credito
-                if (!$serie) {
+                $tipoNC = TipoDocumentoFactura::find($ventaOGEstatus);
+
+                $comprobanteNC = app(VentaService::class)->reservarSerieYNumero(
+                    (int) $tipoNC->id,
+                    (int) $venta->sucursal_id
+                );
+                if (!$comprobanteNC['serie'] || !$comprobanteNC['numero']) {
                     throw new Exception("No se pudo obtener la serie para la nota de crédito");
                 }
-                $tipoNC = TipoDocumentoFactura::where('codigo', '07')->first();
                 $nc = new Venta();
                 $nc->tipo_documento_factura_id = $tipoNC->id;
                 $nc->sucursal_id = $venta->sucursal_id;
                 $nc->persona_id = $venta->persona_id;
                 $nc->tipo_servicio_id = $venta->tipo_servicio_id;
-                $nc->serie = $serie;
-                $ultimo = Venta::where('tipo_documento_factura_id', $tipoNC->id)->max('numero') ?? 0;
-
-                $nc->numero = str_pad($ultimo + 1, 8, '0', STR_PAD_LEFT);
+                $nc->venta_referencia_id = $venta->id;
+                $nc->serie = $comprobanteNC['serie'];
+                $nc->numero = $comprobanteNC['numero'];
                 $nc->usuario_id = auth()->id();
                 $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
                 // $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
@@ -262,7 +259,7 @@ class FacturacionController extends Controller
                 $nc->impuesto = $venta->impuesto;
                 $nc->total = $venta->total;
 
-                $nc->estado = 'E';
+                $nc->estado = EstadoVenta::GENERADO;
                 $nc->fecha_emision = now();
                 $nc->observacion = 'ANULACION DE OPERACION';
 
@@ -300,14 +297,15 @@ class FacturacionController extends Controller
                     'detalles'
                 ]);
 
-                $result = app(VentaService::class)->anularVentaSunat($nc, $venta, $serie);
+                $result = app(VentaService::class)->anularVentaSunat($nc, $venta);
 
+                $metodo = "Anulación por medio de Nota de crédito: {$comprobanteNC['serie']}-{$comprobanteNC['numero']}";
             }
 
             if ($result['success']) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Venta anulada correctamente'
+                    'message' => 'Venta anulada correctamente con ' . $metodo
                 ]);
             }
             return response()->json([
