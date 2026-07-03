@@ -47,6 +47,6 @@ class Sucursal extends Model
 
     public function serie()
     {
-        return $this->belongsTo(SerieSucursal::class, "serie_id");
+        return $this->hasMany(SerieSucursal::class, "sucursal_id");
     }
 }

@@ -333,7 +333,11 @@ class PasajeController extends Controller
                 : "Este pasajero aún no califica para la promoción. Va en su viaje número {$numeroActual}.",
         ]);
     }
-
+    /**
+     * Venta de pasajes
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $request->validate([
