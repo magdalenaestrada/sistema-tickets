@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Caja;
 use App\Models\CajaDetalle;
+use App\Models\ComunicacionBaja;
 use App\Models\CorrelativoVenta;
 use App\Models\Empresa;
 use App\Models\Pasaje;
@@ -475,8 +476,8 @@ class VentaService
         // );
 
         $see = $this->crearSee();
-        $serie = (str_starts_with($venta->serie, "F") ? 'RA' : 'RC') . str_pad($venta->id, 4, '0', STR_PAD_LEFT);
-        $numero = str_pad($venta->id, 6, '0', STR_PAD_LEFT);
+        $serie = str_starts_with($venta->serie, "F") ? 'RA' : 'RC';
+        $numero = ComunicacionBaja::where("serie", $serie)->count() + 1;
 
         $note = $this->buildResumenAnulacion(
             $venta,
@@ -510,7 +511,9 @@ class VentaService
             );
         }
 
-        DB::transaction(function () use ($venta) {
+        $ticket = null; 
+        $filename = null;
+        DB::transaction(function () use ($venta, $serie, $numero, $ticket, $filename) {
             $venta->update([
                 'estado' => 'A',
                 'fecha_anulacion' => now(),
@@ -525,6 +528,13 @@ class VentaService
                 ->update([
                     'anulado' => true,
                 ]);
+            ComunicacionBaja::create([
+                'venta_id' => $venta->id,
+                'serie' => $serie,
+                'correlativo' => $numero,
+                'ticket' => $ticket,
+                'filename' => $filename,
+            ]);
         });
 
         return [
@@ -1032,8 +1042,6 @@ class VentaService
             ->setRazonSocial($venta->sucursal->empresa->razon_social)
             ->setNombreComercial($venta->sucursal->empresa->nombre_comercial ?? $venta->sucursal->empresa->razon_social)
             ->setAddress($companyAddress);
-
-        // Correlativo formato AAAAMMDD-N (N = secuencial de bajas del día)
 
         $detail = (new VoidedDetail())
             ->setTipoDoc($code)
