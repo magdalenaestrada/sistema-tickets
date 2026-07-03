@@ -88,17 +88,19 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($encomiendas as $i => $encomienda)
-                <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
-                    <td>{{ $encomienda->receptor?->nombre_completo ?? '-' }}</td>
-                    <td>{{ $encomienda->origenPueblito->descripcion ?? '-' }}</td>
-                    <td>{{ $encomienda->destinoPueblito->descripcion ?? '-' }}</td>
-                    <td>{{ $encomienda->detalles->first()?->descripcion ?? '-' }}</td>
-                    <td>{{ $encomienda->detalles->first()?->peso ?? '-' }}</td>
-                    <td>{{ number_format((float) ($encomienda->venta?->importe ?? 0), 2) }}</td>
-                </tr>
+            @forelse ($encomiendas as $encomienda)
+                @foreach ($encomienda->detalles as $detalle)
+                    <tr>
+                        <td>{{ $loop->parent->iteration }}.{{ $loop->iteration }}</td>
+                        <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
+                        <td>{{ $encomienda->receptor?->nombre_completo ?? '-' }}</td>
+                        <td>{{ $encomienda->origenPueblito->descripcion ?? '-' }}</td>
+                        <td>{{ $encomienda->destinoPueblito->descripcion ?? '-' }}</td>
+                        <td>{{ $detalle->descripcion }}</td>
+                        <td>{{ $detalle->peso }}</td>
+                        <td>{{ number_format((float) ($detalle->costo ?? 0), 2) }}</td>
+                    </tr>
+                @endforeach
             @empty
                 <tr>
                     <td colspan="8" class="text-center">No hay encomiendas registradas para esta salida.</td>
