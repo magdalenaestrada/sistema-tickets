@@ -254,6 +254,20 @@
                             <tbody></tbody>
                         </table>
 
+                        <div class="mb-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="transbordo_incuyo">
+                                <label class="form-check-label" for="transbordo_incuyo">
+                                    Transbordo Incuyo
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 d-none" id="contenedor_observaciones">
+                            <label class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" rows="3"
+                                placeholder="Ingrese las observaciones del transbordo"></textarea>
+                        </div>
 
                     </div>
                 </div>
@@ -439,3 +453,4 @@
     </script>
     <script src="{{ asset('js/encomiendas_create.js') }}"></script>
 @endpush
+

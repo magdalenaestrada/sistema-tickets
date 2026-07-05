@@ -80,6 +80,16 @@ function initUbigeosReceptor() {
     }
 }
 
+$("#transbordo_incuyo").on("change", function () {
+    if ($(this).is(":checked")) {
+        $("#contenedor_observaciones").removeClass("d-none");
+    } else {
+        $("#contenedor_observaciones").addClass("d-none");
+
+        $("#observaciones").val("");
+    }
+});
+
 $(async function () {
     if (!$("#formEncomienda").length) return;
 
