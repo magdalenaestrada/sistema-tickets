@@ -75,7 +75,8 @@ class EncomiendaController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
-            ->get();;
+            ->get();
+        ;
         $asignaciones = AsignarHorario::with('horario')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
 
@@ -170,7 +171,7 @@ class EncomiendaController extends Controller
             'origenPueblito:id,descripcion',
             'destinoPueblito:id,descripcion',
         ])
-            ->where('estado', 'A')
+            ->where('estado', 'SA')
             ->when($request->filled('documento'), function ($q) use ($request) {
                 $doc = trim($request->documento);
 
@@ -237,6 +238,7 @@ class EncomiendaController extends Controller
                 $request->origen_id,
                 fn($q) => $q->where('origen_pueblito_id', $request->origen_id)
             )
+            ->whereNotIn('estado', ['SA'])
             ->when($request->destino_id, fn($q) => $q->where('destino_id', $request->destino_id))
             ->when($request->salida_id, fn($q) => $q->where('salida_id', $request->salida_id));
 
@@ -266,17 +268,36 @@ class EncomiendaController extends Controller
             ->addColumn('salida', function ($row) {
                 return $row->salidaActual->salida->fecha_salida ?? '-';
             })
+            // ->editColumn('estado', function ($row) {
+            //     if ($row->estado === 'E') {
+            //         return '<span class="badge bg-success">ENTREGADO</span>';
+            //     }
+
+            //     if ($row->estado === 'P') {
+            //         return '<span class="badge bg-warning text-dark">EN CAMINO</span>';
+            //     }
+
+            //     if ($row->estado === 'A') {
+            //         return '<span class="badge bg-info text-dark">SIN ASIGNAR</span>';
+            //     }
+
+            //     return '<span class="badge bg-secondary">' . e($row->estado) . '</span>';
+            // })
             ->editColumn('estado', function ($row) {
-                if ($row->estado === 'E') {
+                if ($row->estado === 'ET') {
                     return '<span class="badge bg-success">ENTREGADO</span>';
                 }
 
-                if ($row->estado === 'P') {
-                    return '<span class="badge bg-warning text-dark">EN CAMINO</span>';
+                if ($row->estado === 'PE') {
+                    return '<span class="badge bg-warning">POR ENTREGAR</span>';
                 }
 
-                if ($row->estado === 'A') {
-                    return '<span class="badge bg-info text-dark">LLEGÓ</span>';
+                if ($row->estado === 'EC') {
+                    return '<span class="badge bg-info text-dark">EN CAMINO</span>';
+                }
+
+                if ($row->estado === 'SA') {
+                    return '<span class="badge bg-danger">SIN ASIGNAR</span>';
                 }
 
                 return '<span class="badge bg-secondary">' . e($row->estado) . '</span>';
@@ -284,9 +305,13 @@ class EncomiendaController extends Controller
             ->addColumn('acciones', function ($row) {
                 $botones = '<button type="button" class="btn btn-xs btn-secondary imprimir" data-id="' . $row->id . '"><i class="link-icon" data-lucide="printer"></i></button> </button> ';
 
-                if ($row->estado !== 'ENTREGADO') {
+                if ($row->estado === 'PE') {
                     $botones .= '<button type="button" class="btn btn-xs btn-success entregar" data-id="' . $row->id . '"><i class="link-icon" data-lucide="check"></i></button> </button>';
                 }
+
+                // if ($row->estado === 'EC') {
+                //     $botones .= '<button type="button" class="btn btn-xs btn-success enagencia" data-id="' . $row->id . '"><i class="link-icon" data-lucide="check"></i></button> </button>';
+                // }
 
                 return $botones;
             })
@@ -305,12 +330,12 @@ class EncomiendaController extends Controller
 
         try {
             $encomiendas = Encomienda::whereIn('id', $request->ids)
-                ->where('estado', 'P')
+                ->where('estado', 'EC')
                 ->get();
 
             foreach ($encomiendas as $encomienda) {
                 $encomienda->update([
-                    'estado' => 'E',
+                    'estado' => 'PE',
                     'fecha_procesado' => now(),
                 ]);
 
@@ -398,7 +423,7 @@ class EncomiendaController extends Controller
             $salida = Salida::with(['horario.ruta.puntos.sucursal', 'horario.tipo_viaje'])->findOrFail($request->salida_id);
 
             $encomiendas = Encomienda::whereIn('id', $request->encomienda_ids)
-                ->where('estado', 'A')
+                ->where('estado', 'SA')
                 ->get();
 
             foreach ($encomiendas as $encomienda) {
@@ -417,7 +442,7 @@ class EncomiendaController extends Controller
                 ]);
 
                 $encomienda->update([
-                    'estado' => 'P', // pendiente / asignada en tránsito
+                    'estado' => 'EC', // EN CAMINO
                     'fecha_procesado' => now(),
                 ]);
             }
@@ -442,12 +467,26 @@ class EncomiendaController extends Controller
         $encomienda = Encomienda::findOrFail($id);
 
         $encomienda->update([
-            "estado" => "E"
+            "estado" => "ET"
         ]);
 
         return response()->json([
             "success" => true,
             "message" => "Encomienda entregada",
+            "data" => $encomienda
+        ]);
+    }
+    public function enAgencia($id)
+    {
+        $encomienda = Encomienda::findOrFail($id);
+
+        $encomienda->update([
+            "estado" => "PE"
+        ]);
+
+        return response()->json([
+            "success" => true,
+            "message" => "Encomienda en agencia",
             "data" => $encomienda
         ]);
     }
@@ -458,7 +497,8 @@ class EncomiendaController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
-            ->get();;
+            ->get();
+        ;
         $user = Auth::user();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
@@ -730,7 +770,7 @@ class EncomiendaController extends Controller
                     'text' => strtoupper($origenNombre) . ' - PARTIDA ' . $hora .
                         ($ruta?->nombre ? ' (' . $ruta->nombre . ')' : ''),
                     'puntos' => $puntos
-                        ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
+                            ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
                         ->values()
                         ->all() ?? [],
                 ];
@@ -755,7 +795,7 @@ class EncomiendaController extends Controller
             ])->findOrFail($request->salida_id);
 
             $encomiendas = Encomienda::whereIn('id', $request->encomienda_ids)
-                ->where('estado', 'A')
+                ->where('estado', 'SA')
                 ->get();
 
             if ($encomiendas->isEmpty()) {
@@ -784,7 +824,7 @@ class EncomiendaController extends Controller
                 ]);
 
                 $encomienda->update([
-                    'estado' => 'P',
+                    'estado' => 'EC',
                     'fecha_procesado' => now(),
                 ]);
             }

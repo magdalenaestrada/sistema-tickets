@@ -17,7 +17,7 @@
 
                         <select id="sucursal_id" name="sucursal_id" class="form-control">
                             @foreach ($sucursales as $sucursal)
-                                <option value="{{ $sucursal->id }}" data-series="{{ $sucursal->serie?->descripcion }}">
+                                <option value="{{ $sucursal->id }}">
                                     {{ $sucursal->nombre_comercial }}
                                 </option>
                             @endforeach

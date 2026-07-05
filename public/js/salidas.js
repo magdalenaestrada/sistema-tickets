@@ -475,7 +475,7 @@ function verSalida(id) {
             <div class="mb-2"><strong>Estado:</strong> ${salida.estado ?? "-"}</div>
         `;
 
-        if (salida.estado === "en_ruta") {
+        if (salida.estado === "en_ruta" || salida.estado === "finalizado") {
             botones = `
                 <div class="d-grid gap-2 mt-3">
                     <a href="${route("salidas.manifiesto_pasajeros", { salida: salida.id })}" class="btn btn-primary" target="_blank">

@@ -286,10 +286,16 @@ $(function () {
             input.val("0.00");
         });
 
-        [div_efectivo, div_tarjeta, div_yape, div_plin, div_transferencia].forEach((div) => {
+        [
+            div_efectivo,
+            div_tarjeta,
+            div_yape,
+            div_plin,
+            div_transferencia,
+        ].forEach((div) => {
             div.prop("hidden", false);
         });
-        
+
         switch (metodo) {
             case 1:
                 efectivo.prop("disabled", false);
@@ -951,6 +957,18 @@ $(function () {
             validarSumaPagos();
         },
     );
+
+    function calcularVuelto() {
+        const contado = Number($("#modal_pago_efectivo").val()) || 0;
+        const recibido = Number($("#modal_efectivo_recibido").val()) || 0;
+
+        const vuelto = Math.max(0, recibido - contado);
+
+        $("#modal_vuelto").val(vuelto.toFixed(2));
+    }
+
+    $("#modal_efectivo_recibido").on("input", calcularVuelto);
+    $("#modal_pago_efectivo").on("input", calcularVuelto);
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();

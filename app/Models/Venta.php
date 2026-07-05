@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoVenta;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -36,9 +37,11 @@ class Venta extends Model
         'fecha_emision',
         'fecha_anulacion',
         'caja_id',
+        'venta_referencia_id'
     ];
 
     protected $casts = [
+        'estado' => EstadoVenta::class,
         'fecha_emision' => 'datetime',
         'fecha_anulacion' => 'datetime',
     ];
@@ -89,5 +92,10 @@ class Venta extends Model
     public function pasajes()
     {
         return $this->hasMany(Pasaje::class);
+    }
+
+    public function ventaReferencia()
+    {
+        return $this->belongsTo(Venta::class, 'venta_referencia_id');
     }
 }

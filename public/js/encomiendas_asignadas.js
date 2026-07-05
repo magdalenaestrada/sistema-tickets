@@ -230,6 +230,40 @@ $(function () {
         });
     });
 
+    $(document).on("click", ".enagencia", function () {
+        const id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Confirmar que llegó a agencia?",
+            text: "La encomienda será marcada como en agencia.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, confirmar",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            $.ajax({
+                url: route("encomiendas.agencia", id),
+                type: "POST",
+                data: {
+                    _token: csrf,
+                },
+                success: function (res) {
+                    Swal.fire("Éxito", res.message, "success");
+                    tabla.ajax.reload(null, false);
+                },
+                error: function (xhr) {
+                    Swal.fire(
+                        "Error",
+                        xhr.responseJSON?.message || "No se pudo enviar a agencia",
+                        "error",
+                    );
+                },
+            });
+        });
+    });
+
     $(document).on("click", ".imprimir", function () {
         const id = $(this).data("id");
         const url = route("encomiendas.ticket", id);

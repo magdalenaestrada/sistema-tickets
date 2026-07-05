@@ -19,6 +19,7 @@ Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(
         Route::post('/asignar-salida', [EncomiendaController::class, 'asignarSalida'])->name('asignar-salida');
         Route::post('/entregar-masivo', [EncomiendaController::class, 'entregarMasivo'])->name('entregar-masivo');
         Route::post('/{id}/entregar', [EncomiendaController::class, 'entregar'])->name('entregar');
+        Route::post('/{id}/agencia', [EncomiendaController::class, 'enAgencia'])->name('agencia');
     });
 
     Route::get(

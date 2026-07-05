@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\EstadoVenta;
 use App\Models\Caja;
 use App\Models\CajaDetalle;
+use App\Models\ComunicacionBaja;
 use App\Models\CorrelativoVenta;
 use App\Models\Empresa;
 use App\Models\Pasaje;
@@ -15,6 +17,10 @@ use App\Models\Venta;
 use App\Models\VentaPago;
 use DateTime;
 use Exception;
+use Greenter\Model\Summary\Summary;
+use Greenter\Model\Summary\SummaryDetail;
+use Greenter\Model\Voided\Voided;
+use Greenter\Model\Voided\VoidedDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -83,7 +89,7 @@ class VentaService
                 'numero' => $comprobante['numero'],
                 'total' => $total,
                 'caja_id' => $cajaId,
-                'estado' => 'P',
+                'estado' => EstadoVenta::GENERADO,
                 'fecha_emision' => now(),
             ]);
 
@@ -248,7 +254,12 @@ class VentaService
             throw new Exception('Tipo de documento no válido.');
         }
 
-        if (in_array($venta->estado, ['E', 'O'], true)) {
+        // significa que ya está emitido ... aunque porque estaria emitido si, por lo que he visto, este
+        // metodo solo se usa despues de que se haya guardado la venta en DB ...
+        // pero entiendo que esto puede funcionar para cuando una venta no se haya emitido o quieras
+        // implementar esta funcionalidad
+        // - Zahovic 2026/07/03
+        if (in_array($venta->estado, [EstadoVenta::EMITIDO->value], true)) {
             return [
                 'success' => true,
                 'estado' => 'YA_EMITIDA',
@@ -261,9 +272,10 @@ class VentaService
             ];
         }
 
+        // correcto
         if ((string) $tipo->codigo === 'NV') {
             $venta->update([
-                'estado' => 'ACEPTADA',
+                'estado' => EstadoVenta::EMITIDO,
                 'observacion' => 'Nota de venta emitida internamente.',
             ]);
 
@@ -297,24 +309,22 @@ class VentaService
         };
     }
 
-    private function resolverSeriePorTipoYSucursal(string $codigoTipoDocumento, int $sucursalId): string
+    private function resolverSeriePorTipoYSucursal(int $tipo_documento_factura_id, int $sucursalId): string
     {
-        $sucursal = \App\Models\Sucursal::with('serie')->findOrFail($sucursalId);
-
-        $codigo = $sucursal->serie->codigo ?? '001';
-        $numero = (int) $codigo;
-
-        return match ($codigoTipoDocumento) {
-            '01' => 'FFF' . $numero,
-            '03' => 'BBB' . $numero,
-            '07' => 'NC' . $numero,
-            'NV' => 'NNN' . $numero,  // ← agrega esto
-
-            default => throw new \Exception('Código no soportado: ' . $codigoTipoDocumento),
-        };
+        $sucursal = \App\Models\Sucursal::with([
+            'serie' => function ($query) use ($tipo_documento_factura_id) {
+                $query->where("tipo_documento_factura_id", $tipo_documento_factura_id)
+                    ->with('tipoDocumentoFactura');
+            }
+        ])->findOrFail($sucursalId);
+        // para notas de credito, hacer algo más para saber si emitir con la serie de NC BOLETAS o NC FACTURAS
+        if ($sucursal?->serie?->isEmpty()) {
+            throw new Exception("No exite la serie correspondiente para el documento", 1);
+        }
+        return $sucursal->serie?->first()->serie;
     }
 
-    private function reservarSerieYNumero(int $tipo_documento_factura_id, int $sucursal_id): array
+    public function reservarSerieYNumero(int $tipo_documento_factura_id, int $sucursal_id): array
     {
         $tipo = TipoDocumentoFactura::find($tipo_documento_factura_id);
 
@@ -322,7 +332,7 @@ class VentaService
             throw new Exception('Tipo de documento de factura no válido.');
         }
 
-        $serie = $this->resolverSeriePorTipoYSucursal((string) $tipo->codigo, $sucursal_id);
+        $serie = $this->resolverSeriePorTipoYSucursal($tipo_documento_factura_id, $sucursal_id);
 
         $correlativo = CorrelativoVenta::where('tipo_documento_factura_id', $tipo_documento_factura_id)
             ->where('sucursal_id', $sucursal_id)
@@ -355,11 +365,11 @@ class VentaService
         ];
     }
 
-    public function anularVentaSunat(Venta $venta): array
+    public function anularVentaSunat(Venta $notaCredito, Venta $ventaOriginal): array
     {
-        $venta->loadMissing(['persona', 'detalles']);
+        $notaCredito->loadMissing(['persona', 'detalles']);
 
-        if (!in_array($venta->estado, ['ACEPTADA', 'O'], true)) {
+        if (!in_array($ventaOriginal->estado, [EstadoVenta::EMITIDO], true)) {
             throw new Exception('Solo se puede anular en SUNAT una venta emitida.');
         }
 
@@ -375,20 +385,111 @@ class VentaService
             throw new Exception('No existe configuración de empresa.');
         }
 
-        $comprobanteNC = $this->reservarSerieYNumero(
-            (int) $tipoNotaCredito->id,
-            (int) $venta->sucursal_id
-        );
-
         $see = $this->crearSee($tipoNotaCredito->codigo);
 
         $note = $this->buildNotaCreditoAnulacion(
-            $venta,
+            $notaCredito,
+            $ventaOriginal,
             $empresa,
-            $comprobanteNC['serie'],
-            $comprobanteNC['numero']
         );
-        dd($note);
+        $result = $see->send($note);
+
+        $folder = 'xml/' . now()->format('d-m-Y');
+        $xmlPath = $folder . '/' . $note->getName() . '.xml';
+        $cdrPath = $folder . '/R-' . $note->getName() . '.zip';
+
+        Storage::disk('public')->put(
+            $xmlPath,
+            $see->getFactory()->getLastXml()
+        );
+
+        if (!$result->isSuccess()) {
+            $errorCode = optional($result->getError())->getCode();
+            $errorMessage = optional($result->getError())->getMessage();
+
+            Log::error('Error al anular venta en SUNAT', [
+                'venta_id' => $notaCredito->id,
+                'codigo' => $errorCode,
+                'mensaje' => $errorMessage,
+            ]);
+
+            throw new Exception(
+                'SUNAT rechazó la anulación: ' . trim($errorCode . ' - ' . $errorMessage, ' -')
+            );
+        }
+
+        Storage::disk('public')->put(
+            $cdrPath,
+            $result->getCdrZip()
+        );
+
+        $cdr = $result->getCdrResponse();
+
+        if ((int) $cdr->getCode() !== 0) {
+            throw new Exception('SUNAT no aceptó la nota de crédito: ' . $cdr->getDescription());
+        }
+
+        DB::transaction(function () use ($notaCredito, $ventaOriginal, $xmlPath, $cdrPath, $cdr, $result) {
+            $notaCredito->update([
+                'ruta_xml' => $xmlPath,
+                'ruta_cdr' => $cdrPath,
+                'estado' => EstadoVenta::EMITIDO,
+                'hash' => method_exists($result, 'getHashCdr') ? $result->getHashCdr() : null,
+                'fecha_anulacion' => now(),
+                'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
+            ]);
+
+            $ventaOriginal->update([
+                'estado' => EstadoVenta::ANULADO_CON_NOTA_CREDITO,
+                'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
+            ]);
+
+            // $notaCredito->pagos()->update([
+            //     'estado' => 'AN',
+            // ]);
+
+            CajaDetalle::where('venta_id', $notaCredito->id)
+                ->update([
+                    'anulado' => true,
+                ]);
+        });
+
+        return [
+            'success' => true,
+            'estado' => 'ANULADA_SUNAT',
+            'codigo' => $cdr->getCode(),
+            'descripcion' => $cdr->getDescription(),
+            'notas' => $cdr->getNotes(),
+            'xml_path' => $xmlPath,
+            'cdr_path' => $cdrPath,
+            'nombre' => $note->getName(),
+        ];
+    }
+
+    public function anularVentaDirecta(Venta $venta)
+    {
+        $venta->loadMissing(['persona', 'detalles']);
+
+        if (!in_array($venta->estado, [EstadoVenta::EMITIDO], true)) {
+            throw new Exception('Solo se puede anular en SUNAT una venta emitida.');
+        }
+
+        // necesitas guardar una cosa para los resumenes diarios
+        // $comprobanteNC = $this->reservarSerieYNumero(
+        //     (int) $tipoNotaCredito->id,
+        //     (int) $venta->sucursal_id
+        // );
+
+        $see = $this->crearSee();
+        $serie = str_starts_with($venta->serie, "F") ? 'RA' : 'RC';
+        $numero = ComunicacionBaja::where("serie", $serie)->count() + 1;
+
+        $note = $this->buildResumenAnulacion(
+            $venta,
+            $serie,
+            $numero
+        );
+        // para ver su funcionamiento
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -415,22 +516,13 @@ class VentaService
             );
         }
 
-        Storage::disk('public')->put(
-            $cdrPath,
-            $result->getCdrZip()
-        );
-
-        $cdr = $result->getCdrResponse();
-
-        if ((int) $cdr->getCode() !== 0) {
-            throw new Exception('SUNAT no aceptó la nota de crédito: ' . $cdr->getDescription());
-        }
-
-        DB::transaction(function () use ($venta, $xmlPath, $cdrPath, $cdr) {
+        $ticket = null;
+        $filename = null;
+        DB::transaction(function () use ($venta, $serie, $numero, $ticket, $filename) {
             $venta->update([
-                'estado' => 'A',
+                'estado' => EstadoVenta::ANULADO,
                 'fecha_anulacion' => now(),
-                'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
+                'observacion' => 'Venta anulada en SUNAT',
             ]);
 
             $venta->pagos()->update([
@@ -441,14 +533,29 @@ class VentaService
                 ->update([
                     'anulado' => true,
                 ]);
+
+            ComunicacionBaja::create([
+                'venta_id' => $venta->id,
+                'serie' => $serie,
+                'correlativo' => $numero,
+                'ticket' => $ticket,
+                'filename' => $filename,
+            ]);
+
+            if ($venta->venta_referencia_id) {
+                $venta->loadMissing('ventaReferencia');
+                $venta->ventaReferencia->update([
+                    'estado' => EstadoVenta::EMITIDO
+                ]);
+            }
         });
 
         return [
             'success' => true,
             'estado' => 'ANULADA_SUNAT',
-            'codigo' => $cdr->getCode(),
-            'descripcion' => $cdr->getDescription(),
-            'notas' => $cdr->getNotes(),
+            'codigo' => 200,
+            'descripcion' => 'Venta anulada en SUNAT',
+            'notas' => [],
             'xml_path' => $xmlPath,
             'cdr_path' => $cdrPath,
             'nombre' => $note->getName(),
@@ -474,10 +581,8 @@ class VentaService
             throw new Exception('No existe configuración de empresa.');
         }
 
-        $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
-        $see = $this->crearSee($tipo->codigo);
+        $see = $this->crearSee();
         $invoice = $this->buildInvoice($venta, $empresa);
-        // dd($invoice);
         $result = $see->send($invoice);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -501,19 +606,21 @@ class VentaService
                 'mensaje' => $errorMessage,
             ]);
 
-            $venta->update([
-                'ruta_xml' => $xmlPath,
-                'ruta_cdr' => null,
-                'hash' => null,
-                'estado' => 'R',
-                'observacion' => trim($errorCode . ' - ' . $errorMessage, ' -'),
-            ]);
+            $venta->delete();
 
-            if ((string) $errorCode === '1033') {
-                throw new Exception(
-                    "SUNAT rechazó el comprobante {$venta->serie}-{$venta->numero}: ya fue registrado previamente con otros datos."
-                );
-            }
+            // $venta->update([
+            //     'ruta_xml' => $xmlPath,
+            //     'ruta_cdr' => null,
+            //     'hash' => null,
+            //     'estado' => ,
+            //     'observacion' => trim($errorCode . ' - ' . $errorMessage, ' -'),
+            // ]);
+
+            // if ((string) $errorCode === '1033') {
+            //     throw new Exception(
+            //         "SUNAT rechazó el comprobante {$venta->serie}-{$venta->numero}: ya fue registrado previamente con otros datos."
+            //     );
+            // }
 
             throw new Exception(
                 'Error al enviar comprobante: ' . trim($errorCode . ' - ' . $errorMessage, ' -')
@@ -535,8 +642,8 @@ class VentaService
         };
 
         $estadoInterno = match (true) {
-            $code === 0 => 'E',
-            $code >= 2000 && $code <= 3999 => 'R',
+            $code === 0 => EstadoVenta::EMITIDO,
+            $code >= 2000 && $code <= 3999 => EstadoVenta::RECHAZADO,
             default => 'O',
         };
 
@@ -569,7 +676,7 @@ class VentaService
         ];
     }
 
-    private function crearSee(string $tipoDocumento): See
+    private function crearSee(?string $tipoDocumento = null): See
     {
         $see = new See();
 
@@ -772,28 +879,27 @@ class VentaService
     }
 
     private function buildNotaCreditoAnulacion(
-        Venta $venta,
+        Venta $notaCredito,
+        Venta $ventaOriginal,
         Empresa $empresa,
-        string $serieNC,
-        int $numeroNC
     ): Note {
-        $cliente = $venta->persona;
+        $cliente = $notaCredito->persona;
 
         if (!$cliente) {
             throw new Exception('La venta no tiene cliente asociado.');
         }
 
-        $tipoDocAfectado = $this->mapTipoDocumentoComprobante($venta->tipo_documento_factura_id);
+        $tipoDocAfectado = $this->mapTipoDocumentoComprobante($ventaOriginal->tipo_documento_factura_id);
         $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
 
         $companyAddress = (new Address())
-            ->setUbigueo($venta->sucursal->distrito->ubigeo)
-            ->setDepartamento($venta->sucursal->distrito->departamento->nombre ?? 'LIMA')
-            ->setProvincia($venta->sucursal->distrito->provincia->nombre ?? 'LIMA')
-            ->setDistrito($venta->sucursal->distrito->nombre ?? 'LIMA')
+            ->setUbigueo($notaCredito->sucursal->distrito->ubigeo)
+            ->setDepartamento($notaCredito->sucursal->distrito->departamento->nombre ?? 'LIMA')
+            ->setProvincia($notaCredito->sucursal->distrito->provincia->nombre ?? 'LIMA')
+            ->setDistrito($notaCredito->sucursal->distrito->nombre ?? 'LIMA')
             ->setUrbanizacion($empresa->urbanizacion ?? '-')
-            ->setDireccion($venta->sucursal->direccion)
-            ->setCodLocal($venta->sucursal->codigo_sucursal ?? '0000');
+            ->setDireccion($notaCredito->sucursal->direccion)
+            ->setCodLocal($notaCredito->sucursal->codigo_sucursal ?? '0000');
         // venta->sucursal->codigo_sucursal te falta llenar
 
         $company = (new Company())
@@ -825,9 +931,9 @@ class VentaService
         $igv = (float) $empresa->igv;
         $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
 
-        foreach ($venta->detalles as $detalle) {
-            $cantidad = (float) ($detalle->cantidad ?? 1);
-            $totalLinea = round((float) ($detalle->total ?? 0), 2);
+        foreach ($notaCredito->detalles as $detalle) {
+            $cantidad = abs((float) ($detalle->cantidad ?? 1));
+            $totalLinea = abs(round((float) ($detalle->total ?? 0), 2));
 
             if ($cantidad <= 0) {
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
@@ -888,24 +994,176 @@ class VentaService
         return (new Note())
             ->setUblVersion('2.1')
             ->setTipoDoc('07')
-            ->setSerie($serieNC)
-            ->setCorrelativo((string) $numeroNC)
+            ->setSerie($notaCredito->serie)
+            ->setCorrelativo((string) $notaCredito->numero)
             ->setFechaEmision(new DateTime(now()->format('Y-m-d H:i:sP')))
             ->setTipDocAfectado($tipoDocAfectado)
-            ->setNumDocfectado($venta->serie . '-' . $venta->numero)
+            ->setNumDocfectado($ventaOriginal->serie . '-' . $ventaOriginal->numero)
             ->setCodMotivo('01')
             ->setDesMotivo('ANULACION DE LA OPERACION')
             ->setTipoMoneda('PEN')
             ->setCompany($company)
             ->setClient($client)
-            ->setMtoOperGravadas(round($mtoOperGravadas, 2))
-            ->setMtoOperExoneradas(round($mtoOperExoneradas, 2))
-            ->setMtoIGV(round($mtoIGV, 2))
-            ->setTotalImpuestos(round($mtoIGV, 2))
-            ->setValorVenta(round($valorVenta, 2))
-            ->setSubTotal(round($subTotal, 2))
-            ->setMtoImpVenta(round($totalVenta, 2))
+            ->setMtoOperGravadas(abs(round($mtoOperGravadas, 2)))
+            ->setMtoOperExoneradas(abs(round($mtoOperExoneradas, 2)))
+            ->setMtoIGV(abs(round($mtoIGV, 2)))
+            ->setTotalImpuestos(abs(round($mtoIGV, 2)))
+            ->setValorVenta(abs(round($valorVenta, 2)))
+            ->setSubTotal(abs(round($subTotal, 2)))
+            ->setMtoImpVenta(abs(round($totalVenta, 2)))
             ->setDetails($detalles)
             ->setLegends([$legend]);
+    }
+
+    private function buildResumenAnulacion(Venta $venta, $serie, $numero)
+    {
+        // factura
+        if ($venta->tipo_documento_factura_id == 1) {
+            return $this->buildCancelledInvoice($venta, $numero);
+        }
+        // boleta
+        else if ($venta->tipo_documento_factura_id == 2) {
+            return $this->buildCancelledBoleta($venta, $numero);
+        }
+        // nota de venta - no hacer nada, simplemente anular internamente.
+        else if ($venta->tipo_documento_factura_id == 3) {
+
+        }
+        // nota de credito
+        else if (in_array($venta->tipo_documento_factura_id, [4, 7])) {
+            return $this->buildCancelledNotaCredito($venta, $numero);
+        } else {
+            throw new Exception("No se puede procesar el documento para su anulación", 1);
+        }
+    }
+
+    private function buildCancelledInvoice(Venta $venta, int $correlativoBaja, string $code = '01')
+    {
+        $venta->loadMissing('sucursal.empresa');
+
+        $companyAddress = (new Address())
+            ->setUbigueo($venta->sucursal->ubigueo ?? '150101')
+            ->setDepartamento($venta->sucursal->departamento ?? 'LIMA')
+            ->setProvincia($venta->sucursal->provincia ?? 'LIMA')
+            ->setDistrito($venta->sucursal->distrito ?? 'LIMA')
+            ->setUrbanizacion($venta->sucursal->urbanizacion ?? '-')
+            ->setDireccion($venta->sucursal->direccion ?? $venta->sucursal->razon_social)
+            ->setCodLocal($venta->sucursal->cod_local ?? '0000');
+
+        $company = (new Company())
+            ->setRuc($venta->sucursal->empresa->documento)
+            ->setRazonSocial($venta->sucursal->empresa->razon_social)
+            ->setNombreComercial($venta->sucursal->empresa->nombre_comercial ?? $venta->sucursal->empresa->razon_social)
+            ->setAddress($companyAddress);
+
+        $detail = (new VoidedDetail())
+            ->setTipoDoc($code)
+            ->setSerie($venta->serie)
+            ->setCorrelativo((string) $venta->numero)
+            ->setDesMotivoBaja('ERROR EN LA EMISION'); // ajusta el motivo según tu caso real
+
+        $voided = (new Voided())
+            ->setCorrelativo((string) $correlativoBaja)
+            ->setFecGeneracion($venta->fecha_emision) // fecha de emisión del comprobante original
+            ->setFecComunicacion(new DateTime(now()->format('Y-m-d H:i:sP'))) // fecha de hoy
+            ->setCompany($company)
+            ->setDetails([$detail]);
+
+        return $voided;
+    }
+
+    private function buildCancelledBoleta(Venta $venta, int $correlativoBaja, string $code = '03')
+    {
+        $venta->loadMissing('persona', 'sucursal.empresa');
+        $cliente = $venta->persona;
+
+        if (!$cliente) {
+            throw new Exception('La venta no tiene cliente asociado.');
+        }
+
+        $tipoDocCliente = $this->mapTipoDocumentoClienteSunat($cliente->tipo_documento_id, $cliente->documento);
+
+        $companyAddress = (new Address())
+            ->setUbigueo($venta->sucursal->ubigueo ?? '150101')
+            ->setDepartamento($venta->sucursal->departamento ?? 'LIMA')
+            ->setProvincia($venta->sucursal->provincia ?? 'LIMA')
+            ->setDistrito($venta->sucursal->distrito ?? 'LIMA')
+            ->setUrbanizacion($venta->sucursal->urbanizacion ?? '-')
+            ->setDireccion($venta->sucursal->direccion ?? $venta->sucursal->razon_social)
+            ->setCodLocal($venta->sucursal->cod_local ?? '0000');
+
+        $company = (new Company())
+            ->setRuc($venta->sucursal->empresa->documento)
+            ->setRazonSocial($venta->sucursal->empresa->razon_social)
+            ->setNombreComercial($venta->sucursal->empresa->nombre_comercial ?? $venta->sucursal->empresa->razon_social)
+            ->setAddress($companyAddress);
+
+        // Recalcula los mismos montos que tuvo la boleta original,
+        // respetando gravado/exonerado por línea (igual que buildInvoice)
+        $mtoOperGravadas = 0.0;
+        $mtoOperExoneradas = 0.0;
+        $mtoIGV = 0.0;
+        $totalVenta = 0.0;
+
+        $igv = (float) $venta->sucursal->empresa->igv;
+        $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
+
+        foreach ($venta->detalles as $detalle) {
+            $totalLinea = round((float) ($detalle->total ?? 0), 2);
+
+            $esExonerado = (bool) true;
+            // $esExonerado = (bool) ($detalle->exonerado ?? false);
+
+            if ($esExonerado) {
+                $valorVentaLinea = $totalLinea;
+                $igvLinea = 0.0;
+            } else {
+                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgv), 2);
+                $igvLinea = round($totalLinea - $valorVentaLinea, 2);
+            }
+
+            if ($esExonerado) {
+                $mtoOperExoneradas += $valorVentaLinea;
+            } else {
+                $mtoOperGravadas += $valorVentaLinea;
+            }
+
+            $mtoIGV += $igvLinea;
+            $totalVenta += $totalLinea;
+        }
+
+        $item = (new SummaryDetail())
+            ->setTipoDoc($code)
+            ->setSerieNro($venta->serie . '-' . $venta->numero)
+            ->setEstado('3') // 3 = de baja / anulado
+            ->setClienteTipo($tipoDocCliente)
+            ->setClienteNro($cliente->documento ?: '00000000')
+            ->setTotal(abs(round($totalVenta, 2)))
+            ->setMtoOperGravadas(abs(round($mtoOperGravadas, 2)))
+            ->setMtoOperExoneradas(abs(round($mtoOperExoneradas, 2)))
+            ->setMtoIGV(abs(round($mtoIGV, 2)));
+
+        $summary = (new Summary())
+            ->setFecGeneracion($venta->fecha_emision) // fecha real de emisión de la boleta
+            ->setFecResumen(new DateTime(now()->format('Y-m-d H:i:sP')))
+            ->setCorrelativo((string) $correlativoBaja)
+            ->setCompany($company)
+            ->setDetails([$item]);
+
+        return $summary;
+    }
+
+    private function buildCancelledNotaCredito(Venta $venta, int $correlativoBaja)
+    {
+        $venta->loadMissing('persona', 'sucursal.empresa');
+
+        // POR ESTE MOTIVO, TUS NC DEBEN EMPEZAR CON F O B DEPENDIENDO DEL TIPO DE DOCUMENTO
+        // es boleta
+        if (str_starts_with($venta->serie, "B")) {
+            return $this->buildCancelledBoleta($venta, $correlativoBaja, '07');
+        } else {
+            // es factura
+            return $this->buildCancelledInvoice($venta, $correlativoBaja, '07');
+        }
     }
 }

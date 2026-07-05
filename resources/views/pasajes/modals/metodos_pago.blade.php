@@ -33,12 +33,37 @@
                                 <input type="number" step="0.01" id="modal_pago_efectivo" class="form-control"
                                     value="0">
                             </div>
+
+                            <div class="row g-2 mb-2" id="modal_efectivo_recibido_div">
+                                <div class="col-6">
+                                    <label class="form-control bg-body-warning fw-bold">
+                                        💵 Efectivo recibido
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" step="0.01" id="modal_efectivo_recibido"
+                                        class="form-control" value="0.00">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2" id="modal_vuelto_div">
+                                <div class="col-6">
+                                    <label class="form-control bg-primary text-white fw-bold">
+                                        💰 Vuelto
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" id="modal_vuelto" class="form-control fw-bold" value="0.00"
+                                        readonly>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="row g-2 mb-2" id="modal_tarjeta_div">
                             <div class="col-6">
                                 <label class="form-control bg-body-secondary fw-bold">
-                                    💳 Tarjeta débito 
+                                    💳 Tarjeta débito
                                 </label>
                             </div>
                             <div class="col-6">

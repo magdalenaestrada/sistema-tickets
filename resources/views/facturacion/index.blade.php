@@ -118,23 +118,29 @@
                                     <td>
 
                                         @switch($venta->estado)
-                                            @case('ACEPTADA')
-                                                <span class="badge bg-success">ACEPTADA</span>
+                                            @case(\App\Enums\EstadoVenta::EMITIDO)
+                                                <span class="badge bg-success">EMITIDA {{ $venta->documento_referencia ? 'A REF: ' . $venta->documento_referencia : '' }}</span>
                                             @break
 
-                                            @case('RECHAZADA')
+                                            @case(\App\Enums\EstadoVenta::RECHAZADO)
                                                 <span class="badge bg-danger">RECHAZADA</span>
                                             @break
 
-                                            @case('PENDIENTE_RESUMEN')
-                                                <span class="badge bg-warning text-dark">
-                                                    PENDIENTE
+                                            @case(\App\Enums\EstadoVenta::ANULADO)
+                                                <span class="badge bg-danger">
+                                                    ANULADO
+                                                </span>
+                                            @break
+
+                                            @case(\App\Enums\EstadoVenta::ANULADO_CON_NOTA_CREDITO)
+                                                <span class="badge bg-danger">
+                                                    ANULADO CON NOTA DE CREDITO
                                                 </span>
                                             @break
 
                                             @default
                                                 <span class="badge bg-secondary">
-                                                    {{ $venta->estado }}
+                                                    {{ $venta->estado->value }}
                                                 </span>
                                         @endswitch
 
@@ -154,23 +160,26 @@
                                             </a>
 
                                             @if ($venta->ruta_xml)
-                                                <a href="{{ route('facturacion.xml', $venta) }}" class="btn btn-info">
+                                                <a href="{{ route('facturacion.xml', $venta) }}" class="btn btn-info mx-1">
 
                                                     XML
                                                 </a>
                                             @endif
 
                                             @if ($venta->ruta_cdr)
-                                                <a href="{{ route('facturacion.cdr', $venta) }}" class="btn btn-success">
+                                                <a href="{{ route('facturacion.cdr', $venta) }}" class="btn btn-success mx-1">
 
                                                     CDR
                                                 </a>
                                             @endif
 
-                                            <button type="button" class="btn btn-danger btn-sm"
-                                                onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
-                                                Anular
-                                            </button>
+                                            @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
+                                                <button type="button" class="btn btn-danger btn-sm mx-1"
+                                                    onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
+                                                    Anular
+                                                </button>
+                                            @endif
+
                                         </div>
 
                                     </td>
@@ -203,9 +212,10 @@
     @endsection
     @push('scripts')
         <script>
+            let xd = 2;
             let items = [];
             const urlAnular = "{{ route('facturacion.anular', ':id') }}";
-            const IGV_ENTERO = {{ $empresa->igv }};
+            const IGV_ENTERO = "{{ $empresa->igv ?? 0 }}";
             const IGV = IGV_ENTERO / 100;
 
             function buscarCliente() {
@@ -319,28 +329,15 @@
             function anularVenta(id, url) {
 
                 Swal.fire({
-                    title: 'Anular venta',
-                    text: 'Seleccione el motivo de la Nota de Crédito',
+                    title: 'Anular documento',
+                    text: 'Si esta dentro de la fecha para anulacion, se procedera con la anulacion correspondiente. De no ser el caso por excedente de limite de fecha, se procedera a realizar una nota de crédito en casos de Boleta/factura.',
                     icon: 'warning',
-                    input: 'select',
-                    inputOptions: {
-                        '01': 'Anulación de la operación',
-                        '02': 'Anulación por error',
-                        '03': 'Corrección de datos',
-                        '04': 'Devolución'
-                    },
                     showCancelButton: true,
                     confirmButtonText: 'Continuar',
                     cancelButtonText: 'Cancelar',
-                    inputValidator: (value) => {
-                        if (!value) return 'Debes seleccionar un motivo';
-                    }
-
                 }).then((result) => {
 
                     if (!result.isConfirmed) return;
-
-                    const motivo = result.value;
 
                     Swal.fire({
                         title: 'Procesando...',
@@ -355,9 +352,6 @@
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({
-                                motivo: motivo
-                            })
                         })
                         .then(res => res.json())
                         .then(data => {
