@@ -569,6 +569,9 @@ class PasajeController extends Controller
                 $personaFacturacion = $pasajeros[0]['persona'];
             }
 
+            $venta = null;
+$emision = null;
+
             if ($accion === 'vender') {
                 $ventaService = app(VentaService::class);
                 $pagoService = app(PagoService::class);
@@ -676,7 +679,7 @@ class PasajeController extends Controller
                         $encomienda = Encomienda::create([
                             'usuario_id' => Auth::id(),
                             'emisor_persona_id' => $pasajeroData['persona']->id,
-                            'venta_id' => $venta->id,
+                            'venta_id' => $venta?->id,
                             'estado' => "A",
                             'total' => $sobre['costo'],
                             'fecha_creacion' => now(),
