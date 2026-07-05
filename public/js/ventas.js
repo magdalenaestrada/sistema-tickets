@@ -274,16 +274,30 @@ $(function () {
         const plin = $("#modal_pago_plin");
         const transferencia = $("#modal_pago_transferencia");
 
+        const div_efectivo = $("#modal_efectivo_div");
+        const div_tarjeta = $("#modal_tarjeta_div");
+        const div_yape = $("#modal_yape_div");
+        const div_plin = $("#modal_plin_div");
+        const div_transferencia = $("#modal_transferencia_div");
+
         // Reiniciar
         [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
             input.prop("disabled", true);
             input.val("0.00");
         });
 
+        [div_efectivo, div_tarjeta, div_yape, div_plin, div_transferencia].forEach((div) => {
+            div.prop("hidden", false);
+        });
+        
         switch (metodo) {
             case 1:
                 efectivo.prop("disabled", false);
                 efectivo.val(total.toFixed(2));
+                div_yape.prop("hidden", true);
+                div_plin.prop("hidden", true);
+                div_transferencia.prop("hidden", true);
+                div_tarjeta.prop("hidden", true);
                 break;
 
             case 2:
@@ -291,8 +305,8 @@ $(function () {
                 plin.prop("disabled", false);
                 transferencia.prop("disabled", false);
                 tarjeta.prop("disabled", false);
-
                 yape.val(total.toFixed(2));
+                div_efectivo.prop("hidden", true);
                 break;
 
             case 3:
@@ -301,7 +315,6 @@ $(function () {
                 yape.prop("disabled", false);
                 plin.prop("disabled", false);
                 transferencia.prop("disabled", false);
-
                 efectivo.val(total.toFixed(2));
                 break;
         }

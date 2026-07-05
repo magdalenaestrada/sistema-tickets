@@ -23,58 +23,63 @@
                             No coincide con el total a pagar
                         </div>
 
-                        <div class="row g-2 mb-2">
+                        <div class="row g-2 mb-2" id="modal_efectivo_div">
                             <div class="col-6">
-                                <label class="btn btn-light border w-100 text-start">
+                                <label class="form-control bg-body-secondary fw-bold">
                                     💵 Contado
                                 </label>
                             </div>
                             <div class="col-6">
-                                <input type="number" step="0.01" id="modal_pago_efectivo" class="form-control" value="0">
+                                <input type="number" step="0.01" id="modal_pago_efectivo" class="form-control"
+                                    value="0">
                             </div>
                         </div>
 
-                        <div class="row g-2 mb-2">
+                        <div class="row g-2 mb-2" id="modal_tarjeta_div">
                             <div class="col-6">
-                                <label class="btn btn-light border w-100 text-start">
-                                    💳 Tarjeta
+                                <label class="form-control bg-body-secondary fw-bold">
+                                    💳 Tarjeta débito 
                                 </label>
                             </div>
                             <div class="col-6">
-                                <input type="number" step="0.01" id="modal_pago_tarjeta" class="form-control" value="0">
+                                <input type="number" step="0.01" id="modal_pago_tarjeta" class="form-control"
+                                    value="0">
                             </div>
                         </div>
 
-                        <div class="row g-2 mb-2">
+                        <div class="row g-2 mb-2" id="modal_yape_div">
                             <div class="col-6">
-                                <label class="btn btn-light border w-100 text-start">
+                                <label class="form-control bg-body-secondary fw-bold">
                                     📱 Yape
                                 </label>
                             </div>
                             <div class="col-6">
-                                <input type="number" step="0.01" id="modal_pago_yape" class="form-control" value="0">
+                                <input type="number" step="0.01" id="modal_pago_yape" class="form-control"
+                                    value="0">
                             </div>
                         </div>
 
-                        <div class="row g-2 mb-2">
+                        <div class="row g-2 mb-2" id="modal_plin_div">
                             <div class="col-6">
-                                <label class="btn btn-light border w-100 text-start">
+                                <label class="form-control bg-body-secondary fw-bold">
                                     📲 Plin
                                 </label>
                             </div>
                             <div class="col-6">
-                                <input type="number" step="0.01" id="modal_pago_plin" class="form-control" value="0">
+                                <input type="number" step="0.01" id="modal_pago_plin" class="form-control"
+                                    value="0">
                             </div>
                         </div>
 
-                        <div class="row g-2 mb-4">
+                        <div class="row g-2 mb-4" id="modal_transferencia_div">
                             <div class="col-6">
-                                <label class="btn btn-light border w-100 text-start">
+                                <label class="form-control bg-body-secondary fw-bold">
                                     🏦 Transferencia
                                 </label>
                             </div>
                             <div class="col-6">
-                                <input type="number" step="0.01" id="modal_pago_transferencia" class="form-control" value="0">
+                                <input type="number" step="0.01" id="modal_pago_transferencia" class="form-control"
+                                    value="0">
                             </div>
                         </div>
 
