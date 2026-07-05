@@ -37,6 +37,7 @@ class EncomiendaService
                 'total' => $request->total,
                 'estado' => 'A',
                 'pago_instantaneo' => $request->boolean('pago_instantaneo'),
+                'transbordo' => $request->boolean('transbordo_incuyo'),
                 'fecha_creacion' => now(),
             ]);
 

@@ -199,7 +199,7 @@
                         </table>
                     </div>
 
-                    
+
                 </div>
             </div>
 
@@ -223,7 +223,14 @@
                                     class="form-control form-control-sm form-control form-control-sm-xs" readonly>
                             </div>
                         </div>
-
+                        <div class="mb-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="transbordo_incuyo">
+                                <label class="form-check-label" for="transbordo_incuyo">
+                                    Transbordo Incuyo
+                                </label>
+                            </div>
+                        </div>
                         <div class="row mb-1">
                             <label class="form-label">ORIGEN <span style="color: red">*</span></label>
                             <select id="origen" class="form-select" name="origen_pueblito_id">
@@ -246,6 +253,8 @@
                                 @endforeach
                             </select>
                         </div>
+
+
                     </div>
                 </div>
                 <div class="card mb-3">

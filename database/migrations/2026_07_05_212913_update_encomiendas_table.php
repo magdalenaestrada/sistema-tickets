@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('series_sucursal', function (Blueprint $table) {
-            $table->id();
-            $table->string("descripcion");
-            $table->string("codigo");
-            $table->timestamps();
+        Schema::table('encomienda', function (Blueprint $table) {
+            $table->string('estado', 20)
+                ->default('SA')
+                ->change();
         });
     }
 
@@ -24,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('series_sucursal');
+        Schema::table('encomienda', function (Blueprint $table) {
+            //
+        });
     }
 };

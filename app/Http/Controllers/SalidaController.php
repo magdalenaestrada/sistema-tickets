@@ -219,6 +219,51 @@ class SalidaController extends Controller
         );
     }
 
+     public function manifiestoPasajerosReal(Salida $salida, PdfService $pdfService)
+    {
+        $salida->load([
+            'horario.ruta.puntos.sucursal',
+            'horario.tipo_vehiculo',
+            'vehiculo',
+            'conductorPrincipal',
+            'conductorSecundario',
+            'pasajes.persona.tipoDocumento',
+            'pasajes.origen',
+            'pasajes.destino',
+            'pasajes.venta',
+        ]);
+
+        $empresa = Empresa::first();
+
+        $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
+        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
+        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
+
+        $pasajes = $salida->pasajes
+            ->whereIn('estado', ['V', 'F'])
+            ->sortBy('asiento_numero')
+            ->values();
+
+        $capacidad = $salida->horario->tipo_vehiculo->capacidad
+            ?? $salida->horario->tipo_vehiculo->asientos
+            ?? 46;
+
+        $html = view('salidas.manifiestos.pasajeros_real', compact(
+            'salida',
+            'empresa',
+            'pasajes',
+            'origenNombre',
+            'destinoNombre',
+            'capacidad'
+        ))->render();
+
+        return $pdfService->generar(
+            $html,
+            "manifiesto_pasajeros_{$salida->id}.pdf",
+            'P'
+        );
+    }
+
     public function destroyBulk(Request $request)
     {
         $ids = $request->ids;

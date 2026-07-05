@@ -66,7 +66,7 @@
                     <td>{{ optional($venta->fecha_emision)->format('d/m/Y') }}</td>
                     <td>{{ number_format($venta->total, 2) }}</td>
                     <td>
-                        {{ $venta->estado->value }}
+                        {{ $venta->estado === 'E' ? 'Emitido' : ($venta->estado === 'A' ? 'Anulado' : $venta->estado) }}
                     </td>
                     <td>{{ optional($venta->tipoDocumentoFactura)->descripcion ?? '' }}</td>
                     <td>{{ optional($venta->sucursal)->nombre_comercial ?? '' }}</td>
@@ -109,7 +109,7 @@
                         <td>{{ optional($venta->fecha_emision)->format('d/m/Y') }}</td>
                         <td>{{ number_format($venta->total, 2) }}</td>
                         <td>
-                            {{ $venta->estado->value }}
+                            {{ $venta->estado === 'E' ? 'Emitido' : ($venta->estado === 'A' ? 'Anulado' : $venta->estado) }}
                         </td>
                         <td>{{ optional($venta->tipoDocumentoFactura)->descripcion ?? '' }}</td>
                         <td>{{ optional($venta->sucursal)->nombre_comercial ?? '' }}</td>

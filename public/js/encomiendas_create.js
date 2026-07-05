@@ -176,7 +176,7 @@ $(async function () {
 
     function distribuirPagosPorMetodo() {
         const metodo = parseInt($("#modal_metodo_pago").val() || 1);
-        const total = parseFloat($("#total_pagar").text()) || 0;
+        const total = parseFloat($("#costo_total").val()) || 0;
 
         const efectivo = $("#modal_pago_efectivo");
         const tarjeta = $("#modal_pago_tarjeta");
@@ -184,15 +184,36 @@ $(async function () {
         const plin = $("#modal_pago_plin");
         const transferencia = $("#modal_pago_transferencia");
 
+        const div_efectivo = $("#modal_efectivo_div");
+        const div_tarjeta = $("#modal_tarjeta_div");
+        const div_yape = $("#modal_yape_div");
+        const div_plin = $("#modal_plin_div");
+        const div_transferencia = $("#modal_transferencia_div");
+
+        // Reiniciar
         [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
             input.prop("disabled", true);
             input.val("0.00");
+        });
+
+        [
+            div_efectivo,
+            div_tarjeta,
+            div_yape,
+            div_plin,
+            div_transferencia,
+        ].forEach((div) => {
+            div.prop("hidden", false);
         });
 
         switch (metodo) {
             case 1:
                 efectivo.prop("disabled", false);
                 efectivo.val(total.toFixed(2));
+                div_yape.prop("hidden", true);
+                div_plin.prop("hidden", true);
+                div_transferencia.prop("hidden", true);
+                div_tarjeta.prop("hidden", true);
                 break;
 
             case 2:
@@ -201,6 +222,7 @@ $(async function () {
                 transferencia.prop("disabled", false);
                 tarjeta.prop("disabled", false);
                 yape.val(total.toFixed(2));
+                div_efectivo.prop("hidden", true);
                 break;
 
             case 3:
@@ -883,9 +905,17 @@ $(async function () {
         },
     );
 
-    // ===============================
-    // MODAL DE PAGO — CONFIRMAR VENTA (idéntico a ventas)
-    // ===============================
+    function calcularVuelto() {
+        const contado = Number($("#modal_pago_efectivo").val()) || 0;
+        const recibido = Number($("#modal_efectivo_recibido").val()) || 0;
+
+        const vuelto = Math.max(0, recibido - contado);
+
+        $("#modal_vuelto").val(vuelto.toFixed(2));
+    }
+
+    $("#modal_efectivo_recibido").on("input", calcularVuelto);
+    $("#modal_pago_efectivo").on("input", calcularVuelto);
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
@@ -1031,6 +1061,8 @@ $(async function () {
             origen_pueblito_id: $("#origen").val(),
             destino_pueblito_id: $("#destino").val(),
             distrito_id: $("#distrito_id").val(),
+            transbordo_incuyo: $("#transbordo_incuyo").is(":checked") ? 1 : 0,
+
             // Facturación
             sobrequipaje: $("input[name='sobrequipaje']").val(),
             pasaje_id: $("input[name='pasaje_id']").val(),

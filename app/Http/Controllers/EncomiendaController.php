@@ -427,10 +427,7 @@ class EncomiendaController extends Controller
                 ->get();
 
             foreach ($encomiendas as $encomienda) {
-                if (!$salida->puedeTransportarEncomienda($encomienda->origen_pueblito_id, $encomienda->destino_pueblito_id)) {
-                    throw new \Exception("La encomienda {$encomienda->id} no es compatible con la salida seleccionada.");
-                }
-
+                
                 DB::table('encomienda_salida')->insert([
                     'encomienda_id' => $encomienda->id,
                     'salida_id' => $salida->id,

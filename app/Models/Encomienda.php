@@ -29,6 +29,7 @@ class Encomienda extends Model
         'sobre_equipaje',
         'origen_pueblito_id',
         'destino_pueblito_id',
+        'transbordo',
     ];
 
     protected $casts = [

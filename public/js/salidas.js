@@ -17,7 +17,6 @@ $(document).on("change", "#fecha_salida, #horario_id", function () {
 
 $(document).ready(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
-
         ajax: {
             url: route("salidas.datatable"),
             data: function (d) {
@@ -34,7 +33,7 @@ $(document).ready(function () {
                     return `<input type="checkbox" class="chk-salida" value="${data.id}">`;
                 },
             },
-                       { data: "DT_RowIndex" },
+            { data: "DT_RowIndex" },
             { data: "ruta" },
             { data: "fecha_formateada" },
             { data: "hora_salida" },
@@ -489,6 +488,11 @@ function verSalida(id) {
                     <a href="${route("salidas.manifiesto_conductores", { salida: salida.id })}" class="btn btn-success" target="_blank">
                         Manifiesto de conductores
                     </a>
+
+                      <a href="${route("salidas.manifiesto_pasajeros_real", { salida: salida.id })}" class="btn btn-secondary" target="_blank">
+                        Manifiesto de pasajeros (Detallado)
+                    </a>
+                    
                 </div>
             `;
         }

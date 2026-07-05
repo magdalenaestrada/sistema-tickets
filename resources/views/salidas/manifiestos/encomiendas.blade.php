@@ -78,6 +78,7 @@
         <thead>
             <tr>
                 <th>ITEM</th>
+                <th>TRANSBORDO</th>
                 <th>REMITENTE</th>
                 <th>DESTINATARIO</th>
                 <th>ORIGEN</th>
@@ -92,6 +93,7 @@
                 @foreach ($encomienda->detalles as $detalle)
                     <tr>
                         <td>{{ $loop->parent->iteration }}.{{ $loop->iteration }}</td>
+                        <td>{{ $encomienda->transbordo ? 'Sí' : 'No' }}</td>
                         <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
                         <td>{{ $encomienda->receptor?->nombre_completo ?? '-' }}</td>
                         <td>{{ $encomienda->origenPueblito->descripcion ?? '-' }}</td>

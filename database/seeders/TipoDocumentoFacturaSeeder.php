@@ -33,13 +33,7 @@ class TipoDocumentoFacturaSeeder extends Seeder
             ],
             [
                 'codigo' => '07',
-                'descripcion' => 'Nota de crédito BOLETA',
-                'codigo_sunat' => '7',
-                'estado' => 'A',
-            ],
-            [
-                'codigo' => '07',
-                'descripcion' => 'Nota de crédito FACTURA',
+                'descripcion' => 'Nota de crédito',
                 'codigo_sunat' => '7',
                 'estado' => 'A',
             ],

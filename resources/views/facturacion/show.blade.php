@@ -76,7 +76,7 @@
 
                                     <tr>
                                         <th>Estado</th>
-                                        <td>{{ $venta->estado->value }}</td>
+                                        <td>{{ $venta->estado }}</td>
                                     </tr>
 
                                     {{-- <tr>
