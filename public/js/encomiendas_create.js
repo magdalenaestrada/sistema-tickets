@@ -176,8 +176,7 @@ $(async function () {
 
     function distribuirPagosPorMetodo() {
         const metodo = parseInt($("#modal_metodo_pago").val() || 1);
-        const total = parseFloat($("#costo_total").val()) || 0;
-
+        const total = parseFloat($("#total_pagar").text()) || 0;
         const efectivo = $("#modal_pago_efectivo");
         const tarjeta = $("#modal_pago_tarjeta");
         const yape = $("#modal_pago_yape");
@@ -193,6 +192,7 @@ $(async function () {
         // Reiniciar
         [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
             input.prop("disabled", true);
+            input.prop("readonly", false);
             input.val("0.00");
         });
 
@@ -209,13 +209,14 @@ $(async function () {
         switch (metodo) {
             case 1:
                 efectivo.prop("disabled", false);
+                efectivo.prop("readonly", true);
                 efectivo.val(total.toFixed(2));
+
                 div_yape.prop("hidden", true);
                 div_plin.prop("hidden", true);
                 div_transferencia.prop("hidden", true);
                 div_tarjeta.prop("hidden", true);
                 break;
-
             case 2:
                 yape.prop("disabled", false);
                 plin.prop("disabled", false);

@@ -340,7 +340,7 @@ class EncomiendaController extends Controller
                 ]);
 
                 EncomiendaSalida::where('encomienda_id', $encomienda->id)
-                    ->where('estado', 'A')
+                    ->where('estado', 'SA')
                     ->update([
                         'estado' => 'L',
                         'fecha_llegada' => now(),
@@ -801,15 +801,11 @@ class EncomiendaController extends Controller
 
             foreach ($encomiendas as $encomienda) {
                 $asignacionActiva = EncomiendaSalida::where('encomienda_id', $encomienda->id)
-                    ->where('estado', 'A')
+                    ->where('estado', 'SA')
                     ->exists();
 
                 if ($asignacionActiva) {
                     throw new \Exception("La encomienda {$encomienda->id} ya tiene una salida asignada.");
-                }
-
-                if (!$salida->puedeTransportarEncomienda($encomienda->origen_pueblito_id, $encomienda->destino_pueblito_id)) {
-                    throw new \Exception("La encomienda {$encomienda->id} no corresponde a esta salida.");
                 }
 
                 EncomiendaSalida::create([

@@ -35,7 +35,7 @@ class EncomiendaService
                 'receptor_persona_id' => $receptorId,
                 'distrito_id' => $request->distrito_id,
                 'total' => $request->total,
-                'estado' => 'A',
+                'estado' => 'SA',
                 'pago_instantaneo' => $request->boolean('pago_instantaneo'),
                 'transbordo' => $request->boolean('transbordo_incuyo'),
                 'fecha_creacion' => now(),
