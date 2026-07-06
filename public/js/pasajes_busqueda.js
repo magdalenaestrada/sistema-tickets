@@ -191,6 +191,57 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    document.addEventListener("click", async function (e) {
+        const boton = e.target.closest(".btn-anular-reserva");
+
+        if (!boton) return;
+
+        const url = boton.dataset.url;
+
+        const result = await Swal.fire({
+            title: "¿Está seguro?",
+            text: "Esta acción anulará la reserva y liberará el asiento.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, anular",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#d33",
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector(
+                    'meta[name="csrf-token"]',
+                ).content,
+                Accept: "application/json",
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            await Swal.fire({
+                icon: "success",
+                title: "Reserva anulada",
+                text: data.message,
+            });
+
+            location.reload();
+        } else {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: data.message ?? "No se pudo anular la reserva.",
+            });
+        }
+    });
+
     function enlazarBotonesAccion() {
         document.querySelectorAll(".btn-abordo").forEach((btn) => {
             btn.addEventListener("click", function () {

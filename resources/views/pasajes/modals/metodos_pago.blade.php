@@ -84,7 +84,7 @@
                                     value="0">
                             </div>
 
-                            <div class="col-6">
+                            {{-- <div class="col-6">
                                 <label class="form-control bg-body-warning fw-bold">
                                     💵 Efectivo recibido
                                 </label>
@@ -102,7 +102,7 @@
                             <div class="col-6">
                                 <input type="text" id="modal_vuelto" class="form-control fw-bold" value="0.00"
                                     readonly>
-                            </div>
+                            </div> --}}
                         </div>
 
                         <input type="hidden" name="metodo_pago_id" id="metodo_pago_id">

@@ -17,6 +17,7 @@ Route::middleware(['auth'])->prefix('pasajes')->name('pasajes.')->group(function
     Route::post('/{pasaje}/actualizar-venta', [PasajeController::class, 'actualizarVentaReserva'])
         ->name('actualizar_venta');
     Route::post('/{pasaje}/abordo', [PasajeController::class, 'abordo'])->name('abordo');
+    Route::post('/{pasaje}/anular-reserva', [PasajeController::class, 'anularReserva'])->name('anular_reserva');
     Route::post('/{pasaje}/no-abordo', [PasajeController::class, 'noAbordo'])->name('noAbordo');
     Route::get('/{pasaje}/cambiar-horario', [PasajeController::class, 'cambiarHorario'])->name('cambiarHorario');
     Route::put('/{pasaje}/actualizar-horario', [PasajeController::class, 'actualizarHorario'])->name('actualizarHorario');

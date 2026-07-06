@@ -570,7 +570,7 @@ class PasajeController extends Controller
             }
 
             $venta = null;
-$emision = null;
+            $emision = null;
 
             if ($accion === 'vender') {
                 $ventaService = app(VentaService::class);
@@ -1298,6 +1298,57 @@ $emision = null;
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function anularReserva(Pasaje $pasaje)
+    {
+        try {
+
+            DB::beginTransaction();
+
+            if ($pasaje->estado !== 'R') {
+                throw ValidationException::withMessages([
+                    'pasaje' => 'Solo se pueden anular reservas.'
+                ]);
+            }
+
+            foreach ($pasaje->sobreEquipajes as $sobreEquipaje) {
+
+                if ($encomienda = $sobreEquipaje->encomienda) {
+                    $encomienda->detalles()->delete();
+                    $encomienda->delete();
+                }
+                $sobreEquipaje->delete();
+            }
+
+            $pasaje->update([
+                'estado' => 'N', // Reserva anulada
+                'fecha_inactivacion' => now(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reserva anulada correctamente.'
+            ]);
+        } catch (ValidationException $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (Throwable $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
             ], 500);
         }
     }

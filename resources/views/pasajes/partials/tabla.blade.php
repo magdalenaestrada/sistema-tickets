@@ -52,6 +52,10 @@
                                 <span class="badge bg-warning text-dark">Reservado</span>
                             @break
 
+                            @case('N')
+                                <span class="badge bg-danger">Reserva anulada</span>
+                            @break
+
                             @default
                                 <span class="badge bg-secondary">{{ $pasaje->estado }}</span>
                         @endswitch
@@ -63,6 +67,11 @@
                                 <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-success">
                                     <i data-lucide="receipt"></i>
                                 </a>
+
+                                <button class="btn btn-xs btn-danger btn-anular-reserva"
+                                    data-url="{{ route('pasajes.anular_reserva', $pasaje->id) }}">
+                                    <i data-lucide="x"></i>
+                                </button>
                             @endif
                             @if ($pasaje->sobreEquipajes->count() > 0)
                                 <button class="btn btn-info btn-xs btnVerSobreEquipaje" data-id="{{ $pasaje->id }}"

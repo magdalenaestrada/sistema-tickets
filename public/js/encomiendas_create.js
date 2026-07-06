@@ -885,22 +885,54 @@ $(async function () {
 
     $(document).on(
         "input",
-        "#modal_pago_tarjeta, #modal_pago_plin, #modal_pago_transferencia",
+        "#modal_pago_yape, #modal_pago_tarjeta, #modal_pago_plin, #modal_pago_transferencia",
         function () {
             if (parseInt($("#modal_metodo_pago").val()) !== 2) return;
 
             const total = parseFloat($("#total_pagar").text()) || 0;
 
-            const tarjeta = parseFloat($("#modal_pago_tarjeta").val()) || 0;
-            const plin = parseFloat($("#modal_pago_plin").val()) || 0;
-            const transferencia =
-                parseFloat($("#modal_pago_transferencia").val()) || 0;
+            let valor = parseFloat($(this).val()) || 0;
 
-            const sumaOtros = tarjeta + plin + transferencia;
+            // No permitir que el campo editado sea mayor al total
+            if (valor > total) {
+                valor = total;
+                $(this).val(total.toFixed(2));
+            }
 
-            $("#modal_pago_yape").val(
-                Math.max(0, total - sumaOtros).toFixed(2),
-            );
+            const yape = $("#modal_pago_yape");
+            const tarjeta = $("#modal_pago_tarjeta");
+            const plin = $("#modal_pago_plin");
+            const transferencia = $("#modal_pago_transferencia");
+
+            const id = $(this).attr("id");
+
+            let vYape = parseFloat(yape.val()) || 0;
+            let vTarjeta = parseFloat(tarjeta.val()) || 0;
+            let vPlin = parseFloat(plin.val()) || 0;
+            let vTransferencia = parseFloat(transferencia.val()) || 0;
+
+            if (id !== "modal_pago_yape") {
+                const otros = vTarjeta + vPlin + vTransferencia;
+
+                if (otros > total) {
+                    const actual = parseFloat($(this).val()) || 0;
+                    const sinActual = otros - actual;
+                    const maximo = Math.max(0, total - sinActual);
+
+                    $(this).val(maximo.toFixed(2));
+
+                    vTarjeta = parseFloat(tarjeta.val()) || 0;
+                    vPlin = parseFloat(plin.val()) || 0;
+                    vTransferencia = parseFloat(transferencia.val()) || 0;
+                }
+
+                yape.val(
+                    Math.max(
+                        0,
+                        total - (vTarjeta + vPlin + vTransferencia),
+                    ).toFixed(2),
+                );
+            }
 
             validarSumaPagos();
         },
