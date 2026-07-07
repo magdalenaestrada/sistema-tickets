@@ -61,7 +61,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-2 mb-4" id="modal_transferencia_div">
+                        <div class="row g-2 mb-2" id="modal_transferencia_div">
                             <div class="col-6">
                                 <label class="form-control bg-body-secondary fw-bold">
                                     🏦 Transferencia
@@ -74,17 +74,17 @@
                         </div>
 
                         <div class="row g-2 mb-2" id="modal_efectivo_div">
-                            <div class="col-6">
+                            <div class="col-6 mb-4 al_contado">
                                 <label class="form-control bg-body-secondary fw-bold">
                                     💵 Contado
                                 </label>
                             </div>
-                            <div class="col-6">
+                            <div class="col-6 al_contado">
                                 <input type="number" step="0.01" id="modal_pago_efectivo" class="form-control"
                                     value="0">
                             </div>
 
-                            {{-- <div class="col-6">
+                            <div class="col-6">
                                 <label class="form-control bg-body-warning fw-bold">
                                     💵 Efectivo recibido
                                 </label>
@@ -102,7 +102,7 @@
                             <div class="col-6">
                                 <input type="text" id="modal_vuelto" class="form-control fw-bold" value="0.00"
                                     readonly>
-                            </div> --}}
+                            </div>
                         </div>
 
                         <input type="hidden" name="metodo_pago_id" id="metodo_pago_id">
