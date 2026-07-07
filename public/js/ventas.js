@@ -258,6 +258,8 @@ $(function () {
     function limpiarPagosModal() {
         $("#modal_pago_efectivo").val("0");
         $("#modal_pago_tarjeta").val("0");
+        $("#modal_efectivo_recibido").val("0");
+        $("#modal_vuelto").val("0");
         $("#modal_pago_yape").val("0");
         $("#modal_pago_plin").val("0");
         $("#modal_pago_transferencia").val("0");
@@ -267,12 +269,13 @@ $(function () {
     function distribuirPagosPorMetodo() {
         const metodo = parseInt($("#modal_metodo_pago").val() || 1);
         const total = parseFloat($("#costo_total").val()) || 0;
-
         const efectivo = $("#modal_pago_efectivo");
         const tarjeta = $("#modal_pago_tarjeta");
         const yape = $("#modal_pago_yape");
         const plin = $("#modal_pago_plin");
         const transferencia = $("#modal_pago_transferencia");
+        const efectivo_recibido = $("#modal_efectivo_recibido");
+        const vuelto = $("#modal_vuelto");
 
         const div_efectivo = $("#modal_efectivo_div");
         const div_tarjeta = $("#modal_tarjeta_div");
@@ -280,9 +283,20 @@ $(function () {
         const div_plin = $("#modal_plin_div");
         const div_transferencia = $("#modal_transferencia_div");
 
+        const label_contado = $(".al_contado");
+
         // Reiniciar
-        [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
+        [
+            efectivo,
+            tarjeta,
+            yape,
+            plin,
+            transferencia,
+            efectivo_recibido,
+            vuelto,
+        ].forEach((input) => {
             input.prop("disabled", true);
+            input.prop("readonly", false);
             input.val("0.00");
         });
 
@@ -299,13 +313,18 @@ $(function () {
         switch (metodo) {
             case 1:
                 efectivo.prop("disabled", false);
+                vuelto.prop("disabled", false);
+                efectivo_recibido.prop("disabled", false);
+                efectivo.prop("readonly", true);
+                vuelto.prop("readonly", true);
                 efectivo.val(total.toFixed(2));
+
                 div_yape.prop("hidden", true);
+                label_contado.prop("hidden", true);
                 div_plin.prop("hidden", true);
                 div_transferencia.prop("hidden", true);
                 div_tarjeta.prop("hidden", true);
                 break;
-
             case 2:
                 yape.prop("disabled", false);
                 plin.prop("disabled", false);
@@ -319,7 +338,10 @@ $(function () {
                 efectivo.prop("disabled", false);
                 tarjeta.prop("disabled", false);
                 yape.prop("disabled", false);
+                efectivo_recibido.prop("disabled", false);
+                label_contado.prop("hidden", false);
                 plin.prop("disabled", false);
+                vuelto.prop("readonly", true);
                 transferencia.prop("disabled", false);
                 efectivo.val(total.toFixed(2));
                 break;
@@ -886,7 +908,6 @@ $(function () {
             }
 
             const total = parseFloat($("#costo_total").val()) || 0;
-
             const efectivo = $("#modal_pago_efectivo");
             const tarjeta = $("#modal_pago_tarjeta");
             const yape = $("#modal_pago_yape");
@@ -896,6 +917,10 @@ $(function () {
             const campoEditado = $(this).attr("id");
 
             if (campoEditado === "modal_pago_efectivo") {
+                efectivo.val(
+                    Math.min(parseFloat(efectivo.val()) || 0, total).toFixed(2),
+                );
+
                 validarSumaPagos();
                 return;
             }

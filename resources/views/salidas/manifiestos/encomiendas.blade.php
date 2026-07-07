@@ -78,8 +78,9 @@
         <thead>
             <tr>
                 <th>ITEM</th>
-                <th>TRANSBORDO</th>
+                <th>DNI R.</th>
                 <th>REMITENTE</th>
+                <th>DNI D.</th>
                 <th>DESTINATARIO</th>
                 <th>ORIGEN</th>
                 <th>DESTINO</th>
@@ -93,12 +94,24 @@
                 @foreach ($encomienda->detalles as $detalle)
                     <tr>
                         <td>{{ $loop->parent->iteration }}.{{ $loop->iteration }}</td>
-                        <td>{{ $encomienda->transbordo ? 'Sí' : 'No' }}</td>
+                        <td>{{ $encomienda->emisor?->documento ?? '-' }}</td>
                         <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
+                        <td>{{ $encomienda->receptor?->documento ?? '-' }}</td>
                         <td>{{ $encomienda->receptor?->nombre_completo ?? '-' }}</td>
                         <td>{{ $encomienda->origenPueblito->descripcion ?? '-' }}</td>
                         <td>{{ $encomienda->destinoPueblito->descripcion ?? '-' }}</td>
-                        <td>{{ $detalle->descripcion }}</td>
+                        <td>
+                            @if ($detalle->descripcion)
+                                {{ $detalle->descripcion }}
+                                @if ($encomienda->transbordo)
+                                    - Transbordo en Incuyo
+                                @endif
+                            @elseif($encomienda->transbordo)
+                                Transbordo en Incuyo
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td>{{ $detalle->peso }}</td>
                         <td>{{ number_format((float) ($detalle->costo ?? 0), 2) }}</td>
                     </tr>

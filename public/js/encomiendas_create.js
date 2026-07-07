@@ -283,10 +283,7 @@ $(async function () {
         return true;
     }
 
-    // ===============================
-    // FACTURACIÓN SUNAT (idéntico a ventas)
-    // ===============================
-
+   
     function obtenerCodigoSucursal() {
         const option = $("#caja_id option:selected");
         return String(option.data("serie") || "").trim();
@@ -1041,7 +1038,7 @@ $(async function () {
                     .text(),
                 peso: $(this).find(".peso").val(),
                 costo: $(this).find(".costo").val(),
-                descripcion: $(this).find(".desc").val() || "Sin descripción",
+                descripcion: $(this).find(".desc").val() || "",
             });
         });
 

@@ -217,7 +217,7 @@ $(function () {
                     .text(),
                 peso: $(this).find(".peso").val(),
                 costo: $(this).find(".costo").val(),
-                descripcion: $(this).find(".desc").val() || "Sin descripción",
+                descripcion: $(this).find(".desc").val() || "",
             });
         });
 
