@@ -26,7 +26,9 @@ class ReportesController extends Controller
 
     public function index()
     {
-        return view('reportes.index');
+        $sucursales = Sucursal::where('estado', 'A')->get();
+        $tipos_documento = TipoDocumentoFactura::where('estado', 'A')->get();
+        return view('reportes.index', compact('sucursales', 'tipos_documento'));
     }
 
     public function resumenVentas(Request $request)

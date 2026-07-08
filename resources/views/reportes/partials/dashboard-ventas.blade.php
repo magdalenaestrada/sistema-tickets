@@ -106,20 +106,69 @@
         </div>
 
         <div class="card-body">
+            <div class="card mb-3">
+                <div class="card-header">
+                    Filtros de Ventas
+                </div>
 
-            <table
-                id="tablaVentas"
-                class="table table-bordered table-striped">
+                <div class="card-body">
+
+                    <div class="row">
+
+                        <div class="col-md-3">
+                            <label>Comprobante</label>
+                            <select id="filtroTipoComprobante" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="B">Boleta</option>
+                                <option value="F">Factura</option>
+                                <option value="N">Nota</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label>Método de pago</label>
+                            <select id="filtroMetodoPago" class="form-control">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label>Vendedor</label>
+                            <select id="filtroVendedor" class="form-control">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label>Cliente</label>
+                            <input type="text" id="filtroCliente" class="form-control"
+                                placeholder="Documento o nombre">
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+            <table id="tablaVentas" class="table table-bordered table-striped">
 
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Documento</th>
+                        <th>Fecha </th>
+                        <th>Hora</th>
+                        <th>Serie</th>
+                        <th>Número</th>
+                        <th>Comprobante</th>
                         <th>Cliente</th>
+                        <th>Documento Cliente</th>
                         <th>Vendedor</th>
                         <th>Sucursal</th>
+                        <th>Método de pago</th>
                         <th>Estado</th>
+                        <th>Subtotal</th>
+                        <th>IGV</th>
                         <th>Total</th>
+                        <th>Usuario</th>        
                     </tr>
                 </thead>
 

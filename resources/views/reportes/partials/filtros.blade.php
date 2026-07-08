@@ -160,5 +160,31 @@
 
         </div>
     </div>
+    <ul class="nav nav-tabs mb-3">
 
+        <li class="nav-item">
+            <a class="nav-link active reporte-tab" data-reporte="ventas" href="#">
+                Ventas
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link reporte-tab" data-reporte="pasajeros" href="#">
+                Pasajeros
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link reporte-tab" data-reporte="viajes" href="#">
+                Viajes
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link reporte-tab" data-reporte="encomiendas" href="#">
+                Encomiendas
+            </a>
+        </li>
+
+    </ul>
 </div>
