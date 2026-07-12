@@ -1007,7 +1007,6 @@ class PasajeController extends Controller
         $seriesSucursal = $cajas_emision
             ->pluck('sucursal.serie')
             ->flatten();
-            dd($seriesSucursal);
         return view('pasajes.venta', compact(
             'salida',
             'asientos',
