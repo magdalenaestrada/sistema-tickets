@@ -167,10 +167,13 @@
                                                 </a>
                                             @endif
 
-                                            <button type="button" class="btn btn-danger btn-sm"
-                                                onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
-                                                Anular
-                                            </button>
+                                            @hasanyrole('Administrador')
+                                                <button type="button" class="btn btn-danger btn-sm"
+                                                    onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
+                                                    Anular
+                                                </button>
+                                            @endhasanyrole
+                                            
                                         </div>
 
                                     </td>
@@ -385,7 +388,7 @@
                 let descripcion = $("#descripcion").val().trim();
 
                 const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.-]+$/;
-                
+
                 if (!regex.test(descripcion)) {
                     Swal.fire(
                         "Error",

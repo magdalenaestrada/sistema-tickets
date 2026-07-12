@@ -20,12 +20,13 @@
                             <th>Método</th>
                             <th>Descripción</th>
                             <th>Monto</th>
+                            <th>Cajero</th>
                             <th>Estado</th>
                             <th width="120">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($caja->detalles as $detalle)
+                        @foreach ($detalles as $detalle)
                             <tr class="{{ $detalle->anulado ? 'table-danger' : '' }}">
                                 <td>{{ $detalle->created_at?->format('d/m/Y h:i A') }}</td>
                                 <td>
@@ -47,6 +48,7 @@
                                 <td>{{ $detalle->metodoPago->descripcion ?? '---' }}</td>
                                 <td>{{ $detalle->description ?? '---' }}</td>
                                 <td><strong>S/ {{ number_format(abs($detalle->amount), 2) }}</strong></td>
+                                <td>{{ $detalle->caja->usuario->persona->nombre_completo ?? '-' }}</td>
                                 <td>
                                     @if ($detalle->anulado)
                                         <span class="badge bg-secondary">Anulado</span>

@@ -283,7 +283,6 @@ $(async function () {
         return true;
     }
 
-   
     function obtenerCodigoSucursal() {
         const option = $("#caja_id option:selected");
         return String(option.data("serie") || "").trim();
@@ -798,9 +797,11 @@ $(async function () {
         },
     );
 
-    // ===============================
-    // MODAL DE PAGO — BOTÓN ABRIR (idéntico a ventas)
-    // ===============================
+    $(document).on("input change", ".tipo, .peso, .costo, .desc", function () {
+        if ($(this).val()) {
+            $(this).removeClass("is-invalid");
+        }
+    });
 
     $("#btnAbrirPago").on("click", function (e) {
         e.preventDefault();
@@ -811,16 +812,35 @@ $(async function () {
         }
 
         let detalleInvalido = false;
+
         $("#tablaDetalles tbody tr").each(function () {
-            if (!$(this).find(".tipo").val()) detalleInvalido = true;
+            const tipo = $(this).find(".tipo").val();
+            const peso = $(this).find(".peso").val();
+            const costo = $(this).find(".costo").val();
+            const descripcion = $(this).find(".desc").val().trim();
+
+            if (!tipo || !peso || !costo || !descripcion) {
+                detalleInvalido = true;
+
+                $(this)
+                    .find(".tipo, .peso, .costo, .desc")
+                    .each(function () {
+                        if (!$(this).val()) {
+                            $(this).addClass("is-invalid");
+                        } else {
+                            $(this).removeClass("is-invalid");
+                        }
+                    });
+            }
         });
 
         if (detalleInvalido) {
-            Swal.fire(
-                "Aviso",
-                "Todos los detalles deben tener un tipo seleccionado.",
-                "warning",
-            );
+            Swal.fire({
+                icon: "warning",
+                title: "Campos incompletos",
+                text: "Por favor completa todos los campos de los detalles de la encomienda.",
+            });
+
             return;
         }
 
