@@ -19,6 +19,7 @@ use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\Pueblito;
 use App\Models\RutaPunto;
+use App\Models\SerieSucursal;
 use App\Models\TipoEncomienda;
 use App\Models\Venta;
 use App\Services\PagoService;
@@ -1003,7 +1004,9 @@ class PasajeController extends Controller
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $metodos_pago = MetodoPago::all();
         $billeteras_digitales = BilleteraDigital::all();
-
+        $seriesSucursal = $cajas_emision
+            ->pluck('sucursal.serie')
+            ->flatten();
         return view('pasajes.venta', compact(
             'salida',
             'asientos',
@@ -1016,7 +1019,8 @@ class PasajeController extends Controller
             'billeteras_digitales',
             'cajas_emision',
             'user',
-            'tiposEncomienda'
+            'tiposEncomienda',
+            'seriesSucursal'
         ));
     }
 

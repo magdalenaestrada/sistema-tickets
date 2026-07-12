@@ -8,7 +8,7 @@ $(function () {
     const selectedSeatNumbers = config.asientos || [];
     let precioBase = parseFloat(config.precioUnitario || 0);
     const descuentoPromoId = config.descuentoPromoId || 1;
-
+    const seriesSucursal = config.seriesSucursal || [];
     const costoTotalInput = $("#costo_total");
 
     let seatPrices = {};
@@ -89,23 +89,37 @@ $(function () {
         }
     });
 
-    function obtenerCodigoSucursal() {
-        const option = $("#caja_id option:selected");
-        return String(option.data("serie") || "").trim();
-    }
+    function obtenerSeriePorTipo(tipo) {
+        const sucursalId = $("#caja_id option:selected").data("sucursal");
 
-    function generarSeriePorTipo(tipo) {
-        const codigo = obtenerCodigoSucursal();
+        console.log("Sucursal seleccionada:", sucursalId);
+        console.log("Tipo seleccionado:", tipo);
 
-        if (!codigo || isNaN(Number(codigo))) {
-            return "Seleccione una sucursal";
+        let tipoDocumentoId = null;
+
+        if (tipo === "factura") {
+            tipoDocumentoId = 1;
         }
 
-        const numero = Number(codigo);
+        if (tipo === "boleta") {
+            tipoDocumentoId = 2;
+        }
 
-        if (tipo === "boleta") return `BBB${numero}`;
-        if (tipo === "factura") return `FFF${numero}`;
-        return `NNN${numero}`;
+        if (tipo === "nota_venta") {
+            tipoDocumentoId = 3;
+        }
+
+        console.log("Tipo documento ID:", tipoDocumentoId);
+
+        const serie = config.seriesSucursal.find(
+            (s) =>
+                Number(s.sucursal_id) === Number(sucursalId) &&
+                Number(s.tipo_documento_factura_id) === Number(tipoDocumentoId),
+        );
+
+        console.log("SERIE ENCONTRADA:", serie);
+
+        return serie ? serie.serie : "SIN SERIE";
     }
 
     function actualizarResumenTotales() {
@@ -378,7 +392,7 @@ $(function () {
             .removeClass("active btn-primary btn-success btn-warning")
             .addClass("btn-outline-secondary");
 
-        const serie = generarSeriePorTipo(tipo);
+        const serie = obtenerSeriePorTipo(tipo);
 
         if (tipo === "boleta") {
             $("#tipo_doc_sunat").val("2");
@@ -399,7 +413,7 @@ $(function () {
                 .removeClass("btn-outline-secondary")
                 .addClass("active btn-success");
         } else {
-            $("#tipo_doc_sunat").val("4");
+            $("#tipo_doc_sunat").val("3");
             $("#serie_doc").text(serie);
             $("#doc_cliente").attr("maxlength", 8);
             ponerClienteVariosNotaVenta();
@@ -449,8 +463,15 @@ $(function () {
     });
 
     $("#caja_id").on("change", function () {
-        const tipoActual = $("#tipo_doc_sunat").val() || "nota_venta";
-        marcarTipoDocumento(tipoActual);
+        const tipoActual = $("#tipo_doc_sunat").val();
+
+        if (tipoActual == "1") {
+            marcarTipoDocumento("factura");
+        } else if (tipoActual == "2") {
+            marcarTipoDocumento("boleta");
+        } else {
+            marcarTipoDocumento("nota_venta");
+        }
     });
 
     $(".doc-btn").on("click", function () {

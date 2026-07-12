@@ -292,8 +292,8 @@
                                 <select name="caja_id" id="caja_id" class="form-select">
                                     <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
-                                        <option value="{{ $caja->id }}"
-                                            {{ ($esSobreequipaje ? $pasaje->venta->caja_id : $user->sucursal_id) == $caja->id ? 'selected' : '' }}>
+                                        <option value="{{ $caja->id }}" data-sucursal="{{ $caja->sucursal_id }}"
+                                            @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
@@ -364,5 +364,10 @@
 @endsection
 
 @push('scripts')
+    <script>
+        window.VENTA_CONFIG = {
+            seriesSucursal: @json($seriesSucursal)
+        };
+    </script>
     <script src="{{ asset('js/encomiendas_create.js') }}"></script>
 @endpush

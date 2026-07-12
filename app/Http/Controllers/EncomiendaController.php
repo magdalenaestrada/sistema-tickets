@@ -102,6 +102,9 @@ class EncomiendaController extends Controller
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
+        $seriesSucursal = $cajas_emision
+            ->pluck('sucursal.serie')
+            ->flatten();
         return view('encomiendas.create', array_merge(
             compact(
                 'sucursales',
@@ -112,7 +115,9 @@ class EncomiendaController extends Controller
                 'tipos_documentos_facturas',
                 'metodos_pago',
                 'billeteras_digitales',
-                'cajas_emision'
+                'cajas_emision',
+                'seriesSucursal'
+
             ),
             [
                 'esSobreequipaje' => false,
@@ -427,7 +432,7 @@ class EncomiendaController extends Controller
                 ->get();
 
             foreach ($encomiendas as $encomienda) {
-                
+
                 DB::table('encomienda_salida')->insert([
                     'encomienda_id' => $encomienda->id,
                     'salida_id' => $salida->id,
@@ -494,8 +499,7 @@ class EncomiendaController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
-            ->get();
-        ;
+            ->get();;
         $user = Auth::user();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
@@ -767,7 +771,7 @@ class EncomiendaController extends Controller
                     'text' => strtoupper($origenNombre) . ' - PARTIDA ' . $hora .
                         ($ruta?->nombre ? ' (' . $ruta->nombre . ')' : ''),
                     'puntos' => $puntos
-                            ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
+                        ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
                         ->values()
                         ->all() ?? [],
                 ];
