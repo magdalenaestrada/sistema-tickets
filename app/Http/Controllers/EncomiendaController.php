@@ -76,7 +76,6 @@ class EncomiendaController extends Controller
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
             ->get();
-        ;
         $asignaciones = AsignarHorario::with('horario')->get();
         $tipos_documentos = TipoDocumentoPersona::all();
 
@@ -499,7 +498,7 @@ class EncomiendaController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
-            ->get();;
+            ->get();
         $user = Auth::user();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
