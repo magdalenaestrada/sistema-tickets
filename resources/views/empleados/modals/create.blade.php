@@ -50,9 +50,9 @@
                                 max="{{ $hoy }}" class="form-control" required>
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Celular <span style="color: red">*</span></label>
+                            <label class="form-label">Celular</label>
                             <input type="text" name="celular" id="celular" class="form-control" pattern="\d{9}"
-                                maxlength="9" title="Ingrese 9 dígitos numéricos" required>
+                                maxlength="9" title="Ingrese 9 dígitos numéricos">
                         </div>
 
                         <div class="col-md-3 mb-3">

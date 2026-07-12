@@ -72,17 +72,17 @@
         <tbody>
             <tr>
                 <td>CHOFER</td>
-                <td>{{ $salida->conductorPrincipal?->nombres }} {{ $salida->conductorPrincipal?->apellidos }}</td>
-                <td>{{ $salida->conductorPrincipal?->documento }}</td>
-                <td>{{ $salida->conductorPrincipal?->empleado->licencia_conducir ?? '-' }}</td>
-                <td>{{ $salida->conductorPrincipal?->celular ?? '-' }}</td>
+                <td>{{ $salida->conductorPrincipal?->persona->nombres }} {{ $salida->conductorPrincipal?->persona->apellidos }}</td>
+                <td>{{ $salida->conductorPrincipal?->persona->documento }}</td>
+                <td>{{ $salida->conductorPrincipal?->licencia_conducir ?? '-' }}</td>
+                <td>{{ $salida->conductorPrincipal?->persona->celular ?? '-' }}</td>
             </tr>
             <tr>
                 <td>COPILOTO</td>
-                <td>{{ $salida->conductorSecundario?->nombres }} {{ $salida->conductorSecundario?->apellidos }}</td>
-                <td>{{ $salida->conductorSecundario?->documento }}</td>
-                <td>{{ $salida->conductorSecundario?->empleado?->licencia_conducir ?? '-' }}</td>
-                <td>{{ $salida->conductorSecundario?->celular ?? '-' }}</td>
+                <td>{{ $salida->conductorSecundario?->persona->nombres }} {{ $salida->conductorSecundario?->persona->apellidos }}</td>
+                <td>{{ $salida->conductorSecundario?->persona->documento }}</td>
+                <td>{{ $salida->conductorSecundario?->licencia_conducir ?? '-' }}</td>
+                <td>{{ $salida->conductorSecundario?->persona->celular ?? '-' }}</td>
             </tr>
         </tbody>
     </table>

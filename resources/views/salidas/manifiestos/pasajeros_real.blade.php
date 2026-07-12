@@ -422,18 +422,18 @@
         </tr>
         <tr>
             <td><span class="label">Conductor 1:</span>
-                {{ $salida->conductorPrincipal?->nombres }} {{ $salida->conductorPrincipal?->apellidos }}
+                {{ $salida->conductorPrincipal?->persona->nombres }} {{ $salida->conductorPrincipal?->persona->apellidos }}
             </td>
             <td colspan="2"><span class="label">Licencia:</span>
-                {{ $salida->conductorPrincipal?->empleado->licencia_conducir ?? '-' }}
+                {{ $salida->conductorPrincipal?->licencia_conducir ?? '-' }}
             </td>
         </tr>
         <tr>
             <td><span class="label">Conductor 2:</span>
-                {{ $salida->conductorSecundario?->nombres }} {{ $salida->conductorSecundario?->apellidos }}
+                {{ $salida->conductorSecundario?->persona->nombres }} {{ $salida->conductorSecundario?->persona->apellidos }}
             </td>
             <td colspan="2"><span class="label">Licencia:</span>
-                {{ $salida->conductorSecundario?->empleado->licencia_conducir ?? '-' }}
+                {{ $salida->conductorSecundario?->licencia_conducir ?? '-' }}
             </td>
         </tr>
         <tr>

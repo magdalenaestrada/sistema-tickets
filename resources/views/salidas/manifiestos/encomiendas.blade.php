@@ -67,10 +67,10 @@
         <tr>
             <td><strong>Vehículo:</strong> {{ $salida->vehiculo->tipo_vehiculo->descripcion ?? '' }} -
                 {{ $salida->vehiculo->numero_placa ?? '' }} </td>
-            <td><strong>Conductor 1:</strong> {{ $salida->conductorPrincipal?->nombres }}
-                {{ $salida->conductorPrincipal?->apellidos }}</td>
-            <td><strong>Conductor 2:</strong> {{ $salida->conductorSecundario?->nombres }}
-                {{ $salida->conductorSecundario?->apellidos }}</td>
+            <td><strong>Conductor 1:</strong> {{ $salida->conductorPrincipal?->persona->nombres }}
+                {{ $salida->conductorPrincipal?->persona->apellidos }}</td>
+            <td><strong>Conductor 2:</strong> {{ $salida->conductorSecundario?->persona->nombres }}
+                {{ $salida->conductorSecundario?->persona->apellidos }}</td>
         </tr>
     </table>
 

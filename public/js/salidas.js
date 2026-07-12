@@ -1,7 +1,7 @@
 let tablaSalidas;
 let horariosSalida = window.HORARIOS_SALIDA || [];
 let rutasSalida = window.RUTAS_SALIDA || [];
-
+console.log(window.CONDUCTORES);
 function cargarHorasDisponibles() {
     let horario_id = $("#horario_id").val();
     let fecha = $("#fecha_salida").val();

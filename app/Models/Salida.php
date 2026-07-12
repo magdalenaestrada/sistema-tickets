@@ -161,12 +161,12 @@ class Salida extends Model
 
     public function conductorPrincipal()
     {
-        return $this->belongsTo(Persona::class, 'conductor_principal_id');
+        return $this->belongsTo(Empleado::class, 'conductor_principal_id');
     }
 
     public function conductorSecundario()
     {
-        return $this->belongsTo(Persona::class, 'conductor_secundario_id');
+        return $this->belongsTo(Empleado::class, 'conductor_secundario_id');
     }
 
     public function asignacionesEncomienda()
