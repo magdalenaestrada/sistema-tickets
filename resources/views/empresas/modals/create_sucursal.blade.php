@@ -42,11 +42,18 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label>Serie <span style="color: red">*</span></label>
-                            <select name="serie_id" id="serie_id" class="form-select" required>
+                            <label>Series <span style="color:red">*</span></label>
+
+                            <select name="grupo_serie_id" id="grupo_serie_id" class="form-select" required>
                                 <option value="">Seleccione</option>
-                                @foreach ($series as $serie)
-                                    <option value="{{ $serie->id }}">{{ $serie->descripcion }}</option>
+
+                                @foreach ($gruposSeries as $grupo)
+                                    <option value="{{ $grupo->id }}">
+                                        {{ $grupo->codigo }}
+                                        @if ($grupo->descripcion)
+                                            - {{ $grupo->descripcion }}
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                         </div>

@@ -7,7 +7,7 @@ use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Empresa;
 use App\Models\Provincia;
-use App\Models\SerieSucursal;
+use App\Models\GrupoSerie;
 use Illuminate\Http\Request;
 use Str;
 use Yajra\DataTables\DataTables;
@@ -22,9 +22,19 @@ class EmpresaController extends Controller
         $departamentos = Departamento::select('id', 'nombre')->get();
         $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
-        $series = SerieSucursal::select('id', 'descripcion')->get();
-
-        return view('empresas.index', compact('empresa', 'departamentos', 'provincias', 'distritos', 'series'));
+        $gruposSeries = GrupoSerie::where('estado', 'A')
+            ->orderBy('codigo')
+            ->get();
+        return view(
+            'empresas.index',
+            compact(
+                'empresa',
+                'departamentos',
+                'provincias',
+                'distritos',
+                'gruposSeries'
+            )
+        );
     }
     public function guardar(Request $request)
     {

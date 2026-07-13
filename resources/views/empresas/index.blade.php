@@ -71,7 +71,7 @@
                             </div>
                         @endif
                     </div>
-                     {{-- <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <label class="form-label">Usuario SOL (SUNAT)</label>
                         <input type="text" class="form-control" name="usuario_facturacion" id="usuario_facturacion"
                             value="{{ $empresa->usuario_facturacion ?? '' }}">
@@ -102,24 +102,24 @@
                         @endif
                     </div> 
                 </div> --}}
-                <div class="col-md-12">
-                    <label class="form-label">Mensaje personalizado</label>
-                    <input type="text" class="form-control" id="mensaje" name="mensaje"
-                        value="{{ $empresa->mensaje }}">
-                </div>
-                <div class="mt-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary" id="btnGuardar">
-                        Guardar
-                    </button>
+                    <div class="col-md-12">
+                        <label class="form-label">Mensaje personalizado</label>
+                        <input type="text" class="form-control" id="mensaje" name="mensaje"
+                            value="{{ $empresa->mensaje }}">
+                    </div>
+                    <div class="mt-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="btnGuardar">
+                            Guardar
+                        </button>
 
-                    <button type="button" class="btn btn-warning d-none" id="btnEditar">
-                        Editar
-                    </button>
+                        <button type="button" class="btn btn-warning d-none" id="btnEditar">
+                            Editar
+                        </button>
 
-                    <button type="button" class="btn btn-secondary d-none" id="btnCancelar">
-                        Cancelar
-                    </button>
-                </div>
+                        <button type="button" class="btn btn-secondary d-none" id="btnCancelar">
+                            Cancelar
+                        </button>
+                    </div>
             </form>
 
         </div>
@@ -162,10 +162,12 @@
                         </select>
                     </div>
                     <div class="col-md-2 mb-3">
-                        <select id="filtro_serie_id" class="form-select">
+                        <select id="filtro_grupo_serie_id" class="form-select">
                             <option value="">Filtrar por serie</option>
-                            @foreach ($series as $serie)
-                                <option value="{{ $serie->id }}">{{ $serie->descripcion }}</option>
+                            @foreach ($gruposSeries as $grupo)
+                                <option value="{{ $grupo->id }}">
+                                    {{ $grupo->codigo }}
+                                </option>
                             @endforeach
                         </select>
                     </div>

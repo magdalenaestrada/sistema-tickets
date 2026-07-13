@@ -15,13 +15,13 @@ $(document).ready(async function () {
                 d.departamento_id = $("#filtro_departamento_id").val();
                 d.provincia_id = $("#filtro_provincia_id").val();
                 d.distrito_id = $("#filtro_distrito_id").val();
-                d.serie_id = $("#filtro_serie_id").val();
+                d.grupo_serie_id = $("#filtro_grupo_serie_id").val();
                 d.nombre_sucursal = $("#nombre_sucursal").val();
             },
         },
         columns: [
             { data: "id" },
-            { data: "serie" },
+            { data: "grupo_serie" },
             { data: "nombre_comercial" },
             { data: "direccion" },
             { data: "telefono" },
@@ -49,7 +49,7 @@ $(document).ready(async function () {
         }, 400);
     });
 
-    $("#filtro_serie_id").on("change", function () {
+    $("#filtro_grupo_serie_id").on("change", function () {
         tabla.ajax.reload();
     });
 
@@ -103,7 +103,7 @@ $(document).ready(async function () {
         $("#filtro_distrito_id")
             .empty()
             .append('<option value="">Filtrar por distrito</option>');
-        $("#filtro_serie_id").val("");
+        $("#filtro_grupo_serie_id").val("");
         $("#nombre_sucursal").val("");
         tabla.ajax.reload();
     });
@@ -219,7 +219,7 @@ $(document).ready(async function () {
             $("#nombre_comercial_sucursal").val(data.nombre_comercial);
             $("#direccion_sucursal").val(data.direccion);
             $("#telefono").val(data.telefono);
-            $("#serie_id").val(data.serie_id);
+            $("#grupo_serie_id").val(data.grupo_serie_id);
             $("#venta_otras").prop("checked", data.venta_otras == 1);
             $("#modalTitulo").text("Editar Sucursal");
 

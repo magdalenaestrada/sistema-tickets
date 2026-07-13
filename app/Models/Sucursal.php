@@ -18,7 +18,8 @@ class Sucursal extends Model
         'estado',
         'venta_otras',
         'serie_id',
-        'codigo_sucursal'
+        'codigo_sucursal',
+        'grupo_serie_id'
     ];
 
     public function empresa()
@@ -48,5 +49,10 @@ class Sucursal extends Model
     public function serie()
     {
         return $this->hasMany(SerieSucursal::class, "sucursal_id");
+    }
+
+    public function grupoSerie()
+    {
+        return $this->belongsTo(GrupoSerie::class);
     }
 }

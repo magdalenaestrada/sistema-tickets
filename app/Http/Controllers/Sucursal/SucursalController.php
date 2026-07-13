@@ -12,12 +12,14 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Models\GrupoSerie;
+use App\Models\SerieSucursal;
 
 class SucursalController extends Controller
 {
     public function datatable(Request $request, $empresa_id)
     {
-        $query = Sucursal::with(['empresa', 'distrito.provincia.departamento', 'serie'])
+        $query = Sucursal::with(['empresa', 'distrito.provincia.departamento', 'grupoSerie'])
             ->where('empresa_id', $empresa_id);
 
         if ($request->departamento_id) {
@@ -36,7 +38,7 @@ class SucursalController extends Controller
             $query->where('distrito_id', $request->distrito_id);
         }
 
-        if ($request->serie_id) {
+        if ($request->filtro_grupo_serie_id) {
             $query->where('serie_id', $request->serie_id);
         }
 
@@ -51,8 +53,10 @@ class SucursalController extends Controller
             ->addColumn('distrito', function ($row) {
                 return '<span class="badge bg-success-subtle text-dark">' . $row->distrito->nombre . '</span>';
             })
-            ->addColumn('serie', function ($row) {
-                return '<span class="badge bg-primary-subtle text-primary">' . ($row->serie->descripcion ?? 'N.A') . '</span>';
+            ->addColumn('grupo_serie', function ($row) {
+                return '<span class="badge bg-primary-subtle text-primary">'
+                    . ($row->grupoSerie->codigo ?? 'N.A')
+                    . '</span>';
             })
             ->addColumn('venta_otras', function ($row) {
                 if ($row->venta_otras == 1) {
@@ -86,7 +90,7 @@ class SucursalController extends Controller
 
                 return $acciones;
             })
-            ->rawColumns(['acciones', 'distrito', 'venta_otras', 'serie'])
+            ->rawColumns(['acciones', 'distrito', 'venta_otras', 'grupo_serie'])
             ->make(true);
     }
 
@@ -104,8 +108,8 @@ class SucursalController extends Controller
             'nombre_comercial' => 'required|string|max:255',
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
+            'grupo_serie_id' => 'required|exists:grupos_series,id',
             'venta_otras'         => 'nullable|boolean',
-            'serie_id'         => 'required|exists:series_sucursal,id',
         ]);
 
         $existe = Sucursal::where('empresa_id', $request->empresa_id)
@@ -125,7 +129,17 @@ class SucursalController extends Controller
 
         $validated['nombre_comercial'] = preg_replace('/\s+/', ' ', trim($request->nombre_comercial));
 
-        Sucursal::create($validated);
+        $sucursal = Sucursal::create($validated);
+
+        $grupo = GrupoSerie::findOrFail($request->grupo_serie_id);
+
+        foreach (SerieSucursal::PREFIJOS as $tipoDocumento => $prefijo) {
+            SerieSucursal::create([
+                'sucursal_id' => $sucursal->id,
+                'tipo_documento_factura_id' => $tipoDocumento,
+                'serie' => $prefijo . $grupo->codigo,
+            ]);
+        }
 
         return response()->json(['success' => true]);
     }
@@ -139,7 +153,7 @@ class SucursalController extends Controller
         return response()->json([
             'id' => $sucursal->id,
             'nombre_comercial' => $sucursal->nombre_comercial,
-            'serie_id' => $sucursal->serie_id,
+            'grupo_serie_id' => $sucursal->grupo_serie_id,
             'direccion' => $sucursal->direccion,
             'telefono' => $sucursal->telefono,
             'venta_otras' => $sucursal->venta_otras,
@@ -178,7 +192,6 @@ class SucursalController extends Controller
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
             'venta_otras' => 'nullable|boolean',
-            'serie_id' => 'required|exists:series_sucursal,id',
         ]);
 
         $existe = Sucursal::where('empresa_id', $request->empresa_id)
@@ -200,9 +213,22 @@ class SucursalController extends Controller
         $validated['nombre_comercial'] = preg_replace('/\s+/', ' ', trim($request->nombre_comercial));
 
         $sucursal->update($validated);
+        $sucursal->update($validated);
 
+        SerieSucursal::where('sucursal_id', $sucursal->id)->delete();
+
+        $grupo = GrupoSerie::findOrFail($request->grupo_serie_id);
+
+        foreach (SerieSucursal::PREFIJOS as $tipoDocumento => $prefijo) {
+            SerieSucursal::create([
+                'sucursal_id' => $sucursal->id,
+                'tipo_documento_factura_id' => $tipoDocumento,
+                'serie' => $prefijo . $grupo->codigo,
+            ]);
+        }
         return response()->json(['success' => true]);
     }
+
     public function activar(Sucursal $sucursal)
     {
         $sucursal->update(['estado' => 'A']);
