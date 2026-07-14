@@ -341,6 +341,7 @@ class PasajeController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request->all());
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'salida_id' => 'required|exists:salidas,id',
