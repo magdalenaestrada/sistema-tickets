@@ -67,7 +67,7 @@ class EmitirVentaService
 
         $venta->ruta_cdr = $cdrPath;
         $venta->hash = method_exists($documento, 'getHash') ? $documento->getHash() : null;
-        $venta->estado = ((int) $cdr->getCode() === 0) ? 'ACEPTADA' : 'RECHAZADA';
+        $venta->estado = ((int) $cdr->getCode() === 0) ? 'EMITIDO' : 'RECHAZADA';
         $venta->observacion = $cdr->getDescription();
         $venta->save();
 

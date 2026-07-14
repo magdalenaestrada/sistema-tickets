@@ -214,4 +214,82 @@ class Salida extends Model
             || ($this->fecha_salida == now()->toDateString()
                 && $this->hora_salida < now()->format('H:i:s'));
     }
+
+    public function puntoActual($sucursalId)
+    {
+        return $this->horario
+            ->ruta
+            ->puntos
+            ->firstWhere('sucursal_id', $sucursalId);
+    }
+
+    public function siguientePunto($sucursalId)
+    {
+        $actual = $this->puntoActual($sucursalId);
+
+        if (!$actual) {
+            return null;
+        }
+
+        return $this->horario
+            ->ruta
+            ->puntos
+            ->firstWhere('orden', $actual->orden + 1);
+    }
+
+    public function pasajerosEnTramo($sucursalId)
+    {
+        $ruta = $this->horario->ruta;
+
+        $puntos = $ruta->puntos;
+
+        $actual = $puntos->firstWhere('sucursal_id', $sucursalId);
+
+        if (!$actual) {
+            return collect();
+        }
+
+        return $this->pasajes
+            ->whereIn('estado', ['V', 'F'])
+            ->filter(function ($pasaje) use ($puntos, $actual) {
+
+                $origen = $puntos->firstWhere(
+                    'pueblito_id',
+                    $pasaje->origen_id
+                );
+
+                $destino = $puntos->firstWhere(
+                    'pueblito_id',
+                    $pasaje->destino_id
+                );
+
+                if (!$origen || !$destino) {
+                    return false;
+                }
+
+                return $origen->orden <= $actual->orden
+                    && $destino->orden > $actual->orden;
+            })
+            ->sortBy('asiento_numero')
+            ->values();
+    }
+
+    public function datosManifiesto($sucursalId)
+    {
+        $puntos = $this->horario->ruta->puntos;
+
+        $actual = $puntos->firstWhere('sucursal_id', $sucursalId);
+
+        if (!$actual) {
+            return null;
+        }
+
+        return [
+            'origen' => $actual->pueblito?->descripcion ?? '-',
+            'destino' => optional(
+                $puntos->firstWhere('orden', $actual->orden + 1)
+            )->pueblito?->descripcion ?? '-',
+            'orden' => $actual->orden,
+        ];
+    }
 }

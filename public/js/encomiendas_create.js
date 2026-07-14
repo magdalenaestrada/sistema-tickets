@@ -1219,6 +1219,13 @@ $(async function () {
 
     $("#formEncomienda").on("submit", function (e) {
         e.preventDefault();
-        $("#btnAbrirPago").trigger("click");
+
+        if (!this.checkValidity()) {
+            this.reportValidity();
+            return;
+        }
+
+        // Abrir aquí el modal de métodos de pago
+        $("#modalMetodoPago").modal("show");
     });
 });

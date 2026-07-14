@@ -201,10 +201,10 @@ class SalidaController extends Controller
             ->make(true);
     }
 
-    public function manifiestoPasajeros(Salida $salida, PdfService $pdfService)
+    public function manifiestoPasajeros(Salida $salida, PdfService $pdfService, Request $request)
     {
         $salida->load([
-            'horario.ruta.puntos.sucursal',
+            'horario.ruta.puntos.pueblito',
             'horario.tipo_vehiculo',
             'vehiculo',
             'conductorPrincipal',
@@ -217,27 +217,36 @@ class SalidaController extends Controller
 
         $empresa = Empresa::first();
 
-        $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
-        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
-        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
+        $user = auth()->user();
 
-        $pasajes = $salida->pasajes
-            ->whereIn('estado', ['V', 'F'])
-            ->sortBy('asiento_numero')
-            ->values();
+        $sucursalId = $user->rol == 'Administrador'
+            ? $request->sucursal_id
+            : $user->sucursal_id;
+
+        $datos = $salida->datosManifiesto($sucursalId);
+
+        abort_unless($datos, 404, 'La sucursal no pertenece a la ruta.');
+
+        $pasajes = $salida->pasajerosEnTramo($sucursalId);
 
         $capacidad = $salida->horario->tipo_vehiculo->capacidad
             ?? $salida->horario->tipo_vehiculo->asientos
             ?? 46;
 
-        $html = view('salidas.manifiestos.pasajeros', compact(
-            'salida',
-            'empresa',
-            'pasajes',
-            'origenNombre',
-            'destinoNombre',
-            'capacidad'
-        ))->render();
+        $origenNombre = $datos['origen'];
+        $destinoNombre = $datos['destino'];
+
+        $html = view(
+            'salidas.manifiestos.pasajeros',
+            compact(
+                'salida',
+                'empresa',
+                'pasajes',
+                'origenNombre',
+                'destinoNombre',
+                'capacidad'
+            )
+        )->render();
 
         return $pdfService->generar(
             $html,

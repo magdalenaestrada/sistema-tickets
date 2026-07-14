@@ -26,6 +26,7 @@ class EncomiendaService
 
     public function crearEncomienda($request, $emisorId, $receptorId, $user_id)
     {
+        dd($request->all());
         $data = DB::transaction(function () use ($request, $emisorId, $receptorId, $user_id) {
             $encomienda = Encomienda::create([
                 'origen_pueblito_id' => $request->origen_pueblito_id,

@@ -233,7 +233,7 @@
                         </div>
                         <div class="row mb-1">
                             <label class="form-label">ORIGEN <span style="color: red">*</span></label>
-                            <select id="origen" class="form-select" name="origen_pueblito_id">
+                            <select id="origen" class="form-select" name="origen_pueblito_id" required>
                                 <option value="">Seleccione una parada</option>
                                 @foreach ($pueblitos as $pueblito)
                                     <option value="{{ $pueblito->id }}">
