@@ -246,7 +246,6 @@ class VentaService
 
     public function emitirVenta(Venta $venta): array
     {
-        dd($venta);
         $venta->refresh();
 
         $tipo = TipoDocumentoFactura::find($venta->tipo_documento_factura_id);
