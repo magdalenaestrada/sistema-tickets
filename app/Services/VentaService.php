@@ -273,7 +273,7 @@ class VentaService
         }
 
         // correcto
-        if ((string) $tipo->codigo === 'NV') {
+        if ((string) $tipo->codigo === '00') {
             $venta->update([
                 'estado' => EstadoVenta::EMITIDO,
                 'observacion' => 'Nota de venta emitida internamente.',
