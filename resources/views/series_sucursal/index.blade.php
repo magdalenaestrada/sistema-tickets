@@ -104,6 +104,27 @@
             const btnGuardar = document.getElementById('btnGuardarSerie');
             const tbodySeries = document.getElementById('tbodySeries');
             const alertaBox = document.getElementById('alertaSeries');
+            const tipoDocumento = document.getElementById('tipo_documento_factura_id');
+            const txtSerie = document.getElementById('serie');
+
+
+            const prefijos = {
+                1: 'FF', // Factura
+                2: 'BB', // Boleta
+                3: 'NN', // Nota de Venta
+                4: 'BC', // Nota de Crédito
+                5: 'FC' // Nota de Débito
+            };
+
+            tipoDocumento.addEventListener('change', function() {
+                const prefijo = prefijos[this.value] ?? '';
+
+                if (!prefijo) return;
+
+                if (!txtSerie.value || !txtSerie.value.startsWith(prefijo)) {
+                    txtSerie.value = prefijo + '0';
+                }
+            });
 
             function mostrarAlerta(mensaje, tipo) {
                 alertaBox.innerHTML = `
@@ -154,7 +175,7 @@
             btnGuardar.addEventListener('click', function() {
                 const sucursal_id = document.getElementById('sucursal_id').value;
                 const tipo_documento_factura_id = document.getElementById('tipo_documento_factura_id')
-                .value;
+                    .value;
                 const serie = document.getElementById('serie').value.trim();
 
                 if (!sucursal_id || !tipo_documento_factura_id || !serie) {
@@ -232,15 +253,16 @@
             // ---------- EDICIÓN INLINE ----------
 
             // Mismas opciones que el formulario de arriba, para reconstruir los <select> en modo edición
-            const opcionesSucursales = @json($sucursales->map(fn($s) => ['id' => $s->id, 'nombre' => $s->nombre]));
-            const opcionesTipos = @json($tiposDocumento->map(fn($t) => ['id' => $t->id, 'nombre' => $t->nombre]));
+            const opcionesSucursales = @json($sucursales->map(fn($s) => ['id' => $s->id, 'nombre_comercial' => $s->nombre_comercial]));
+            const opcionesTipos = @json($tiposDocumento->map(fn($t) => ['id' => $t->id, 'descripcion' => $t->descripcion]));
 
             function construirSelect(id, opciones, seleccionadoId) {
                 let html = `<select id="${id}" class="form-select form-control form-select-sm">`;
                 html += `<option value="">-- Seleccione --</option>`;
                 opciones.forEach((op) => {
                     const selected = String(op.id) === String(seleccionadoId) ? 'selected' : '';
-                    html += `<option value="${op.id}" ${selected}>${op.nombre}</option>`;
+                    html +=
+                        `<option value="${op.id}" ${selected}>${op.nombre_comercial ?? op.descripcion}</option>`;
                 });
                 html += `</select>`;
                 return html;
@@ -259,12 +281,33 @@
                     construirSelect('edit_tipo_' + id, opcionesTipos, tipoId);
 
                 fila.querySelector('.celda-serie').innerHTML =
-                    `<input type="text" id="edit_serie_${id}" class="form-control form-control-sm" value="${serie}" maxlength="10">`;
+                    `<input type="text"
+                id="edit_serie_${id}"
+                class="form-control form-control-sm"
+                value="${serie}"
+                maxlength="10">`;
 
                 fila.querySelector('.celda-acciones').innerHTML = `
-            <button type="button" class="btn btn-sm btn-success btnGuardarEdicion" data-id="${id}">Guardar</button>
-            <button type="button" class="btn btn-sm btn-secondary btnCancelarEdicion" data-id="${id}">Cancelar</button>
-        `;
+        <button type="button" class="btn btn-sm btn-success btnGuardarEdicion" data-id="${id}">
+            Guardar
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary btnCancelarEdicion" data-id="${id}">
+            Cancelar
+        </button>
+    `;
+
+                const editTipo = document.getElementById('edit_tipo_' + id);
+                const editSerie = document.getElementById('edit_serie_' + id);
+
+                editTipo.addEventListener('change', function() {
+                    const prefijo = prefijos[this.value] ?? '';
+
+                    if (!prefijo) return;
+
+                    if (!editSerie.value.startsWith(prefijo)) {
+                        editSerie.value = prefijo + '0';
+                    }
+                });
             }
 
             function salirModoEdicion(fila, data) {
@@ -301,9 +344,9 @@
                         sucursal_id: fila.dataset.sucursalId,
                         tipo_documento_factura_id: fila.dataset.tipoId,
                         sucursal: opcionesSucursales.find(o => String(o.id) === fila.dataset
-                            .sucursalId)?.nombre ?? '-',
+                            .sucursalId)?.nombre_comercial ?? '-',
                         tipo_documento: opcionesTipos.find(o => String(o.id) === fila.dataset
-                            .tipoId)?.nombre ?? '-',
+                            .tipoId)?.descripcion ?? '-',
                         serie: fila.dataset.serie,
                     });
                     return;
@@ -321,6 +364,13 @@
 
                     if (!sucursal_id || !tipo_documento_factura_id || !serie) {
                         mostrarAlerta('Completa sucursal, tipo de documento y serie.', 'warning');
+                        return;
+                    }
+
+                    const prefijo = prefijos[tipo_documento_factura_id] ?? '';
+
+                    if (!serie.startsWith(prefijo)) {
+                        mostrarAlerta(`La serie debe comenzar con "${prefijo}".`, 'warning');
                         return;
                     }
 

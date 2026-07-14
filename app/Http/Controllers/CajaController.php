@@ -220,7 +220,11 @@ class CajaController extends Controller
         $metodosPago = MetodoPago::all();
 
         $billeterasDigitales = BilleteraDigital::all();
-
+        dd([
+            'caja_id' => $caja->id,
+            'estado' => $caja->estado,
+            'movimientos' => $detalles->pluck('caja_id')->unique(),
+        ]);
         return view('caja.show', compact(
             'caja',
             'detalles',

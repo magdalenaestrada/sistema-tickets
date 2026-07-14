@@ -32,7 +32,34 @@ class SerieSucursalController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $existe = SerieSucursal::where('sucursal_id', $request->sucursal_id)
+            ->where('tipo_documento_factura_id', $request->tipo_documento_factura_id)
+            ->exists();
+
+        if ($existe) {
+            return response()->json([
+                'message' => 'La sucursal ya tiene una serie registrada para este tipo de documento.',
+                'errors' => [
+                    'tipo_documento_factura_id' => [
+                        'La sucursal ya tiene una serie registrada para este tipo de documento.'
+                    ]
+                ]
+            ], 422);
+        }
+
+        $tipoDocumento = TipoDocumentoFactura::findOrFail($request->tipo_documento_factura_id);
+
+        $prefijos = [
+            1 => 'F',
+            2 => 'B',
+            3 => 'N',
+            4 => 'BC',
+            5 => 'FC',
+        ];
+
+        $prefijoEsperado = $prefijos[$tipoDocumento->id] ?? null;
+
+        $validator = validator($request->all(), [
             'sucursal_id' => ['required', 'exists:sucursales,id'],
             'tipo_documento_factura_id' => ['required', 'exists:tipo_documentos_factura,id'],
             'serie' => [
@@ -52,8 +79,26 @@ class SerieSucursalController extends Controller
             'tipo_documento_factura_id.exists' => 'El tipo de documento seleccionado no es válido.',
             'serie.required' => 'Debe escribir la serie.',
             'serie.max' => 'La serie no puede tener más de 10 caracteres.',
-            'serie.unique' => 'Ya existe esa serie para esta sucursal y tipo de documento.',
+            'serie.unique' => 'Ya existe una serie para ese tipo de documento en esta sucursal.',
         ]);
+
+        $validator->after(function ($validator) use ($request, $prefijoEsperado) {
+
+            if (!$prefijoEsperado) {
+                return;
+            }
+
+            if (!str_starts_with(strtoupper($request->serie), strtoupper($prefijoEsperado))) {
+                $validator->errors()->add(
+                    'serie',
+                    "La serie debe comenzar con '{$prefijoEsperado}'."
+                );
+            }
+        });
+
+        $validated = $validator->validate();
+
+        $validated['serie'] = strtoupper($validated['serie']);
 
         $serieSucursal = SerieSucursal::create($validated);
         $serieSucursal->load(['sucursal', 'tipoDocumentoFactura']);
@@ -66,7 +111,7 @@ class SerieSucursalController extends Controller
                 'sucursal_id' => $serieSucursal->sucursal_id,
                 'tipo_documento_factura_id' => $serieSucursal->tipo_documento_factura_id,
                 'sucursal' => $serieSucursal->sucursal->nombre_comercial ?? '-',
-                'tipo_documento' => $serieSucursal->tipoDocumentoFactura->nombre ?? '-',
+                'tipo_documento' => $serieSucursal->tipoDocumentoFactura->descripcion ?? '-',
                 'serie' => $serieSucursal->serie,
             ],
         ]);
@@ -78,6 +123,22 @@ class SerieSucursalController extends Controller
      */
     public function update(Request $request, SerieSucursal $serieSucursal)
     {
+        $existe = SerieSucursal::where('sucursal_id', $request->sucursal_id)
+            ->where('tipo_documento_factura_id', $request->tipo_documento_factura_id)
+            ->where('id', '<>', $serieSucursal->id)
+            ->exists();
+
+        if ($existe) {
+            return response()->json([
+                'message' => 'La sucursal ya tiene una serie registrada para este tipo de documento.',
+                'errors' => [
+                    'tipo_documento_factura_id' => [
+                        'La sucursal ya tiene una serie registrada para este tipo de documento.'
+                    ]
+                ]
+            ], 422);
+        }
+
         $validated = $request->validate([
             'sucursal_id' => ['required', 'exists:sucursales,id'],
             'tipo_documento_factura_id' => ['required', 'exists:tipo_documentos_factura,id'],
@@ -114,7 +175,7 @@ class SerieSucursalController extends Controller
                 'sucursal_id' => $serieSucursal->sucursal_id,
                 'tipo_documento_factura_id' => $serieSucursal->tipo_documento_factura_id,
                 'sucursal' => $serieSucursal->sucursal->nombre_comercial ?? '-',
-                'tipo_documento' => $serieSucursal->tipoDocumentoFactura->nombre ?? '-',
+                'tipo_documento' => $serieSucursal->tipoDocumentoFactura->descripcion ?? '-',
                 'serie' => $serieSucursal->serie,
             ],
         ]);
