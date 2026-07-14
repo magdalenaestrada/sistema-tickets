@@ -763,8 +763,8 @@ class VentaService
         $totalVenta = 0.0;
         $detalles = [];
 
-        $igv = (float) $empresa->igv; // 18, 10.5, etc. — tasa vigente para líneas gravadas
-        $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
+         // 18, 10.5, etc. — tasa vigente para líneas gravadas
+        $porcentajeIgv = $this->obtenerPorcentajeIgv($venta);
 
         foreach ($venta->detalles as $detalle) {
             $cantidad = (float) ($detalle->cantidad ?? 1);
@@ -776,7 +776,7 @@ class VentaService
 
             // Determina el tipo de afectación de ESTA línea.
             // hay que ponerlo en algun lado el ->exonerado, de momento true
-            $esExonerado = (bool) true;
+            $esExonerado = $porcentajeIgv == 0;
             // $esExonerado = (bool) ($detalle->exonerado ?? false);
 
             if ($esExonerado) {
@@ -878,6 +878,11 @@ class VentaService
         return (string) $tipo->codigo_sunat;
     }
 
+    private function obtenerPorcentajeIgv(Venta $venta): float
+    {
+        return $venta->tipo_servicio_id == 1 ? 0.0 : 0.18;
+    }
+
     private function buildNotaCreditoAnulacion(
         Venta $notaCredito,
         Venta $ventaOriginal,
@@ -928,8 +933,8 @@ class VentaService
         $totalVenta = 0.0;
         $detalles = [];
 
-        $igv = (float) $empresa->igv;
-        $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
+        
+        $porcentajeIgv = $this->obtenerPorcentajeIgv($ventaOriginal);
 
         foreach ($notaCredito->detalles as $detalle) {
             $cantidad = abs((float) ($detalle->cantidad ?? 1));
@@ -941,7 +946,7 @@ class VentaService
 
             // Debe coincidir con el mismo criterio usado en buildInvoice
             // para el comprobante original que se está anulando.
-            $esExonerado = (bool) true;
+            $esExonerado = $porcentajeIgv == 0;
             // $esExonerado = (bool) ($detalle->exonerado ?? false);
 
             if ($esExonerado) {
@@ -1027,10 +1032,9 @@ class VentaService
         }
         // nota de venta - no hacer nada, simplemente anular internamente.
         else if ($venta->tipo_documento_factura_id == 3) {
-
         }
         // nota de credito
-        else if (in_array($venta->tipo_documento_factura_id, [4, 7])) {
+        else if (in_array($venta->tipo_documento_factura_id, [4, 5])) {
             return $this->buildCancelledNotaCredito($venta, $numero);
         } else {
             throw new Exception("No se puede procesar el documento para su anulación", 1);
@@ -1106,12 +1110,12 @@ class VentaService
         $totalVenta = 0.0;
 
         $igv = (float) $venta->sucursal->empresa->igv;
-        $porcentajeIgv = $igv > 1 ? $igv / 100 : 0;
+        $porcentajeIgv = $this->obtenerPorcentajeIgv($venta);
 
         foreach ($venta->detalles as $detalle) {
             $totalLinea = round((float) ($detalle->total ?? 0), 2);
 
-            $esExonerado = (bool) true;
+            $esExonerado = $porcentajeIgv == 0;
             // $esExonerado = (bool) ($detalle->exonerado ?? false);
 
             if ($esExonerado) {

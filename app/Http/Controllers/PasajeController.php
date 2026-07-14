@@ -341,6 +341,7 @@ class PasajeController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'salida_id' => 'required|exists:salidas,id',
@@ -947,8 +948,8 @@ class PasajeController extends Controller
 
     public function vender(Request $request)
     {
-        $user = Auth::user();
 
+        $user = Auth::user();
         $request->validate([
             'salida' => 'required|exists:salidas,id',
             'asientos' => 'required|string',
@@ -1393,7 +1394,7 @@ class PasajeController extends Controller
         $pasaje->load([
             'persona',
             'usuario.persona',
-            'origen.empresa',
+            'origen',
             'destino',
             'venta.pagos.metodoPago',
             'salida.horario.ruta',

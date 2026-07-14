@@ -308,7 +308,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     $(document).on("click", ".imprimir-pasaje", function () {
         const id = $(this).data("id");
-        const url = route("pasajes.ticket", id);
+        const url = route("ventas.tickets", id);
 
         const iframe = document.createElement("iframe");
         iframe.style.display = "none";

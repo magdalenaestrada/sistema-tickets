@@ -86,10 +86,12 @@
                                 </a>
                             @endif
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
-                                <button class="btn btn-xs btn-secondary imprimir-pasaje" data-id="{{ $pasaje->id }}">
+                                <button class="btn btn-xs btn-secondary imprimir-pasaje"
+                                    data-id="{{ $pasaje->venta_id }}">
                                     <i data-lucide="printer"></i>
                                 </button>
                             @endif
+
                         </div>
                     </td>
                 </tr>
