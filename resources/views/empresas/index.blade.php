@@ -161,16 +161,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <select id="filtro_grupo_serie_id" class="form-select">
-                            <option value="">Filtrar por serie</option>
-                            @foreach ($gruposSeries as $grupo)
-                                <option value="{{ $grupo->id }}">
-                                    {{ $grupo->codigo }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                   
                     <div class="col-md-1 mb-3 d-flex align-items-end">
                         <button class="btn btn-secondary" id="btnLimpiarFiltros">
                             <i class="fa fa-filter"></i> Limpiar
@@ -181,7 +172,6 @@
                     <thead class="table-primary">
                         <tr>
                             <th>ID</th>
-                            <th>Código</th>
                             <th>Nombre Sucursal</th>
                             <th>Dirección</th>
                             <th>Teléfono</th>

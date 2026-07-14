@@ -21,7 +21,6 @@ $(document).ready(async function () {
         },
         columns: [
             { data: "id" },
-            { data: "grupo_serie" },
             { data: "nombre_comercial" },
             { data: "direccion" },
             { data: "telefono" },

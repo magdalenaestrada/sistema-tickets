@@ -38,10 +38,6 @@ class SucursalController extends Controller
             $query->where('distrito_id', $request->distrito_id);
         }
 
-        if ($request->filtro_grupo_serie_id) {
-            $query->where('serie_id', $request->serie_id);
-        }
-
         if ($request->nombre_sucursal) {
             $query->where('nombre_comercial', 'like', '%' . $request->nombre_sucursal . '%');
         }
@@ -108,7 +104,6 @@ class SucursalController extends Controller
             'nombre_comercial' => 'required|string|max:255',
             'direccion'        => 'nullable|string|max:255',
             'telefono'         => 'nullable|string|max:20',
-            'grupo_serie_id' => 'required|exists:grupos_series,id',
             'venta_otras'         => 'nullable|boolean',
         ]);
 
@@ -131,16 +126,6 @@ class SucursalController extends Controller
 
         $sucursal = Sucursal::create($validated);
 
-        $grupo = GrupoSerie::findOrFail($request->grupo_serie_id);
-
-        foreach (SerieSucursal::PREFIJOS as $tipoDocumento => $prefijo) {
-            SerieSucursal::create([
-                'sucursal_id' => $sucursal->id,
-                'tipo_documento_factura_id' => $tipoDocumento,
-                'serie' => $prefijo . $grupo->codigo,
-            ]);
-        }
-
         return response()->json(['success' => true]);
     }
     public function show($id)
@@ -153,7 +138,6 @@ class SucursalController extends Controller
         return response()->json([
             'id' => $sucursal->id,
             'nombre_comercial' => $sucursal->nombre_comercial,
-            'grupo_serie_id' => $sucursal->grupo_serie_id,
             'direccion' => $sucursal->direccion,
             'telefono' => $sucursal->telefono,
             'venta_otras' => $sucursal->venta_otras,
@@ -217,15 +201,6 @@ class SucursalController extends Controller
 
         SerieSucursal::where('sucursal_id', $sucursal->id)->delete();
 
-        $grupo = GrupoSerie::findOrFail($request->grupo_serie_id);
-
-        foreach (SerieSucursal::PREFIJOS as $tipoDocumento => $prefijo) {
-            SerieSucursal::create([
-                'sucursal_id' => $sucursal->id,
-                'tipo_documento_factura_id' => $tipoDocumento,
-                'serie' => $prefijo . $grupo->codigo,
-            ]);
-        }
         return response()->json(['success' => true]);
     }
 

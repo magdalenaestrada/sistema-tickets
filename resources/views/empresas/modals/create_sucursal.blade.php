@@ -40,28 +40,10 @@
                         <input type="text" name="nombre_comercial" id="nombre_comercial_sucursal"
                             class="form-control" required>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>Series <span style="color:red">*</span></label>
-
-                            <select name="grupo_serie_id" id="grupo_serie_id" class="form-select" required>
-                                <option value="">Seleccione</option>
-
-                                @foreach ($gruposSeries as $grupo)
-                                    <option value="{{ $grupo->id }}">
-                                        {{ $grupo->codigo }}
-                                        @if ($grupo->descripcion)
-                                            - {{ $grupo->descripcion }}
-                                        @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label>Teléfono</label>
-                            <input type="text" name="telefono" id="telefono" class="form-control" maxlength="9"
-                                pattern="\d{9}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
-                        </div>
+                    <div class="mb-3">
+                        <label>Teléfono</label>
+                        <input type="text" name="telefono" id="telefono" class="form-control" maxlength="9"
+                            pattern="\d{9}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,9);">
                     </div>
                     <div class="mb-3">
                         <label>Dirección</label>
