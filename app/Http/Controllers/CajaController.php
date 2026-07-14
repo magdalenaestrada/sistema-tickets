@@ -175,35 +175,16 @@ class CajaController extends Controller
     {
         $this->autorizarCaja($caja);
 
-        if ($this->esAdmin(auth()->user())) {
-
-            // IDs de todas las cajas abiertas
-            $idsCajas = Caja::whereIn('estado', ['A', 'abierta'])
-                ->pluck('id');
-
-            $detalles = CajaDetalle::with([
-                'subtipo.tipo_movimiento',
-                'metodoPago',
-                'caja.usuario.persona',
-                'caja.sucursal'
-            ])
-                ->whereIn('caja_id', $idsCajas)
-                ->latest()
-                ->get();
-        } else {
-
-            // Solo movimientos de su caja
-            $detalles = CajaDetalle::with([
-                'subtipo.tipo_movimiento',
-                'metodoPago',
-                'caja.usuario.persona',
-                'caja.sucursal'
-            ])
-                ->where('caja_id', $caja->id)
-                ->latest()
-                ->get();
-        }
-
+        $detalles = CajaDetalle::with([
+            'subtipo.tipo_movimiento',
+            'metodoPago',
+            'caja.usuario.persona',
+            'caja.sucursal'
+        ])
+            ->where('caja_id', $caja->id)
+            ->latest()
+            ->get();
+            
         $caja->load([
             'usuario',
             'sucursal'
@@ -220,7 +201,7 @@ class CajaController extends Controller
         $metodosPago = MetodoPago::all();
 
         $billeterasDigitales = BilleteraDigital::all();
-     
+
         return view('caja.show', compact(
             'caja',
             'detalles',

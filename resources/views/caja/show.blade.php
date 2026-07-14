@@ -165,8 +165,10 @@
         </div>
 
         <div id="contenedor-tabla-movimientos">
-            @include('caja.partials.tabla_movimientos', ['caja' => $caja])
-        </div>
+            @include('caja.partials.tabla_movimientos', [
+                'caja' => $caja,
+                'detalles' => $detalles,
+            ]) </div>
 
     </div>
     @include('caja.modals.egreso')
