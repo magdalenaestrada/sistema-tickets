@@ -13,14 +13,6 @@ class SerieSucursal extends Model
         "serie",
     ];
 
-    public const PREFIJOS = [
-        1 => 'FF',
-        2 => 'BB',
-        3 => 'NN',
-        4 => 'BC',
-        5 => 'FC',
-    ];
-
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');

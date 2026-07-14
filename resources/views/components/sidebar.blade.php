@@ -67,7 +67,7 @@
                         <span class="link-title">Caja</span>
                     </a>
                 </li>
-               
+
 
                 <li class="nav-item {{ request()->routeIs('pasajes.index') ? 'active' : '' }}"> <a
                         href="{{ route('pasajes.index') }}" class="nav-link">
@@ -116,7 +116,7 @@
                         </ul>
                     </div>
                 </li>
-                 <li class="nav-item {{ request()->is('facturacion*') ? 'active' : '' }}">
+                <li class="nav-item {{ request()->is('facturacion*') ? 'active' : '' }}">
                     <a href="{{ route('facturacion.index') }}" class="nav-link">
                         <i class="link-icon" data-lucide="ticket-check"></i>
                         <span class="link-title">Comprobantes</span>
@@ -146,6 +146,12 @@
                                 <a href="{{ route('empresas.index') }}"
                                     class="nav-link {{ request()->routeIs('empresas.*') ? 'active' : '' }}">
                                     Mi empresa
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('series-sucursal.index') }}"
+                                    class="nav-link {{ request()->routeIs('empresas.*') ? 'active' : '' }}">
+                                    Mis series
                                 </a>
                             </li>
 
@@ -251,9 +257,9 @@
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('reportes.index') }}"
-                                class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
-                                Reportes
-                            </a>
+                                    class="nav-link {{ request()->routeIs('reportes.*') ? 'active' : '' }}">
+                                    Reportes
+                                </a>
                             </li>
 
                         </ul>
