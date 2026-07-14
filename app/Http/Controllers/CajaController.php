@@ -220,11 +220,13 @@ class CajaController extends Controller
         $metodosPago = MetodoPago::all();
 
         $billeterasDigitales = BilleteraDigital::all();
-        dd([
-            'caja_id' => $caja->id,
-            'estado' => $caja->estado,
-            'movimientos' => $detalles->pluck('caja_id')->unique(),
-        ]);
+      dd([
+    'caja_id_actual' => $caja->id,
+    'sql' => $caja->detalles()->toSql(),
+    'bindings' => $caja->detalles()->getBindings(),
+    'ids_relacion' => $caja->detalles()->pluck('caja_id')->toArray(),
+    'ids_query' => CajaDetalle::where('caja_id', $caja->id)->pluck('caja_id')->toArray(),
+]);
         return view('caja.show', compact(
             'caja',
             'detalles',
