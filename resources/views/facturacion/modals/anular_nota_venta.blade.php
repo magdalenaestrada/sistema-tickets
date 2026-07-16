@@ -2,6 +2,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-body p-4">
+    <input type="hidden" id="venta_id_anular" value="">
 
                 <div class="text-center mb-4">
                     <h2 class="fw-bold text-danger">Total a devolver:</h2>

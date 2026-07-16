@@ -235,6 +235,7 @@
             let xd = 2;
             let items = [];
             const urlAnular = "{{ route('facturacion.anular', ':id') }}";
+            const urlAnularNotaVenta = "{{ route('facturacion.anular.nota', ':id') }}";
             const IGV_ENTERO = "{{ $empresa->igv ?? 0 }}";
             const IGV = IGV_ENTERO / 100;
 
@@ -565,6 +566,117 @@
                         return !$(this).prop("disabled");
                     });
             }
+
+            let procesandoAnulacion = false;
+
+            $("#btnConfirmarAnulacion").on("click", function() {
+
+                if (procesandoAnulacion) return; 
+
+                const total = parseFloat($("#modal_total_devolver").text()) || 0;
+                const ventaId = $("#venta_id_anular").val();
+                const motivo = $("#motivo_anulacion").val().trim();
+
+                if (!motivo) {
+                    Swal.fire("Error", "Debe ingresar un motivo.", "error");
+                    return;
+                }
+
+                const metodos = [{
+                        id: "devolucion_efectivo",
+                        metodo_pago_id: 1,
+                        billetera_id: null
+                    },
+                    {
+                        id: "devolucion_tarjeta",
+                        metodo_pago_id: 2,
+                        billetera_id: null
+                    },
+                    {
+                        id: "devolucion_yape",
+                        metodo_pago_id: 3,
+                        billetera_id: 1
+                    },
+                    {
+                        id: "devolucion_plin",
+                        metodo_pago_id: 3,
+                        billetera_id: 2
+                    },
+                    {
+                        id: "devolucion_transferencia",
+                        metodo_pago_id: 4,
+                        billetera_id: null
+                    },
+                ];
+
+                const devoluciones = metodos
+                    .map(m => ({
+                        metodo_pago_id: m.metodo_pago_id,
+                        billetera_id: m.billetera_id,
+                        total: parseFloat($("#" + m.id).val()) || 0
+                    }))
+                    .filter(d => d.total > 0);
+
+                const suma = devoluciones.reduce((acc, d) => acc + d.total, 0);
+
+                if (Math.abs(suma - total) > 0.01) {
+                    $("#alerta_devolucion").removeClass("d-none");
+                    return;
+                }
+                $("#alerta_devolucion").addClass("d-none");
+
+                // 🔒 bloqueo activado
+                procesandoAnulacion = true;
+
+                const $btn = $(this);
+                const textoOriginal = $btn.html();
+
+                $btn.prop("disabled", true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span> Procesando...'
+                );
+                $("#btnCancelarAnulacion, [data-bs-dismiss='modal']").prop("disabled", true);
+
+                Swal.fire({
+                    title: 'Procesando...',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                fetch(urlAnularNotaVenta.replace(":id", ventaId), {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            motivo,
+                            devoluciones
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        Swal.close();
+
+                        if (data.success) {
+                            Swal.fire('OK', data.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                            restaurarBoton();
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire('Error', 'Error de servidor', 'error');
+                        restaurarBoton();
+                    });
+
+                function restaurarBoton() {
+                    procesandoAnulacion = false;
+                    $btn.prop("disabled", false).html(textoOriginal);
+                    $("[data-bs-dismiss='modal']").prop("disabled", false);
+                }
+            });
 
             function agregarItem() {
 

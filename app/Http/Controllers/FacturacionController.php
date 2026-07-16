@@ -359,63 +359,86 @@ class FacturacionController extends Controller
         }
     }
 
-    public function crearNotaAnulacion(Venta $venta, Request $request): NotaVentaAnulada
+    public function crearNotaAnulacion(Venta $venta, Request $request)
     {
         $sumaDevoluciones = collect($request->devoluciones)->sum('total');
 
-        if (round($sumaDevoluciones, 2) !== round($venta->total, 2)) {
-            throw new \Exception('La suma de las devoluciones no coincide con el total de la venta.');
+        if (abs($sumaDevoluciones - $venta->total) > 0.01) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La suma de las devoluciones no coincide con el total de la venta.',
+            ], 422);
         }
+        foreach ($venta->detalles as $detalle) {
 
-        return DB::transaction(function () use ($venta, $request) {
+            if (!$detalle->referencia_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede anular la venta porque un detalle no tiene servicio asociado.',
+                ], 422);
+            }
+        }
+        try {
+            $anulacion = DB::transaction(function () use ($venta, $request) {
 
-            $anulacion = NotaVentaAnulada::create([
-                'venta_id'   => $venta->id,
-                'usuario_id' => Auth::id(),
-                'fecha'      => now(),
-                'total'      => $venta->total,
-                'motivo'     => $request->motivo,
-                'estado'     => 'A',
-            ]);
-
-            foreach ($venta->detalles as $detalle) {
-
-                NotaVentaAnuladaDetalle::create([
-                    'anulacion_id'     => $anulacion->id,
-                    'venta_detalle_id' => $detalle->id,
-                    'cantidad'         => $detalle->cantidad,
-                    'precio_unitario'  => $detalle->precio_unitario,
-                    'subtotal'         => $detalle->total,
+                $anulacion = NotaVentaAnulada::create([
+                    'venta_id'   => $venta->id,
+                    'usuario_id' => Auth::id(),
+                    'fecha'      => now(),
+                    'total'      => $venta->total,
+                    'motivo'     => $request->motivo,
+                    'estado'     => 'A',
                 ]);
 
-                if ($detalle->referencia) {
-                    $detalle->referencia->update([
-                        'estado' => 'X',
+                foreach ($venta->detalles as $detalle) {
+
+                    NotaVentaAnuladaDetalle::create([
+                        'anulacion_id'     => $anulacion->id,
+                        'venta_detalle_id' => $detalle->id,
+                        'cantidad'         => $detalle->cantidad,
+                        'precio_unitario'  => $detalle->precio_unitario,
+                        'subtotal'         => $detalle->total,
+                    ]);
+
+                    if ($detalle->referencia) {
+                        $detalle->referencia->update([
+                            'estado' => 'X',
+                        ]);
+                    }
+                }
+
+                $venta->update([
+                    'estado' => EstadoVenta::ANULADO,
+                    'fecha_anulacion' => now(),
+                ]);
+
+                foreach ($request->devoluciones as $pago) {
+
+                    CajaDetalle::create([
+                        'caja_id'                    => $venta->caja_id,
+                        'subtipo_movimiento_caja_id' => 35,
+                        'metodo_pago_id'             => $pago['metodo_pago_id'],
+                        'billetera_digital_id'       => $pago['billetera_id'] ?? null,
+                        'table_name'                 => NotaVentaAnulada::class,
+                        'table_id'                   => $anulacion->id,
+                        'amount'                     => -abs($pago['total']),
+                        'description'                => 'Anulación Nota Venta ' . $venta->serie . '-' . $venta->numero,
+                        'anulado'                    => false,
                     ]);
                 }
-            }
 
-            $venta->update([
-                'estado' => EstadoVenta::ANULADO,
-                'fecha_anulacion' => now(),
+                return $anulacion;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'La nota de venta fue anulada correctamente.',
             ]);
-
-            foreach ($request->devoluciones as $pago) {
-
-                CajaDetalle::create([
-                    'caja_id'                    => $venta->caja_id,
-                    'subtipo_movimiento_caja_id' => 2,
-                    'metodo_pago_id'             => $pago['metodo_pago_id'],
-                    'billetera_digital_id'       => $pago['billetera_id'] ?? null,
-                    'table_name'                 => NotaVentaAnulada::class,
-                    'table_id'                   => $anulacion->id,
-                    'amount'                     => -abs($pago['total']),
-                    'description'                => 'Anulación Nota Venta ' . $venta->serie . '-' . $venta->numero,
-                    'anulado'                    => false,
-                ]);
-            }
-
-            return $anulacion;
-        });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al anular la nota: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

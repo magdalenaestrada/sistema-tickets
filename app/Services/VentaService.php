@@ -103,9 +103,6 @@ class VentaService
                     if ($descripcion === '') {
                         $descripcion = 'Pasaje de viaje';
                     }
-
-                    $type = 'Pasaje::class';
-
                     $tipoServicioDetalle = 1;
                 } elseif ((int) $tipoServicioId === 2) {
                     $descripcion = 'Encomienda: '
@@ -114,20 +111,18 @@ class VentaService
                         . ($detalle['peso'] ?? 0)
                         . 'kg';
                     $tipoServicioDetalle = 2;
-                    $type = 'Encomienda::class';
                 } else {
                     $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
                     $tipoServicioDetalle = 3;
-                    $type = 'Encomienda::class';
                 }
 
-
+                $type = $servicio_model;
 
                 $venta->detalles()->create([
                     'tipo_servicio_id' => $tipoServicioDetalle,
                     'descripcion' => $descripcion,
                     'referencia_type' => $type,
-                    'referencia_id' => $servicio_id,
+                    'referencia_id' => $servicio_id ?: null,
                     'cantidad' => 1,
                     'precio_venta' => (float) ($detalle['costo'] ?? 0),
                     'total' => (float) ($detalle['costo'] ?? 0),

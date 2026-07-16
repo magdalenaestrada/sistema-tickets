@@ -39,4 +39,7 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
 
     Route::post('anular/{venta}', [FacturacionController::class, 'anularVenta'])
         ->name('anular');
+
+    Route::post('/{venta}/anular-nota', [FacturacionController::class, 'crearNotaAnulacion'])
+        ->name('anular.nota');
 });
