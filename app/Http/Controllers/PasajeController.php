@@ -24,6 +24,7 @@ use App\Models\TipoEncomienda;
 use App\Models\Venta;
 use App\Services\PagoService;
 use App\Services\VentaService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1415,5 +1416,31 @@ class PasajeController extends Controller
         ]);
 
         return view('caja.ticket', compact('venta'));
+    }
+
+    public function ticketVentaPdf(Venta $venta)
+    {
+        $venta->load([
+            'caja.sucursal.empresa',
+            'pasajes.persona',
+            'pasajes.usuario.persona',
+            'pasajes.origen',
+            'pasajes.destino',
+            'pagos.metodoPago',
+        ]);
+
+        // 80mm ≈ 226.77 pt de ancho. El alto lo dejamos generoso
+        // porque dompdf no soporta "auto" real; se recorta solo.
+        $pdf = Pdf::loadView('caja.ticket', [
+            'venta' => $venta,
+            'esPdf' => true, // para diferenciar dentro del blade
+        ])
+            ->setPaper([0, 0, 226.77, 1500], 'portrait');
+
+        $nombreArchivo = "ticket-{$venta->serie}-{$venta->numero}.pdf";
+
+        return $pdf->download($nombreArchivo);
+        // Si prefieres que se abra en el navegador en vez de forzar descarga:
+        // return $pdf->stream($nombreArchivo);
     }
 }

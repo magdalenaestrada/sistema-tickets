@@ -151,32 +151,42 @@
                                         {{ optional($venta->fecha_emision)->format('d/m/Y H:i') }}
                                     </td>
 
-                                    <td class="text-end">
+                                    <td class="text-end align-middle">
+                                        <div class="d-flex justify-content-end align-items-center flex-wrap gap-1">
 
-                                        <div class="btn-group btn-group-sm">
+                                            @if (!($esPdf ?? false))
+                                                <a href="{{ route('ventas.ticket.pdf', $venta->id) }}"
+                                                    class="btn btn-sm btn-danger" title="Ticket">
+                                                    <i data-lucide="receipt-text" class="me-1"></i>
+                                                    
+                                                </a>
+                                            @endif
 
-                                            <a href="{{ route('facturacion.show', $venta) }}" class="btn btn-primary">
-
-                                                Ver
+                                            <a href="{{ route('facturacion.show', $venta) }}"
+                                                class="btn btn-sm btn-primary">
+                                                <i data-lucide="eye" class="me-1"></i>
+                                                
                                             </a>
 
                                             @if ($venta->ruta_xml)
-                                                <a href="{{ route('facturacion.xml', $venta) }}" class="btn btn-info mx-1">
-
+                                                <a href="{{ route('facturacion.xml', $venta) }}"
+                                                    class="btn btn-sm btn-info text-white">
+                                                    <i data-lucide="file-code-2" class="me-1"></i>
                                                     XML
                                                 </a>
                                             @endif
 
                                             @if ($venta->ruta_cdr)
                                                 <a href="{{ route('facturacion.cdr', $venta) }}"
-                                                    class="btn btn-success mx-1">
-
+                                                    class="btn btn-sm btn-success">
+                                                    <i data-lucide="badge-check" class="me-1"></i>
                                                     CDR
                                                 </a>
                                             @endif
+
                                             @hasanyrole('Administrador')
                                                 @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
-                                                    <button type="button" class="btn btn-danger btn-sm mx-1"
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
                                                         onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
                                                         Anular
                                                     </button>
@@ -184,7 +194,6 @@
                                             @endhasanyrole
 
                                         </div>
-
                                     </td>
 
                                 </tr>
