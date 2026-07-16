@@ -619,6 +619,7 @@ class PasajeController extends Controller
                     null
                 );
 
+
                 $venta = $ventaData['venta'];
 
                 $pagos = $request->pagos ?? [];
@@ -673,7 +674,17 @@ class PasajeController extends Controller
 
                 $pasajesCreados[] = $pasaje->id;
                 $pasaje->tramos()->attach($tramos->pluck('id')->toArray());
+                $detalleVenta = $venta->detalles()
+                    ->whereNull('referencia_id')
+                    ->where('tipo_servicio_id', 1)
+                    ->first();
 
+                if ($detalleVenta) {
+                    $detalleVenta->update([
+                        'referencia_type' => Pasaje::class,
+                        'referencia_id'   => $pasaje->id,
+                    ]);
+                }
                 $index = $pasajeroData['index'];
 
                 if (

@@ -8,6 +8,7 @@ use App\Models\CajaDetalle;
 use App\Models\ComunicacionBaja;
 use App\Models\CorrelativoVenta;
 use App\Models\Empresa;
+use App\Models\Encomienda;
 use App\Models\Pasaje;
 use App\Models\Persona;
 use App\Models\SubtipoMovimientoCaja;
@@ -103,6 +104,8 @@ class VentaService
                     if ($descripcion === '') {
                         $descripcion = 'Pasaje de viaje';
                     }
+                    $referenciaType = Pasaje::class;
+
                     $tipoServicioDetalle = 1;
                 } elseif ((int) $tipoServicioId === 2) {
                     $descripcion = 'Encomienda: '
@@ -111,9 +114,11 @@ class VentaService
                         . ($detalle['peso'] ?? 0)
                         . 'kg';
                     $tipoServicioDetalle = 2;
+                    $referenciaType = Encomienda::class;
                 } else {
                     $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
                     $tipoServicioDetalle = 3;
+                    $referenciaType = Encomienda::class;
                 }
 
                 $type = $servicio_model;
@@ -121,7 +126,7 @@ class VentaService
                 $venta->detalles()->create([
                     'tipo_servicio_id' => $tipoServicioDetalle,
                     'descripcion' => $descripcion,
-                    'referencia_type' => $type,
+                    'referencia_type' => $referenciaType,
                     'referencia_id' => $servicio_id ?: null,
                     'cantidad' => 1,
                     'precio_venta' => (float) ($detalle['costo'] ?? 0),
