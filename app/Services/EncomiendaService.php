@@ -26,7 +26,6 @@ class EncomiendaService
 
     public function crearEncomienda($request, $emisorId, $receptorId, $user_id)
     {
-        dd($request->all());
         $data = DB::transaction(function () use ($request, $emisorId, $receptorId, $user_id) {
             $encomienda = Encomienda::create([
                 'origen_pueblito_id' => $request->origen_pueblito_id,
@@ -81,7 +80,7 @@ class EncomiendaService
 
             $ventaData = $ventaService->crearVenta(
                 new Request([
-                    'tipo_servicio_id' => 1,
+                    'tipo_servicio_id' => 2,
                     'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,
@@ -92,7 +91,8 @@ class EncomiendaService
                     'destino_nombre' => $destinoNombre,
                 ]),
                 Encomienda::class,
-                null
+                $encomienda->id
+
             );
 
             $venta = $ventaData['venta'];
@@ -130,7 +130,6 @@ class EncomiendaService
                     'pasaje_id'     => $request->pasaje_id,
                     'encomienda_id' => $encomienda->id,
                 ]);
-
             }
 
             return [

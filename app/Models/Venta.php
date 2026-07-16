@@ -98,4 +98,9 @@ class Venta extends Model
     {
         return $this->belongsTo(Venta::class, 'venta_referencia_id');
     }
+
+    public function devoluciones()
+{
+    return $this->hasMany(NotaVentaAnulada::class);
+}
 }

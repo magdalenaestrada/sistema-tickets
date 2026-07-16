@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tipo_documentos_factura', function (Blueprint $table) {
-            $table->dropUnique('tipo_documentos_factura_codigo_unique');
+            $table->dropUnique('tipo_documentos_factura_codigo_sunat_unique');
         });
     }
 

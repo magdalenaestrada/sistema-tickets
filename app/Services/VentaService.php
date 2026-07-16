@@ -104,6 +104,8 @@ class VentaService
                         $descripcion = 'Pasaje de viaje';
                     }
 
+                    $type = 'Pasaje::class';
+
                     $tipoServicioDetalle = 1;
                 } elseif ((int) $tipoServicioId === 2) {
                     $descripcion = 'Encomienda: '
@@ -112,14 +114,20 @@ class VentaService
                         . ($detalle['peso'] ?? 0)
                         . 'kg';
                     $tipoServicioDetalle = 2;
+                    $type = 'Encomienda::class';
                 } else {
                     $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
                     $tipoServicioDetalle = 3;
+                    $type = 'Encomienda::class';
                 }
+
+
 
                 $venta->detalles()->create([
                     'tipo_servicio_id' => $tipoServicioDetalle,
                     'descripcion' => $descripcion,
+                    'referencia_type' => $type,
+                    'referencia_id' => $servicio_id,
                     'cantidad' => 1,
                     'precio_venta' => (float) ($detalle['costo'] ?? 0),
                     'total' => (float) ($detalle['costo'] ?? 0),
@@ -763,7 +771,7 @@ class VentaService
         $totalVenta = 0.0;
         $detalles = [];
 
-         // 18, 10.5, etc. — tasa vigente para líneas gravadas
+        // 18, 10.5, etc. — tasa vigente para líneas gravadas
         $porcentajeIgv = $this->obtenerPorcentajeIgv($venta);
 
         foreach ($venta->detalles as $detalle) {
@@ -933,7 +941,7 @@ class VentaService
         $totalVenta = 0.0;
         $detalles = [];
 
-        
+
         $porcentajeIgv = $this->obtenerPorcentajeIgv($ventaOriginal);
 
         foreach ($notaCredito->detalles as $detalle) {

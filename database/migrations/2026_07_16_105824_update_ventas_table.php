@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tipo_documentos_factura', function (Blueprint $table) {
-            $table->dropUnique('tipo_documentos_factura_codigo_unique');
+        Schema::table('venta_detalles', function (Blueprint $table) {
+            $table->morphs('referencia');
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tipo_documentos_factura', function (Blueprint $table) {
+        Schema::table('ventas', function (Blueprint $table) {
             //
         });
     }

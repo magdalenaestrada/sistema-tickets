@@ -181,7 +181,6 @@ class FacturacionController extends Controller
                     'valor_venta' => $item['precio'],
                     'base_igv' => $item['precio'],
                     'igv' => $item['precio'] * 0.18,
-
                     'tipo_afectacion_igv' => '10',
                 ]);
             }
@@ -192,6 +191,26 @@ class FacturacionController extends Controller
         return redirect()
             ->route('facturacion.index')
             ->with('success', 'Venta generada y enviada a SUNAT');
+    }
+
+    public function anularNotaVenta(Request $request, VentaService $service)
+    {
+        $request->validate([
+            'venta_id' => 'required|exists:ventas,id',
+            'motivo' => 'required|string',
+            'detalles' => 'required|array|min:1',
+            'pagos' => 'required|array|min:1',
+        ]);
+
+        DB::transaction(function () use ($request) {
+
+            $service->registrarAnulacion($request);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Devolución registrada correctamente.'
+        ]);
     }
 
     public function anularVenta(Venta $venta)
@@ -205,7 +224,6 @@ class FacturacionController extends Controller
                 if (!$puedeAnularConResumen) {
                     $anularConCredito = true;
                 }
-
             } else if ($venta->tipoDocumentoFactura->codigo === '03') {
                 $puedeAnularConResumen = Carbon::parse($venta->fecha_emision)->diffInDays(now()) <= 7;
                 if (!$puedeAnularConResumen) {
@@ -230,7 +248,6 @@ class FacturacionController extends Controller
                 // anular todo lo que sea ... boleta, factura, nota de credito ...
                 $result = app(VentaService::class)->anularVentaDirecta($venta);
                 $metodo = 'Anulación directa';
-
             } else if ($anularConCredito) {
                 // elegir si es nota de credito de boleta o factura
                 $ventaOGEstatus = mb_substr($venta->serie, 0, 1) === 'B' ? 4 : 7;

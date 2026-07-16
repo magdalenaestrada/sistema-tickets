@@ -25,7 +25,9 @@ class VentaDetalle extends Model
         'porcentaje_igv',
         'igv',
         'valor_venta',
-        'tipo_afectacion_igv'
+        'tipo_afectacion_igv',
+        'referencia_type',
+        'referencia_id'
     ];
 
     public function venta()
@@ -46,5 +48,15 @@ class VentaDetalle extends Model
     public function unidadMedida()
     {
         return $this->belongsTo(UnidadMedida::class);
+    }
+
+    public function devoluciones()
+    {
+        return $this->hasMany(NotaVentaAnuladaDetalle::class);
+    }
+    
+    public function referencia()
+    {
+        return $this->morphTo();
     }
 }
