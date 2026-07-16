@@ -358,6 +358,7 @@ class FacturacionController extends Controller
                 return view('tickets.venta', compact('venta'));
         }
     }
+    
     public function crearNotaAnulacion(Venta $venta, Request $request): NotaVentaAnulada
     {
         return DB::transaction(function () use ($venta, $request) {

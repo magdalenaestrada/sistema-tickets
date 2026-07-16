@@ -298,11 +298,25 @@
 
                 $("#venta_id_anular").val(id);
 
+                limpiarDevolucion();
+                distribuirDevolucionPorMetodo();
+
                 const modal = bootstrap.Modal.getOrCreateInstance(
                     document.getElementById("modalAnulacion")
                 );
 
                 modal.show();
+            }
+
+            function limpiarDevolucion() {
+
+                $("#devolucion_efectivo").val("0.00");
+                $("#devolucion_tarjeta").val("0.00");
+                $("#devolucion_yape").val("0.00");
+                $("#devolucion_plin").val("0.00");
+                $("#devolucion_transferencia").val("0.00");
+
+                $("#alerta_devolucion").addClass("d-none");
             }
 
             function obtenerSerie() {
@@ -404,6 +418,107 @@
 
                 });
             }
+
+            function distribuirDevolucionPorMetodo() {
+
+                const metodo = parseInt($("#modal_metodo_devolucion").val()) || 1;
+
+                const efectivo = $("#devolucion_efectivo");
+                const tarjeta = $("#devolucion_tarjeta");
+                const yape = $("#devolucion_yape");
+                const plin = $("#devolucion_plin");
+                const transferencia = $("#devolucion_transferencia");
+
+                const div_efectivo = $("#devolucion_efectivo_div");
+                const div_tarjeta = $("#devolucion_tarjeta_div");
+                const div_yape = $("#devolucion_yape_div");
+                const div_plin = $("#devolucion_plin_div");
+                const div_transferencia = $("#devolucion_transferencia_div");
+
+
+                // Reiniciar valores
+                [
+                    efectivo,
+                    tarjeta,
+                    yape,
+                    plin,
+                    transferencia
+                ].forEach(input => {
+                    input.val("0.00");
+                    input.prop("disabled", true);
+                });
+
+
+                // Mostrar todos primero
+                [
+                    div_efectivo,
+                    div_tarjeta,
+                    div_yape,
+                    div_plin,
+                    div_transferencia
+                ].forEach(div => {
+                    div.prop("hidden", false);
+                });
+
+
+                const total = parseFloat($("#modal_total_devolver").text()) || 0;
+
+
+                switch (metodo) {
+
+                    // EFECTIVO
+                    case 1:
+
+                        efectivo
+                            .prop("disabled", false)
+                            .prop("readonly", true)
+                            .val(total.toFixed(2));
+
+
+                        div_tarjeta.prop("hidden", true);
+                        div_yape.prop("hidden", true);
+                        div_plin.prop("hidden", true);
+                        div_transferencia.prop("hidden", true);
+
+                        break;
+
+
+                        // DIGITAL
+                    case 2:
+
+                        yape.prop("disabled", false);
+                        plin.prop("disabled", false);
+                        tarjeta.prop("disabled", false);
+                        transferencia.prop("disabled", false);
+
+
+                        // por defecto todo a yape
+                        yape.val(total.toFixed(2));
+
+
+                        div_efectivo.prop("hidden", true);
+
+                        break;
+
+
+                        // MIXTO
+                    case 3:
+
+                        efectivo.prop("disabled", false);
+                        tarjeta.prop("disabled", false);
+                        yape.prop("disabled", false);
+                        plin.prop("disabled", false);
+                        transferencia.prop("disabled", false);
+
+                        efectivo.val(total.toFixed(2));
+
+                        break;
+                }
+            }
+
+            $("#modal_metodo_devolucion").on("change", function() {
+                distribuirDevolucionPorMetodo();
+            });
 
             function agregarItem() {
 
