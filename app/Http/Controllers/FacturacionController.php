@@ -3,7 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\EstadoVenta;
+use App\Models\CajaDetalle;
 use App\Models\Empresa;
+use App\Models\Encomienda;
+use App\Models\NotaVentaAnulada;
+use App\Models\NotaVentaAnuladaDetalle;
+use App\Models\Pasaje;
 use App\Models\Persona;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
@@ -16,6 +21,7 @@ use App\Services\VentaService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -193,25 +199,6 @@ class FacturacionController extends Controller
             ->with('success', 'Venta generada y enviada a SUNAT');
     }
 
-    public function anularNotaVenta(Request $request, VentaService $service)
-    {
-        $request->validate([
-            'venta_id' => 'required|exists:ventas,id',
-            'motivo' => 'required|string',
-            'detalles' => 'required|array|min:1',
-            'pagos' => 'required|array|min:1',
-        ]);
-
-        DB::transaction(function () use ($request) {
-
-            $service->registrarAnulacion($request);
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Devolución registrada correctamente.'
-        ]);
-    }
 
     public function anularVenta(Venta $venta)
     {
@@ -370,5 +357,58 @@ class FacturacionController extends Controller
             default:
                 return view('tickets.venta', compact('venta'));
         }
+    }
+    public function crearNotaAnulacion(Venta $venta, Request $request): NotaVentaAnulada
+    {
+        return DB::transaction(function () use ($venta, $request) {
+
+            $anulacion = NotaVentaAnulada::create([
+                'venta_id'   => $venta->id,
+                'usuario_id' => Auth::id(),
+                'fecha'      => now(),
+                'total'      => $venta->total,
+                'motivo'     => $request->motivo,
+                'estado'     => 'A',
+            ]);
+
+            foreach ($venta->detalles as $detalle) {
+
+                NotaVentaAnuladaDetalle::create([
+                    'anulacion_id'     => $anulacion->id,
+                    'venta_detalle_id' => $detalle->id,
+                    'cantidad'         => $detalle->cantidad,
+                    'precio_unitario'  => $detalle->precio_unitario,
+                    'subtotal'         => $detalle->total,
+                ]);
+
+                if ($detalle->referencia) {
+                    $detalle->referencia->update([
+                        'estado' => 'X',
+                    ]);
+                }
+            }
+
+            $venta->update([
+                'estado' => EstadoVenta::ANULADO,
+                'fecha_anulacion' => now(),
+            ]);
+
+            foreach ($request->devoluciones as $pago) {
+
+                CajaDetalle::create([
+                    'caja_id'                    => $venta->caja_id,
+                    'subtipo_movimiento_caja_id' => 2,
+                    'metodo_pago_id'             => $pago['metodo_pago_id'],
+                    'billetera_digital_id'       => $pago['billetera_id'] ?? null,
+                    'table_name'                 => NotaVentaAnulada::class,
+                    'table_id'                   => $anulacion->id,
+                    'amount'                     => -abs($pago['total']),
+                    'description'                => 'Anulación Nota Venta ' . $venta->serie . '-' . $venta->numero,
+                    'anulado'                    => false,
+                ]);
+            }
+
+            return $anulacion;
+        });
     }
 }

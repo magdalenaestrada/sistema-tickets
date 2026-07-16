@@ -156,16 +156,16 @@
 
                                             @if (!($esPdf ?? false))
                                                 <a href="{{ route('ventas.ticket.pdf', $venta->id) }}"
-                                                    class="btn btn-sm btn-danger" title="Ticket">
+                                                    class="btn btn-sm btn-warning" title="Ticket">
                                                     <i data-lucide="receipt-text" class="me-1"></i>
-                                                    
+
                                                 </a>
                                             @endif
 
                                             <a href="{{ route('facturacion.show', $venta) }}"
                                                 class="btn btn-sm btn-primary">
                                                 <i data-lucide="eye" class="me-1"></i>
-                                                
+
                                             </a>
 
                                             @if ($venta->ruta_xml)
@@ -186,10 +186,17 @@
 
                                             @hasanyrole('Administrador')
                                                 @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
-                                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
-                                                        Anular
-                                                    </button>
+                                                    @if ($venta->tipo_documento_factura_id == 3)
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="anularNotaVenta({{ $venta->id }})">
+                                                            Anular
+                                                        </button>
+                                                    @else
+                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
+                                                            Anular
+                                                        </button>
+                                                    @endif
                                                 @endif
                                             @endhasanyrole
 
@@ -220,6 +227,7 @@
         </div>
 
         @include('facturacion.modals.crear')
+        @include('facturacion.modals.anular_nota_venta')
 
     @endsection
     @push('scripts')
@@ -283,6 +291,18 @@
 
                     });
 
+            }
+
+
+            function anularNotaVenta(id) {
+
+                $("#venta_id_anular").val(id);
+
+                const modal = bootstrap.Modal.getOrCreateInstance(
+                    document.getElementById("modalAnulacion")
+                );
+
+                modal.show();
             }
 
             function obtenerSerie() {
