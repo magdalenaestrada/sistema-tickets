@@ -188,7 +188,7 @@
                                                 @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
                                                     @if ($venta->tipo_documento_factura_id == 3)
                                                         <button type="button" class="btn btn-sm btn-outline-danger"
-                                                            onclick="anularNotaVenta({{ $venta->id }})">
+                                                            onclick="anularNotaVenta({{ $venta->id }}, {{ $venta->total }})">
                                                             Anular
                                                         </button>
                                                     @else
@@ -294,9 +294,9 @@
             }
 
 
-            function anularNotaVenta(id) {
-
+            function anularNotaVenta(id, total) {
                 $("#venta_id_anular").val(id);
+                $("#modal_total_devolver").text(parseFloat(total).toFixed(2));
 
                 limpiarDevolucion();
                 distribuirDevolucionPorMetodo();
@@ -304,7 +304,6 @@
                 const modal = bootstrap.Modal.getOrCreateInstance(
                     document.getElementById("modalAnulacion")
                 );
-
                 modal.show();
             }
 
@@ -466,7 +465,6 @@
 
                 switch (metodo) {
 
-                    // EFECTIVO
                     case 1:
 
                         efectivo
@@ -482,8 +480,6 @@
 
                         break;
 
-
-                        // DIGITAL
                     case 2:
 
                         yape.prop("disabled", false);
@@ -491,8 +487,6 @@
                         tarjeta.prop("disabled", false);
                         transferencia.prop("disabled", false);
 
-
-                        // por defecto todo a yape
                         yape.val(total.toFixed(2));
 
 
@@ -500,8 +494,6 @@
 
                         break;
 
-
-                        // MIXTO
                     case 3:
 
                         efectivo.prop("disabled", false);
@@ -514,11 +506,65 @@
 
                         break;
                 }
+
+                aplicarLimiteDevolucion(metodo);
             }
 
             $("#modal_metodo_devolucion").on("change", function() {
                 distribuirDevolucionPorMetodo();
             });
+
+
+            function aplicarLimiteDevolucion(metodo) {
+                if (metodo === 1) return;
+
+                const total = parseFloat($("#modal_total_devolver").text()) || 0;
+                const campos = camposDevolucionHabilitados();
+
+                if (campos.length <= 1) return;
+
+                campos.off("input.limite").on("input.limite", function() {
+                    ajustarMontosDevolucion(campos, total, $(this));
+                });
+            }
+
+            function ajustarMontosDevolucion(campos, total, actual) {
+                let sumaOtros = 0;
+
+                campos.each(function() {
+                    if (this !== actual[0]) {
+                        sumaOtros += parseFloat($(this).val()) || 0;
+                    }
+                });
+
+                const restanteParaEste = Math.max(total - sumaOtros, 0);
+                let valorActual = parseFloat(actual.val()) || 0;
+
+                if (valorActual > restanteParaEste) {
+                    valorActual = restanteParaEste;
+                    actual.val(valorActual.toFixed(2));
+                }
+
+                campos.each(function() {
+                    if (this !== actual[0]) {
+                        const otroValor = parseFloat($(this).val()) || 0;
+                        const sumaSinEste = (sumaOtros - otroValor) + valorActual;
+                        const max = Math.max(total - sumaSinEste, 0);
+                        $(this).attr("max", max.toFixed(2));
+                    }
+                });
+
+                actual.attr("max", restanteParaEste.toFixed(2));
+            }
+
+            function camposDevolucionHabilitados() {
+                return $(
+                        "#devolucion_efectivo, #devolucion_tarjeta, #devolucion_yape, #devolucion_plin, #devolucion_transferencia"
+                    )
+                    .filter(function() {
+                        return !$(this).prop("disabled");
+                    });
+            }
 
             function agregarItem() {
 

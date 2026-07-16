@@ -358,9 +358,15 @@ class FacturacionController extends Controller
                 return view('tickets.venta', compact('venta'));
         }
     }
-    
+
     public function crearNotaAnulacion(Venta $venta, Request $request): NotaVentaAnulada
     {
+        $sumaDevoluciones = collect($request->devoluciones)->sum('total');
+
+        if (round($sumaDevoluciones, 2) !== round($venta->total, 2)) {
+            throw new \Exception('La suma de las devoluciones no coincide con el total de la venta.');
+        }
+
         return DB::transaction(function () use ($venta, $request) {
 
             $anulacion = NotaVentaAnulada::create([

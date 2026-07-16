@@ -18,7 +18,7 @@
                                 Motivo de la anulación
                             </label>
 
-                            <textarea id="motivo_anulacion" class="form-control" rows="3" maxlength="255" placeholder="Ingrese el motivo..."></textarea>
+                            <textarea id="motivo_anulacion" class="form-control" rows="3" maxlength="255" placeholder="Ingrese el motivo..." name="motivo"></textarea>
                         </div>
 
                         <div class="mb-3">
