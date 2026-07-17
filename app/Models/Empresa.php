@@ -18,7 +18,8 @@ class Empresa extends Model
         'icon', 
         'igv',
         'mensaje', 
-        'modo'
+        'modo',
+        'igv_encomienda'
     ];
 
     public function sucursales()

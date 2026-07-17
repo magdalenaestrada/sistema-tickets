@@ -554,7 +554,6 @@ class PasajeController extends Controller
                 $detalles[] = [
                     'descripcion' =>
                     "Pasaje {$origenNombre} - {$destinoNombre} | Asiento {$p['asiento_numero']}",
-
                     'costo' => $p['precio_final'],
                     'descuento' => $p['descuento_monto'],
                 ];
@@ -592,6 +591,7 @@ class PasajeController extends Controller
                         $costo = (float)$item['costo'];
 
                         $detalles[] = [
+                            'tipo_servicio_id' => 3,
                             'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
                             'costo' => $costo,
                             'descuento' => 0,
@@ -1215,6 +1215,7 @@ class PasajeController extends Controller
                             $costo = (float)$item['costo'];
 
                             $detalles[] = [
+                                'tipo_servicio_id' => 3,
                                 'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
                                 'costo' => $costo,
                                 'descuento' => 0,

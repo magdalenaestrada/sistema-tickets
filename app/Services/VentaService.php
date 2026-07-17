@@ -65,6 +65,7 @@ class VentaService
                 $sucursalId
             );
 
+            $empresa = Empresa::first();
             $personaVenta = Persona::updateOrCreate(
                 ['documento' => $numeroDocumento],
                 [
@@ -105,8 +106,8 @@ class VentaService
                         $descripcion = 'Pasaje de viaje';
                     }
                     $referenciaType = Pasaje::class;
-
                     $tipoServicioDetalle = 1;
+                    $igv = $empresa->igv;
                 } elseif ((int) $tipoServicioId === 2) {
                     $descripcion = 'Encomienda: '
                         . ($detalle['tipo_encomienda_nombre'] ?? 'Servicio')
@@ -115,10 +116,12 @@ class VentaService
                         . 'kg';
                     $tipoServicioDetalle = 2;
                     $referenciaType = Encomienda::class;
+                    $igv = $empresa->igv_encomienda;
                 } else {
                     $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
                     $tipoServicioDetalle = 3;
                     $referenciaType = Encomienda::class;
+                    $igv = $empresa->igv_encomienda;
                 }
 
                 $type = $servicio_model;
@@ -126,6 +129,7 @@ class VentaService
                 $venta->detalles()->create([
                     'tipo_servicio_id' => $tipoServicioDetalle,
                     'descripcion' => $descripcion,
+                    'porcentaje_igv' => $igv,
                     'referencia_type' => $referenciaType,
                     'referencia_id' => $servicio_id ?: null,
                     'cantidad' => 1,
