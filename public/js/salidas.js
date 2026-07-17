@@ -482,7 +482,12 @@ function verSalida(id) {
             return; // no hay manifiestos que mostrar
         }
 
-        // 👇 acá pedimos SOLO las sucursales de esta ruta, no todas
+        $("#panelSalidaContenido").html(
+            html +
+                puntos +
+                '<div id="loadingSucursales" class="text-muted mt-3">Cargando opciones de manifiesto...</div>',
+        );
+
         $.get(
             route("salidas.sucursales_ruta", { salida: id }),
             function (sucursalesRuta) {
@@ -563,7 +568,7 @@ function verSalida(id) {
                     }
                 }
 
-                $("#panelSalidaContenido").append(selectorSucursal + botones);
+                $("#loadingSucursales").replaceWith(selectorSucursal + botones);
                 lucide.createIcons();
             },
         );

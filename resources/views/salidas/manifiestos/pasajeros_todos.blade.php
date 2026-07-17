@@ -343,13 +343,26 @@
             font-weight: bold;
             letter-spacing: 0.5px;
         }
+
+        /* ===== Salto de página entre bloques (uno por hoja) ===== */
+        .salto-pagina {
+            page-break-before: always;
+        }
+
+        .main-table {
+            page-break-inside: avoid;
+        }
+
+        .main-table tr {
+            page-break-inside: avoid;
+        }
     </style>
 </head>
 
 <body>
     @foreach ($bloques as $index => $bloque)
         <div class="{{ $index > 0 ? 'salto-pagina' : '' }}">
-            @include('salidas.manifiestos._pasajeros_bloque', $bloque)
+            @include('salidas.manifiestos.pasajeros_bloque', $bloque)
         </div>
     @endforeach
 </body>
