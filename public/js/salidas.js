@@ -444,7 +444,6 @@ window.generarSalidas = function () {
 function verSalida(id) {
     $.get(route("salidas.show", { id: id }), function (salida) {
         let puntos = "";
-        let botones = "";
 
         if (salida.ruta?.puntos?.length) {
             puntos = `
@@ -474,33 +473,129 @@ function verSalida(id) {
             <div class="mb-2"><strong>Estado:</strong> ${salida.estado ?? "-"}</div>
         `;
 
-        if (salida.estado === "en_ruta" || salida.estado === "finalizado") {
-            botones = `
-                <div class="d-grid gap-2 mt-3">
-                    <a href="${route("salidas.manifiesto_pasajeros", { salida: salida.id })}" class="btn btn-primary" target="_blank">
-                        Manifiesto de pasajeros
-                    </a>
+        // Render inicial sin selector/botones (llegan después vía AJAX)
+        $("#tituloPanelSalida").text("Detalle de salida");
+        $("#panelSalidaContenido").html(html + puntos);
+        lucide.createIcons();
 
-                    <a href="${route("salidas.manifiesto_encomiendas", { salida: salida.id })}" class="btn btn-warning" target="_blank">
-                        Manifiesto de encomiendas
-                    </a>
-
-                    <a href="${route("salidas.manifiesto_conductores", { salida: salida.id })}" class="btn btn-success" target="_blank">
-                        Manifiesto de conductores
-                    </a>
-
-                      <a href="${route("salidas.manifiesto_pasajeros_real", { salida: salida.id })}" class="btn btn-secondary" target="_blank">
-                        Manifiesto de pasajeros (Detallado)
-                    </a>
-                    
-                </div>
-            `;
+        if (salida.estado !== "en_ruta" && salida.estado !== "finalizado") {
+            return; // no hay manifiestos que mostrar
         }
 
-        $("#tituloPanelSalida").text("Detalle de salida");
-        $("#panelSalidaContenido").html(html + puntos + botones);
-        lucide.createIcons();
+        // 👇 acá pedimos SOLO las sucursales de esta ruta, no todas
+        $.get(
+            route("salidas.sucursales_ruta", { salida: id }),
+            function (sucursalesRuta) {
+                let selectorSucursal = "";
+
+                if (window.IS_ADMIN) {
+                    selectorSucursal = `
+                    <div class="mb-2 mt-3">
+                        <label class="form-label">Seleccionar sucursal</label>
+                        <select id="sucursal_manifiesto" class="form-select">
+                            ${sucursalesRuta
+                                .map(
+                                    (s) =>
+                                        `<option value="${s.id}">${s.nombre}</option>`,
+                                )
+                                .join("")}
+                        </select>
+                    </div>
+                `;
+                } else {
+                    let mia = sucursalesRuta.find(
+                        (s) =>
+                            String(s.id) === String(window.USER_SUCURSAL?.id),
+                    );
+
+                    if (!mia) {
+                        selectorSucursal = `
+                        <div class="alert alert-warning mt-3">
+                            Tu sucursal no forma parte de esta ruta.
+                        </div>
+                    `;
+                    } else {
+                        selectorSucursal = `
+                        <div class="mb-2 mt-3">
+                            <label class="form-label">Sucursal</label>
+                            <input type="text" class="form-control" value="${mia.nombre}" disabled>
+                            <input type="hidden" id="sucursal_manifiesto" value="${mia.id}">
+                        </div>
+                    `;
+                    }
+                }
+
+                let botones = "";
+
+                // Solo mostramos botones si hay una sucursal válida seleccionable
+                if (
+                    window.IS_ADMIN ||
+                    sucursalesRuta.some(
+                        (s) =>
+                            String(s.id) === String(window.USER_SUCURSAL?.id),
+                    )
+                ) {
+                    botones = `
+                    <div class="d-grid gap-2 mt-2">
+                        <button class="btn btn-primary" onclick="abrirManifiesto(${salida.id}, 'pasajeros')">
+                            Manifiesto de pasajeros
+                        </button>
+                        <button class="btn btn-warning" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
+                            Manifiesto de encomiendas
+                        </button>
+                        <button class="btn btn-success" onclick="abrirManifiesto(${salida.id}, 'conductores')">
+                            Manifiesto de conductores
+                        </button>
+                        <button class="btn btn-secondary" onclick="abrirManifiesto(${salida.id}, 'pasajeros_real')">
+                            Manifiesto de pasajeros (Detallado)
+                        </button>
+                    </div>
+                `;
+
+                    if (salida.estado === "finalizado") {
+                        botones += `
+                        <div class="d-grid gap-2 mt-2">
+                            <button class="btn btn-dark" onclick="imprimirTodosManifiestos(${salida.id})">
+                                Imprimir todos los manifiestos (todas las sucursales)
+                            </button>
+                        </div>
+                    `;
+                    }
+                }
+
+                $("#panelSalidaContenido").append(selectorSucursal + botones);
+                lucide.createIcons();
+            },
+        );
     });
+}
+
+function abrirManifiesto(salidaId, tipo) {
+    let sucursalId = $("#sucursal_manifiesto").val();
+
+    if (!sucursalId) {
+        Swal.fire("Atención", "Selecciona una sucursal", "warning");
+        return;
+    }
+
+    let rutasPorTipo = {
+        pasajeros: "salidas.manifiesto_pasajeros",
+        encomiendas: "salidas.manifiesto_encomiendas",
+        conductores: "salidas.manifiesto_conductores",
+        pasajeros_real: "salidas.manifiesto_pasajeros_real",
+    };
+
+    let url =
+        route(rutasPorTipo[tipo], { salida: salidaId }) +
+        "?sucursal_id=" +
+        sucursalId;
+
+    window.open(url, "_blank");
+}
+
+function imprimirTodosManifiestos(salidaId) {
+    let url = route("salidas.manifiesto_pasajeros.todos", { salida: salidaId });
+    window.open(url, "_blank");
 }
 
 function bloqueCambioEstado(salida = {}) {

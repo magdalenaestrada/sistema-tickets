@@ -205,6 +205,7 @@ class SalidaController extends Controller
     {
         $salida->load([
             'horario.ruta.puntos.pueblito',
+            'horario.ruta.puntos.sucursal',
             'horario.tipo_vehiculo',
             'vehiculo',
             'conductorPrincipal',
@@ -216,15 +217,19 @@ class SalidaController extends Controller
         ]);
 
         $empresa = Empresa::first();
-
         $user = auth()->user();
 
-        $sucursalId = $user->rol == 'Administrador'
+        $sucursalId = $user->rol === 'Administrador'
             ? $request->sucursal_id
             : $user->sucursal_id;
 
-        $datos = $salida->datosManifiesto($sucursalId);
+        abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
+        // 👇 valida que la sucursal pertenezca a la ruta de esta salida
+        $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
+        abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
+
+        $datos = $salida->datosManifiesto($sucursalId);
         abort_unless($datos, 404, 'La sucursal no pertenece a la ruta.');
 
         $pasajes = $salida->pasajerosEnTramo($sucursalId);
@@ -233,20 +238,14 @@ class SalidaController extends Controller
             ?? $salida->horario->tipo_vehiculo->asientos
             ?? 46;
 
-        $origenNombre = $datos['origen'];
-        $destinoNombre = $datos['destino'];
-
-        $html = view(
-            'salidas.manifiestos.pasajeros',
-            compact(
-                'salida',
-                'empresa',
-                'pasajes',
-                'origenNombre',
-                'destinoNombre',
-                'capacidad'
-            )
-        )->render();
+        $html = view('salidas.manifiestos.pasajeros', [
+            'salida'        => $salida,
+            'empresa'       => $empresa,
+            'pasajes'       => $pasajes,
+            'origenNombre'  => $datos['origen'],
+            'destinoNombre' => $datos['destino'],
+            'capacidad'     => $capacidad,
+        ])->render();
 
         return $pdfService->generar(
             $html,
@@ -254,6 +253,75 @@ class SalidaController extends Controller
             'P'
         );
     }
+
+    public function manifiestoPasajerosTodos(Salida $salida, PdfService $pdfService)
+    {
+        abort_unless(
+            $salida->estado === 'finalizado',
+            403,
+            'Solo se pueden imprimir todos los manifiestos de una salida finalizada.'
+        );
+
+        $salida->load([
+            'horario.ruta.puntos.pueblito',
+            'horario.ruta.puntos.sucursal',
+            'horario.tipo_vehiculo',
+            'vehiculo',
+            'conductorPrincipal',
+            'conductorSecundario',
+            'pasajes.persona.tipoDocumento',
+            'pasajes.origen',
+            'pasajes.destino',
+            'pasajes.venta',
+        ]);
+
+        $empresa = Empresa::first();
+        $sucursales = $salida->sucursalesRuta();
+
+        abort_if($sucursales->isEmpty(), 404, 'La ruta no tiene sucursales asignadas.');
+
+        $capacidad = $salida->horario->tipo_vehiculo->capacidad
+            ?? $salida->horario->tipo_vehiculo->asientos
+            ?? 46;
+
+        $bloques = [];
+
+        foreach ($sucursales as $sucursal) {
+            $datos = $salida->datosManifiesto($sucursal->id);
+
+            if (!$datos) {
+                continue;
+            }
+
+            $bloques[] = [
+                'salida'        => $salida,
+                'empresa'       => $empresa,
+                'pasajes'       => $salida->pasajerosEnTramo($sucursal->id),
+                'origenNombre'  => $datos['origen'],
+                'destinoNombre' => $datos['destino'],
+                'capacidad'     => $capacidad,
+            ];
+        }
+
+        $html = view('salidas.manifiestos.pasajeros_todos', compact('bloques'))->render();
+
+        return $pdfService->generar(
+            $html,
+            "manifiesto_pasajeros_todas_sucursales_{$salida->id}.pdf",
+            'P'
+        );
+    }
+
+    public function sucursalesRuta(Salida $salida)
+    {
+        return response()->json(
+            $salida->sucursalesRuta()->map(fn($s) => [
+                'id' => $s->id,
+                'nombre' => $s->nombre_comercial,
+            ])
+        );
+    }
+
 
     public function manifiestoPasajerosReal(Salida $salida, PdfService $pdfService)
     {

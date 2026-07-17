@@ -347,7 +347,11 @@
 </head>
 
 <body>
-    @include('salidas.manifiestos.pasajeros_bloque')
+    @foreach ($bloques as $index => $bloque)
+        <div class="{{ $index > 0 ? 'salto-pagina' : '' }}">
+            @include('salidas.manifiestos._pasajeros_bloque', $bloque)
+        </div>
+    @endforeach
 </body>
 
 </html>

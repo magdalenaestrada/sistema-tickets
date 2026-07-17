@@ -276,7 +276,7 @@ class Salida extends Model
 
     public function datosManifiesto($sucursalId)
     {
-        $puntos = $this->horario->ruta->puntos;
+        $puntos = $this->horario->ruta->puntos->sortBy('orden')->values();
 
         $actual = $puntos->firstWhere('sucursal_id', $sucursalId);
 
@@ -284,12 +284,23 @@ class Salida extends Model
             return null;
         }
 
+        $ultimoPunto = $puntos->last();
+
         return [
-            'origen' => $actual->pueblito?->descripcion ?? '-',
-            'destino' => optional(
-                $puntos->firstWhere('orden', $actual->orden + 1)
-            )->pueblito?->descripcion ?? '-',
-            'orden' => $actual->orden,
+            'origen'  => $actual->pueblito?->descripcion ?? '-',
+            'destino' => $ultimoPunto->pueblito?->descripcion ?? '-',
+            'orden'   => $actual->orden,
         ];
+    }
+
+    public function sucursalesRuta()
+    {
+        return $this->horario->ruta->puntos
+            ->whereNotNull('sucursal_id')
+            ->sortBy('orden')
+            ->pluck('sucursal')
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 }

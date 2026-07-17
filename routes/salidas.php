@@ -12,6 +12,13 @@ Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function
         '/directa',
         [SalidaController::class, 'storeDirecta']
     )->name('store.directa');
+
+    Route::get('{salida}/sucursales-ruta', [SalidaController::class, 'sucursalesRuta'])
+        ->name('sucursales_ruta');
+
+    Route::get('{salida}/manifiesto-pasajeros/todos', [SalidaController::class, 'manifiestoPasajerosTodos'])
+        ->name('manifiesto_pasajeros.todos');
+
     Route::delete('/bulk', [SalidaController::class, 'destroyBulk'])
         ->name('destroy.bulk');
     Route::get('/{id}', [SalidaController::class, 'show'])->name('show');
