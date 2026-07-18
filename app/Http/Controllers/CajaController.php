@@ -512,11 +512,6 @@ class CajaController extends Controller
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Métodos privados
-    |--------------------------------------------------------------------------
-    */
 
     private function esAdmin($user): bool
     {

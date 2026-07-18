@@ -12,31 +12,27 @@
 
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-4 mb-3 ">
                         <label>Sucursal</label>
-
-                        <select id="sucursal_id" name="sucursal_id" class="form-control">
-                            @foreach ($sucursales as $sucursal)
-                                <option value="{{ $sucursal->id }}">
-                                    {{ $sucursal->nombre_comercial }}
+                        <select id="caja_id" name="caja_id" class="form-select" required>
+                            @foreach ($cajas as $caja)
+                                <option value="{{ $caja->id }}" data-series='@json($caja->sucursal->serie->pluck('serie', 'tipo_documento_factura_id'))'>
+                                    {{ $caja->sucursal->nombre_comercial }} — {{ $caja->usuario->persona->nombre_completo }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 mb-3">
                         <label>Tipo documento</label>
-
-                        <select name="tipo_documento_factura_id" class="form-control" required>
-
+                        <select id="tipo_documento_modal" name="tipo_documento_factura_id" class="form-select" required>
                             @foreach ($tiposDocumento as $tipo)
                                 <option value="{{ $tipo->id }}">
                                     {{ $tipo->descripcion }}
                                 </option>
                             @endforeach
-
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 mb-3">
                         <label>Serie</label>
 
                         <input type="text" id="serie" class="form-control" readonly>
@@ -45,7 +41,7 @@
 
                 </div>
                 <div class="row mb-2">
-                    <div class="col-md-4">
+                    <div class="col-md-4 mb-3">
                         <label>Documento</label>
 
                         <div class="input-group">
@@ -63,12 +59,12 @@
                     </div>
 
 
-                    <div class="col-md-4">
+                    <div class="col-md-4 mb-3">
                         <label id="lblNombre">Nombres</label>
                         <input type="text" id="nombres" name="nombres" class="form-control">
                     </div>
 
-                    <div class="col-md-4" id="divApellidos">
+                    <div class="col-md-4 mb-3" id="divApellidos">
                         <label>Apellidos</label>
                         <input type="text" id="apellidos" name="apellidos" class="form-control">
                     </div>
@@ -87,11 +83,20 @@
 
                 <hr>
 
-                <h6>Detalle de servicio</h6>
-
+                <h6><b>DETALLE DEL SERVICIO</b></h6>
+                <br>
                 <div class="row mb-2">
+                    <div class="col-md-2 mb-3">
 
-                    <div class="col-md-6">
+                        <select name="tipo_servicio_id" id="tipo_servicio_id" class="form-select">
+
+                            <option value="1">Pasaje</option>
+                            <option value="2">Encomienda</option>
+                            <option value="3">Sobreequipaje</option>
+
+                        </select>
+                    </div>
+                    <div class="col-md-4">
                         <input type="text" id="descripcion" class="form-control" placeholder="Escribir descripción">
                     </div>
                     <div class="col-md-2">
@@ -108,21 +113,20 @@
                             +
                         </button>
                     </div>
-
                 </div>
 
-                {{-- TABLE --}}
                 <table class="table table-sm table-bordered">
-                    <thead class="table-light">
+                    <thead class="table-light text-center">
                         <tr>
                             <th>Descripción</th>
-                            <th width="120">Unidades</th>
-                            <th width="120">Precio Unitario</th>
-                            <th width="120">Subtotal</th>
-                            <th width="80">Acciones</th>
+                            <th width="90">Unidades</th>
+                            <th width="110">P. Unit. (c/IGV)</th>
+                            <th width="110">Valor s/IGV</th>
+                            <th width="90">IGV</th>
+                            <th width="110">Subtotal</th>
+                            <th width="60">Acciones</th>
                         </tr>
                     </thead>
-
                     <tbody id="tablaItems"></tbody>
                 </table>
 
@@ -130,13 +134,10 @@
 
                 <hr>
 
-                {{-- TOTALES --}}
                 <div class="text-end">
-
                     <h6>Subtotal: S/ <span id="subtotal">0.00</span></h6>
-                    <h6>IGV ({{ $empresa->igv }}%): S/ <span id="igv">0.00</span></h6>
+                    <h6>IGV: S/ <span id="igv">0.00</span></h6>
                     <h4>Total: S/ <span id="total">0.00</span></h4>
-
                 </div>
 
             </div>

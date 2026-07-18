@@ -131,19 +131,21 @@ $(function () {
             const precioFinal = parseFloat(seatPrices[num]) || 0;
             const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
 
-            // sobre equipaje
             let totalSobre = 0;
-            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
-                totalSobre +=
-                    parseFloat($(this).find(".sobre-costo").val()) || 0;
-            });
+            const sobreActivo = $(`#toggle_sobre_equipaje_${i}`).is(":checked");
+
+            if (sobreActivo) {
+                $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
+                    totalSobre +=
+                        parseFloat($(this).find(".sobre-costo").val()) || 0;
+                });
+            }
 
             subtotalOriginal += precioBase + totalSobre;
             totalDescuento += descuento;
             totalPagar += precioFinal + totalSobre;
 
             $(`#precio_asiento_${i}`).text(`S/ ${precioFinal.toFixed(2)}`);
-
             if ($(`#descuento_asiento_${i}`).length) {
                 $(`#descuento_asiento_${i}`).text(`S/ ${descuento.toFixed(2)}`);
             }
@@ -822,6 +824,9 @@ $(function () {
 
         $(".tabla-sobre-equipaje").each(function () {
             const index = $(this).data("index");
+            const activo = $(`#toggle_sobre_equipaje_${index}`).is(":checked");
+
+            if (!activo) return; // no mandar nada si está desactivado
 
             $(this)
                 .find("tbody tr")
@@ -830,17 +835,14 @@ $(function () {
                         `sobre_equipaje_detalles[${index}][${i}][tipo_encomienda_id]`,
                         $(this).find(".sobre-tipo").val(),
                     );
-
                     formData.append(
                         `sobre_equipaje_detalles[${index}][${i}][descripcion]`,
                         $(this).find(".sobre-desc").val(),
                     );
-
                     formData.append(
                         `sobre_equipaje_detalles[${index}][${i}][peso]`,
                         $(this).find(".sobre-peso").val(),
                     );
-
                     formData.append(
                         `sobre_equipaje_detalles[${index}][${i}][costo]`,
                         $(this).find(".sobre-costo").val(),
@@ -1255,12 +1257,16 @@ $(function () {
 
         $(`#card_sobre_equipaje_${index}`).toggle(this.checked);
 
-        if (
-            this.checked &&
-            $(`#tablaSobreEquipaje_${index} tbody tr`).length === 0
-        ) {
-            agregarFilaSobreEquipaje(index);
+        if (this.checked) {
+            if ($(`#tablaSobreEquipaje_${index} tbody tr`).length === 0) {
+                agregarFilaSobreEquipaje(index);
+            }
+        } else {
+            $(`#tablaSobreEquipaje_${index} tbody`).empty();
+            $(`#total_sobre_equipaje_${index}`).text("0.00");
         }
+
+        actualizarCostoTotal(); // recalcular ya sin sobre equipaje
     });
 
     $(document).on("click", ".btn-agregar-sobre", function () {

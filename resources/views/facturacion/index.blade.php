@@ -15,10 +15,8 @@
             </div>
 
             <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalVentaRapida">
-
                 + Nueva venta
             </button>
-
         </div>
 
         <div class="row mb-3">
@@ -64,8 +62,104 @@
         <div class="card shadow-sm">
 
             <div class="card-body p-0">
+                <div class="card shadow-sm mb-3">
 
-                <div class="table-responsive">
+
+
+                </div>
+
+                <div class="card-body">
+
+                    <form method="GET">
+
+                        <div class="row g-2">
+
+                            <div class="col-md-2">
+                                <label class="form-label">Desde</label>
+                                <input type="date" class="form-control" name="fecha_desde"
+                                    value="{{ request('fecha_desde') }}">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Hasta</label>
+                                <input type="date" class="form-control" name="fecha_hasta"
+                                    value="{{ request('fecha_hasta') }}">
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label">Tipo</label>
+
+                                <select class="form-select" name="tipo_documento_factura_id">
+
+                                    <option value="">Todos</option>
+
+                                    @foreach ($tiposDocumento as $tipo)
+                                        <option value="{{ $tipo->id }}" @selected(request('tipo_documento_factura_id') == $tipo->id)>
+                                            {{ $tipo->descripcion }}
+                                        </option>
+                                    @endforeach
+
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+
+                                <label class="form-label">Estado</label>
+
+                                <select class="form-select" name="estado">
+
+                                    <option value="">Todos</option>
+
+                                    @foreach (\App\Enums\EstadoVenta::cases() as $estado)
+                                        <option value="{{ $estado->value }}" @selected(request('estado') == $estado->value)>
+
+                                            {{ $estado->value }}
+
+                                        </option>
+                                    @endforeach
+
+                                </select>
+
+                            </div>
+
+                            <div class="col-md-2">
+
+                                <label class="form-label">
+                                    N° Documento
+                                </label>
+
+                                <input type="text" class="form-control" name="documento"
+                                    value="{{ request('documento') }}">
+
+                            </div>
+
+                            <div class="col-md-1 d-grid">
+
+                                <label class="form-label">&nbsp;</label>
+
+                                <button class="btn btn-primary">
+                                    Buscar
+                                </button>
+
+                            </div>
+                            <div class="col-md-1 d-grid">
+
+                                <label class="form-label">&nbsp;</label>
+
+                                <a href="{{ route('facturacion.index') }}" class="btn btn-outline-secondary">
+
+                                    Limpiar
+
+                                </a>
+
+                            </div>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <div class="table-responsive  p-4">
 
                     <table class="table table-hover align-middle mb-0">
 
@@ -156,30 +250,30 @@
 
                                             @if (!($esPdf ?? false))
                                                 <a href="{{ route('ventas.ticket.pdf', $venta->id) }}"
-                                                    class="btn btn-sm btn-warning" title="Ticket">
-                                                    <i data-lucide="receipt-text" class="me-1"></i>
+                                                    class="btn btn-xs btn-warning" title="Ticket">
+                                                    <i data-lucide="receipt-text"></i>
 
                                                 </a>
                                             @endif
 
                                             <a href="{{ route('facturacion.show', $venta) }}"
-                                                class="btn btn-sm btn-primary">
-                                                <i data-lucide="eye" class="me-1"></i>
+                                                class="btn btn-xs btn-primary">
+                                                <i data-lucide="eye"></i>
 
                                             </a>
 
                                             @if ($venta->ruta_xml)
                                                 <a href="{{ route('facturacion.xml', $venta) }}"
-                                                    class="btn btn-sm btn-info text-white">
-                                                    <i data-lucide="file-code-2" class="me-1"></i>
+                                                    class="btn btn-xs btn-info text-white">
+                                                    <i data-lucide="file-code-2"></i>
                                                     XML
                                                 </a>
                                             @endif
 
                                             @if ($venta->ruta_cdr)
                                                 <a href="{{ route('facturacion.cdr', $venta) }}"
-                                                    class="btn btn-sm btn-success">
-                                                    <i data-lucide="badge-check" class="me-1"></i>
+                                                    class="btn btn-xs btn-success">
+                                                    <i data-lucide="badge-check"></i>
                                                     CDR
                                                 </a>
                                             @endif
@@ -187,12 +281,12 @@
                                             @hasanyrole('Administrador')
                                                 @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
                                                     @if ($venta->tipo_documento_factura_id == 3)
-                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        <button type="button" class="btn btn-xs btn-outline-danger"
                                                             onclick="anularNotaVenta({{ $venta->id }}, {{ $venta->total }})">
                                                             Anular
                                                         </button>
                                                     @else
-                                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        <button type="button" class="btn btn-xs btn-outline-danger"
                                                             onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
                                                             Anular
                                                         </button>
@@ -236,15 +330,12 @@
             let items = [];
             const urlAnular = "{{ route('facturacion.anular', ':id') }}";
             const urlAnularNotaVenta = "{{ route('facturacion.anular.nota', ':id') }}";
-            const IGV_ENTERO = "{{ $empresa->igv ?? 0 }}";
-            const IGV = IGV_ENTERO / 100;
+            const IGV_VIAJE = {{ $empresa->igv ?? 0 }};
+            const IGV_ENCOMIENDA = {{ $empresa->igv_encomienda ?? 0 }};
 
             function buscarCliente() {
-
                 let documento = $("#doc_cliente").val().trim();
-
                 $("#btnBuscarCliente").prop("disabled", true);
-
                 $.getJSON(route("buscar.buscar") + "?documento=" + documento)
 
                     .done(function(data) {
@@ -294,6 +385,16 @@
 
             }
 
+            function obtenerIGV() {
+
+                const servicio = parseInt($("#tipo_servicio_id").val());
+
+                if (servicio === 1) {
+                    return IGV_VIAJE / 100;
+                }
+
+                return IGV_ENCOMIENDA / 100;
+            }
 
             function anularNotaVenta(id, total) {
                 $("#venta_id_anular").val(id);
@@ -320,32 +421,18 @@
             }
 
             function obtenerSerie() {
-
-                const descripcion = $("#sucursal_id option:selected").data("series");
-
-                if (!descripcion) return "";
-
-                const [boleta, factura, nota] =
-                descripcion.split("/").map(s => s.trim());
-
-                const tipo = $('select[name="tipo_documento_factura_id"] option:selected')
-                    .text()
-                    .toLowerCase();
-
-                if (tipo.includes("boleta")) return boleta;
-                if (tipo.includes("factura")) return factura;
-
-                return nota;
+                const series = $("#caja_id option:selected").data("series");
+                if (!series) return "";
+                const tipoDocumentoId = $("#tipo_documento_modal").val();
+                return series[tipoDocumentoId] || "";
             }
 
             function actualizarSerie() {
                 $("#serie").val(obtenerSerie());
             }
 
-            $("#sucursal_id").on("change", actualizarSerie);
-
-            $('select[name="tipo_documento_factura_id"]').on("change", actualizarSerie);
-
+            $("#caja_id").on("change", actualizarSerie);
+            $("#tipo_documento_modal").on("change", actualizarSerie);
             $(document).ready(actualizarSerie);
 
             function actualizarCamposCliente() {
@@ -571,7 +658,7 @@
 
             $("#btnConfirmarAnulacion").on("click", function() {
 
-                if (procesandoAnulacion) return; 
+                if (procesandoAnulacion) return;
 
                 const total = parseFloat($("#modal_total_devolver").text()) || 0;
                 const ventaId = $("#venta_id_anular").val();
@@ -679,29 +766,33 @@
             });
 
             function agregarItem() {
-
                 let descripcion = $("#descripcion").val().trim();
-
                 const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.-]+$/;
 
                 if (!regex.test(descripcion)) {
-                    Swal.fire(
-                        "Error",
-                        "La descripción solo puede contener letras, números y espacios.",
-                        "error"
-                    );
+                    Swal.fire("Error", "La descripción solo puede contener letras, números y espacios.", "error");
                     return;
                 }
+
                 let precio = parseFloat($("#precio").val());
                 let unidad = parseFloat($("#unidad").val());
-                let subtotal = unidad * precio;
-                if (!descripcion || isNaN(precio) || isNaN(precio)) return;
+                let tipoServicioId = parseInt($("#tipo_servicio_id").val());
+
+                if (!descripcion || isNaN(precio) || isNaN(unidad) || precio <= 0 || unidad <= 0) {
+                    Swal.fire("Error", "Completa unidades y precio correctamente.", "error");
+                    return;
+                }
+
+                const subtotal = unidad * precio;
+                const porcentajeIgv = tipoServicioId === 1 ? IGV_VIAJE / 100 : IGV_ENCOMIENDA / 100;
 
                 items.push({
+                    tipo_servicio_id: tipoServicioId,
                     descripcion,
-                    precio,
-                    unidad,
-                    subtotal
+                    cantidad: unidad,
+                    precio, // precio unitario CON IGV
+                    igv: porcentajeIgv,
+                    subtotal // unidad * precio, con IGV incluido
                 });
 
                 $("#descripcion").val("");
@@ -717,39 +808,44 @@
             }
 
             function render() {
-
                 let tbody = $("#tablaItems");
-                tbody.html("");
+                tbody.empty();
 
-                let total = 0;
+                let totalGeneral = 0;
+                let baseGeneral = 0;
+                let igvGeneral = 0;
 
                 items.forEach((item, i) => {
+                    totalGeneral += item.subtotal;
 
-                    total += item.subtotal;
+                    const baseItem = item.subtotal / (1 + item.igv); // valor sin IGV
+                    const igvItem = item.subtotal - baseItem; // monto de IGV
 
-                    tbody.append(`
-            <tr>
-                <td>${item.descripcion}</td>
-                <td>${item.unidad}</td>
-                <td>${item.precio.toFixed(2)}</td>
-                <td>${item.subtotal.toFixed(2)}</td>
-                <td>
-                    <button type="button"
-                            class="btn btn-danger btn-sm"
-                            onclick="eliminarItem(${i})">
-                        X
-                    </button>
-                </td>
-            </tr>
-        `);
+                    baseGeneral += baseItem;
+                    igvGeneral += igvItem;
+
+                    const fila = `
+                        <tr>
+                            <td>${item.descripcion}</td>
+                            <td class="text-center">${item.cantidad}</td>
+                            <td class="text-end">${item.precio.toFixed(2)}</td>
+                            <td class="text-end">${baseItem.toFixed(2)}</td>
+                            <td class="text-end">
+                                <small>S/ ${igvItem.toFixed(2)}</small>
+                            </td>
+                            <td class="text-end">${item.subtotal.toFixed(2)}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-danger btn-xs" onclick="eliminarItem(${i})">X</button>
+                            </td>
+                        </tr>
+                    `;
+
+                    tbody.append(fila);
                 });
 
-                let base = total / (1 + IGV);
-                let igv = total - base;
-
-                $("#subtotal").text(base.toFixed(2));
-                $("#igv").text(igv.toFixed(2));
-                $("#total").text(total.toFixed(2));
+                $("#subtotal").text(baseGeneral.toFixed(2));
+                $("#igv").text(igvGeneral.toFixed(2));
+                $("#total").text(totalGeneral.toFixed(2));
 
                 $("#itemsInput").val(JSON.stringify(items));
             }

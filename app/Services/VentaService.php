@@ -82,7 +82,6 @@ class VentaService
             );
 
             $venta = Venta::create([
-                'tipo_servicio_id' => $tipoServicioId,
                 'sucursal_id' => $sucursalId,
                 'usuario_id' => $user->id,
                 'persona_id' => $personaVenta->id,
@@ -182,79 +181,79 @@ class VentaService
         ];
     }
 
-    public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1, $request, $sucursal_id = null): array
-    {
-        $user = Auth::user();
-        $precioFinal = $precio - $descuento;
+    // public function crearVentaPasaje($horario, $asiento, $precio, $descuento, $tipo_documento_factura_id = 1, $request, $sucursal_id = null): array
+    // {
+    //     $user = Auth::user();
+    //     $precioFinal = $precio - $descuento;
 
-        $cajaId = data_get($request, 'caja_id');
+    //     $cajaId = data_get($request, 'caja_id');
 
-        if ($user->hasRole('Administrador')) {
-            $caja = Caja::with('sucursal')
-                ->where('id', $cajaId)
-                ->where('estado', 'A')
-                ->first();
+    //     if ($user->hasRole('Administrador')) {
+    //         $caja = Caja::with('sucursal')
+    //             ->where('id', $cajaId)
+    //             ->where('estado', 'A')
+    //             ->first();
 
-            if (!$caja) {
-                throw new \Exception('Debe seleccionar una caja válida.');
-            }
+    //         if (!$caja) {
+    //             throw new \Exception('Debe seleccionar una caja válida.');
+    //         }
 
-            $sucursalId = $caja->sucursal_id;
-        } else {
-            $caja = Caja::with('sucursal')
-                ->where('usuario_id', $user->id)
-                ->where('estado', 'A')
-                ->first();
+    //         $sucursalId = $caja->sucursal_id;
+    //     } else {
+    //         $caja = Caja::with('sucursal')
+    //             ->where('usuario_id', $user->id)
+    //             ->where('estado', 'A')
+    //             ->first();
 
-            if (!$caja) {
-                throw new \Exception('El usuario no tiene caja abierta.');
-            }
+    //         if (!$caja) {
+    //             throw new \Exception('El usuario no tiene caja abierta.');
+    //         }
 
-            $cajaId = $caja->id;
-            $sucursalId = $caja->sucursal_id;
-        }
+    //         $cajaId = $caja->id;
+    //         $sucursalId = $caja->sucursal_id;
+    //     }
 
-        $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user, $sucursalId, $cajaId) {
-            $comprobante = $this->reservarSerieYNumero((int) $tipo_documento_factura_id, $sucursalId);
+    //     $venta = DB::transaction(function () use ($horario, $asiento, $precio, $descuento, $precioFinal, $tipo_documento_factura_id, $user, $sucursalId, $cajaId) {
+    //         $comprobante = $this->reservarSerieYNumero((int) $tipo_documento_factura_id, $sucursalId);
 
-            $venta = Venta::create([
-                'tipo_servicio_id' => 1,
-                'sucursal_id' => $sucursalId,
-                'usuario_id' => $user->id,
-                'persona_id' => $user->persona_id,
-                'tipo_documento_factura_id' => $tipo_documento_factura_id,
-                'caja_id' => $cajaId,
-                'serie' => $comprobante['serie'],
-                'numero' => $comprobante['numero'],
-                'total' => $precioFinal,
-                'estado' => 'P',
-                'fecha_emision' => now(),
-            ]);
+    //         $venta = Venta::create([
+    //             'tipo_servicio_id' => 1,
+    //             'sucursal_id' => $sucursalId,
+    //             'usuario_id' => $user->id,
+    //             'persona_id' => $user->persona_id,
+    //             'tipo_documento_factura_id' => $tipo_documento_factura_id,
+    //             'caja_id' => $cajaId,
+    //             'serie' => $comprobante['serie'],
+    //             'numero' => $comprobante['numero'],
+    //             'total' => $precioFinal,
+    //             'estado' => 'P',
+    //             'fecha_emision' => now(),
+    //         ]);
 
-            $descripcion = $horario->punto_origen->nombre_comercial . ' - '
-                . $horario->punto_destino->nombre_comercial
-                . ' - Asiento ' . $asiento;
+    //         $descripcion = $horario->punto_origen->nombre_comercial . ' - '
+    //             . $horario->punto_destino->nombre_comercial
+    //             . ' - Asiento ' . $asiento;
 
-            $venta->detalles()->create([
-                'tipo_servicio_id' => 1,
-                'descripcion' => $descripcion,
-                'cantidad' => 1,
-                'precio_venta' => $precio,
-                'total' => $precioFinal,
-                'descuento' => $descuento,
-            ]);
+    //         $venta->detalles()->create([
+    //             'tipo_servicio_id' => 1,
+    //             'descripcion' => $descripcion,
+    //             'cantidad' => 1,
+    //             'precio_venta' => $precio,
+    //             'total' => $precioFinal,
+    //             'descuento' => $descuento,
+    //         ]);
 
-            $venta->load(['persona', 'detalles']);
+    //         $venta->load(['persona', 'detalles']);
 
-            return $venta;
-        });
+    //         return $venta;
+    //     });
 
-        return [
-            'venta' => $venta,
-            'servicio_model' => Pasaje::class,
-            'servicio_id' => null,
-        ];
-    }
+    //     return [
+    //         'venta' => $venta,
+    //         'servicio_model' => Pasaje::class,
+    //         'servicio_id' => null,
+    //     ];
+    // }
 
     public function emitirVenta(Venta $venta): array
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\EstadoVenta;
+use App\Models\Caja;
 use App\Models\CajaDetalle;
 use App\Models\Empresa;
 use App\Models\Encomienda;
@@ -29,12 +30,61 @@ class FacturacionController extends Controller
 {
     public function index(Request $request)
     {
-        $ventas = Venta::with([
+        $user = $request->user();
+
+        $query = Venta::with([
             'persona',
             'tipoDocumentoFactura',
-        ])
+        ]);
+
+        // Fecha desde
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_emision', '>=', $request->fecha_desde);
+        }
+
+        // Fecha hasta
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_emision', '<=', $request->fecha_hasta);
+        }
+
+        // Tipo de comprobante
+        if ($request->filled('tipo_documento_factura_id')) {
+            $query->where(
+                'tipo_documento_factura_id',
+                $request->tipo_documento_factura_id
+            );
+        }
+
+        // Estado
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        // Buscar por documento
+        if ($request->filled('documento')) {
+
+            $buscar = strtoupper(trim($request->documento));
+
+            if (str_contains($buscar, '-')) {
+
+                [$serie, $numero] = explode('-', $buscar);
+
+                $query->where('serie', $serie)
+                    ->where('numero', $numero);
+            } else {
+
+                $query->where(function ($q) use ($buscar) {
+
+                    $q->where('numero', 'like', "%{$buscar}%")
+                        ->orWhereRaw("CONCAT(serie,'-',numero) LIKE ?", ["%{$buscar}%"]);
+                });
+            }
+        }
+
+        $ventas = $query
             ->orderByDesc('fecha_emision')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         $totalVentas = Venta::count();
 
@@ -46,7 +96,13 @@ class FacturacionController extends Controller
 
         $rechazadas = Venta::where('estado', EstadoVenta::RECHAZADO)->count();
 
-        $sucursales = Sucursal::with('serie')->get();
+        $cajas = Caja::with('sucursal.serie')
+            ->where('estado', 'A')
+            ->when(
+                !$user->hasRole('Administrador'),
+                fn($q) => $q->where('usuario_id', $user->id)
+            )
+            ->get();
         $empresa = Empresa::first();
         $porcentajeIgv = $empresa->igv;
         $tiposDocumento = TipoDocumentoFactura::all();
@@ -60,7 +116,7 @@ class FacturacionController extends Controller
             'rechazadas',
             'tiposDocumento',
             'personas',
-            'sucursales',
+            'cajas',
             'empresa',
             'porcentajeIgv'
         ));
@@ -131,74 +187,70 @@ class FacturacionController extends Controller
     /**
      * QUE SE SUPONE QUE ES ESTO!!!
      */
-    public function store(Request $request, EmitirVentaService $service)
+    public function store(Request $request, VentaService $ventaService)
     {
         $items = json_decode($request->items, true);
 
         if (!$items || count($items) === 0) {
             return back()->with('error', 'Debe agregar items');
         }
-        DB::transaction(function () use ($request, $items, $service) {
-            $empresa = Empresa::first();
-            $porcentaje = $empresa->igv / 100;
-            $subtotal = collect($items)->sum('precio');
-            $igv = $subtotal * $porcentaje;
-            $total = $subtotal + $igv;
 
-            $persona = Persona::updateOrCreate(
-                ['documento' => $request->documento],
-                [
-                    'tipo_documento_id' => strlen($request->documento) === 8 ? 1 : 2,
-                    'nombres' => $request->nombres,
-                    'apellidos' => $request->apellidos,
-                    'celular' => $request->celular,
-                    'telefono' => $request->telefono,
-                    'direccion' => $request->direccion,
-                    'correo' => $request->correo,
-                    'estado' => 'A',
-                    'fecha_creacion' => now(),
-                ]
-            );
+        $empresa = Empresa::first();
 
-            $venta = Venta::create([
-                'sucursal_id' => $request->sucursal_id,
-                'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
-                'persona_id' => $persona->id,
-                'fecha_emision' => now(),
+        $porcentaje = $request->tipo_servicio_id == 1
+            ? ($empresa->igv / 100)
+            : ($empresa->igv_encomienda / 100);
 
-                'subtotal_sin_igv' => $subtotal,
-                'subtotal' => $subtotal,
-                'impuesto' => $igv,
-                'total' => $total,
+        $detalles = [];
+        $total = 0;
 
-                'estado' => 'GENERADO',
-            ]);
+        foreach ($items as $item) {
 
-            foreach ($items as $item) {
+            $base = (float) $item['precio'];
 
-                VentaDetalle::create([
-                    'venta_id' => $venta->id,
-                    'descripcion' => $item['descripcion'],
-
-                    'cantidad' => 1,
-                    'valor_unitario' => $item['precio'],
-                    'precio_unitario' => $item['precio'],
-
-                    'valor_venta' => $item['precio'],
-                    'base_igv' => $item['precio'],
-                    'igv' => $item['precio'] * 0.18,
-                    'tipo_afectacion_igv' => '10',
-                ]);
+            if ($porcentaje > 0) {
+                $igv = round($base * $porcentaje, 2);
+                $importe = $base + $igv;
+            } else {
+                $igv = 0;
+                $importe = $base;
             }
 
-            $service->emitir($venta);
-        });
+            $total += $importe;
+
+            $detalles[] = [
+                'descripcion' => $item['descripcion'],
+                'costo' => $importe,
+                'descuento' => 0,
+            ];
+        }
+
+        $data = new \Illuminate\Http\Request([
+            'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
+            'tipo_servicio_id'          => $request->tipo_servicio_id,
+            'numero_documento_id'       => $request->documento,
+            'razon_social'              => trim($request->nombres . ' ' . $request->apellidos),
+            'direccion'                 => $request->direccion,
+            'correo'                    => $request->correo,
+            'telefono'                  => $request->telefono,
+            'celular'                   => $request->celular,
+            'caja_id'                   => $request->caja_id,
+            'total'                     => $total,
+            'detalles'                  => $detalles,
+        ]);
+
+        $resultado = $ventaService->crearVenta(
+            $data,
+            null,   // referencia_type
+            null    // referencia_id
+        );
+
+        $ventaService->emitirVenta($resultado['venta']);
 
         return redirect()
             ->route('facturacion.index')
             ->with('success', 'Venta generada y enviada a SUNAT');
     }
-
 
     public function anularVenta(Venta $venta)
     {
