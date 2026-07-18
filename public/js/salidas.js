@@ -1,7 +1,7 @@
 let tablaSalidas;
 let horariosSalida = window.HORARIOS_SALIDA || [];
 let rutasSalida = window.RUTAS_SALIDA || [];
-console.log(window.CONDUCTORES);
+console.log(window.IS_ADMIN);
 function cargarHorasDisponibles() {
     let horario_id = $("#horario_id").val();
     let fecha = $("#fecha_salida").val();
@@ -821,9 +821,9 @@ function editarSalida(id) {
             // 🔒 HORARIO
             if ($("#horario_id")[0]?.tomselect) {
                 if (bloquearBase || reprogramado) {
-                    $("#horario_id")[0].tomselect.disable();
+                    $("#horario_id")[0].tomselect.lock();
                 } else {
-                    $("#horario_id")[0].tomselect.enable();
+                    $("#horario_id")[0].tomselect.unlock();
                 }
             }
 
@@ -851,7 +851,7 @@ function editarSalida(id) {
 }
 
 window.guardarEdicionSalida = function (id, horarioOriginal) {
-    let horario_id = $("#horario_id").val();
+    let horario_id = $("#horario_id").val() || horarioOriginal;
     let fecha_salida = $("#fecha_salida").val();
     let estado = $("#estado").val();
     let fecha_cambio_estado = $("#fecha_cambio_estado").val();

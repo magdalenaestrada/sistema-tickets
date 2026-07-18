@@ -91,6 +91,7 @@
         window.RUTAS_SALIDA = @json($rutas);
         window.TIPOS_VEHICULO = @json($tiposVehiculo);
         window.IS_ADMIN = {{ auth()->user()->hasRole('Administrador') ? 'true' : 'false' }};
+        
         window.SUCURSALES = @json(\App\Models\Sucursal::select('id', 'nombre_comercial')->get());
         window.USER_SUCURSAL = @json(auth()->user()->sucursal ? auth()->user()->sucursal->only('id', 'nombre_comercial') : null);
     </script>
