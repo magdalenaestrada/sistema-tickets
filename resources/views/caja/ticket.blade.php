@@ -251,6 +251,12 @@
     @if ($salida)
         <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL VIAJE</div>
         <table class="table-data w-100">
+             <tr>
+                <td class="bold" style="width: 35%;">Pasajero:</td>
+                <td class="right">
+                    {{ $pasaje->persona->nombre_completo }}
+                </td>
+            </tr>
             <tr>
                 <td class="bold" style="width: 35%;">Origen:</td>
                 <td class="right">

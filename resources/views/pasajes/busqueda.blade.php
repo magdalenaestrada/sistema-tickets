@@ -50,7 +50,7 @@
                         <option value="">Todos</option>
                         <option value="V" {{ request('estado') == 'V' ? 'selected' : '' }}>Vendido</option>
                         <option value="F" {{ request('estado') == 'F' ? 'selected' : '' }}>Abordó</option>
-                        <option value="X" {{ request('estado') == 'X' ? 'selected' : '' }}>No abordó / Cancelado
+                        <option value="X" {{ request('estado') == 'X' ? 'selected' : '' }}>Anulado
                         </option>
                     </select>
                 </div>
