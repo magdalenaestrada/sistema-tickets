@@ -184,9 +184,7 @@ class FacturacionController extends Controller
         return Storage::disk('public')
             ->download($venta->ruta_pdf);
     }
-    /**
-     * QUE SE SUPONE QUE ES ESTO!!!
-     */
+
     public function store(Request $request, VentaService $ventaService)
     {
         $items = json_decode($request->items, true);
@@ -206,21 +204,14 @@ class FacturacionController extends Controller
 
         foreach ($items as $item) {
 
-            $base = (float) $item['precio'];
-
-            if ($porcentaje > 0) {
-                $igv = round($base * $porcentaje, 2);
-                $importe = $base + $igv;
-            } else {
-                $igv = 0;
-                $importe = $base;
-            }
-
-            $total += $importe;
-
+            $tipoServicioItemId = (int) ($item['tipo_servicio_id'] ?? $request->tipo_servicio_id);
+            $precio = (float) $item['precio'];
+            $total += $precio;
             $detalles[] = [
+                'tipo_servicio_id' => $tipoServicioItemId,
                 'descripcion' => $item['descripcion'],
-                'costo' => $importe,
+                'cantidad' => $item['cantidad'],
+                'costo' => $precio,
                 'descuento' => 0,
             ];
         }

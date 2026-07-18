@@ -48,7 +48,6 @@ class VentaService
 
             $tipoDocumentoFacturaId = (int) data_get($request, 'tipo_documento_factura_id')
                 ?: (int) data_get($request, 'tipo_doc_sunat');
-            $tipoServicioId = (int) data_get($request, 'tipo_servicio_id');
             $numeroDocumento = trim((string) data_get($request, 'numero_documento_id'));
             $direccion = trim((string) data_get($request, 'direccion'));
             $razonSocial = data_get($request, 'razon_social');
@@ -95,6 +94,8 @@ class VentaService
             ]);
 
             foreach ($detalles as $detalle) {
+                $tipoServicioId = (int) ($detalle['tipo_servicio_id'] ?? data_get($request, 'tipo_servicio_id'));
+
                 if ((int) $tipoServicioId === 1) {
 
                     $descripcion = trim(
@@ -123,18 +124,50 @@ class VentaService
                     $igv = $empresa->igv_encomienda;
                 }
 
-                $type = $servicio_model;
+                $cantidad = (float) ($detalle['cantidad'] ?? 1);
+                $precioVenta = (float) ($detalle['costo'] ?? 0);
+                $descuento = (float) ($detalle['descuento'] ?? 0);
+
+                $precioUnitario = round($precioVenta / $cantidad, 2);
+
+                if ($igv > 0) {
+
+                    $factor = 1 + ($igv / 100);
+                    $valorUnitario = round($precioUnitario / $factor, 2);
+                    $baseIgv = round($valorUnitario * $cantidad, 2);
+                    $montoIgv = round($precioVenta - $baseIgv, 2);
+                    $valor_venta = $montoIgv + $baseIgv;
+                    $tipoAfectacion = 10;
+                } else {
+
+                    $valorUnitario = $precioUnitario;
+                    $baseIgv = $precioVenta;
+                    $montoIgv = 0;
+                    $valor_venta = $montoIgv + $baseIgv;
+                    $tipoAfectacion = 30;
+                }
 
                 $venta->detalles()->create([
-                    'tipo_servicio_id' => $tipoServicioDetalle,
-                    'descripcion' => $descripcion,
-                    'porcentaje_igv' => $igv,
-                    'referencia_type' => $referenciaType,
-                    'referencia_id' => $servicio_id ?: null,
-                    'cantidad' => 1,
-                    'precio_venta' => (float) ($detalle['costo'] ?? 0),
-                    'total' => (float) ($detalle['costo'] ?? 0),
-                    'descuento' => (float) ($detalle['descuento'] ?? 0),
+                    'tipo_servicio_id'    => $tipoServicioDetalle,
+                    'descripcion'         => $descripcion,
+                    'referencia_type'     => $referenciaType,
+                    'referencia_id'       => $servicio_id ?: null,
+
+                    'cantidad'            => $cantidad,
+                    'codigo'              => 'NIU',
+                    'unidad'              => 'NIU',
+
+                    'precio_venta'        => $baseIgv,
+                    'precio_unitario'     => $precioUnitario,
+                    'valor_unitario'      => $valorUnitario,
+                    'valor_venta'         => $valor_venta,
+                    'base_igv'            => $baseIgv,
+                    'porcentaje_igv'      => $igv,
+                    'igv'                 => $montoIgv,
+                    'tipo_afectacion_igv' => $tipoAfectacion,
+
+                    'total'               => $precioVenta,
+                    'descuento'           => $descuento,
                 ]);
             }
 

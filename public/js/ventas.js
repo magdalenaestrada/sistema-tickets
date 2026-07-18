@@ -1145,21 +1145,47 @@ $(function () {
                         .text("Terminar Venta");
                     return;
                 }
-                const win = window.open(
-                    res.ticket_url,
-                    "_blank",
-                    "width=420,height=700",
-                );
 
-                setTimeout(() => {
-                    if (win && !win.closed) {
-                        try {
-                            win.focus();
-                            win.print();
-                        } catch (e) {}
+                // 1. Creamos el iframe invisible
+                const iframe = document.createElement("iframe");
+                iframe.style.position = "fixed";
+                iframe.style.right = "0";
+                iframe.style.bottom = "0";
+                iframe.style.width = "0";
+                iframe.style.height = "0";
+                iframe.style.border = "0";
+
+                iframe.src = res.ticket_url;
+
+                // 2. Esperamos a que cargue el ticket
+                iframe.onload = function () {
+                    try {
+                        iframe.contentWindow.focus();
+
+                        // Escuchamos el evento de "después de imprimir/cancelar" dentro del iframe
+                        iframe.contentWindow.addEventListener(
+                            "afterprint",
+                            function () {
+                                window.location.href = res.redirect;
+                            },
+                        );
+
+                        iframe.contentWindow.print();
+
+                        // Respaldo: Algunos navegadores antiguos no soportan 'afterprint' en iframes.
+                        // Como window.print() es síncrono y pausa el JS, si llega a esta línea
+                        // es porque el cuadro de impresión ya se cerró.
+                        setTimeout(() => {
+                            window.location.href = res.redirect;
+                        }, 300);
+                    } catch (e) {
+                        console.error("Error al intentar imprimir:", e);
+                        // Si algo falla con la impresora, redirigimos igual para proteger la venta
+                        window.location.href = res.redirect;
                     }
-                    window.location.href = res.redirect;
-                }, 1200);
+                };
+
+                document.body.appendChild(iframe);
             },
             error: function (xhr) {
                 $("#btnConfirmarVenta")

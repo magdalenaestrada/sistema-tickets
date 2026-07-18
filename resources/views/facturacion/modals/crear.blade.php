@@ -13,18 +13,20 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-4 mb-3 ">
-                        <label>Sucursal</label>
+                        <label>Sucursal <span style="color: red">*</span></label>
                         <select id="caja_id" name="caja_id" class="form-select" required>
                             @foreach ($cajas as $caja)
                                 <option value="{{ $caja->id }}" data-series='@json($caja->sucursal->serie->pluck('serie', 'tipo_documento_factura_id'))'>
-                                    {{ $caja->sucursal->nombre_comercial }} — {{ $caja->usuario->persona->nombre_completo }}
+                                    {{ $caja->sucursal->nombre_comercial }} —
+                                    {{ $caja->usuario->persona->nombre_completo }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label>Tipo documento</label>
+                        <label>Tipo documento <span style="color: red">*</span></label>
                         <select id="tipo_documento_modal" name="tipo_documento_factura_id" class="form-select" required>
+                            <option value="">Seleccionar un tipo</option>
                             @foreach ($tiposDocumento as $tipo)
                                 <option value="{{ $tipo->id }}">
                                     {{ $tipo->descripcion }}
@@ -33,20 +35,20 @@
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label>Serie</label>
+                        <label>Serie<span style="color: red">*</span></label>
 
-                        <input type="text" id="serie" class="form-control" readonly>
+                        <input type="text" id="serie" class="form-control" readonly required>
                     </div>
 
 
                 </div>
                 <div class="row mb-2">
                     <div class="col-md-4 mb-3">
-                        <label>Documento</label>
+                        <label>Documento <span style="color: red">*</span></label>
 
                         <div class="input-group">
 
-                            <input type="text" id="doc_cliente" class="form-control" placeholder="DNI o RUC">
+                            <input type="text" id="doc_cliente" name="documento" class="form-control" placeholder="DNI o RUC" required >
 
                             <button type="button" id="btnBuscarCliente" class="btn btn-primary"
                                 onclick="buscarCliente()">
@@ -60,13 +62,13 @@
 
 
                     <div class="col-md-4 mb-3">
-                        <label id="lblNombre">Nombres</label>
-                        <input type="text" id="nombres" name="nombres" class="form-control">
+                        <label id="lblNombre">Nombres <span style="color: red">*</span></label>
+                        <input type="text" id="nombres" name="nombres" class="form-control" required>
                     </div>
 
                     <div class="col-md-4 mb-3" id="divApellidos">
-                        <label>Apellidos</label>
-                        <input type="text" id="apellidos" name="apellidos" class="form-control">
+                        <label>Apellidos <span style="color: red">*</span></label>
+                        <input type="text" id="apellidos" name="apellidos" class="form-control" required>
                     </div>
 
                 </div>
@@ -118,6 +120,7 @@
                 <table class="table table-sm table-bordered">
                     <thead class="table-light text-center">
                         <tr>
+                            <th width="90">Tipo</th>
                             <th>Descripción</th>
                             <th width="90">Unidades</th>
                             <th width="110">P. Unit. (c/IGV)</th>

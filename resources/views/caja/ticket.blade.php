@@ -140,7 +140,9 @@
     </style>
 
     <script>
-        window.onload = function () { window.print(); };
+        window.onload = function() {
+            window.print();
+        };
     </script>
 </head>
 
@@ -157,26 +159,33 @@
         $empresa = $venta->sucursal?->empresa;
         $cliente = $venta->persona;
 
-        // Pasaje principal (el primero asociado a esta venta)
         $pasaje = $venta->pasajes?->first();
-        $salida = $pasaje?->salida;           // Salida model
-        $descuento = $pasaje?->descuento;        // Descuento model
+        $salida = $pasaje?->salida; // Salida model
+        $descuento = $pasaje?->descuento; // Descuento model
 
-        // Monto de descuento: puede venir del detalle o del modelo Descuento
-        // Ajusta $montoDescuento según la lógica real de tu sistema
         $montoDescuento = 0;
         if ($descuento) {
-            // Ejemplo: campo "monto" o "valor" en tabla descuentos
-            $montoDescuento = $descuento->monto ?? $descuento->valor ?? 0;
+            $montoDescuento = $descuento->monto ?? ($descuento->valor ?? 0);
         }
 
-        // Op. Gravada = total - IGV
-        $opGravada = $venta->subtotal ?? ($venta->total - $venta->impuesto);
+        $sobreEquipajeItems = $venta->pasajes?->flatMap(fn($p) => $p->sobreEquipajes ?? collect()) ?? collect();
 
-        // Todos los sobreequipajes de todos los pasajes de esta venta
-        $sobreEquipajeItems = $venta->pasajes
-                ?->flatMap(fn($p) => $p->sobreEquipajes ?? collect())
-            ?? collect();
+        $opGravada = 0;
+        $opInafecta = 0;
+        $opExonerada = 0;
+        $igvTotal = 0;
+
+        foreach ($venta->detalles as $detalle) {
+            if ($detalle->tipo_afectacion_igv == 10) {
+                $opGravada += $detalle->base_igv;
+                $igvTotal += $detalle->igv;
+            } elseif ($detalle->tipo_afectacion_igv == 30) {
+                $opInafecta += $detalle->total;
+            } elseif ($detalle->tipo_afectacion_igv == 20) {
+                $opExonerada += $detalle->total;
+            }
+        }
+
     @endphp
 
     {{-- ENCABEZADO --}}
@@ -210,9 +219,7 @@
         <tr>
             <td class="bold">F. Emisión:</td>
             <td class="right">
-                {{ $venta->fecha_emision
-    ? $venta->fecha_emision->format('d/m/Y H:i')
-    : $venta->created_at->format('d/m/Y H:i') }}
+                {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
             </td>
         </tr>
         <tr>
@@ -229,9 +236,7 @@
         <tr>
             <td class="bold" style="width: 30%;">Cliente:</td>
             <td class="right">
-                {{ $cliente
-    ? $cliente->nombres . ' ' . $cliente->apellidos
-    : 'CLIENTE VARIOS' }}
+                {{ $cliente ? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}
             </td>
         </tr>
         <tr>
@@ -249,28 +254,27 @@
             <tr>
                 <td class="bold" style="width: 35%;">Origen:</td>
                 <td class="right">
-                    {{ $pasaje->origen?->descripcion ?? $salida->origen ?? '—' }}
+                    {{ $pasaje->origen?->descripcion ?? ($salida->origen ?? '—') }}
                 </td>
             </tr>
             <tr>
                 <td class="bold">Destino:</td>
                 <td class="right">
-                    {{ $pasaje->destino?->descripcion ?? $salida->destino ?? '—' }}
+                    {{ $pasaje->destino?->descripcion ?? ($salida->destino ?? '—') }}
                 </td>
             </tr>
             <tr>
                 <td class="bold">F. Salida:</td>
                 {{-- Ajusta el campo según tu modelo Salida: fecha_salida / fecha / fecha_programada --}}
                 <td class="right">
-                    {{ optional($salida->fecha_salida ?? $salida->fecha ?? null)
-                ?->format('d/m/Y') ?? '—' }}
+                    {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') ?? '—' }}
                 </td>
             </tr>
             <tr>
                 <td class="bold">H. Salida:</td>
                 {{-- Ajusta el campo: hora_salida / hora / hora_programada --}}
                 <td class="right">
-                    {{ $salida->hora_salida ?? $salida->hora ?? '—' }}
+                    {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
                 </td>
             </tr>
             <tr>
@@ -305,27 +309,70 @@
 
     {{-- TOTALES --}}
     <table class="table-data w-100">
-        <tr>
-            <td class="bold">Op. Gravada:</td>
-            <td class="right">S/ {{ number_format($opGravada, 2) }}</td>
-        </tr>
-        <tr>
-            <td class="bold">IGV ({{ $empresa->igv ?? 18 }}.%):</td>
-            <td class="right">S/ {{ number_format($venta->impuesto, 2) }}</td>
-        </tr>
-        {{-- Descuentos: siempre visible, 0.00 cuando no hay ninguno --}}
-        <tr>
-            <td class="bold">Descuentos:</td>
-            <td class="right">- S/ {{ number_format($montoDescuento, 2) }}</td>
-        </tr>
-        <tr style="font-size: 12px; border-top: 1px dashed #000;">
-            <td class="bold" style="padding-top: 3px;">TOTAL A PAGAR:</td>
-            <td class="right bold" style="padding-top: 3px;">
+
+        @if ($opGravada > 0)
+            <tr>
+                <td class="bold">Op. Gravada:</td>
+                <td class="right">
+                    S/ {{ number_format($opGravada, 2) }}
+                </td>
+            </tr>
+        @endif
+
+
+        @if ($opInafecta > 0)
+            <tr>
+                <td class="bold">Op. Inafecta:</td>
+                <td class="right">
+                    S/ {{ number_format($opInafecta, 2) }}
+                </td>
+            </tr>
+        @endif
+
+
+        @if ($opExonerada > 0)
+            <tr>
+                <td class="bold">Op. Exonerada:</td>
+                <td class="right">
+                    S/ {{ number_format($opExonerada, 2) }}
+                </td>
+            </tr>
+        @endif
+
+
+        @if ($igvTotal > 0)
+            <tr>
+                <td class="bold">
+                    IGV (18%):
+                </td>
+                <td class="right">
+                    S/ {{ number_format($igvTotal, 2) }}
+                </td>
+            </tr>
+        @endif
+
+
+        @if ($montoDescuento > 0)
+            <tr>
+                <td class="bold">Descuentos:</td>
+                <td class="right">
+                    - S/ {{ number_format($montoDescuento, 2) }}
+                </td>
+            </tr>
+        @endif
+
+
+        <tr style="font-size:12px;border-top:1px dashed #000;">
+            <td class="bold" style="padding-top:3px;">
+                TOTAL A PAGAR:
+            </td>
+            <td class="right bold" style="padding-top:3px;">
                 S/ {{ number_format($venta->total, 2) }}
             </td>
         </tr>
-    </table>
 
+    </table>
+    
     <div class="line"></div>
 
     {{-- PIE DE PÁGINA --}}
@@ -386,18 +433,16 @@
                     <td class="bold">Cliente:</td>
                     <td class="right">
                         {{ $personaSE
-            ? $personaSE->nombres . ' ' . $personaSE->apellidos
-            : ($enc?->emisor
-                ? $enc->emisor->nombres . ' ' . $enc->emisor->apellidos
-                : 'CLIENTE VARIOS') }}
+                            ? $personaSE->nombres . ' ' . $personaSE->apellidos
+                            : ($enc?->emisor
+                                ? $enc->emisor->nombres . ' ' . $enc->emisor->apellidos
+                                : 'CLIENTE VARIOS') }}
                     </td>
                 </tr>
                 <tr>
                     <td class="bold">DNI:</td>
                     <td class="right">
-                        {{ $personaSE->documento
-            ?? $enc?->emisor?->documento
-            ?? '—' }}
+                        {{ $personaSE->documento ?? ($enc?->emisor?->documento ?? '—') }}
                     </td>
                 </tr>
                 <tr>
@@ -429,7 +474,9 @@
                                 <td class="bold">Bulto:</td>
                                 <td class="right">
                                     {{ $det->descripcion }}
-                                    @if ($det->peso) ({{ $det->peso }} kg) @endif
+                                    @if ($det->peso)
+                                        ({{ $det->peso }} kg)
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

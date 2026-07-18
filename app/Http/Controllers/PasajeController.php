@@ -720,6 +720,19 @@ class PasajeController extends Controller
                             'pasaje_id'     => $pasaje->id,
                             'encomienda_id' => $encomienda->id,
                         ]);
+
+                        $detalleVenta = $venta->detalles()
+                            ->whereNull('referencia_id')
+                            ->where('tipo_servicio_id', 3)
+                            ->where('total', $sobre['costo'])
+                            ->first();
+
+                        if ($detalleVenta) {
+                            $detalleVenta->update([
+                                'referencia_type' => Encomienda::class,
+                                'referencia_id'   => $encomienda->id,
+                            ]);
+                        }
                     }
                 }
             }

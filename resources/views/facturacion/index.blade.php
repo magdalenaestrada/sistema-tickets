@@ -824,21 +824,26 @@
                     baseGeneral += baseItem;
                     igvGeneral += igvItem;
 
+                    const NOMBRES_SERVICIO = {
+                        1: "Pasaje",
+                        2: "Encomienda",
+                        3: "Sobreequipaje"
+                    };
+
                     const fila = `
-                        <tr>
-                            <td>${item.descripcion}</td>
-                            <td class="text-center">${item.cantidad}</td>
-                            <td class="text-end">${item.precio.toFixed(2)}</td>
-                            <td class="text-end">${baseItem.toFixed(2)}</td>
-                            <td class="text-end">
-                                <small>S/ ${igvItem.toFixed(2)}</small>
-                            </td>
-                            <td class="text-end">${item.subtotal.toFixed(2)}</td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-danger btn-xs" onclick="eliminarItem(${i})">X</button>
-                            </td>
-                        </tr>
-                    `;
+    <tr>
+        <td class="text-center">${NOMBRES_SERVICIO[item.tipo_servicio_id] || '-'}</td>
+        <td>${item.descripcion}</td>
+        <td class="text-center">${item.cantidad}</td>
+        <td class="text-end">${item.precio.toFixed(2)}</td>
+        <td class="text-end">${baseItem.toFixed(2)}</td>
+        <td class="text-end"><small>S/ ${igvItem.toFixed(2)}</small></td>
+        <td class="text-end">${item.subtotal.toFixed(2)}</td>
+        <td class="text-center">
+            <button type="button" class="btn btn-danger btn-xs" onclick="eliminarItem(${i})">X</button>
+        </td>
+    </tr>
+`;
 
                     tbody.append(fila);
                 });
