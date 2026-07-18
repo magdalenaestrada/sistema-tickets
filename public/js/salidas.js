@@ -557,7 +557,7 @@ function verSalida(id) {
                     </div>
                 `;
 
-                    if (salida.estado === "finalizado") {
+                    if (salida.estado === "finalizado" && window.IS_ADMIN) {
                         botones += `
                         <div class="d-grid gap-2 mt-2">
                             <button class="btn btn-dark" onclick="imprimirTodosManifiestos(${salida.id})">

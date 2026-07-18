@@ -59,10 +59,18 @@ class SalidaController extends Controller
 
     public function index_vendedor()
     {
+        // Sucursal del vendedor autenticado (ajusta según tu relación real)
+        $sucursalId = auth()->user()->empleado->sucursal_id;
+
         $rutas = Ruta::all();
 
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
-        $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
+
+
+        $conductores = Empleado::with('persona')
+            ->where('cargo_id', 3)
+            ->get();
+
         $tiposVehiculo = TipoVehiculo::all();
         $hoy = now()->toDateString();
         $horaActual = now()->format('H:i:s');
@@ -74,8 +82,8 @@ class SalidaController extends Controller
                     ->where('salidas.fecha_salida', '=', $hoy);
             })
             ->where(function ($q) use ($horaActual) {
-                $q->whereNull('salidas.id')
-                    ->orWhere('horarios.hora_salida', '>=', $horaActual);
+                $q->whereNull('salidas.id') // no existe salida para hoy
+                    ->orWhere('horarios.hora_salida', '>=', $horaActual); // aún no ha pasado la hora
             })
             ->orderBy('horarios.hora_salida')
             ->select('horarios.*')
@@ -92,6 +100,7 @@ class SalidaController extends Controller
                         . ($h->tipo_vehiculo?->descripcion ?? ''),
                 ];
             });
+
         return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
     }
 
