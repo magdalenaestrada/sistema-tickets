@@ -25,18 +25,12 @@ class DashboardVendedorController extends Controller
         $finDia = Carbon::parse($fecha)->endOfDay();
         $sucursalId = $user->sucursal_id;
 
-        $vendedores = User::query()
-            ->where('sucursal_id', $sucursalId)
-            ->orderBy('username')
-            ->get();
+        $vendedores = User::where('id', $user->id)->get();
 
         $ventasBase = Venta::query()
             ->where('sucursal_id', $sucursalId)
+            ->where('usuario_id', $user->id)
             ->whereBetween('fecha_emision', [$inicioDia, $finDia]);
-
-        if ($request->filled('vendedor_id')) {
-            $ventasBase->where('usuario_id', $request->vendedor_id);
-        }
 
         $ticketsHoy = (clone $ventasBase)->count();
         $ventasHoy = (clone $ventasBase)->sum('total');
@@ -51,9 +45,9 @@ class DashboardVendedorController extends Controller
             ->selectRaw('users.id, users.username, COUNT(ventas.id) as tickets, SUM(ventas.total) as importe')
             ->join('users', 'users.id', '=', 'ventas.usuario_id')
             ->where('ventas.sucursal_id', $sucursalId)
+            ->where('ventas.usuario_id', $user->id)
             ->whereBetween('ventas.fecha_emision', [$inicioDia, $finDia])
             ->groupBy('users.id', 'users.username')
-            ->orderByDesc('importe')
             ->get()
             ->map(function ($row) {
                 return [
