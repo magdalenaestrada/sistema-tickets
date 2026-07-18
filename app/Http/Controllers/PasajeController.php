@@ -342,7 +342,6 @@ class PasajeController extends Controller
      */
     public function store(Request $request)
     {
-
         $request->validate([
             'accion' => 'required|in:reservar,vender',
             'salida_id' => 'required|exists:salidas,id',
@@ -674,16 +673,19 @@ class PasajeController extends Controller
 
                 $pasajesCreados[] = $pasaje->id;
                 $pasaje->tramos()->attach($tramos->pluck('id')->toArray());
-                $detalleVenta = $venta->detalles()
-                    ->whereNull('referencia_id')
-                    ->where('tipo_servicio_id', 1)
-                    ->first();
+                if ($venta) {
 
-                if ($detalleVenta) {
-                    $detalleVenta->update([
-                        'referencia_type' => Pasaje::class,
-                        'referencia_id'   => $pasaje->id,
-                    ]);
+                    $detalleVenta = $venta->detalles()
+                        ->whereNull('referencia_id')
+                        ->where('tipo_servicio_id', 1)
+                        ->first();
+
+                    if ($detalleVenta) {
+                        $detalleVenta->update([
+                            'referencia_type' => Pasaje::class,
+                            'referencia_id'   => $pasaje->id,
+                        ]);
+                    }
                 }
                 $index = $pasajeroData['index'];
 
@@ -721,17 +723,19 @@ class PasajeController extends Controller
                             'encomienda_id' => $encomienda->id,
                         ]);
 
-                        $detalleVenta = $venta->detalles()
-                            ->whereNull('referencia_id')
-                            ->where('tipo_servicio_id', 3)
-                            ->where('total', $sobre['costo'])
-                            ->first();
+                        if ($venta) {
+                            $detalleVenta = $venta->detalles()
+                                ->whereNull('referencia_id')
+                                ->where('tipo_servicio_id', 3)
+                                ->where('total', $sobre['costo'])
+                                ->first();
 
-                        if ($detalleVenta) {
-                            $detalleVenta->update([
-                                'referencia_type' => Encomienda::class,
-                                'referencia_id'   => $encomienda->id,
-                            ]);
+                            if ($detalleVenta) {
+                                $detalleVenta->update([
+                                    'referencia_type' => Encomienda::class,
+                                    'referencia_id'   => $encomienda->id,
+                                ]);
+                            }
                         }
                     }
                 }
