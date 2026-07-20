@@ -278,21 +278,29 @@
                                                 </a>
                                             @endif
 
-                                            @hasanyrole('Administrador')
-                                                @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
+                                            @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
+                                                @hasrole('Administrador')
                                                     @if ($venta->tipo_documento_factura_id == 3)
                                                         <button type="button" class="btn btn-xs btn-outline-danger"
                                                             onclick="anularNotaVenta({{ $venta->id }}, {{ $venta->total }})">
+                                                            <i data-lucide="trash-2"></i>
                                                             Anular
                                                         </button>
                                                     @else
                                                         <button type="button" class="btn btn-xs btn-outline-danger"
                                                             onclick="anularVenta({{ $venta->id }}, '{{ route('facturacion.anular', $venta) }}')">
+                                                            <i data-lucide="trash-2"></i>
                                                             Anular
                                                         </button>
                                                     @endif
-                                                @endif
-                                            @endhasanyrole
+                                                @else
+                                                    <button type="button" class="btn btn-xs btn-outline-danger"
+                                                        onclick="solicitarAnulacion({{ $venta->id }})">
+                                                        <i data-lucide="send"></i>
+                                                        Solicitar Anulación
+                                                    </button>
+                                                @endhasrole
+                                            @endif
 
                                         </div>
                                     </td>
@@ -322,6 +330,7 @@
 
         @include('facturacion.modals.crear')
         @include('facturacion.modals.anular_nota_venta')
+        @include('facturacion.modals.solicitud_anulacion')
 
     @endsection
     @push('scripts')
@@ -506,8 +515,50 @@
                 });
             }
 
-            function distribuirDevolucionPorMetodo() {
+            function solicitarAnulacion(ventaId) {
+                $("#venta_solicitud").val(ventaId);
+                $("#motivo_solicitud").val("");
 
+                const modal = bootstrap.Modal.getOrCreateInstance(
+                    document.getElementById("modalSolicitudAnulacion")
+                );
+
+                modal.show();
+            }
+
+            $("#btnEnviarSolicitud").click(function() {
+
+                $.ajax({
+                    url: route('facturacion.solicitar.anulacion'),
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        venta_id: $("#venta_solicitud").val(),
+                        motivo: $("#motivo_solicitud").val()
+                    },
+                    success: function(resp) {
+
+                        Swal.fire(
+                            'Correcto',
+                            'La solicitud fue enviada al administrador.',
+                            'success'
+                        ).then(() => location.reload());
+
+                    },
+                    error: function() {
+
+                        Swal.fire(
+                            'Error',
+                            'No se pudo enviar la solicitud.',
+                            'error'
+                        );
+
+                    }
+                });
+
+            });
+
+            function distribuirDevolucionPorMetodo() {
                 const metodo = parseInt($("#modal_metodo_devolucion").val()) || 1;
 
                 const efectivo = $("#devolucion_efectivo");
@@ -522,8 +573,6 @@
                 const div_plin = $("#devolucion_plin_div");
                 const div_transferencia = $("#devolucion_transferencia_div");
 
-
-                // Reiniciar valores
                 [
                     efectivo,
                     tarjeta,

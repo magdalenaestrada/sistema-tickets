@@ -10,4 +10,5 @@ Route::middleware(['auth'])->prefix('ventas')->name('ventas.')->group(function (
         ->name('imprimir');
 
     Route::get('/{venta}/ticket-pdf', [PasajeController::class, 'ticketVentaPdf'])->name('ticket.pdf');
+    
 });

@@ -1458,18 +1458,14 @@ class PasajeController extends Controller
             'pagos.metodoPago',
         ]);
 
-        // 80mm ≈ 226.77 pt de ancho. El alto lo dejamos generoso
-        // porque dompdf no soporta "auto" real; se recorta solo.
         $pdf = Pdf::loadView('caja.ticket', [
             'venta' => $venta,
-            'esPdf' => true, // para diferenciar dentro del blade
+            'esPdf' => true,
         ])
             ->setPaper([0, 0, 226.77, 1500], 'portrait');
 
         $nombreArchivo = "ticket-{$venta->serie}-{$venta->numero}.pdf";
 
         return $pdf->download($nombreArchivo);
-        // Si prefieres que se abra en el navegador en vez de forzar descarga:
-        // return $pdf->stream($nombreArchivo);
     }
 }

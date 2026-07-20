@@ -13,7 +13,7 @@
     </div>
 
     @php
-        $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*');
+        $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*', 'series-sucursal.*');
         $maestrosOpen = request()->routeIs('cargos.*', 'tipo-encomienda.*', 'tipo-cupones.*');
 
         $personalOpen = request()->routeIs('eventos.*');
@@ -122,6 +122,15 @@
                         <span class="link-title">Comprobantes</span>
                     </a>
                 </li>
+
+                <li class="nav-item {{ request()->is('facturacion*') ? 'active' : '' }}">
+                    <a href="{{ route('facturacion.solicitudes') }}" class="nav-link">
+                        <i class="link-icon" data-lucide="receipt"></i>
+                        <span class="link-title">Solicitudes</span>
+                    </a>
+                </li>
+
+
                 <li class="nav-item {{ request()->routeIs('salidas.index-vendedor') ? 'active' : '' }}">
                     <a href="{{ route('salidas.index-vendedor') }}" class="nav-link">
                         <i class="link-icon" data-lucide="file-clock"></i>
@@ -150,7 +159,7 @@
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('series-sucursal.index') }}"
-                                    class="nav-link {{ request()->routeIs('empresas.*') ? 'active' : '' }}">
+                                    class="nav-link {{ request()->routeIs('series-sucursal.*') ? 'active' : '' }}">
                                     Mis series
                                 </a>
                             </li>

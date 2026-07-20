@@ -10,6 +10,15 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
     )->name('index');
 
     Route::get(
+        '/solicitudes-anulacion',
+        [FacturacionController::class, 'solicitudes']
+    )->name('solicitudes');
+
+    Route::post(
+        '/solicitud-anulacion',
+        [FacturacionController::class, 'solicitarAnulacion']
+    )->name('solicitar.anulacion');
+    Route::get(
         '/{venta}',
         [FacturacionController::class, 'show']
     )->name('show');
@@ -42,4 +51,19 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
 
     Route::post('/{venta}/anular-nota', [FacturacionController::class, 'crearNotaAnulacion'])
         ->name('anular.nota');
+
+    Route::get(
+        '/solicitudes-anulacion/{solicitud}',
+        [FacturacionController::class, 'showSolicitud']
+    )->name('solicitudes.show');
+
+    Route::post(
+        '/solicitudes-anulacion/{solicitud}/aprobar',
+        [FacturacionController::class, 'aprobarAnulacion']
+    )->name('solicitudes.aprobar');
+
+    Route::post(
+        '/solicitudes-anulacion/{solicitud}/rechazar',
+        [FacturacionController::class, 'rechazarAnulacion']
+    )->name('solicitudes.rechazar');
 });

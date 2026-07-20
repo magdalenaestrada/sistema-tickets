@@ -11,6 +11,7 @@ use App\Models\NotaVentaAnulada;
 use App\Models\NotaVentaAnuladaDetalle;
 use App\Models\Pasaje;
 use App\Models\Persona;
+use App\Models\SolicitudAnulacion;
 use App\Models\Sucursal;
 use App\Models\TipoDocumentoFactura;
 use App\Models\Venta;
@@ -122,6 +123,61 @@ class FacturacionController extends Controller
         ));
     }
 
+    public function showSolicitud(SolicitudAnulacion $solicitud)
+    {
+        $solicitud->load([
+            'venta.persona',
+            'venta.tipoDocumentoFactura',
+            'venta.detalles',
+            'solicitante.persona',
+            'aprobador.persona'
+        ]);
+
+        return view(
+            'facturacion.solicitudes_show',
+            compact('solicitud')
+        );
+    }
+
+    public function solicitudes(Request $request)
+    {
+        $query = SolicitudAnulacion::with([
+            'venta.persona',
+            'venta.tipoDocumentoFactura',
+            'solicitante.persona',
+            'aprobador.persona'
+        ]);
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_solicitud', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_solicitud', '<=', $request->fecha_hasta);
+        }
+
+        if ($request->filled('documento')) {
+            $query->whereHas('venta', function ($q) use ($request) {
+                $q->whereRaw("CONCAT(serie,'-',numero) LIKE ?", [
+                    "%{$request->documento}%"
+                ]);
+            });
+        }
+
+        $solicitudes = $query
+            ->latest()
+            ->paginate(20);
+
+        return view(
+            'facturacion.solicitudes',
+            compact('solicitudes')
+        );
+    }
+
     public function show(Venta $venta)
     {
         $venta->load([
@@ -163,6 +219,26 @@ class FacturacionController extends Controller
 
         return Storage::disk('public')
             ->download($venta->ruta_xml);
+    }
+
+    public function solicitarAnulacion(Request $request)
+    {
+        $request->validate([
+            'venta_id' => 'required|exists:ventas,id',
+            'motivo' => 'required|min:10'
+        ]);
+
+        SolicitudAnulacion::create([
+            'venta_id' => $request->venta_id,
+            'usuario_solicitante_id' => auth()->id(),
+            'motivo' => $request->motivo,
+            'fecha_solicitud' => now(),
+            'estado' => 'Pendiente'
+        ]);
+
+        return response()->json([
+            'success' => true
+        ]);
     }
 
     public function descargarCdr(Venta $venta)
@@ -360,6 +436,25 @@ class FacturacionController extends Controller
                 'message' => 'Error al anular la venta'
             ], 500);
         });
+    }
+
+    public function aprobarAnulacion(Request $request, SolicitudAnulacion $solicitud)
+    {
+        $this->crearNotaAnulacion(
+            $solicitud->venta,
+            $request
+        );
+
+        $solicitud->update([
+            'estado' => 'Aprobada',
+            'usuario_aprobador_id' => auth()->id(),
+            'fecha_respuesta' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Solicitud aprobada y venta anulada correctamente.'
+        ]);
     }
 
 
