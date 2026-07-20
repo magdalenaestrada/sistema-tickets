@@ -123,8 +123,8 @@
                     </a>
                 </li>
 
-                <li class="nav-item {{ request()->is('facturacion*') ? 'active' : '' }}">
-                    <a href="{{ route('facturacion.solicitudes') }}" class="nav-link">
+                <li class="nav-item {{ request()->is('solicitudes*') ? 'active' : '' }}">
+                    <a href="{{ route('solicitudes.index') }}" class="nav-link">
                         <i class="link-icon" data-lucide="receipt"></i>
                         <span class="link-title">Solicitudes</span>
                     </a>

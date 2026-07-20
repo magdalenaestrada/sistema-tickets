@@ -529,7 +529,7 @@
             $("#btnEnviarSolicitud").click(function() {
 
                 $.ajax({
-                    url: route('facturacion.solicitar.anulacion'),
+                    url: route('solicitudes.anulacion'),
                     type: 'POST',
                     data: {
                         _token: $('meta[name="csrf-token"]').attr('content'),

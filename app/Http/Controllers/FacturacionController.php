@@ -440,10 +440,16 @@ class FacturacionController extends Controller
 
     public function aprobarAnulacion(Request $request, SolicitudAnulacion $solicitud)
     {
-        $this->crearNotaAnulacion(
+        $respuesta = $this->crearNotaAnulacion(
             $solicitud->venta,
             $request
         );
+
+        $data = $respuesta->getData(true);
+
+        if (!$data['success']) {
+            return $respuesta;
+        }
 
         $solicitud->update([
             'estado' => 'Aprobada',
@@ -453,7 +459,7 @@ class FacturacionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Solicitud aprobada y venta anulada correctamente.'
+            'message' => 'Solicitud aprobada y venta anulada correctamente.',
         ]);
     }
 

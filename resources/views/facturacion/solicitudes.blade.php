@@ -77,7 +77,7 @@
                             Buscar
                         </button>
 
-                        <a href="{{ route('facturacion.solicitudes') }}" class="btn btn-secondary">
+                        <a href="{{ route('solicitudes.index') }}" class="btn btn-secondary">
                             Limpiar
                         </a>
 
@@ -173,64 +173,43 @@
                                             Rechazada
                                         </span>
                                     @endif
-
                                 </td>
-
                                 <td>
-
                                     {{ $solicitud->fecha_solicitud->format('d/m/Y H:i') }}
-
                                 </td>
-
                                 <td>
-
                                     @if ($solicitud->estado == 'Pendiente')
-                                        <a href="{{ route('facturacion.solicitudes.show', $solicitud) }}"
-                                            class="btn btn-sm btn-primary">
+                                        <a href="{{ route('solicitudes.show', $solicitud) }}"
+                                            class="btn btn-xs btn-primary">
                                             <i data-lucide="eye"></i>
-                                            Revisar
                                         </a>
-
-                                        <button class="btn btn-success"
+                                        <button class="btn btn-xs btn-success"
                                             onclick="anularNotaVenta(
         {{ $solicitud->venta_id }},
         {{ $solicitud->venta->total }},
         @js($solicitud->motivo),
         {{ $solicitud->id }}
     )">
-                                            Aprobar y anular
+                                            <i data-lucide="check"></i>
                                         </button>
                                     @endif
-
                                 </td>
-
                             </tr>
-
                         @empty
-
                             <tr>
-
                                 <td colspan="8" class="text-center">
-
                                     No existen solicitudes.
-
                                 </td>
-
                             </tr>
                         @endforelse
-
                     </tbody>
-
                 </table>
-
             </div>
-
             <div class="card-footer">
 
                 {{ $solicitudes->links() }}
 
             </div>
-
         </div>
         @include('facturacion.modals.anular_nota_venta')
     </div>
@@ -429,7 +408,7 @@
 
         let procesandoAnulacion = false;
         const urlAprobarSolicitud =
-            "{{ route('facturacion.solicitudes.aprobar', ':id') }}";
+            "{{ route('solicitudes.aprobar', ':id') }}";
 
         const urlAnularNotaVenta =
             "{{ route('facturacion.anular.nota', ':id') }}";
