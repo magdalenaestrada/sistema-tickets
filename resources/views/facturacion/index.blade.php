@@ -277,9 +277,9 @@
                                                     CDR
                                                 </a>
                                             @endif
-
-                                            @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
-                                                @hasrole('Administrador')
+                                            
+                                            @hasrole('Administrador')
+                                                @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
                                                     @if ($venta->tipo_documento_factura_id == 3)
                                                         <button type="button" class="btn btn-xs btn-outline-danger"
                                                             onclick="anularNotaVenta({{ $venta->id }}, {{ $venta->total }})">
@@ -293,14 +293,8 @@
                                                             Anular
                                                         </button>
                                                     @endif
-                                                @else
-                                                    <button type="button" class="btn btn-xs btn-outline-danger"
-                                                        onclick="solicitarAnulacion({{ $venta->id }})">
-                                                        <i data-lucide="send"></i>
-                                                        Solicitar Anulación
-                                                    </button>
-                                                @endhasrole
-                                            @endif
+                                                @endif
+                                            @endhasrole
 
                                         </div>
                                     </td>
@@ -826,7 +820,7 @@
                     Swal.fire("Error", "La descripción solo puede contener letras, números y espacios.", "error");
                     return;
                 }
-               
+
 
                 let precio = parseFloat($("#precio").val());
                 let unidad = parseFloat($("#unidad").val());
