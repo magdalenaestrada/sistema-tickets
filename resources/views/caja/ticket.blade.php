@@ -62,12 +62,12 @@
         }
 
         .anulado {
-            border: 1px solid #000;
+            border: 2px solid #000;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 14px;
             text-align: center;
             margin-bottom: 5px;
-            padding: 2px;
+            padding: 4px;
         }
 
         .w-100 {
@@ -111,7 +111,38 @@
             font-size: 11px;
         }
 
-        /* ── Ticket extra de sobreequipaje ── */
+        /* ── Bloques Destacados ── */
+        .highlight-box {
+            border: 2px solid #000;
+            padding: 5px;
+            margin: 6px 0;
+            text-align: center;
+            background-color: #fcfcfc;
+        }
+
+        .asiento-box {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+
+        .ruta-box {
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .fecha-hora-box {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* ── Saltos de página ── */
+        .ticket-pasajero {
+            page-break-before: always;
+        }
+
         .ticket-sobreequipaje {
             page-break-before: always;
             padding-top: 10px;
@@ -121,10 +152,11 @@
             border: 2px solid #000;
             text-align: center;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 14px;
             padding: 4px 2px;
             margin-bottom: 6px;
             letter-spacing: 1px;
+            background-color: #f0f0f0;
         }
 
         @media print {
@@ -147,361 +179,334 @@
 </head>
 
 <body>
-
-    {{-- ═══════════════════════════════════════════════ --}}
-    {{-- TICKET PRINCIPAL --}}
-    {{-- ═══════════════════════════════════════════════ --}}
-    @if ($venta->estado === \App\Enums\EstadoVenta::ANULADO || $venta->fecha_anulacion)
-        <div class="anulado">*** ANULADO ***</div>
-    @endif
-
     @php
         $empresa = $venta->sucursal?->empresa;
         $cliente = $venta->persona;
-
-        $pasaje = $venta->pasajes?->first();
-        $salida = $pasaje?->salida; // Salida model
-        $descuento = $pasaje?->descuento; // Descuento model
-
-        $montoDescuento = 0;
-        if ($descuento) {
-            $montoDescuento = $descuento->monto ?? ($descuento->valor ?? 0);
-        }
-
-        $sobreEquipajeItems = $venta->pasajes?->flatMap(fn($p) => $p->sobreEquipajes ?? collect()) ?? collect();
-
-        $opGravada = 0;
-        $opInafecta = 0;
-        $opExonerada = 0;
-        $igvTotal = 0;
-
-        foreach ($venta->detalles as $detalle) {
-            if ($detalle->tipo_afectacion_igv == 10) {
-                $opGravada += $detalle->base_igv;
-                $igvTotal += $detalle->igv;
-            } elseif ($detalle->tipo_afectacion_igv == 30) {
-                $opInafecta += $detalle->total;
-            } elseif ($detalle->tipo_afectacion_igv == 20) {
-                $opExonerada += $detalle->total;
-            }
-        }
-
     @endphp
 
-    {{-- ENCABEZADO --}}
-    <div class="center">
-        @if ($empresa && $empresa->logo)
-            <div class="logo-container">
-                <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
-            </div>
-        @endif
+    @foreach ($venta->pasajes as $pasaje)
+        {{-- ═══════════════════════════════════════════════ --}}
+        {{-- BOLETA DE PASAJE DESTACADA --}}
+        {{-- ═══════════════════════════════════════════════ --}}
+        <div class="{{ $loop->first ? '' : 'ticket-pasajero' }}">
 
-        <div class="bold" style="font-size: 12px;">
-            {{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}
-        </div>
-        <div class="bold">RUC: {{ $empresa->documento ?? '20513247495' }}</div>
-        <div style="font-size: 10px;">
-            {{ $venta->sucursal->direccion ?? ($empresa->direccion ?? 'Av. El Sol 789') }}
-        </div>
+            @if ($venta->estado === \App\Enums\EstadoVenta::ANULADO || $venta->fecha_anulacion)
+                <div class="anulado">*** ANULADO ***</div>
+            @endif
 
-        <div class="line"></div>
+            @php
+                $salida = $pasaje?->salida;
+                $descuento = $pasaje?->descuento;
 
-        <div class="bold" style="text-transform: uppercase;">
-            {{ $venta->tipoDocumentoFactura->descripcion ?? 'NOTA DE VENTA' }}
-        </div>
-        <div class="bold" style="font-size: 12px;">{{ $venta->serie }} - {{ $venta->numero }}</div>
+                $montoDescuento = 0;
+                if ($descuento) {
+                    $montoDescuento = $descuento->monto ?? ($descuento->valor ?? 0);
+                }
 
-        <div class="line"></div>
-    </div>
+                $detallesPasaje = $venta->detalles->where('pasaje_id', $pasaje->id);
 
-    {{-- EMISIÓN --}}
-    <table class="table-data w-100">
-        <tr>
-            <td class="bold">F. Emisión:</td>
-            <td class="right">
-                {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
-            </td>
-        </tr>
-        <tr>
-            <td class="bold">Cajero:</td>
-            <td class="right">{{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}</td>
-        </tr>
-    </table>
+                if ($detallesPasaje->isEmpty()) {
+                    $detallesPasaje = $venta->detalles->whereNull('pasaje_id');
+                }
 
-    <div class="line"></div>
+                $sobreEquipajeItems = $pasaje->sobreEquipajes ?? collect();
 
-    {{-- DATOS DEL CLIENTE --}}
-    <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL CLIENTE</div>
-    <table class="table-data w-100">
-        <tr>
-            <td class="bold" style="width: 30%;">Cliente:</td>
-            <td class="right">
-                {{ $cliente ? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}
-            </td>
-        </tr>
-        <tr>
-            <td class="bold">Documento:</td>
-            <td class="right">{{ $cliente->documento ?? '00000000' }}</td>
-        </tr>
-    </table>
+                $opGravada = 0;
+                $opInafecta = 0;
+                $opExonerada = 0;
+                $igvTotal = 0;
 
-    <div class="line"></div>
+                foreach ($detallesPasaje as $detalle) {
+                    if ($detalle->tipo_afectacion_igv == 10) {
+                        $opGravada += $detalle->base_igv;
+                        $igvTotal += $detalle->igv;
+                    } elseif ($detalle->tipo_afectacion_igv == 30) {
+                        $opInafecta += $detalle->total;
+                    } elseif ($detalle->tipo_afectacion_igv == 20) {
+                        $opExonerada += $detalle->total;
+                    }
+                }
 
-    {{-- DATOS DE VIAJE (nuevo bloque solicitado por Gretel) --}}
-    @if ($salida)
-        <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL VIAJE</div>
-        <table class="table-data w-100">
-             <tr>
-                <td class="bold" style="width: 35%;">Pasajero:</td>
-                <td class="right">
-                    {{ $pasaje->persona->nombre_completo }}
-                </td>
-            </tr>
-            <tr>
-                <td class="bold" style="width: 35%;">Origen:</td>
-                <td class="right">
-                    {{ $pasaje->origen?->descripcion ?? ($salida->origen ?? '—') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="bold">Destino:</td>
-                <td class="right">
-                    {{ $pasaje->destino?->descripcion ?? ($salida->destino ?? '—') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="bold">F. Salida:</td>
-                {{-- Ajusta el campo según tu modelo Salida: fecha_salida / fecha / fecha_programada --}}
-                <td class="right">
-                    {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') ?? '—' }}
-                </td>
-            </tr>
-            <tr>
-                <td class="bold">H. Salida:</td>
-                {{-- Ajusta el campo: hora_salida / hora / hora_programada --}}
-                <td class="right">
-                    {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="bold">Asiento:</td>
-                <td class="right">{{ $pasaje->asiento_numero ?? '—' }}</td>
-            </tr>
-        </table>
-        <div class="line"></div>
-    @endif
+                $totalPasaje = $detallesPasaje->sum('total');
+                $origenText = $pasaje->origen?->descripcion ?? ($salida->origen ?? '—');
+                $destinoText = $pasaje->destino?->descripcion ?? ($salida->destino ?? '—');
+            @endphp
 
-    {{-- ÍTEMS --}}
-    <table class="table-items w-100">
-        <thead>
-            <tr>
-                <th class="left" style="width: 65%;">Descripción</th>
-                <th class="center" style="width: 10%;">Cant</th>
-                <th class="right" style="width: 25%;">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($venta->detalles as $detalle)
-                <tr>
-                    <td class="left">{{ $detalle->descripcion }}</td>
-                    <td class="center">{{ number_format($detalle->cantidad, 0) }}</td>
-                    <td class="right">S/ {{ number_format($detalle->total, 2) }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <div class="line"></div>
-
-    {{-- TOTALES --}}
-    <table class="table-data w-100">
-
-        @if ($opGravada > 0)
-            <tr>
-                <td class="bold">Op. Gravada:</td>
-                <td class="right">
-                    S/ {{ number_format($opGravada, 2) }}
-                </td>
-            </tr>
-        @endif
-
-
-        @if ($opInafecta > 0)
-            <tr>
-                <td class="bold">Op. Inafecta:</td>
-                <td class="right">
-                    S/ {{ number_format($opInafecta, 2) }}
-                </td>
-            </tr>
-        @endif
-
-
-        @if ($opExonerada > 0)
-            <tr>
-                <td class="bold">Op. Exonerada:</td>
-                <td class="right">
-                    S/ {{ number_format($opExonerada, 2) }}
-                </td>
-            </tr>
-        @endif
-
-
-        @if ($igvTotal > 0)
-            <tr>
-                <td class="bold">
-                    IGV (18%):
-                </td>
-                <td class="right">
-                    S/ {{ number_format($igvTotal, 2) }}
-                </td>
-            </tr>
-        @endif
-
-
-        @if ($montoDescuento > 0)
-            <tr>
-                <td class="bold">Descuentos:</td>
-                <td class="right">
-                    - S/ {{ number_format($montoDescuento, 2) }}
-                </td>
-            </tr>
-        @endif
-
-
-        <tr style="font-size:12px;border-top:1px dashed #000;">
-            <td class="bold" style="padding-top:3px;">
-                TOTAL A PAGAR:
-            </td>
-            <td class="right bold" style="padding-top:3px;">
-                S/ {{ number_format($venta->total, 2) }}
-            </td>
-        </tr>
-
-    </table>
-    
-    <div class="line"></div>
-
-    {{-- PIE DE PÁGINA --}}
-    @if ($venta->observacion)
-        <div style="font-size: 10px; font-style: italic; margin-bottom: 5px; word-break: break-word;">
-            <strong>Obs:</strong> {{ $venta->observacion }}
-        </div>
-        <div class="line"></div>
-    @endif
-
-    <div class="center" style="font-size: 10px;">
-        <div>¡Gracias por su compra!</div>
-        <div>Representación impresa de la</div>
-        <div class="bold">
-            {{ $venta->tipoDocumentoFactura->descripcion ?? 'Nota de venta' }} Electrónica.
-        </div>
-    </div>
-
-    <button class="btn-print" onclick="window.print()">Imprimir Ticket</button>
-
-
-    {{-- ═══════════════════════════════════════════════════════════════ --}}
-    {{-- TICKETS ADICIONALES DE SOBREEQUIPAJE (uno por cada item) --}}
-    {{-- ═══════════════════════════════════════════════════════════════ --}}
-
-    @foreach ($sobreEquipajeItems as $seItem)
-        @php
-            $enc = $seItem->encomienda;
-            $pasajeSE = $seItem->pasaje;
-            $personaSE = $pasajeSE?->persona;
-            $numEtiq = str_pad($loop->iteration, 3, '0', STR_PAD_LEFT); // 001, 002 …
-        @endphp
-
-        <div class="ticket-sobreequipaje">
-
-            {{-- Encabezado empresa --}}
-            <div class="center" style="margin-bottom: 4px;">
+            {{-- ENCABEZADO --}}
+            <div class="center">
                 @if ($empresa && $empresa->logo)
                     <div class="logo-container">
                         <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
                     </div>
                 @endif
-                <div class="bold" style="font-size: 11px;">
+
+                <div class="bold" style="font-size: 12px;">
                     {{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}
                 </div>
+                <div class="bold">RUC: {{ $empresa->documento ?? '20513247495' }}</div>
+                <div style="font-size: 10px;">
+                    {{ $venta->sucursal->direccion ?? ($empresa->direccion ?? 'Av. El Sol 789') }}
+                </div>
+
+                <div class="line"></div>
+
+                <div class="bold" style="text-transform: uppercase;">
+                    {{ $venta->tipoDocumentoFactura->descripcion ?? 'BOLETO DE VIAJE' }}
+                </div>
+                <div class="bold" style="font-size: 13px;">{{ $venta->serie }} - {{ $venta->numero }}</div>
             </div>
 
-            <div class="line"></div>
-
-            {{-- Etiqueta principal --}}
-            <div class="sobreequipaje-header">
-                SOBREEQUIPAJE {{ $numEtiq }}
+            {{-- 🚨 BLOQUE PRINCIPAL DESTACADO DE EMBARQUE --}}
+            <div class="highlight-box">
+                <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">DETALLE</div>
+                <div class="asiento-box">N° {{ $pasaje->asiento_numero ?? '—' }}</div>
+                <div class="line" style="margin: 4px 0;"></div>
+                <div class="ruta-box">{{ $origenText }} - {{ $destinoText }}</div>
+                @if ($salida)
+                    <div class="fecha-hora-box">
+                        {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') }} —
+                        {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
+                    </div>
+                @endif
             </div>
 
-            {{-- Datos del pasajero propietario --}}
-            <table class="table-data w-100">
+            {{-- DATOS VISIBLES DEL PASAJERO --}}
+            <div class="bold" style="font-size: 10px; margin-bottom: 2px; margin-top: 4px;">PASAJERO(A)</div>
+            <table class="table-data w-100" style="margin-bottom: 4px;">
                 <tr>
-                    <td class="bold">Cliente:</td>
-                    <td class="right">
-                        {{ $personaSE
-                            ? $personaSE->nombres . ' ' . $personaSE->apellidos
-                            : ($enc?->emisor
-                                ? $enc->emisor->nombres . ' ' . $enc->emisor->apellidos
-                                : 'CLIENTE VARIOS') }}
+                    <td class="bold" style="width: 30%;">Nombre:</td>
+                    <td class="right bold" style="font-size: 12px; text-transform: uppercase;">
+                        {{ $pasaje->persona->nombre_completo }}
                     </td>
                 </tr>
                 <tr>
-                    <td class="bold">DNI:</td>
-                    <td class="right">
-                        {{ $personaSE->documento ?? ($enc?->emisor?->documento ?? '—') }}
+                    <td class="bold">N° Doc:</td>
+                    <td class="right bold" style="font-size: 11px;">
+                        {{ $pasaje->persona->documento ?? '—' }}
                     </td>
-                </tr>
-                <tr>
-                    <td class="bold">Asiento:</td>
-                    <td class="right">{{ $pasajeSE?->asiento_numero ?? '—' }}</td>
                 </tr>
             </table>
 
             <div class="line"></div>
 
-            {{-- Datos del envío / encomienda --}}
-            @if ($enc)
-                <table class="table-data w-100">
+            {{-- DATOS DEL CLIENTE / EMISIÓN --}}
+            <table class="table-data w-100">
+                <tr>
+                    <td class="bold">Comprador:</td>
+                    <td class="right">
+                        {{ $cliente ? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="bold">F. Emisión:</td>
+                    <td class="right">
+                        {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="bold">Cajero:</td>
+                    <td class="right">{{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}</td>
+                </tr>
+            </table>
+
+            <div class="line"></div>
+
+            {{-- ÍTEMS / DETALLE --}}
+            <table class="table-items w-100">
+                <thead>
                     <tr>
-                        <td class="bold">Origen:</td>
-                        <td class="right">
-                            {{ $enc->origenPueblito?->descripcion ?? '—' }}
-                        </td>
+                        <th class="left" style="width: 65%;">Descripción</th>
+                        <th class="center" style="width: 10%;">Cant</th>
+                        <th class="right" style="width: 25%;">Total</th>
                     </tr>
+                </thead>
+                <tbody>
+                    @foreach ($detallesPasaje as $detalle)
+                        <tr>
+                            <td class="left">{{ $detalle->descripcion }}</td>
+                            <td class="center">{{ number_format($detalle->cantidad, 0) }}</td>
+                            <td class="right">S/ {{ number_format($detalle->total, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+
+            <div class="line"></div>
+
+            {{-- TOTALES --}}
+            <table class="table-data w-100">
+
+                @if ($opGravada > 0)
                     <tr>
-                        <td class="bold">Destino:</td>
-                        <td class="right">
-                            {{ $enc->destinoPueblito?->descripcion ?? '—' }}
-                        </td>
+                        <td class="bold">Op. Gravada:</td>
+                        <td class="right">S/ {{ number_format($opGravada, 2) }}</td>
                     </tr>
-                    @if ($enc->detalles->isNotEmpty())
-                        @foreach ($enc->detalles as $det)
-                            <tr>
-                                <td class="bold">Bulto:</td>
-                                <td class="right">
-                                    {{ $det->descripcion }}
-                                    @if ($det->peso)
-                                        ({{ $det->peso }} kg)
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    @endif
+                @endif
+
+                @if ($opInafecta > 0)
                     <tr>
-                        <td class="bold">Costo:</td>
-                        <td class="right bold">S/ {{ number_format($enc->total ?? 0, 2) }}</td>
+                        <td class="bold">Op. Inafecta:</td>
+                        <td class="right">S/ {{ number_format($opInafecta, 2) }}</td>
                     </tr>
-                </table>
+                @endif
+
+                @if ($opExonerada > 0)
+                    <tr>
+                        <td class="bold">Op. Exonerada:</td>
+                        <td class="right">S/ {{ number_format($opExonerada, 2) }}</td>
+                    </tr>
+                @endif
+
+                @if ($igvTotal > 0)
+                    <tr>
+                        <td class="bold">IGV (18%):</td>
+                        <td class="right">S/ {{ number_format($igvTotal, 2) }}</td>
+                    </tr>
+                @endif
+
+                @if ($montoDescuento > 0)
+                    <tr>
+                        <td class="bold">Descuentos:</td>
+                        <td class="right">- S/ {{ number_format($montoDescuento, 2) }}</td>
+                    </tr>
+                @endif
+
+                <tr style="font-size: 13px; border-top: 1px dashed #000;">
+                    <td class="bold" style="padding-top: 3px;">TOTAL PAGADO:</td>
+                    <td class="right bold" style="padding-top: 3px;">
+                        S/ {{ number_format($totalPasaje, 2) }}
+                    </td>
+                </tr>
+
+            </table>
+
+            <div class="line"></div>
+
+            {{-- PIE DE PÁGINA --}}
+            @if ($venta->observacion)
+                <div style="font-size: 10px; font-style: italic; margin-bottom: 5px; word-break: break-word;">
+                    <strong>Obs:</strong> {{ $venta->observacion }}
+                </div>
                 <div class="line"></div>
             @endif
 
             <div class="center" style="font-size: 10px;">
-                <div>Boleta: <strong>{{ $venta->serie }}-{{ $venta->numero }}</strong></div>
-                <div>Conserve esta etiqueta hasta llegar a destino.</div>
+                <div class="bold">Presentarse 30 min antes del embarque</div>
+                <div>¡Gracias por su preferencia!</div>
             </div>
+
+            <button class="btn-print" onclick="window.print()">Imprimir Ticket</button>
 
         </div>
 
+        {{-- ═══════════════════════════════════════════════════════════════ --}}
+        {{-- TICKET DE SOBREEQUIPAJE DESTACADO --}}
+        {{-- ═══════════════════════════════════════════════════════════════ --}}
+        @foreach ($sobreEquipajeItems as $seItem)
+            @php
+                $enc = $seItem->encomienda;
+                $numEtiq = str_pad($loop->iteration, 3, '0', STR_PAD_LEFT);
+            @endphp
+
+            <div class="ticket-sobreequipaje">
+
+                <div class="center" style="margin-bottom: 4px;">
+                    @if ($empresa && $empresa->logo)
+                        <div class="logo-container">
+                            <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                        </div>
+                    @endif
+                    <div class="bold" style="font-size: 11px;">
+                        {{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}
+                    </div>
+                </div>
+
+                <div class="line"></div>
+
+                <div class="sobreequipaje-header">
+                    SOBREEQUIPAJE {{ $numEtiq }}
+                </div>
+
+                <div class="highlight-box">
+                    <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">ASIENTO ASIGNADO</div>
+                    <div class="asiento-box">N° {{ $pasaje->asiento_numero ?? '—' }}</div>
+                    <div class="line" style="margin: 3px 0;"></div>
+                    <div class="ruta-box">{{ $origenText }} ➔ {{ $destinoText }}</div>
+                </div>
+
+                <div class="bold" style="font-size: 10px; margin-top: 6px; margin-bottom: 2px;">DATOS DEL PASAJERO
+                </div>
+                <table class="table-data w-100">
+                    <tr>
+                        <td class="bold" style="width: 35%;">Pasajero:</td>
+                        <td class="right bold" style="font-size: 11px; text-transform: uppercase;">
+                            {{ $pasaje->persona->nombre_completo }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="bold">DNI/Doc:</td>
+                        <td class="right bold">
+                            {{ $pasaje->persona->documento ?? '—' }}
+                        </td>
+                    </tr>
+                    @if ($salida)
+                        <tr>
+                            <td class="bold">F. Salida:</td>
+                            <td class="right">
+                                {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="bold">H. Salida:</td>
+                            <td class="right">
+                                {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
+                            </td>
+                        </tr>
+                    @endif
+                </table>
+
+                <div class="line"></div>
+
+                <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DETALLE DEL BULTO</div>
+                <table class="table-data w-100">
+                    @if ($enc && $enc->detalles->isNotEmpty())
+                        @foreach ($enc->detalles as $det)
+                            <tr>
+                                <td class="bold" style="width: 35%;">Descripción:</td>
+                                <td class="right bold">
+                                    {{ $det->descripcion }}
+                                </td>
+                            </tr>
+                            @if ($det->peso)
+                                <tr>
+                                    <td class="bold">Peso:</td>
+                                    <td class="right">{{ $det->peso }} kg</td>
+                                </tr>
+                            @endif
+                        @endforeach
+                    @else
+                        <tr>
+                            <td class="bold" style="width: 35%;">Bulto:</td>
+                            <td class="right bold">Equipaje extra</td>
+                        </tr>
+                    @endif
+                    <tr>
+                        <td class="bold">Monto Pagado:</td>
+                        <td class="right bold" style="font-size: 12px;">
+                            S/ {{ number_format($enc->total ?? 0, 2) }}
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="line"></div>
+
+                <div class="center" style="font-size: 10px; margin-top: 4px;">
+                    <div>Comprobante: <strong>{{ $venta->serie }}-{{ $venta->numero }}</strong></div>
+                    <div style="margin-top: 2px;">Pegar o conservar este ticket junto al equipaje.</div>
+                </div>
+
+            </div>
+        @endforeach
     @endforeach
 
 </body>

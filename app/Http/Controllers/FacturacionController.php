@@ -105,6 +105,9 @@ class FacturacionController extends Controller
             )
             ->get();
         $empresa = Empresa::first();
+        $cajasAbiertas = Caja::with('usuario')
+            ->where('estado', 'A')
+            ->get();
         $porcentajeIgv = $empresa->igv;
         $tiposDocumento = TipoDocumentoFactura::all();
         $personas = Persona::all();
@@ -119,7 +122,8 @@ class FacturacionController extends Controller
             'personas',
             'cajas',
             'empresa',
-            'porcentajeIgv'
+            'porcentajeIgv',
+            'cajasAbiertas'
         ));
     }
 
@@ -559,7 +563,7 @@ class FacturacionController extends Controller
                 foreach ($request->devoluciones as $pago) {
 
                     CajaDetalle::create([
-                        'caja_id'                    => $venta->caja_id,
+                        'caja_id'                    => $request->caja_anulacion_id,
                         'subtipo_movimiento_caja_id' => 35,
                         'metodo_pago_id'             => $pago['metodo_pago_id'],
                         'billetera_digital_id'       => $pago['billetera_id'] ?? null,
