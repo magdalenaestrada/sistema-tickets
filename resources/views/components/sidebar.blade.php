@@ -1,17 +1,4 @@
 <nav class="sidebar">
-    <div class="sidebar-header">
-        <a href="{{ route('empresas.index') }}" class="sidebar-brand d-flex align-items-center">
-            @if ($empresaGlobal && $empresaGlobal->logo)
-                <img src="{{ asset('storage/' . $empresaGlobal->logo) }}" alt="Logo" style="height:40px" class="me-2">
-            @else
-                <span>Mi Empresa</span>
-            @endif
-        </a>
-        <div class="sidebar-toggler">
-            <span></span><span></span><span></span>
-        </div>
-    </div>
-
     @php
         $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*', 'series-sucursal.*');
         $maestrosOpen = request()->routeIs('cargos.*', 'tipo-encomienda.*', 'tipo-cupones.*');
@@ -31,6 +18,20 @@
         $isContador = Auth::user()->hasRole('Contador');
         $isAdmin = Auth::user()->hasRole('Administrador');
     @endphp
+    <div class="sidebar-header">
+        <a href="{{ route($route) }}" class="sidebar-brand d-flex align-items-center">
+            @if ($empresaGlobal && $empresaGlobal->logo)
+                <img src="{{ asset('storage/' . $empresaGlobal->logo) }}" alt="Logo" style="height:40px" class="me-2">
+            @else
+                <span>Mi Empresa</span>
+            @endif
+        </a>
+        <div class="sidebar-toggler">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+
+
 
     <div class="sidebar-body">
         <ul class="nav" id="sidebarNav">
