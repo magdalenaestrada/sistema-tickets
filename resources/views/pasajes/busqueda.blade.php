@@ -49,7 +49,7 @@
                     <select name="estado" id="filtroEstado">
                         <option value="">Todos</option>
                         <option value="V" {{ request('estado') == 'V' ? 'selected' : '' }}>Vendido</option>
-                        <option value="F" {{ request('estado') == 'F' ? 'selected' : '' }}>Abordó</option>
+                        <option value="R" {{ request('estado') == 'R' ? 'selected' : '' }}>Reservado</option>
                         <option value="X" {{ request('estado') == 'X' ? 'selected' : '' }}>Anulado
                         </option>
                     </select>

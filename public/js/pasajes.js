@@ -509,7 +509,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 const horaEl = row.querySelector(".hr-date-time");
-                const horaOriginal = horaEl?.dataset.horaOriginal; // ✅
+                const horaOriginal = horaEl?.dataset.horaOriginal; 
                 if (horaEl && horaOriginal) {
                     horaEl.textContent = horaOriginal;
                 }

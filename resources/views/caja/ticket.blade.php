@@ -395,7 +395,6 @@
                 <div>¡Gracias por su preferencia!</div>
             </div>
 
-            <button class="btn-print" onclick="window.print()">Imprimir Ticket</button>
 
         </div>
 

@@ -158,9 +158,8 @@
 
                                     <div class="col-md-6 autorizacion-container"
                                         id="autorizacion_container_{{ $index }}" style="display:none;">
-                                        <label class="form-label">Autorización PDF <span
-                                                class="text-danger">*</span></label>
-                                        <input type="file" accept=".pdf" class="form-control"
+                                        <label class="form-label">Autorización PDF </label>
+                                        <input type="file" accept=".pdf,image/*" class="form-control"
                                             id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
                                     </div>
                                 </div>

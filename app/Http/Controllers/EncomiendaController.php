@@ -743,8 +743,8 @@ class EncomiendaController extends Controller
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
-            ->whereIn('estado', ['activo', 'programado'])
-            ->whereDate('fecha_salida', $request->fecha_salida) // <- filtro que faltaba
+            ->whereIn('estado', ['en_ruta', 'programado'])
+            ->whereDate('fecha_salida', $request->fecha_salida)
             ->orderBy('fecha_salida')
             ->get();
 
@@ -763,12 +763,22 @@ class EncomiendaController extends Controller
                 $puntos = $ruta?->puntos?->sortBy('orden')->values();
 
                 $origenNombre = $puntos?->first()?->pueblito?->descripcion ?? 'Origen';
+                $destinoNombre = $puntos?->last()?->pueblito?->descripcion ?? 'Destino';
                 $hora = $salida->horario?->hora_formateada ?? '-';
+
+                $estado = match ($salida->estado) {
+                    'en_ruta'      => 'EN RUTA',
+                    'programado'   => 'PROGRAMADO',
+                    'finalizado'   => 'FINALIZADO',
+                    'cancelado'    => 'CANCELADO',
+                    'reprogramado' => 'REPROGRAMADO',
+                    default        => $salida->estado,
+                };
+
 
                 return [
                     'value' => $salida->id,
-                    'text' => strtoupper($origenNombre) . ' - PARTIDA ' . $hora .
-                        ($ruta?->nombre ? ' (' . $ruta->nombre . ')' : ''),
+                    'text' => strtoupper($ruta?->nombre) . ' ( ' . $hora . ' ) - ' . strtoupper($estado),
                     'puntos' => $puntos
                         ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
                         ->values()
