@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-body p-4">
-    <input type="hidden" id="venta_id_anular" value="">
+                <input type="hidden" id="venta_id_anular" value="">
 
                 <div class="text-center mb-4">
                     <h2 class="fw-bold text-danger">Total a devolver:</h2>
@@ -15,11 +15,23 @@
                     <div class="col-md-8 mx-auto">
 
                         <div class="mb-3">
+                            <label class="form-label fw-bold">Caja</label>
+                            <select id="caja_anulacion_id" class="form-select" name="caja_anulacion_id">
+                                @foreach ($cajasAbiertas as $c)
+                                    <option value="{{ $c->id }}">
+                                        Caja {{ $c->sucursal->nombre_comercial }} - {{ $c->usuario?->persona->nombre_completo ?? 'Sin usuario' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-bold">
                                 Motivo de la anulación
                             </label>
 
-                            <textarea id="motivo_anulacion" class="form-control" rows="3" maxlength="255" placeholder="Ingrese el motivo..." name="motivo"></textarea>
+                            <textarea id="motivo_anulacion" class="form-control" rows="3" maxlength="255" placeholder="Ingrese el motivo..."
+                                name="motivo"></textarea>
                         </div>
 
                         <div class="mb-3">

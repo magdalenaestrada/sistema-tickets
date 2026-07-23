@@ -277,9 +277,9 @@
                                                     CDR
                                                 </a>
                                             @endif
-
-                                            @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
-                                                @hasrole('Administrador')
+                                            
+                                            @hasrole('Administrador')
+                                                @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
                                                     @if ($venta->tipo_documento_factura_id == 3)
                                                         <button type="button" class="btn btn-xs btn-outline-danger"
                                                             onclick="anularNotaVenta({{ $venta->id }}, {{ $venta->total }})">
@@ -293,14 +293,8 @@
                                                             Anular
                                                         </button>
                                                     @endif
-                                                @else
-                                                    <button type="button" class="btn btn-xs btn-outline-danger"
-                                                        onclick="solicitarAnulacion({{ $venta->id }})">
-                                                        <i data-lucide="send"></i>
-                                                        Solicitar Anulación
-                                                    </button>
-                                                @endhasrole
-                                            @endif
+                                                @endif
+                                            @endhasrole
 
                                         </div>
                                     </td>
@@ -405,9 +399,13 @@
                 return IGV_ENCOMIENDA / 100;
             }
 
-            function anularNotaVenta(id, total) {
+            function anularNotaVenta(id, total, caja_anulacion_id) {
                 $("#venta_id_anular").val(id);
                 $("#modal_total_devolver").text(parseFloat(total).toFixed(2));
+
+                if ($("#modal_caja_anulacion option[value='" + caja_anulacion_id + "']").length) {
+                    $("#modal_caja_anulacion").val(caja_anulacion_id);
+                }
 
                 limpiarDevolucion();
                 distribuirDevolucionPorMetodo();
@@ -527,7 +525,6 @@
             }
 
             $("#btnEnviarSolicitud").click(function() {
-
                 $.ajax({
                     url: route('solicitudes.anulacion'),
                     type: 'POST',
@@ -706,12 +703,12 @@
             let procesandoAnulacion = false;
 
             $("#btnConfirmarAnulacion").on("click", function() {
-
                 if (procesandoAnulacion) return;
 
                 const total = parseFloat($("#modal_total_devolver").text()) || 0;
                 const ventaId = $("#venta_id_anular").val();
                 const motivo = $("#motivo_anulacion").val().trim();
+                const caja_anulacion_id = $("#caja_anulacion_id").val().trim();
 
                 if (!motivo) {
                     Swal.fire("Error", "Debe ingresar un motivo.", "error");
@@ -788,7 +785,8 @@
                         },
                         body: JSON.stringify({
                             motivo,
-                            devoluciones
+                            devoluciones,
+                            caja_anulacion_id
                         })
                     })
                     .then(res => res.json())
@@ -822,6 +820,7 @@
                     Swal.fire("Error", "La descripción solo puede contener letras, números y espacios.", "error");
                     return;
                 }
+
 
                 let precio = parseFloat($("#precio").val());
                 let unidad = parseFloat($("#unidad").val());

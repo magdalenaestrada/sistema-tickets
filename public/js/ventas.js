@@ -857,14 +857,6 @@ $(function () {
     $("#btnReservar").on("click", function (e) {
         e.preventDefault();
         if (!datosPasajerosCompletos()) return;
-        if (!validarMenores()) {
-            Swal.fire(
-                "Atención",
-                "Los pasajeros menores deben adjuntar autorización PDF.",
-                "warning",
-            );
-            return;
-        }
 
         const formData = construirPayload("reservar");
 
@@ -899,14 +891,6 @@ $(function () {
     $("#btnAbrirPago").on("click", function (e) {
         e.preventDefault();
         if (!datosPasajerosCompletos()) return;
-        if (!validarMenores()) {
-            Swal.fire(
-                "Atención",
-                "Los pasajeros menores deben adjuntar autorización PDF.",
-                "warning",
-            );
-            return;
-        }
 
         actualizarCostoTotal();
         limpiarPagosModal();
@@ -1032,12 +1016,6 @@ $(function () {
         }
 
         if (!validarClienteFacturacion()) {
-            btn.prop("disabled", false).text("Terminar Venta");
-            return;
-        }
-
-        if (!validarMenores()) {
-            Swal.fire("Atención", "Adjunta autorización PDF.", "warning");
             btn.prop("disabled", false).text("Terminar Venta");
             return;
         }

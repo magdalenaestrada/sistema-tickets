@@ -45,7 +45,7 @@
                             @break
 
                             @case('X')
-                                <span class="badge bg-danger">No abordó</span>
+                                <span class="badge bg-danger">Anulado</span>
                             @break
 
                             @case('R')
@@ -91,7 +91,12 @@
                                     <i data-lucide="printer"></i>
                                 </button>
                             @endif
-
+                            @if ($pasaje->autorizacion_pdf)
+                                <a href="{{ Storage::url($pasaje->autorizacion_pdf) }}" class="btn btn-xs btn-danger"
+                                    target="_blank" download title="Descargar autorización">
+                                    <i data-lucide="file"></i>
+                                </a>
+                            @endif
                         </div>
                     </td>
                 </tr>

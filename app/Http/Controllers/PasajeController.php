@@ -50,7 +50,7 @@ class PasajeController extends Controller
             'horario.tipo_vehiculo',
         ])
             ->join('horarios', 'horarios.id', '=', 'salidas.horario_id')
-            ->whereIn('salidas.estado', ['activo', 'programado'])
+            ->whereIn('salidas.estado', ['en_ruta', 'programado'])
             ->whereRaw(
                 "TIMESTAMP(salidas.fecha_salida, horarios.hora_salida) >= ?",
                 [$limite->format('Y-m-d H:i:s')]
@@ -443,14 +443,10 @@ class PasajeController extends Controller
                 $esMenor = isset($request->pasajero_menor[$index]) && $request->pasajero_menor[$index] == 1;
                 $autorizacionPdf = null;
 
-                if ($esMenor) {
-                    if (!$request->hasFile("autorizacion_pdf.$index")) {
-                        throw ValidationException::withMessages([
-                            "autorizacion_pdf.$index" => "El asiento {$asientoNumero} corresponde a un menor y requiere PDF de autorización.",
-                        ]);
-                    }
-
-                    $autorizacionPdf = $request->file("autorizacion_pdf.$index")->store('pasajes', 'public');
+                if ($request->hasFile("autorizacion_pdf.$index")) {
+                    $autorizacionPdf = $request
+                        ->file("autorizacion_pdf.$index")
+                        ->store('pasajes', 'public');
                 }
 
                 $persona = Persona::updateOrCreate(
