@@ -461,6 +461,8 @@ $(function () {
     }
 
     $("#emitir_sunat").on("change", function () {
+        $("#emitir_sunat").prop("checked", false).prop("disabled", true);
+
         actualizarEstadoSunat();
     });
 
