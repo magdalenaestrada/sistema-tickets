@@ -634,9 +634,13 @@ $(async function () {
         const receptor_tipo = $("#receptor_tipo_documento_id").val();
 
         if (receptor_tipo == "6") {
-            $("#receptor_documento").prop("disabled", true).val("");
+            $("#receptor_documento").val("00000000").prop("disabled", true);
+
+            buscarPersona("receptor");
         } else {
-            $("#receptor_documento").prop("disabled", false);
+            $("#receptor_documento")
+                .val("")
+                .prop("disabled", false)
         }
     }
 

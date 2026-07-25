@@ -126,7 +126,7 @@
                                 </div>
                             </div>
 
-                            <div class="row g-2 mt-2">
+                            {{-- <div class="row g-2 mt-2">
                                 <div class="col-md-3">
                                     <label class="form-label">Celular</label>
                                     <input type="text" class="form-control form-control-sm solo-numeros"
@@ -144,9 +144,9 @@
                                     <input type="text" class="form-control form-control-sm" id="receptor_direccion"
                                         name="receptor_direccion">
                                 </div>
-                            </div>
+                            </div> --}}
 
-                            <div class="row g-2 mt-2">
+                            {{-- <div class="row g-2 mt-2">
                                 <div class="col-md-4">
                                     <label class="form-label">DEPARTAMENTO</label>
                                     <select name="receptor_departamento_id" id="departamento_id" class="form-select">
@@ -168,7 +168,7 @@
                                         <option value="">Seleccione</option>
                                     </select>
                                 </div>
-                            </div>
+                            </div> --}}
 
                         </div>
                     </div>

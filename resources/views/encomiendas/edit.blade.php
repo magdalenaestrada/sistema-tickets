@@ -48,7 +48,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-2 mt-2">
+                        {{-- <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
                                 <input type="text" class="form-control" id="emisor_celular" name="emisor[celular]"
@@ -74,7 +74,7 @@
                                 <input type="text" class="form-control" id="emisor_ubigeo" name="emisor[ubigeo]"
                                     value="{{ $user->sucursal->distrito->ubigeo }}"readonly>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
 
@@ -138,7 +138,7 @@
                                     name="receptor[direccion]" value="{{ $encomienda->receptor->direccion ?? '' }}">
                             </div>
                         </div>
-
+{{-- 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">DEPARTAMENTO</label>
@@ -174,7 +174,7 @@
                                 <input type="text" class="form-control" id="receptor_ubigeo"
                                     value="{{ $encomienda->distrito->ubigeo ?? '' }}" name="receptor[ubigeo]" readonly>
                             </div>
-                        </div>
+                        </div> --}}
 
                     </div>
                 </div>
