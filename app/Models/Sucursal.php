@@ -55,4 +55,9 @@ class Sucursal extends Model
     {
         return $this->belongsTo(GrupoSerie::class);
     }
+
+    public function pueblitos()
+    {
+        return $this->hasMany(Pueblito::class);
+    }
 }

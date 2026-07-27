@@ -20,6 +20,10 @@ Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(
         Route::post('/entregar-masivo', [EncomiendaController::class, 'entregarMasivo'])->name('entregar-masivo');
         Route::post('/{id}/entregar', [EncomiendaController::class, 'entregar'])->name('entregar');
         Route::post('/{id}/agencia', [EncomiendaController::class, 'enAgencia'])->name('agencia');
+        Route::get(
+    '{encomienda}/ticket-entrega',
+    [EncomiendaController::class, 'ticketEntrega']
+)->name('ticket-entrega');
     });
 
     Route::get(

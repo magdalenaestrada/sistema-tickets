@@ -10,11 +10,17 @@ class Pueblito extends Model
 
     protected $fillable = [
         'descripcion',
-        'distrito_id'
+        'distrito_id',
+        'sucursal_id',
     ];
 
     public function distrito()
     {
         return $this->belongsTo(Distrito::class);
+    }
+
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class);
     }
 }

@@ -24,6 +24,7 @@ use App\Models\TipoDocumentoPersona;
 use App\Models\TipoEncomienda;
 use App\Services\EncomiendaService;
 use App\Services\PagoService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -465,18 +466,44 @@ class EncomiendaController extends Controller
     }
     public function entregar($id)
     {
-        $encomienda = Encomienda::findOrFail($id);
+        $encomienda = Encomienda::with([
+            'cliente',
+            'origen',
+            'destino',
+            'detalles',
+            'empresa',
+        ])->findOrFail($id);
 
         $encomienda->update([
-            "estado" => "ET"
+            'estado' => 'ET',
+            'fecha_entrega' => now(),
         ]);
 
         return response()->json([
-            "success" => true,
-            "message" => "Encomienda entregada",
-            "data" => $encomienda
+            'success' => true,
+            'message' => 'Encomienda entregada.',
+            'ticket_url' => route('encomiendas.ticket-entrega', $encomienda->id),
+            'data' => $encomienda
         ]);
     }
+
+    public function ticketEntrega(Encomienda $encomienda)
+{
+    $encomienda->load([
+        'cliente',
+        'origen',
+        'destino',
+        'detalles',
+        'empresa',
+    ]);
+
+    $pdf = Pdf::loadView(
+        'encomiendas.ticket_entrega',
+        compact('encomienda')
+    );
+
+    return $pdf->stream("ENTREGA-{$encomienda->codigo}.pdf");
+}
     public function enAgencia($id)
     {
         $encomienda = Encomienda::findOrFail($id);

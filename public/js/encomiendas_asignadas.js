@@ -216,7 +216,12 @@ $(function () {
                     _token: csrf,
                 },
                 success: function (res) {
+                    if (res.ticket_url) {
+                        window.open(res.ticket_url, "_blank");
+                    }
+
                     Swal.fire("Éxito", res.message, "success");
+
                     tabla.ajax.reload(null, false);
                 },
                 error: function (xhr) {
@@ -256,7 +261,8 @@ $(function () {
                 error: function (xhr) {
                     Swal.fire(
                         "Error",
-                        xhr.responseJSON?.message || "No se pudo enviar a agencia",
+                        xhr.responseJSON?.message ||
+                            "No se pudo enviar a agencia",
                         "error",
                     );
                 },
