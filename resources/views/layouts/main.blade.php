@@ -113,26 +113,21 @@
 
     @if (session('abrir_caja'))
         <script>
-            document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("crear-encomienda")?.addEventListener("click", function(e) {
+                if (!window.VENTA_CONFIG.esAdmin && !window.VENTA_CONFIG.cajaAbierta) {
+                    e.preventDefault();
 
-                Swal.fire({
-                    icon: "warning",
-                    title: "Debe abrir una caja",
-                    html: `
-            <div style="font-size:15px">
-                Antes de realizar una <b>venta de pasajes</b> o registrar una
-                <b>encomienda</b>, debe abrir una caja.
-                <br><br>
-                <span style="color:#6c757d">
-                    Una vez abierta podrá continuar normalmente.
-                </span>
-            </div>
-        `,
-                    confirmButtonText: "Entendido",
-                    confirmButtonColor: "#3085d6",
-                    allowOutsideClick: false,
-                });
-
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Caja cerrada",
+                        text: "Debe abrir una caja antes de crear una encomienda.",
+                        confirmButtonText: "Ir a abrir caja",
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = window.VENTA_CONFIG.rutaCaja;
+                        }
+                    });
+                }
             });
         </script>
     @endif

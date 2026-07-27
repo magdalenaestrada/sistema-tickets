@@ -369,7 +369,24 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    sellButton.addEventListener("click", function () {
+    sellButton.addEventListener("click", function (e) {
+        if (!window.VENTA_CONFIG.esAdmin && !window.VENTA_CONFIG.cajaAbierta) {
+            e.preventDefault();
+
+            Swal.fire({
+                icon: "warning",
+                title: "Caja cerrada",
+                text: "Debe abrir una caja antes de vender un pasaje.",
+                confirmButtonText: "Ir a abrir caja",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = window.VENTA_CONFIG.rutaCaja;
+                }
+            });
+
+            return;
+        }
+
         if (!selectedSeats.length || !currentSalidaId) return;
 
         const seats = selectedSeats.sort((a, b) => a - b).join(",");
@@ -415,10 +432,206 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    function obtenerFechasSemana() {
+        const hoy = new Date();
+        const fechas = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(hoy);
+            d.setDate(hoy.getDate() + i);
+            fechas.push(d.toISOString().split("T")[0]);
+        }
+        return fechas;
+    }
+
+    function mostrarSalidasSemanaPorOrigen(origen) {
+        const estadoInicial = document.getElementById("estado-inicial");
+        const rows = document.querySelectorAll(".horario-row");
+        const fechasSemana = obtenerFechasSemana();
+
+        const selectOrigen = document.getElementById("filtro_origen");
+        const nombreOrigen =
+            selectOrigen.options[selectOrigen.selectedIndex]?.text?.trim() ||
+            "";
+
+        let visibles = 0;
+
+        rows.forEach((row) => {
+            const rowFecha = row.dataset.fecha || "";
+
+            let puntos = [];
+            try {
+                puntos = JSON.parse(row.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+
+            const puntoOrigen = puntos.find(
+                (p) => String(p.pueblito_id) === String(origen),
+            );
+
+            const matchOrigen = !!puntoOrigen;
+            const matchSemana = fechasSemana.includes(rowFecha);
+
+            const ordenMax = puntos.length
+                ? Math.max(...puntos.map((p) => Number(p.orden)))
+                : null;
+            const esUltimoPunto =
+                puntoOrigen && Number(puntoOrigen.orden) === ordenMax;
+
+            const visible = matchOrigen && matchSemana && !esUltimoPunto;
+
+            const label = row.querySelector(".hr-route-label");
+
+            if (visible) {
+                row.style.display = "flex";
+                visibles++;
+
+                const puntoFinal = puntos[puntos.length - 1];
+                const nombreDestinoReal =
+                    puntoFinal?.nombre ||
+                    puntoFinal?.pueblito_nombre ||
+                    row.dataset.destinoNombre ||
+                    "";
+
+                if (label) {
+                    label.textContent = `${nombreOrigen} → ${nombreDestinoReal}`;
+                }
+
+                const horaEl = row.querySelector(".hr-date-time");
+                if (horaEl && puntoOrigen?.hora) {
+                    horaEl.textContent = puntoOrigen.hora;
+                }
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        actualizarContador(visibles);
+
+        if (estadoInicial) {
+            estadoInicial.style.display = visibles === 0 ? "block" : "none";
+            if (visibles === 0) {
+                estadoInicial.innerHTML = `No hay salidas esta semana desde ${nombreOrigen || "ese origen"}`;
+            }
+        }
+
+        if (visibles === 0) {
+            svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
+        }
+    }
+
+    function mostrarSalidasSemanaPorOrigenDestino(origen, destino) {
+        const estadoInicial = document.getElementById("estado-inicial");
+        const rows = document.querySelectorAll(".horario-row");
+        const fechasSemana = obtenerFechasSemana();
+
+        const selectOrigen = document.getElementById("filtro_origen");
+        const selectDestino = document.getElementById("filtro_destino");
+        const nombreOrigen =
+            selectOrigen.options[selectOrigen.selectedIndex]?.text?.trim() ||
+            "";
+        const nombreDestino =
+            selectDestino.options[selectDestino.selectedIndex]?.text?.trim() ||
+            "";
+
+        let visibles = 0;
+
+        rows.forEach((row) => {
+            const rowFecha = row.dataset.fecha || "";
+            const tipoViajeId = parseInt(row.dataset.tipoViajeId || "0");
+
+            let puntos = [];
+            try {
+                puntos = JSON.parse(row.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+
+            const puntoOrigen = puntos.find(
+                (p) => String(p.pueblito_id) === String(origen),
+            );
+            const puntoDestino = puntos.find(
+                (p) => String(p.pueblito_id) === String(destino),
+            );
+
+            const matchSemana = fechasSemana.includes(rowFecha);
+            const matchOrigen = !!puntoOrigen;
+            const matchDestino = !!puntoDestino;
+
+            let matchOrden = false;
+            if (puntoOrigen && puntoDestino) {
+                matchOrden =
+                    Number(puntoOrigen.orden) < Number(puntoDestino.orden);
+            }
+
+            let visible =
+                matchSemana && matchOrigen && matchDestino && matchOrden;
+
+            if (visible && tipoViajeId !== 2) {
+                const primero = puntos[0];
+                const ultimo = puntos[puntos.length - 1];
+
+                const coincideExacto =
+                    primero &&
+                    ultimo &&
+                    String(primero.pueblito_id) === String(origen) &&
+                    String(ultimo.pueblito_id) === String(destino);
+
+                visible = coincideExacto;
+            }
+
+            const label = row.querySelector(".hr-route-label");
+
+            if (visible) {
+                row.style.display = "flex";
+                visibles++;
+
+                if (label) {
+                    label.textContent = `${nombreOrigen} → ${nombreDestino}`;
+                }
+
+                const horaEl = row.querySelector(".hr-date-time");
+                if (horaEl && puntoOrigen?.hora) {
+                    horaEl.textContent = puntoOrigen.hora;
+                }
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        actualizarContador(visibles);
+
+        if (estadoInicial) {
+            estadoInicial.style.display = visibles === 0 ? "block" : "none";
+            if (visibles === 0) {
+                estadoInicial.innerHTML = `No hay salidas esta semana de ${nombreOrigen} a ${nombreDestino}`;
+            }
+        }
+
+        if (visibles === 0) {
+            svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
+        }
+    }
+
     function filtrarSalidas() {
         const fecha = document.getElementById("filtro_fecha").value;
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
+
+        if (!origen && !destino && !fecha) {
+            mostrarPrimeras10Salidas();
+            return;
+        }
+
+        if (origen && !destino) {
+            mostrarSalidasSemanaPorOrigen(origen);
+            return;
+        }
+
+        if (origen && destino && !fecha) {
+            mostrarSalidasSemanaPorOrigenDestino(origen, destino);
+            return;
+        }
 
         const selectOrigen = document.getElementById("filtro_origen");
         const selectDestino = document.getElementById("filtro_destino");
@@ -429,11 +642,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const nombreDestino =
             selectDestino.options[selectDestino.selectedIndex]?.text?.trim() ||
             "";
-
-        if (!fecha || !origen || !destino) {
-            mostrarPrimeras10Salidas();
-            return;
-        }
 
         const estadoInicial = document.getElementById("estado-inicial");
         const rows = document.querySelectorAll(".horario-row");
@@ -454,7 +662,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const puntoOrigen = puntos.find(
                 (p) => String(p.pueblito_id) === String(origen),
             );
-
             const puntoDestino = puntos.find(
                 (p) => String(p.pueblito_id) === String(destino),
             );
@@ -509,7 +716,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 const horaEl = row.querySelector(".hr-date-time");
-                const horaOriginal = horaEl?.dataset.horaOriginal; 
+                const horaOriginal = horaEl?.dataset.horaOriginal;
                 if (horaEl && horaOriginal) {
                     horaEl.textContent = horaOriginal;
                 }

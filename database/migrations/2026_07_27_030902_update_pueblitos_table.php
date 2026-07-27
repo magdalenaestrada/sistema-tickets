@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('pueblitos', function (Blueprint $table) {
             $table->foreignId('sucursal_id')
+                ->nullable()
                 ->after('distrito_id')
                 ->constrained('sucursales')
                 ->cascadeOnDelete();

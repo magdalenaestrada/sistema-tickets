@@ -120,16 +120,16 @@
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">Celular</label>
-                                <input type="text" class="form-control" id="receptor_celular"
-                                    name="receptor[celular]" inputmode="numeric" pattern="\d+" title="Solo números"
+                                <input type="text" class="form-control" id="receptor_celular" name="receptor[celular]"
+                                    inputmode="numeric" pattern="\d+" title="Solo números"
                                     value="{{ $encomienda->receptor->celular ?? '' }}">
                             </div>
 
                             <div class="col-md-3">
                                 <label class="form-label">Telefono</label>
                                 <input type="text" class="form-control" id="receptor_telefono" inputmode="numeric"
-                                    pattern="\d+" title="Solo números"
-                                    value="{{ $encomienda->receptor->telefono ?? '' }}" name="receptor[telefono]">
+                                    pattern="\d+" title="Solo números" value="{{ $encomienda->receptor->telefono ?? '' }}"
+                                    name="receptor[telefono]">
                             </div>
 
                             <div class="col-md-6">
@@ -138,7 +138,7 @@
                                     name="receptor[direccion]" value="{{ $encomienda->receptor->direccion ?? '' }}">
                             </div>
                         </div>
-{{-- 
+                        {{-- 
                         <div class="row g-2 mt-2">
                             <div class="col-md-3">
                                 <label class="form-label">DEPARTAMENTO</label>
@@ -316,7 +316,7 @@
                             </select>
                         </div>
 
-                        
+
 
                         <div class="mb-3">
                             <label for="numero_documento_id" class="form-label">Número documento</label>
@@ -442,5 +442,8 @@
     <script src="{{ asset('js/encomiendas.js') }}"></script>
     <script>
         window.IS_EDIT = {{ request()->routeIs('encomiendas.editar') ? 'true' : 'false' }};
+        window.VENTA_CONFIG = {
+            seriesSucursal: @json($seriesSucursal)
+        };
     </script>
 @endpush

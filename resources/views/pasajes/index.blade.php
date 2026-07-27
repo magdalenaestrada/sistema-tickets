@@ -417,6 +417,11 @@
 @push('scripts')
     <script>
         const fechaHoy = @json($hoy);
+        window.VENTA_CONFIG = {
+            esAdmin: @json($esAdmin),
+            cajaAbierta: @json($cajaAbierta),
+            rutaCaja: @json($ruta),
+        };
     </script>
     <script src="{{ asset('js/pasajes.js') }}"></script>
 @endpush

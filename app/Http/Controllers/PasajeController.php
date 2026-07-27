@@ -42,6 +42,13 @@ class PasajeController extends Controller
 
         $ayer = now('America/Lima')->subDay()->format('Y-m-d');
 
+        $esAdmin = auth()->user()->hasRole('Administrador');
+
+        $cajaAbierta = Caja::where('usuario_id', auth()->id())
+            ->where('estado', 'A')
+            ->exists();
+
+        $ruta = route('caja.index');
         $salidas = Salida::with([
             'horario.ruta.puntos.pueblito',
             'horario.ruta.puntos.sucursal',
@@ -122,7 +129,7 @@ class PasajeController extends Controller
             ->get();
         $pueblitos = Pueblito::orderBy('descripcion')
             ->get();
-        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitos'));
+        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
     }
 
     public function listarPasajes(Request $request)

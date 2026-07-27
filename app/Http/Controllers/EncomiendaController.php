@@ -87,24 +87,41 @@ class EncomiendaController extends Controller
     {
         Carbon::now();
         $user = Auth::user();
+
+        if (!$user->hasRole('Administrador')) {
+            $cajaAbierta = Caja::where('usuario_id', $user->id)
+                ->where('estado', 'A')
+                ->exists();
+
+            if (!$cajaAbierta) {
+                return redirect()
+                    ->route('caja.index')
+                    ->with('warning', 'Debe abrir una caja antes de crear una encomienda.');
+            }
+        }
+
         $metodos_pago = MetodoPago::all();
         $sucursales = Sucursal::with('distrito')
             ->where('estado', 'A')
             ->select('id', 'nombre_comercial', 'distrito_id')
             ->orderBy('nombre_comercial')
             ->get();
+
         $cajas_emision = Caja::with('sucursal')
             ->where('usuario_id', $user->id)
             ->where('estado', 'A')
             ->get();
+
         $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
         $billeteras_digitales = BilleteraDigital::all();
+
         $seriesSucursal = $cajas_emision
             ->pluck('sucursal.serie')
             ->flatten();
+
         return view('encomiendas.create', array_merge(
             compact(
                 'sucursales',
@@ -117,7 +134,6 @@ class EncomiendaController extends Controller
                 'billeteras_digitales',
                 'cajas_emision',
                 'seriesSucursal'
-
             ),
             [
                 'esSobreequipaje' => false,
