@@ -435,8 +435,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        
-
         const estadoInicial = document.getElementById("estado-inicial");
         const rows = document.querySelectorAll(".horario-row");
 

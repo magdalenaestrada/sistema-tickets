@@ -26,7 +26,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($detalles as $detalle)
+                        @foreach ($caja->detalles as $detalle)
                             <tr class="{{ $detalle->anulado ? 'table-danger' : '' }}">
                                 <td>{{ $detalle->created_at?->format('d/m/Y h:i A') }}</td>
                                 <td>

@@ -863,7 +863,9 @@ class PasajeController extends Controller
         // Ya no usamos precio_cobrado aquí: es el total de la venta, no el precio del asiento.
         // El precio final del asiento lo calcula el JS = precio_pasaje - monto_descuento
         $preciosFinales = [];
-
+        $seriesSucursal = $cajas_emision
+            ->pluck('sucursal.serie')
+            ->flatten();
         return view('pasajes.editar', compact(
             'pasaje',
             'salida',
@@ -877,7 +879,8 @@ class PasajeController extends Controller
             'user',
             'sobreEquipajes',
             'descuentosConfig',
-            'preciosFinales'
+            'preciosFinales',
+            'seriesSucursal'
         ));
     }
 

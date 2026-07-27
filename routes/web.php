@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DashboardVendedorController;
+use App\Http\Controllers\PasajeController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Caja;
 use App\Models\Venta;
@@ -20,7 +21,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::middleware(['auth', 'caja.abierta'])->group(function () {
 
+    Route::get('/pasajes', [PasajeController::class, 'vender'])
+        ->name('pasajes.vender');
+
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/vendedor', DashboardVendedorController::class)

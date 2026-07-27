@@ -252,12 +252,14 @@
                             <div class="mb-3">
                                 <select name="caja_id" id="caja_id" class="form-select">
                                     <option value="">Seleccionar sucursal</option>
+
                                     @foreach ($cajas_emision as $caja)
-                                        <option value="{{ $caja->id }}"
+                                        <option value="{{ $caja->id }}" data-sucursal="{{ $caja->sucursal_id }}"
                                             @if ($caja->sucursal_id == $user->sucursal_id) selected @endif>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>
                                     @endforeach
+
                                 </select>
                             </div>
 
@@ -308,7 +310,7 @@
 
                             <div class="d-grid gap-2">
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="btnGuardarReserva">
-                                    Guardar Reserva 
+                                    Guardar Reserva
                                 </button>
                                 <button type="button" class="btn btn-success btn-sm" id="btnAbrirPago">
                                     Terminar Venta
@@ -447,6 +449,8 @@
             sobreEquipajes: @json($sobreEquipajes),
             preciosFinales: @json($preciosFinales),
             descuentos: @json($descuentosConfig),
+            seriesSucursal: @json($seriesSucursal)
+
         };
     </script>
     <script src="{{ asset('js/pasajes_editar.js') }}"></script>
