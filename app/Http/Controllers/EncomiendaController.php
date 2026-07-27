@@ -467,11 +467,15 @@ class EncomiendaController extends Controller
     public function entregar($id)
     {
         $encomienda = Encomienda::with([
-            'cliente',
-            'origen',
-            'destino',
-            'detalles',
-            'empresa',
+            'emisor.tipoDocumento',
+            'receptor.tipoDocumento',
+            'detalles.tipo_encomienda',
+            'sucursal_origen',
+            'sucursal_destino',
+            'origenPueblito',
+            'destinoPueblito',
+            'usuario',
+            'venta',
         ])->findOrFail($id);
 
         $encomienda->update([
@@ -483,7 +487,7 @@ class EncomiendaController extends Controller
             'success' => true,
             'message' => 'Encomienda entregada.',
             'ticket_url' => route('encomiendas.ticket-entrega', $encomienda->id),
-            'data' => $encomienda
+            'data' => $encomienda,
         ]);
     }
 

@@ -20,6 +20,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/vendedor', DashboardVendedorController::class)
         ->name('dashboard.vendedor');

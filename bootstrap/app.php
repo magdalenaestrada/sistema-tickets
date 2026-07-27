@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'caja.activa' => \App\Http\Middleware\VerificarCajaActiva::class,
         ]);
     })
+    ->withMiddleware(function ($middleware) {
+        $middleware->alias([
+            'caja.abierta' => \App\Http\Middleware\CajaAbiertaMiddleware::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

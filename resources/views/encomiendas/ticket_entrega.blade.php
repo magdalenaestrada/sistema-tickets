@@ -134,11 +134,8 @@
         <tr>
             <td>Origen</td>
             <td>
-
-                {{ $encomienda->sucursal_origen?->nombre }}
-
                 @if ($encomienda->origenPueblito)
-                    - {{ $encomienda->origenPueblito->nombre }}
+                    - {{ $encomienda->origenPueblito->descripcion }}
                 @endif
 
             </td>
@@ -147,11 +144,8 @@
         <tr>
             <td>Destino</td>
             <td>
-
-                {{ $encomienda->sucursal_destino?->nombre }}
-
                 @if ($encomienda->destinoPueblito)
-                    - {{ $encomienda->destinoPueblito->nombre }}
+                    - {{ $encomienda->destinoPueblito->descripcion }}
                 @endif
 
             </td>
