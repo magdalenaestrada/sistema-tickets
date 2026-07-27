@@ -430,8 +430,14 @@ document.addEventListener("DOMContentLoaded", function () {
             selectDestino.options[selectDestino.selectedIndex]?.text?.trim() ||
             "";
 
-        if (!fecha || !origen || !destino) {
-            mostrarPrimeras10Salidas();
+        if (!origen) {
+            ocultarTodasLasSalidas();
+            actualizarContador(0);
+
+            estadoInicial.style.display = "block";
+            estadoInicial.innerHTML =
+                "Seleccione un origen para ver las salidas.";
+
             return;
         }
 
@@ -462,6 +468,36 @@ document.addEventListener("DOMContentLoaded", function () {
             const matchFecha = rowFecha === fecha;
             const matchOrigen = !!puntoOrigen;
             const matchDestino = !!puntoDestino;
+
+            let matchFecha = true;
+
+            if (fecha) {
+                matchFecha = rowFecha === fecha;
+            } else {
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+
+                const limite = new Date(hoy);
+                limite.setDate(limite.getDate() + 6);
+
+                const fechaSalida = new Date(rowFecha + "T00:00:00");
+
+                matchFecha = fechaSalida >= hoy && fechaSalida <= limite;
+            }
+
+            let matchDestino = true;
+            let matchOrden = true;
+
+            if (destino) {
+                matchDestino = !!puntoDestino;
+
+                if (puntoOrigen && puntoDestino) {
+                    matchOrden =
+                        Number(puntoOrigen.orden) < Number(puntoDestino.orden);
+                } else {
+                    matchOrden = false;
+                }
+            }
 
             let matchOrden = false;
             if (puntoOrigen && puntoDestino) {
@@ -509,7 +545,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 const horaEl = row.querySelector(".hr-date-time");
-                const horaOriginal = horaEl?.dataset.horaOriginal; 
+                const horaOriginal = horaEl?.dataset.horaOriginal;
                 if (horaEl && horaOriginal) {
                     horaEl.textContent = horaOriginal;
                 }

@@ -107,7 +107,36 @@
 
     @include('layouts.partials.scripts')
 
+
+
     @stack('scripts')
+
+    @if (session('abrir_caja'))
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+
+                Swal.fire({
+                    icon: "warning",
+                    title: "Debe abrir una caja",
+                    html: `
+            <div style="font-size:15px">
+                Antes de realizar una <b>venta de pasajes</b> o registrar una
+                <b>encomienda</b>, debe abrir una caja.
+                <br><br>
+                <span style="color:#6c757d">
+                    Una vez abierta podrá continuar normalmente.
+                </span>
+            </div>
+        `,
+                    confirmButtonText: "Entendido",
+                    confirmButtonColor: "#3085d6",
+                    allowOutsideClick: false,
+                });
+
+            });
+        </script>
+    @endif
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
 

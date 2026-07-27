@@ -488,22 +488,24 @@ class EncomiendaController extends Controller
     }
 
     public function ticketEntrega(Encomienda $encomienda)
-{
-    $encomienda->load([
-        'cliente',
-        'origen',
-        'destino',
-        'detalles',
-        'empresa',
-    ]);
+    {
+        $encomienda->load([
+            'emisor.tipoDocumento',
+            'receptor.tipoDocumento',
+            'usuario.persona',
+            'sucursal_origen',
+            'sucursal_destino',
+            'origenPueblito',
+            'destinoPueblito',
+            'detalles.tipo_encomienda',
+            'venta',
+        ]);
 
-    $pdf = Pdf::loadView(
-        'encomiendas.ticket_entrega',
-        compact('encomienda')
-    );
-
-    return $pdf->stream("ENTREGA-{$encomienda->codigo}.pdf");
-}
+        return Pdf::loadView(
+            'encomiendas.ticket_entrega',
+            compact('encomienda')
+        )->stream("ENTREGA-{$encomienda->id}.pdf");
+    }
     public function enAgencia($id)
     {
         $encomienda = Encomienda::findOrFail($id);
