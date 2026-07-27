@@ -296,7 +296,7 @@
                 <div class="filtro-group">
                     <label>Fecha</label>
                     <input type="date" id="filtro_fecha" min="{{ $ayer }}" class="form-control"
-                        >
+                        value="{{ $hoy }}">
                 </div>
                 <div class="filtro-group">
                     <label>Origen</label>
