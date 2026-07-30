@@ -30,6 +30,9 @@ class Encomienda extends Model
         'origen_pueblito_id',
         'destino_pueblito_id',
         'transbordo',
+        'receptor2_persona_id',
+        'observaciones',
+        'entregado_por'
     ];
 
     protected $casts = [
@@ -76,9 +79,19 @@ class Encomienda extends Model
         return $this->belongsTo(Sucursal::class, 'destino', 'id');
     }
 
+    public function receptor2()
+    {
+        return $this->belongsTo(Persona::class, 'receptor2_persona_id');
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function entregado()
+    {
+        return $this->belongsTo(User::class, 'entregado_por');
     }
 
     public function venta()

@@ -83,6 +83,30 @@ document.addEventListener("DOMContentLoaded", function () {
             $("#modalSobreEquipaje").modal("show");
         });
     });
+
+
+    document.addEventListener("click", function (e) {
+    const boton = e.target.closest(".btn-editar-pasaje, .btn-sobreequipaje");
+
+    if (!boton) return;
+
+    if (!window.VENTA_CONFIG.esAdmin && !window.VENTA_CONFIG.cajaAbierta) {
+        e.preventDefault();
+
+        Swal.fire({
+            icon: "warning",
+            title: "Caja cerrada",
+            text: "Debe abrir una caja antes de realizar esta operación.",
+            confirmButtonText: "Ir a abrir caja",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = window.VENTA_CONFIG.rutaCaja;
+            }
+        });
+    }
+});
+
+
     function cargarResultados(url = null) {
         const dni = (document.getElementById("filtroDNI")?.value || "").trim();
 

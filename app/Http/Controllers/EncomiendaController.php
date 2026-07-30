@@ -482,6 +482,7 @@ class EncomiendaController extends Controller
     }
     public function entregar($id)
     {
+        $user_id = Auth::id();
         $encomienda = Encomienda::with([
             'emisor.tipoDocumento',
             'receptor.tipoDocumento',
@@ -496,6 +497,7 @@ class EncomiendaController extends Controller
 
         $encomienda->update([
             'estado' => 'ET',
+            'entregado_por' => $user_id,
             'fecha_entrega' => now(),
         ]);
 
@@ -725,6 +727,20 @@ class EncomiendaController extends Controller
                         'fecha_creacion' => now(),
                     ]);
                 }
+            }
+
+            $receptor2 = null;
+
+            if ($request->filled('receptor2.nombres')) {
+
+                $receptor2 = Persona::create([
+                    'tipo_documento_id' => $request->input('receptor2.tipo_documento_id'),
+                    'documento' => $request->input('receptor2.documento'),
+                    'nombres' => $request->input('receptor2.nombres'),
+                    'apellidos' => $request->input('receptor2.apellidos'),
+                    'estado' => 'A',
+                    'fecha_creacion' => now(),
+                ]);
             }
 
             $user_id = Auth::id();

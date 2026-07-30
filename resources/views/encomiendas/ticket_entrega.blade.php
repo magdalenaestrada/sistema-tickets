@@ -227,7 +227,7 @@
 
             <td>Entregado por</td>
 
-            <td>{{ $encomienda->usuario?->persona?->nombre_completo ?? $encomienda->usuario?->name }}</td>
+            <td>{{ $encomienda->entregado?->persona?->nombre_completo ?? $encomienda->usuario?->persona?->nombre_completo  }}</td>
 
         </tr>
 

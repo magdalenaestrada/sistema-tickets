@@ -179,11 +179,19 @@ class PasajeController extends Controller
             ->orderBy('nombre_comercial')
             ->get();
 
+        $esAdmin = auth()->user()->hasRole('Administrador');
+
+        $cajaAbierta = Caja::where('usuario_id', auth()->id())
+            ->where('estado', 'A')
+            ->exists();
+
+        $ruta = route('caja.index');
+
         if ($request->ajax()) {
             return view('pasajes.partials.tabla', compact('pasajes'))->render();
         }
 
-        return view('pasajes.busqueda', compact('pasajes', 'sucursales'));
+        return view('pasajes.busqueda', compact('pasajes', 'sucursales', 'esAdmin', 'cajaAbierta', 'ruta'));
     }
 
     public function datatable()

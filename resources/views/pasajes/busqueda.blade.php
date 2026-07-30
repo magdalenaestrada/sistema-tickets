@@ -73,4 +73,11 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
         <script src="{{ asset('js/pasajes_busqueda.js') }}"></script>
+        <script>
+            window.VENTA_CONFIG = {
+                esAdmin: @json($esAdmin),
+                cajaAbierta: @json($cajaAbierta),
+                rutaCaja: @json($ruta),
+            };
+        </script>
     @endpush

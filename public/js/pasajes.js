@@ -618,124 +618,33 @@ document.addEventListener("DOMContentLoaded", function () {
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
 
-        if (!origen && !destino && !fecha) {
-            mostrarPrimeras10Salidas();
+        if (!origen) {
+            actualizarContador(0);
+            document
+                .querySelectorAll(".horario-row")
+                .forEach((r) => (r.style.display = "none"));
+
+            estadoInicial.style.display = "block";
+            estadoInicial.innerHTML = "Seleccione un origen";
             return;
         }
 
-        if (origen && !destino) {
+        if (!destino && !fecha) {
             mostrarSalidasSemanaPorOrigen(origen);
             return;
         }
 
-        if (origen && destino && !fecha) {
+        if (destino && !fecha) {
             mostrarSalidasSemanaPorOrigenDestino(origen, destino);
             return;
         }
 
-        const selectOrigen = document.getElementById("filtro_origen");
-        const selectDestino = document.getElementById("filtro_destino");
-
-        const nombreOrigen =
-            selectOrigen.options[selectOrigen.selectedIndex]?.text?.trim() ||
-            "";
-        const nombreDestino =
-            selectDestino.options[selectDestino.selectedIndex]?.text?.trim() ||
-            "";
-
-        const estadoInicial = document.getElementById("estado-inicial");
-        const rows = document.querySelectorAll(".horario-row");
-
-        let visibles = 0;
-
-        rows.forEach((row) => {
-            const rowFecha = row.dataset.fecha || "";
-            const tipoViajeId = parseInt(row.dataset.tipoViajeId || "0");
-
-            let puntos = [];
-            try {
-                puntos = JSON.parse(row.dataset.puntos || "[]");
-            } catch (e) {
-                puntos = [];
-            }
-
-            const puntoOrigen = puntos.find(
-                (p) => String(p.pueblito_id) === String(origen),
-            );
-            const puntoDestino = puntos.find(
-                (p) => String(p.pueblito_id) === String(destino),
-            );
-
-            const matchFecha = rowFecha === fecha;
-            const matchOrigen = !!puntoOrigen;
-            const matchDestino = !!puntoDestino;
-
-            let matchOrden = false;
-            if (puntoOrigen && puntoDestino) {
-                matchOrden =
-                    Number(puntoOrigen.orden) < Number(puntoDestino.orden);
-            }
-
-            let visible =
-                matchFecha && matchOrigen && matchDestino && matchOrden;
-
-            if (visible && tipoViajeId !== 2) {
-                const primero = puntos[0];
-                const ultimo = puntos[puntos.length - 1];
-
-                const coincideExacto =
-                    primero &&
-                    ultimo &&
-                    String(primero.pueblito_id) === String(origen) &&
-                    String(ultimo.pueblito_id) === String(destino);
-
-                visible = coincideExacto;
-            }
-
-            const label = row.querySelector(".hr-route-label");
-            const origenOriginal = row.dataset.origenNombre || "";
-            const destinoOriginal = row.dataset.destinoNombre || "";
-
-            if (visible) {
-                row.style.display = "flex";
-                visibles++;
-
-                if (label) {
-                    label.textContent = `${nombreOrigen} → ${nombreDestino}`;
-                }
-
-                const horaEl = row.querySelector(".hr-date-time");
-                if (horaEl && puntoOrigen?.hora) {
-                    horaEl.textContent = puntoOrigen.hora;
-                }
-            } else {
-                row.style.display = "none";
-
-                if (label && origenOriginal && destinoOriginal) {
-                    label.textContent = `${origenOriginal} → ${destinoOriginal}`;
-                }
-
-                const horaEl = row.querySelector(".hr-date-time");
-                const horaOriginal = horaEl?.dataset.horaOriginal;
-                if (horaEl && horaOriginal) {
-                    horaEl.textContent = horaOriginal;
-                }
-            }
-        });
-
-        actualizarContador(visibles);
-
-        if (estadoInicial) {
-            estadoInicial.style.display = visibles === 0 ? "block" : "none";
-            if (visibles === 0) {
-                estadoInicial.innerHTML =
-                    "No hay salidas disponibles con esos filtros";
-            }
+        if (!destino && fecha) {
+            mostrarSalidasPorOrigenFecha(origen, fecha);
+            return;
         }
 
-        if (visibles === 0) {
-            svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
-        }
+        mostrarSalidasPorOrigenDestinoFecha(origen, destino, fecha);
     }
 
     function actualizarContador(total) {

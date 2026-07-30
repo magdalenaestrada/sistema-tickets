@@ -630,6 +630,13 @@ $(async function () {
         }
     }
 
+    const swReceptor2 = document.getElementById("usar_receptor2");
+    const panelReceptor2 = document.getElementById("panelReceptor2");
+
+    swReceptor2.addEventListener("change", function () {
+        panelReceptor2.style.display = this.checked ? "block" : "none";
+    });
+
     function sinDocumento() {
         const receptor_tipo = $("#receptor_tipo_documento_id").val();
 
@@ -638,9 +645,7 @@ $(async function () {
 
             buscarPersona("receptor");
         } else {
-            $("#receptor_documento")
-                .val("")
-                .prop("disabled", false)
+            $("#receptor_documento").val("").prop("disabled", false);
         }
     }
 
@@ -872,6 +877,36 @@ $(async function () {
             return;
         }
 
+        if ($("#usar_receptor2").is(":checked")) {
+            const documento = $("#receptor2_documento").val().trim();
+            const nombres = $("#receptor2_nombres").val().trim();
+
+            $("#receptor2_documento, #receptor2_nombres").removeClass(
+                "is-invalid",
+            );
+
+            let error = false;
+
+            if (!documento) {
+                $("#receptor2_documento").addClass("is-invalid");
+                error = true;
+            }
+
+            if (!nombres) {
+                $("#receptor2_nombres").addClass("is-invalid");
+                error = true;
+            }
+
+            if (error) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Receptor alterno incompleto",
+                    text: "Completa el documento y los nombres del receptor alterno.",
+                });
+                return;
+            }
+        }
+
         if (!validarClienteFacturacion()) return;
 
         recalcularTotal();
@@ -881,6 +916,12 @@ $(async function () {
         const modalEl = document.getElementById("modalPago");
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
+    });
+
+    $("#receptor2_documento, #receptor2_nombres").on("input", function () {
+        if ($(this).val().trim()) {
+            $(this).removeClass("is-invalid");
+        }
     });
 
     $("#modal_metodo_pago").on("change", function () {
@@ -1160,6 +1201,21 @@ $(async function () {
                 telefono: $("#receptor_telefono").val(),
                 direccion: $("#receptor_direccion").val(),
             },
+
+            responsable: {
+                documento: $("#responsable_documento").val(),
+                nombres: $("#responsable_nombres").val(),
+            },
+
+            receptor2: $("#usar_receptor2").is(":checked")
+                ? {
+                      documento: $("#receptor2_documento").val(),
+                      nombres: $("#receptor2_nombres").val(),
+                  }
+                : null,
+
+            observaciones: $("#observaciones").val(),
+
             origen_pueblito_id: $("#origen").val(),
             destino_pueblito_id: $("#destino").val(),
             distrito_id: $("#distrito_id").val(),

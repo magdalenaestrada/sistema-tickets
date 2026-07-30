@@ -38,9 +38,9 @@ class AppServiceProvider extends ServiceProvider
             $empresaGlobal = Empresa::first();
             $auth = Auth::id();
 
-            $caja_activa = Caja::where("usuario_id", $auth)
-                ->where("estado", "A")
-                ->get();
+            $caja_activa = Caja::where('usuario_id', $auth)
+                ->where('estado', 'A')
+                ->exists();
 
             $hoy = Carbon::now('America/Lima')->startOfDay();
             $ahora = Carbon::now('America/Lima');

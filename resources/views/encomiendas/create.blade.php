@@ -126,7 +126,7 @@
                                 </div>
                             </div>
 
-                            {{-- <div class="row g-2 mt-2">
+                            <div class="row g-2 mt-2">
                                 <div class="col-md-3">
                                     <label class="form-label">Celular</label>
                                     <input type="text" class="form-control form-control-sm solo-numeros"
@@ -144,7 +144,7 @@
                                     <input type="text" class="form-control form-control-sm" id="receptor_direccion"
                                         name="receptor_direccion">
                                 </div>
-                            </div> --}}
+                            </div>
 
                             {{-- <div class="row g-2 mt-2">
                                 <div class="col-md-4">
@@ -169,6 +169,144 @@
                                     </select>
                                 </div>
                             </div> --}}
+
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>OBSERVACIONES</h6>
+
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <textarea name="observaciones" id="observaciones" class="form-control" rows="4"
+                                        placeholder="Ingrese las observaciones..."></textarea>
+                                </div>
+                            </div>
+
+                            {{-- <div class="row g-2 mt-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">DEPARTAMENTO</label>
+                                    <select name="receptor_departamento_id" id="departamento_id" class="form-select">
+                                        <option value="">Seleccione</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">PROVINCIA</label>
+                                    <select name="receptor_provincia_id" id="provincia_id" class="form-select">
+                                        <option value="">Seleccione</option>
+
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">DISTRITO</label>
+                                    <select name="receptor_distrito_id" id="distrito_id" class="form-select">
+                                        <option value="">Seleccione</option>
+                                    </select>
+                                </div>
+                            </div> --}}
+
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="usar_receptor2">
+                                <label class="form-check-label fw-semibold" for="usar_receptor2">
+                                    Agregar receptor alterno
+                                </label>
+                            </div>
+
+                            <div id="panelReceptor2" style="display:none;">
+                                <div class="row g-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label">
+                                            Tipo documento
+                                        </label>
+
+                                        <select class="form-select" name="receptor2[tipo_documento_id]"
+                                            id="receptor2_tipo_documento_id">
+
+                                            @foreach ($tipos_documentos as $tipo_documento)
+                                                <option value="{{ $tipo_documento->id }}">
+                                                    {{ $tipo_documento->codigo }}
+                                                </option>
+                                            @endforeach
+
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label class="form-label">
+                                            Documento
+                                        </label>
+
+                                        <div class="input-group">
+
+                                            <input type="text" class="form-control form-control-sm solo-numeros"
+                                                id="receptor2_documento" name="receptor2[documento]">
+
+                                            <button type="button" class="btn btn-primary btn-buscar-persona"
+                                                data-tipo="receptor2">
+
+                                                <i data-lucide="search"></i>
+
+                                            </button>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            Nombres
+                                        </label>
+
+                                        <input type="text" class="form-control form-control-sm solo-letras"
+                                            id="receptor2_nombres" name="receptor2[nombres]">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            Apellidos
+                                        </label>
+
+                                        <input type="text" class="form-control form-control-sm solo-letras"
+                                            id="receptor2_apellidos" name="receptor2[apellidos]">
+                                    </div>
+
+                                </div>
+
+                                {{-- <div class="row g-2 mt-2">
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Celular</label>
+
+                                        <input type="text" class="form-control form-control-sm solo-numeros"
+                                            maxlength="9" id="receptor2_celular">
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label">Teléfono</label>
+
+                                        <input type="text" class="form-control form-control-sm solo-numeros"
+                                            maxlength="9" id="receptor2_telefono">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            Correo
+                                        </label>
+
+                                        <input type="email" class="form-control form-control-sm" id="receptor2_correo">
+                                    </div>
+
+                                </div> --}}
+
+                            </div>
 
                         </div>
                     </div>

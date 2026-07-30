@@ -64,7 +64,7 @@
                         <div class="gap-1">
 
                             @if ($pasaje->estado == 'R')
-                                <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-success">
+                                <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-success btn-editar-pasaje">
                                     <i data-lucide="receipt"></i>
                                 </a>
 
@@ -81,7 +81,7 @@
                             @endif
                             @if ($pasaje->venta_id)
                                 <a href="{{ route('encomiendas.sobreequipaje.formulario', $pasaje->id) }}"
-                                    class="btn btn-warning btn-xs" title="Agregar sobre equipaje">
+                                    class="btn btn-warning btn-xs btn-sobreequipaje" title="Agregar sobre equipaje">
                                     <i data-lucide="plus"></i>
                                 </a>
                             @endif
