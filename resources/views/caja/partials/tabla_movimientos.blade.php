@@ -20,7 +20,6 @@
                             <th>Método</th>
                             <th>Descripción</th>
                             <th>Monto</th>
-                            <th>Cajero</th>
                             <th>Estado</th>
                             <th width="120">Acciones</th>
                         </tr>
@@ -48,7 +47,6 @@
                                 <td>{{ $detalle->metodoPago->descripcion ?? '---' }}</td>
                                 <td>{{ $detalle->description ?? '---' }}</td>
                                 <td><strong>S/ {{ number_format(abs($detalle->amount), 2) }}</strong></td>
-                                <td>{{ $detalle->caja->usuario->persona->nombre_completo ?? '-' }}</td>
                                 <td>
                                     @if ($detalle->anulado)
                                         <span class="badge bg-secondary">Anulado</span>
