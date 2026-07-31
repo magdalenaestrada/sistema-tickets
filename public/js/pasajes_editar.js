@@ -34,24 +34,17 @@ $(function () {
             cargarCuponesPersona(i, documento, codigoGuardado);
         }
     });
+
     function bloquearDatosPersonales() {
         selectedSeatNumbers.forEach((_, i) => {
             $(`#documento_${i}`).prop("readonly", true).addClass("bg-light");
-
             $(`#nombres_${i}`).prop("readonly", true).addClass("bg-light");
-
             $(`#apellidos_${i}`).prop("readonly", true).addClass("bg-light");
-
             $(`#celular_${i}`).prop("readonly", true).addClass("bg-light");
-
             $(`#telefono_${i}`).prop("readonly", true).addClass("bg-light");
-
             $(`#correo_${i}`).prop("readonly", true).addClass("bg-light");
-
             $(`#tipo_documento_id_${i}`).prop("disabled", true);
-
             $(`#pasajero_menor_${i}`).prop("disabled", true);
-
             $(`.btn-buscar-documento[data-index="${i}"]`).prop(
                 "disabled",
                 true,
@@ -68,7 +61,6 @@ $(function () {
             input.value = "";
 
             let max = 15;
-
             if (e.target.value == 1) max = 8;
             else if (e.target.value == 2) max = 11;
             else if (e.target.value == 3) max = 9;
@@ -103,24 +95,10 @@ $(function () {
     function obtenerSeriePorTipo(tipo) {
         const sucursalId = $("#caja_id option:selected").data("sucursal");
 
-        console.log("Sucursal seleccionada:", sucursalId);
-        console.log("Tipo seleccionado:", tipo);
-
         let tipoDocumentoId = null;
-
-        if (tipo === "factura") {
-            tipoDocumentoId = 1;
-        }
-
-        if (tipo === "boleta") {
-            tipoDocumentoId = 2;
-        }
-
-        if (tipo === "nota_venta") {
-            tipoDocumentoId = 3;
-        }
-
-        console.log("Tipo documento ID:", tipoDocumentoId);
+        if (tipo === "factura") tipoDocumentoId = 1;
+        if (tipo === "boleta") tipoDocumentoId = 2;
+        if (tipo === "nota_venta") tipoDocumentoId = 3;
 
         const serie = config.seriesSucursal.find(
             (s) =>
@@ -128,11 +106,14 @@ $(function () {
                 Number(s.tipo_documento_factura_id) === Number(tipoDocumentoId),
         );
 
-        console.log("SERIE ENCONTRADA:", serie);
-
         return serie ? serie.serie : "SIN SERIE";
     }
 
+    // -----------------------------------------------------------------
+    // FIX 1: el total de sobre equipaje ahora solo se suma si el switch
+    // "Registrar sobre equipaje" de ese pasajero está activo. Antes se
+    // sumaba siempre, aunque el switch estuviera apagado.
+    // -----------------------------------------------------------------
     function actualizarResumenTotales() {
         let subtotalOriginal = 0;
         let totalDescuento = 0;
@@ -142,12 +123,15 @@ $(function () {
             const precioFinal = parseFloat(seatPrices[num]) || 0;
             const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
 
-            // sobre equipaje
             let totalSobre = 0;
-            $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
-                totalSobre +=
-                    parseFloat($(this).find(".sobre-costo").val()) || 0;
-            });
+            const sobreActivo = $(`#toggle_sobre_equipaje_${i}`).is(":checked");
+
+            if (sobreActivo) {
+                $(`#tablaSobreEquipaje_${i} tbody tr`).each(function () {
+                    totalSobre +=
+                        parseFloat($(this).find(".sobre-costo").val()) || 0;
+                });
+            }
 
             subtotalOriginal += precioBase + totalSobre;
             totalDescuento += descuento;
@@ -238,13 +222,10 @@ $(function () {
                     return;
                 }
 
-                // RUC
                 if (data.razon_social) {
                     $("#razon_social").val(data.razon_social);
                     $("#direccion").val(data.direccion || "-");
-                }
-                // DNI
-                else {
+                } else {
                     let nombreCompleto = (
                         (data.nombres || "") +
                         " " +
@@ -304,12 +285,19 @@ $(function () {
     function limpiarPagosModal() {
         $("#modal_pago_efectivo").val("0");
         $("#modal_pago_tarjeta").val("0");
+        $("#modal_efectivo_recibido").val("0");
+        $("#modal_vuelto").val("0");
         $("#modal_pago_yape").val("0");
         $("#modal_pago_plin").val("0");
         $("#modal_pago_transferencia").val("0");
         $("#alerta_pago").addClass("d-none");
     }
 
+    // -----------------------------------------------------------------
+    // FIX 2: ahora se ocultan los divs de los métodos de pago que no
+    // corresponden al método seleccionado, igual que en el otro archivo.
+    // Antes solo se deshabilitaban pero seguían visibles en el modal.
+    // -----------------------------------------------------------------
     function distribuirPagosPorMetodo() {
         const metodo = parseInt($("#modal_metodo_pago").val() || 1);
         const total = parseFloat($("#costo_total").val()) || 0;
@@ -319,35 +307,76 @@ $(function () {
         const yape = $("#modal_pago_yape");
         const plin = $("#modal_pago_plin");
         const transferencia = $("#modal_pago_transferencia");
+        const efectivo_recibido = $("#modal_efectivo_recibido");
+        const vuelto = $("#modal_vuelto");
+
+        const div_efectivo = $("#modal_efectivo_div");
+        const div_tarjeta = $("#modal_tarjeta_div");
+        const div_yape = $("#modal_yape_div");
+        const div_plin = $("#modal_plin_div");
+        const div_transferencia = $("#modal_transferencia_div");
+
+        const label_contado = $(".al_contado");
 
         // Reiniciar
-        [efectivo, tarjeta, yape, plin, transferencia].forEach((input) => {
+        [
+            efectivo,
+            tarjeta,
+            yape,
+            plin,
+            transferencia,
+            efectivo_recibido,
+            vuelto,
+        ].forEach((input) => {
             input.prop("disabled", true);
+            input.prop("readonly", false);
             input.val("0.00");
         });
 
+        [
+            div_efectivo,
+            div_tarjeta,
+            div_yape,
+            div_plin,
+            div_transferencia,
+        ].forEach((div) => {
+            div.prop("hidden", false);
+        });
+
         switch (metodo) {
-            case 1:
+            case 1: // Efectivo
                 efectivo.prop("disabled", false);
+                vuelto.prop("disabled", false);
+                efectivo_recibido.prop("disabled", false);
+                efectivo.prop("readonly", true);
+                vuelto.prop("readonly", true);
                 efectivo.val(total.toFixed(2));
+
+                div_yape.prop("hidden", true);
+                label_contado.prop("hidden", true);
+                div_plin.prop("hidden", true);
+                div_transferencia.prop("hidden", true);
+                div_tarjeta.prop("hidden", true);
                 break;
 
-            case 2:
+            case 2: // Digital (Yape/Plin/Transferencia/Tarjeta)
                 yape.prop("disabled", false);
                 plin.prop("disabled", false);
                 transferencia.prop("disabled", false);
                 tarjeta.prop("disabled", false);
-
                 yape.val(total.toFixed(2));
+                div_efectivo.prop("hidden", true);
                 break;
 
-            case 3:
+            case 3: // Mixto
                 efectivo.prop("disabled", false);
                 tarjeta.prop("disabled", false);
                 yape.prop("disabled", false);
+                efectivo_recibido.prop("disabled", false);
+                label_contado.prop("hidden", false);
                 plin.prop("disabled", false);
+                vuelto.prop("readonly", true);
                 transferencia.prop("disabled", false);
-
                 efectivo.val(total.toFixed(2));
                 break;
         }
@@ -451,7 +480,6 @@ $(function () {
 
     $("#emitir_sunat").on("change", function () {
         $("#emitir_sunat").prop("checked", false).prop("disabled", true);
-
         actualizarEstadoSunat();
     });
 
@@ -607,7 +635,6 @@ $(function () {
         $(`#descuento_${index}`)
             .empty()
             .append('<option value="">Sin cupón</option>');
-
         $(`#descuento_msg_${index}`).text("");
 
         descuentosAplicados[asiento] = {
@@ -696,15 +723,12 @@ $(function () {
                 route("descuentos.buscar") + `?codigo=${codigo}`,
             );
 
-            console.log(res);
-
             if (res.error) {
                 Swal.fire("Atención", res.error, "warning");
                 input.val("");
                 return;
             }
 
-            let descuentoAplicado = 0;
             const descuentoId =
                 res.descuento_id ?? res.id ?? res.data?.id ?? null;
 
@@ -719,7 +743,7 @@ $(function () {
                     input.val("");
                     return;
                 }
-                // Promo = 100% del precio
+
                 descuentosAplicados[asiento] = {
                     descuento_id: descuentoId,
                     codigo: codigo,
@@ -796,9 +820,6 @@ $(function () {
         selectedSeatNumbers.forEach((asiento) => {
             const desc = descuentosAplicados[asiento] || {};
 
-            console.log("Asiento:", asiento);
-            console.log("Descuento:", desc);
-
             formData.append(
                 "descuento_ids[]",
                 desc.descuento_id !== null && desc.descuento_id !== undefined
@@ -807,7 +828,6 @@ $(function () {
             );
 
             formData.append("descuento_montos[]", desc.monto || 0);
-
             formData.append(
                 "precios_finales[]",
                 seatPrices[asiento] || precioBase,
@@ -816,6 +836,9 @@ $(function () {
 
         $(".tabla-sobre-equipaje").each(function () {
             const index = $(this).data("index");
+            const activo = $(`#toggle_sobre_equipaje_${index}`).is(":checked");
+
+            if (!activo) return; // no mandar nada si está desactivado
 
             $(this)
                 .find("tbody tr")
@@ -933,6 +956,9 @@ $(function () {
             const campoEditado = $(this).attr("id");
 
             if (campoEditado === "modal_pago_efectivo") {
+                efectivo.val(
+                    Math.min(parseFloat(efectivo.val()) || 0, total).toFixed(2),
+                );
                 validarSumaPagos();
                 return;
             }
@@ -995,6 +1021,53 @@ $(function () {
         },
     );
 
+    function calcularVuelto() {
+        const contado = Number($("#modal_pago_efectivo").val()) || 0;
+        const recibido = Number($("#modal_efectivo_recibido").val()) || 0;
+
+        const vuelto = Math.max(0, recibido - contado);
+
+        $("#modal_vuelto").val(vuelto.toFixed(2));
+    }
+
+    $("#modal_efectivo_recibido").on("input", calcularVuelto);
+    $("#modal_pago_efectivo").on("input", calcularVuelto);
+
+    // -----------------------------------------------------------------
+    // FIX 3: se movió este binding fuera del handler de #btnConfirmarVenta.
+    // Antes se re-registraba cada vez que se hacía clic en "Terminar Venta",
+    // acumulando handlers duplicados en #btnGuardarReserva.
+    // -----------------------------------------------------------------
+    $("#btnGuardarReserva").on("click", function (e) {
+        e.preventDefault();
+        if (!datosPasajerosCompletos()) return;
+
+        const formData = construirPayload("reservar");
+
+        $.ajax({
+            url: route("pasajes.actualizar_venta", config.pasajeId),
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "X-CSRF-TOKEN": csrfToken },
+            success: function (res) {
+                if (res.success) {
+                    Swal.fire("Éxito", res.message, "success").then(() => {
+                        window.location.href = res.redirect;
+                    });
+                }
+            },
+            error: function (xhr) {
+                Swal.fire(
+                    "Error",
+                    xhr.responseJSON?.message || "Error al guardar",
+                    "error",
+                );
+            },
+        });
+    });
+
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
         const btn = $(this);
@@ -1046,6 +1119,7 @@ $(function () {
                 `La suma de pagos (S/ ${sumaPagos.toFixed(2)}) no coincide con el total (S/ ${totalActual.toFixed(2)}).`,
                 "warning",
             );
+            btn.prop("disabled", false).text("Terminar Venta");
             return;
         }
 
@@ -1058,34 +1132,54 @@ $(function () {
 
         const formData = construirPayload("vender");
 
-        $("#btnGuardarReserva").on("click", function (e) {
-            e.preventDefault();
-            if (!datosPasajerosCompletos()) return;
+         const pagos = [];
 
-            const formData = construirPayload("reservar");
-
-            $.ajax({
-                url: route("pasajes.actualizar_venta", config.pasajeId),
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: { "X-CSRF-TOKEN": csrfToken },
-                success: function (res) {
-                    if (res.success) {
-                        Swal.fire("Éxito", res.message, "success").then(() => {
-                            window.location.href = res.redirect;
-                        });
-                    }
-                },
-                error: function (xhr) {
-                    Swal.fire(
-                        "Error",
-                        xhr.responseJSON?.message || "Error al guardar",
-                        "error",
-                    );
-                },
+        if (pagoEfectivo > 0) {
+            pagos.push({
+                metodo_pago_id: 1,
+                total: pagoEfectivo,
             });
+        }
+
+        if (pagoYape > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 1,
+                total: pagoYape,
+            });
+        }
+
+        if (pagoPlin > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 2,
+                total: pagoPlin,
+            });
+        }
+
+        if (pagoTarjeta > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 3,
+                total: pagoTarjeta,
+            });
+        }
+
+        if (pagoTransferencia > 0) {
+            pagos.push({
+                metodo_pago_id: 2,
+                billetera_id: 4,
+                total: pagoTransferencia,
+            });
+        }
+
+        pagos.forEach((pago, i) => {
+            formData.append(`pagos[${i}][metodo_pago_id]`, pago.metodo_pago_id);
+            formData.append(
+                `pagos[${i}][billetera_id]`,
+                pago.billetera_id ?? "",
+            );
+            formData.append(`pagos[${i}][total]`, pago.total);
         });
 
         $.ajax({
@@ -1221,17 +1315,25 @@ $(function () {
         $(`#tablaSobreEquipaje_${index} tbody`).append(fila);
     }
 
+    // -----------------------------------------------------------------
+    // FIX 1 (complemento): al apagar el switch, se limpia la tabla y el
+    // total de sobre equipaje, y se recalcula el costo total del pasaje.
+    // -----------------------------------------------------------------
     $(document).on("change", ".toggle-sobre-equipaje", function () {
         const index = $(this).data("index");
 
         $(`#card_sobre_equipaje_${index}`).toggle(this.checked);
 
-        if (
-            this.checked &&
-            $(`#tablaSobreEquipaje_${index} tbody tr`).length === 0
-        ) {
-            agregarFilaSobreEquipaje(index);
+        if (this.checked) {
+            if ($(`#tablaSobreEquipaje_${index} tbody tr`).length === 0) {
+                agregarFilaSobreEquipaje(index);
+            }
+        } else {
+            $(`#tablaSobreEquipaje_${index} tbody`).empty();
+            $(`#total_sobre_equipaje_${index}`).text("0.00");
         }
+
+        actualizarCostoTotal();
     });
 
     $(document).on("click", ".btn-agregar-sobre", function () {

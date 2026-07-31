@@ -42,6 +42,7 @@ class VentaService
 {
     public function crearVenta($request, $servicio_model, $servicio_id): array
     {
+
         $user = Auth::user();
 
         return DB::transaction(function () use ($request, $servicio_model, $servicio_id, $user) {
@@ -146,6 +147,7 @@ class VentaService
                     $valor_venta = $montoIgv + $baseIgv;
                     $tipoAfectacion = 30;
                 }
+
 
                 $venta->detalles()->create([
                     'tipo_servicio_id'    => $tipoServicioDetalle,

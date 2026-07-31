@@ -1235,10 +1235,8 @@ class PasajeController extends Controller
                     $totalSobreEquipaje = 0;
 
                     foreach ($request->sobre_equipaje_detalles ?? [] as $grupo) {
-
                         foreach ($grupo as $item) {
-
-                            $costo = (float)$item['costo'];
+                            $costo = (float) $item['costo'];
 
                             $detalles[] = [
                                 'tipo_servicio_id' => 3,
@@ -1246,12 +1244,8 @@ class PasajeController extends Controller
                                 'costo' => $costo,
                                 'descuento' => 0,
                             ];
-
-                            $totalSobreEquipaje += $costo;
                         }
                     }
-
-                    $totalVenta += $totalSobreEquipaje;
 
                     $ventaData = $ventaService->crearVenta(
                         new Request([
@@ -1275,32 +1269,29 @@ class PasajeController extends Controller
                     $venta->update(['total' => $totalVenta]);
                 }
 
-                $pagos = [
-                    1 => (float) $request->pago_efectivo,
-                    2 => (float) $request->pago_tarjeta,
-                    3 => (float) $request->pago_yape,
-                    4 => (float) $request->pago_plin,
-                    5 => (float) $request->pago_transferencia,
-                ];
+                $pagos = $request->pagos ?? [];
 
-                $sumaPagos = array_sum($pagos);
+                $sumaPagos = collect($pagos)->sum(function ($pago) {
+                    return (float) $pago['total'];
+                });
 
+               
                 if (round($sumaPagos, 2) !== round($totalVenta, 2)) {
                     throw ValidationException::withMessages([
                         'pagos' => 'La suma de pagos no coincide con el total a cobrar.',
                     ]);
                 }
 
-                foreach ($pagos as $metodoPagoId => $monto) {
-                    if ($monto <= 0) continue;
-
+                foreach ($pagos as $pago) {
                     CajaDetalle::create([
                         'caja_id' => $request->caja_id,
                         'subtipo_movimiento_caja_id' => 1,
-                        'metodo_pago_id' => $metodoPagoId,
-                        'amount' => $monto,
+                        'metodo_pago_id' => $pago['metodo_pago_id'],
+                        'billetera_digital_id' => $pago['billetera_id'] ?? null,
+                        'amount' => $pago['total'],
                         'description' => "Venta de pasaje #{$venta->id}",
                         'anulado' => false,
+                        'venta_id' => $venta->id,
                     ]);
                 }
             }
