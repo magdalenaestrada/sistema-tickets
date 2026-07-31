@@ -369,7 +369,7 @@
                                     {{ $esSobreequipaje ? 'disabled' : 'required' }}>
                                     <option value="">Seleccionar sucursal</option>
                                     @foreach ($cajas_emision as $caja)
-                                        <option value="{{ $caja->id }}"
+                                        <option value="{{ $caja->id }}" data-sucursal="{{ $caja->sucursal_id }}"
                                             {{ ($esSobreequipaje ? $pasaje->venta->caja_id ?? null : $user->sucursal_id) == $caja->id ? 'selected' : '' }}>
                                             {{ $caja->sucursal->nombre_comercial }}
                                         </option>
@@ -450,7 +450,9 @@
         };
 
         window.ES_SOBREEQUIPAJE = @json($esSobreequipaje);
+        window.VENTA_CONFIG = {
+            seriesSucursal: @json($seriesSucursal)
+        };
     </script>
     <script src="{{ asset('js/encomiendas_create.js') }}"></script>
 @endpush
-

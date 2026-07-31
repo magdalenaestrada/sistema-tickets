@@ -5,10 +5,13 @@ namespace App\Services;
 use App\Models\CajaDetalle;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
+use App\Models\EncomiendaSalida;
+use App\Models\Pasaje;
 use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\Pueblito;
 use App\Models\Venta;
+use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -131,6 +134,22 @@ class EncomiendaService
                 PasajeSobreEquipaje::create([
                     'pasaje_id'     => $request->pasaje_id,
                     'encomienda_id' => $encomienda->id,
+                ]);
+
+                $pasaje = Pasaje::with('salida')->findOrFail($request->pasaje_id);
+
+                EncomiendaSalida::create([
+                    'encomienda_id' => $encomienda->id,
+                    'salida_id' => $pasaje->salida_id,
+                    'usuario_id' => Auth::id(),
+                    'fecha_asignacion' => now(),
+                    'estado' => 'A',
+                ]);
+
+                $encomienda->update([
+                    'estado' => 'EC',
+                    'sobre_equipaje' => true,
+                    'fecha_procesado' => now(),
                 ]);
             }
 

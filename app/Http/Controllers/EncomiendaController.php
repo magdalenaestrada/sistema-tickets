@@ -158,6 +158,10 @@ class EncomiendaController extends Controller
             ->where('estado', 'A')
             ->get();
         $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
+        $seriesSucursal = $cajas_emision
+            ->pluck('sucursal.serie')
+            ->flatten();
+
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
@@ -174,7 +178,8 @@ class EncomiendaController extends Controller
                     'tipos_documentos_facturas',
                     'metodos_pago',
                     'billeteras_digitales',
-                    'cajas_emision'
+                    'cajas_emision',
+                    'seriesSucursal'
                 ),
                 [
                     'esSobreequipaje' => true,
@@ -194,6 +199,7 @@ class EncomiendaController extends Controller
             'destinoPueblito:id,descripcion',
         ])
             ->where('estado', 'SA')
+            ->where('sobre_equipaje', false)
             ->when($request->filled('documento'), function ($q) use ($request) {
                 $doc = trim($request->documento);
 
@@ -587,6 +593,8 @@ class EncomiendaController extends Controller
             'detalles' => 'required|array|min:1',
         ]);
 
+
+
         try {
             $emisor = Persona::updateOrCreate(
                 [
@@ -693,19 +701,20 @@ class EncomiendaController extends Controller
                 ]
             );
 
-            $receptorDocumento = $request->input('receptor.documento');
-            if ($request->boolean('sobrequipaje')) {
-                $receptor = null;
-            } else {
+            $receptor = null;
+
+            if ($request->has('receptor.documento')) {
+
+                $receptorDocumento = $request->input('receptor.documento');
+
                 if ($receptorDocumento) {
                     $receptor = Persona::updateOrCreate(
                         [
-                            'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
                             'documento' => $request->input('receptor.documento'),
+                            'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
                         ],
                         [
-                            'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
-                            'distrito_id' => $request->input('receptor.distrito_id'),
+                            'distrito_id' => $request->input('receptor.distrito_id', 1),
                             'nombres' => $request->input('receptor.nombres'),
                             'apellidos' => $request->input('receptor.apellidos'),
                             'telefono' => $request->input('receptor.telefono'),
@@ -713,26 +722,10 @@ class EncomiendaController extends Controller
                             'correo' => $request->input('receptor.correo'),
                             'direccion' => $request->input('receptor.direccion'),
                             'estado' => 'A',
-                            'fecha_creacion' => now(),
                         ]
                     );
-                } else {
-                    $receptor = Persona::create([
-                        'tipo_documento_id' => $request->input('receptor.tipo_documento_id'),
-                        'documento' => null,
-                        'distrito_id' => $request->input('receptor.distrito_id'),
-                        'nombres' => $request->input('receptor.nombres'),
-                        'apellidos' => $request->input('receptor.apellidos'),
-                        'telefono' => $request->input('receptor.telefono'),
-                        'celular' => $request->input('receptor.celular'),
-                        'correo' => $request->input('receptor.correo'),
-                        'direccion' => $request->input('receptor.direccion'),
-                        'estado' => 'A',
-                        'fecha_creacion' => now(),
-                    ]);
                 }
             }
-
             $receptor2 = null;
 
             if ($request->filled('receptor2.nombres')) {
@@ -764,10 +757,11 @@ class EncomiendaController extends Controller
             }
 
             $receptorId = $receptor ? $receptor->id : null;
+            $receptor2Id = $receptor2 ? $receptor2->id : null;
 
             $encomienda = $encomiendaService->crearEncomienda(
                 $request,
-                $receptor2->id,
+                $receptor2Id,
                 $emisor->id,
                 $receptorId,
                 $user_id
@@ -786,6 +780,7 @@ class EncomiendaController extends Controller
             ], 500);
         }
     }
+
     public function mostrar($id)
     {
         $encomienda = Encomienda::with(['emisor', 'receptor', 'detalles'])->findOrFail($id);

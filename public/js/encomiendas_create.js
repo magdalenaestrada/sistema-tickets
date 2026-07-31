@@ -629,14 +629,14 @@ $(async function () {
             }
         }
     }
-
     const swReceptor2 = document.getElementById("usar_receptor2");
     const panelReceptor2 = document.getElementById("panelReceptor2");
 
-    swReceptor2.addEventListener("change", function () {
-        panelReceptor2.style.display = this.checked ? "block" : "none";
-    });
-
+    if (swReceptor2 && panelReceptor2) {
+        swReceptor2.addEventListener("change", function () {
+            panelReceptor2.style.display = this.checked ? "block" : "none";
+        });
+    }
     function sinDocumento() {
         const receptor_tipo = $("#receptor_tipo_documento_id").val();
 
