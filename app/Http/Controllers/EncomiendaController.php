@@ -9,6 +9,7 @@ use App\Models\CajaDetalle;
 use App\Models\Cliente;
 use App\Models\Departamento;
 use App\Models\Distrito;
+use App\Models\Empresa;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\EncomiendaSalida;
@@ -252,7 +253,7 @@ class EncomiendaController extends Controller
                 'salidaActual'
             ])->when($request->documento, function ($q) use ($request) {
                 $q->whereHas('receptor', function ($sub) use ($request) {
-                    $sub->where('nro_documento', 'like', $request->documento . '%');
+                    $sub->where('documento', 'like', $request->documento . '%');
                 });
             })
             ->when(
@@ -260,8 +261,10 @@ class EncomiendaController extends Controller
                 fn($q) => $q->where('origen_pueblito_id', $request->origen_id)
             )
             ->whereNotIn('estado', ['SA'])
+            ->where("sobre_equipaje", false)
             ->when($request->destino_id, fn($q) => $q->where('destino_id', $request->destino_id))
-            ->when($request->salida_id, fn($q) => $q->where('salida_id', $request->salida_id));
+            ->when($request->salida_id, fn($q) => $q->where('salida_id', $request->salida_id))
+            ->orderBy("fecha_creacion", "desc");
 
         return datatables()->of($query)
             ->addColumn('checkbox', function ($row) {
@@ -523,9 +526,10 @@ class EncomiendaController extends Controller
             'venta',
         ]);
 
+        $empresa = Empresa::first();
         return Pdf::loadView(
             'encomiendas.ticket_entrega',
-            compact('encomienda')
+            compact('encomienda', 'empresa')
         )->stream("ENTREGA-{$encomienda->id}.pdf");
     }
     public function enAgencia($id)
@@ -733,9 +737,11 @@ class EncomiendaController extends Controller
 
             if ($request->filled('receptor2.nombres')) {
 
-                $receptor2 = Persona::create([
+                $receptor2 = Persona::updateOrCreate([
                     'tipo_documento_id' => $request->input('receptor2.tipo_documento_id'),
                     'documento' => $request->input('receptor2.documento'),
+                ], [
+
                     'nombres' => $request->input('receptor2.nombres'),
                     'apellidos' => $request->input('receptor2.apellidos'),
                     'estado' => 'A',
@@ -761,6 +767,7 @@ class EncomiendaController extends Controller
 
             $encomienda = $encomiendaService->crearEncomienda(
                 $request,
+                $receptor2->id,
                 $emisor->id,
                 $receptorId,
                 $user_id

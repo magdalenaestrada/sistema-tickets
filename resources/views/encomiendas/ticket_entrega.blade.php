@@ -47,8 +47,22 @@
 
     <div class="center">
 
-        <h3>{{ config('app.name') }}</h3>
+        @if ($empresa && $empresa->logo)
+            <div class="logo-container">
+                <img src="{{ public_path('storage/' . $empresa->logo) }}" alt="Logo"
+                    style="max-width:120px; max-height:80px;">
+            </div>
+        @endif
 
+        <div class="bold" style="font-size: 12px;">
+            {{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}
+        </div>
+        <div class="bold">RUC: {{ $empresa->documento ?? '20513247495' }}</div>
+        <div style="font-size: 10px;">
+            {{ $venta->sucursal->direccion ?? ($empresa->direccion ?? 'Av. El Sol 789') }}
+        </div>
+        <div class="line"></div>
+<br>
         <strong>CONSTANCIA DE ENTREGA</strong>
 
     </div>
@@ -58,8 +72,8 @@
     <table>
 
         <tr>
-            <td><strong>N°</strong></td>
-            <td>{{ $encomienda->id }}</td>
+            <td><strong>Venta</strong></td>
+            <td>{{ $encomienda->venta->serie }} - {{ $encomienda->venta->numero }}</td>
         </tr>
 
         <tr>
@@ -97,7 +111,7 @@
 
         <tr>
             <td>Celular</td>
-            <td>{{ $encomienda->emisor?->celular }}</td>
+            <td>{{ $encomienda->emisor?->celular ?? "-" }}</td>
         </tr>
 
     </table>
@@ -120,7 +134,7 @@
 
         <tr>
             <td>Celular</td>
-            <td>{{ $encomienda->receptor?->celular }}</td>
+            <td>{{ $encomienda->receptor?->celular  ?? "-" }}</td>
         </tr>
 
     </table>
@@ -135,7 +149,7 @@
             <td>Origen</td>
             <td>
                 @if ($encomienda->origenPueblito)
-                    - {{ $encomienda->origenPueblito->descripcion }}
+                    {{ $encomienda->origenPueblito->descripcion }}
                 @endif
 
             </td>
@@ -145,7 +159,7 @@
             <td>Destino</td>
             <td>
                 @if ($encomienda->destinoPueblito)
-                    - {{ $encomienda->destinoPueblito->descripcion }}
+                    {{ $encomienda->destinoPueblito->descripcion }}
                 @endif
 
             </td>
@@ -180,7 +194,7 @@
             @foreach ($encomienda->detalles as $detalle)
                 <tr>
 
-                    <td>{{ $detalle->tipo_encomienda?->nombre }}</td>
+                    <td>{{ $detalle->tipo_encomienda?->descripcion }}</td>
 
                     <td>{{ $detalle->descripcion }}</td>
 
@@ -226,8 +240,8 @@
         <tr>
 
             <td>Entregado por</td>
-
-            <td>{{ $encomienda->entregado?->persona?->nombre_completo ?? $encomienda->usuario?->persona?->nombre_completo  }}</td>
+            <td>{{ $encomienda->entregado?->persona?->nombre_completo ?? $encomienda->usuario?->persona?->nombre_completo }}
+            </td>
 
         </tr>
 

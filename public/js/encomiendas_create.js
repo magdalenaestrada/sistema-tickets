@@ -811,6 +811,11 @@ $(async function () {
         debounce(() => buscarPersona("receptor"), 300),
     );
 
+    $("#receptor2_documento").on(
+        "blur",
+        debounce(() => buscarPersona("receptor2"), 300),
+    );
+
     // Botones de búsqueda por click
     $(document).on("click", ".btn-buscar-persona", function () {
         const tipo = $(this).data("tipo");
@@ -835,6 +840,55 @@ $(async function () {
             $(this).removeClass("is-invalid");
         }
     });
+
+    function validarFormulario() {
+        const campos = [
+            { id: "#emisor_documento", nombre: "Documento del emisor" },
+            { id: "#emisor_nombres", nombre: "Nombres del emisor" },
+            { id: "#emisor_apellidos", nombre: "Apellidos del emisor" },
+
+            { id: "#origen", nombre: "Origen" },
+            { id: "#destino", nombre: "Destino" },
+        ];
+
+        // Solo validar receptor cuando NO es sobreequipaje
+        if (!$("input[name='sobrequipaje']").length) {
+            campos.splice(
+                3,
+                0,
+                { id: "#receptor_nombres", nombre: "Nombres del receptor" },
+                { id: "#receptor_apellidos", nombre: "Apellidos del receptor" },
+            );
+        }
+
+        for (const campo of campos) {
+            const valor = $(campo.id).val();
+
+            if (!valor || valor.toString().trim() === "") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Campo obligatorio",
+                    text: `Debe completar: ${campo.nombre}.`,
+                });
+
+                $(campo.id).focus();
+                return false;
+            }
+        }
+
+        if ($("#origen").val() === $("#destino").val()) {
+            Swal.fire({
+                icon: "warning",
+                title: "Origen y destino",
+                text: "El origen y el destino no pueden ser iguales.",
+            });
+
+            $("#destino").focus();
+            return false;
+        }
+
+        return true;
+    }
 
     $("#btnAbrirPago").on("click", function (e) {
         e.preventDefault();
@@ -866,6 +920,10 @@ $(async function () {
                     });
             }
         });
+
+        if (!validarFormulario()) {
+            return;
+        }
 
         if (detalleInvalido) {
             Swal.fire({
@@ -1202,13 +1260,11 @@ $(async function () {
                 direccion: $("#receptor_direccion").val(),
             },
 
-            responsable: {
-                documento: $("#responsable_documento").val(),
-                nombres: $("#responsable_nombres").val(),
-            },
-
             receptor2: $("#usar_receptor2").is(":checked")
                 ? {
+                      tipo_documento_id: $(
+                          "#receptor2_tipo_documento_id",
+                      ).val(),
                       documento: $("#receptor2_documento").val(),
                       nombres: $("#receptor2_nombres").val(),
                   }

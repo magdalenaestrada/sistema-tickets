@@ -24,15 +24,17 @@ class EncomiendaService
         $this->pagoService = $pagoService;
     }
 
-    public function crearEncomienda($request, $emisorId, $receptorId, $user_id)
+    public function crearEncomienda($request, $receptorId2, $emisorId, $receptorId, $user_id)
     {
-        $data = DB::transaction(function () use ($request, $emisorId, $receptorId, $user_id) {
+        $data = DB::transaction(function () use ($request, $emisorId, $receptorId, $user_id, $receptorId2) {
             $encomienda = Encomienda::create([
                 'origen_pueblito_id' => $request->origen_pueblito_id,
                 'destino_pueblito_id' => $request->destino_pueblito_id,
                 'usuario_id' => $user_id,
+                'observaciones' => $request->observaciones,
                 'emisor_persona_id' => $emisorId,
                 'receptor_persona_id' => $receptorId,
+                'receptor2_persona_id' => $receptorId2,
                 'distrito_id' => $request->distrito_id,
                 'total' => $request->total,
                 'estado' => 'SA',
