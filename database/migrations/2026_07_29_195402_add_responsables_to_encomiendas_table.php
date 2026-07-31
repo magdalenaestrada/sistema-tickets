@@ -17,7 +17,6 @@ return new class extends Migration
                 ->constrained('personas')
                 ->nullOnDelete();
 
-            $table->text('observaciones')->nullable();
         });
     }
 
