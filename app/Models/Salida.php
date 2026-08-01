@@ -274,7 +274,7 @@ class Salida extends Model
             ->values();
     }
 
-    public function datosManifiesto($sucursalId)
+    public function datosManifiesto($sucursalId, bool $origenPrimeraRuta = false)
     {
         $puntos = $this->horario->ruta->puntos->sortBy('orden')->values();
 
@@ -284,12 +284,17 @@ class Salida extends Model
             return null;
         }
 
+        $primerPunto = $puntos->first();
         $ultimoPunto = $puntos->last();
 
         return [
-            'origen'  => $actual->pueblito?->descripcion ?? '-',
+            'origen' => $origenPrimeraRuta
+                ? ($primerPunto->pueblito?->descripcion ?? '-')
+                : ($actual->pueblito?->descripcion ?? '-'),
+
             'destino' => $ultimoPunto->pueblito?->descripcion ?? '-',
-            'orden'   => $actual->orden,
+
+            'orden' => $actual->orden,
         ];
     }
 

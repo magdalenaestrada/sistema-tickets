@@ -234,11 +234,10 @@ class SalidaController extends Controller
 
         abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
-        // 👇 valida que la sucursal pertenezca a la ruta de esta salida
         $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
-        $datos = $salida->datosManifiesto($sucursalId);
+        $datos = $salida->datosManifiesto($sucursalId, true);
         abort_unless($datos, 404, 'La sucursal no pertenece a la ruta.');
 
         $pasajes = $salida->pasajerosEnTramo($sucursalId);
@@ -297,7 +296,6 @@ class SalidaController extends Controller
 
         foreach ($sucursales as $sucursal) {
             $datos = $salida->datosManifiesto($sucursal->id);
-
             if (!$datos) {
                 continue;
             }

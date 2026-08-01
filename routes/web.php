@@ -84,6 +84,7 @@ require __DIR__ . '/vehiculos.php';
 require __DIR__ . '/caja.php';
 require __DIR__ . '/asignaciones.php';
 require __DIR__ . '/facturacion.php';
+require __DIR__ . '/paradas.php';
 require __DIR__ . '/pasaje.php';
 require __DIR__ . '/permisos.php';
 require __DIR__ . '/descuentos.php';

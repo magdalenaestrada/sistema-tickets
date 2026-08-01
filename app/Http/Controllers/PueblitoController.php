@@ -2,127 +2,98 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Distrito;
 use App\Models\Pueblito;
+use App\Models\Sucursal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class PueblitoController extends Controller
 {
-    /**
-     * Listar todos los pueblitos con sus relaciones
-     */
     public function index()
     {
-        $pueblitos = Pueblito::with(['distrito', 'sucursal'])->paginate(15);
+        $pueblitos = Pueblito::with(['distrito', 'sucursal'])
+            ->orderByDesc('id')
+            ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $pueblitos,
-        ]);
+        $distritos = Distrito::orderBy('nombre')->get();
+        $sucursales = Sucursal::orderBy('nombre_comercial')->get();
+
+        return view('paradas.index', compact(
+            'pueblitos',
+            'distritos',
+            'sucursales'
+        ));
     }
 
-    /**
-     * Crear un nuevo pueblito
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'descripcion' => ['required', 'string', 'max:255'],
-            'distrito_id' => ['required', 'integer', 'exists:distritos,id'],
-            'sucursal_id' => ['required', 'integer', 'exists:sucursales,id'],
+            'descripcion' => 'required|string|max:255',
+            'distrito_id' => 'required|exists:distritos,id',
+            'sucursal_id' => 'required|exists:sucursales,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
+                'errors' => $validator->errors()
             ], 422);
         }
 
         $pueblito = Pueblito::create($validator->validated());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Pueblito creado correctamente',
-            'data' => $pueblito->load(['distrito', 'sucursal']),
-        ], 201);
-    }
-
-    /**
-     * Mostrar un pueblito específico
-     */
-    public function show($id)
-    {
-        $pueblito = Pueblito::with(['distrito', 'sucursal'])->find($id);
-
-        if (!$pueblito) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pueblito no encontrado',
-            ], 404);
-        }
+        $pueblito->load(['distrito', 'sucursal']);
 
         return response()->json([
-            'success' => true,
-            'data' => $pueblito,
+            'message' => 'Pueblito registrado correctamente.',
+            'data' => [
+                'id' => $pueblito->id,
+                'descripcion' => $pueblito->descripcion,
+                'distrito_id' => $pueblito->distrito_id,
+                'sucursal_id' => $pueblito->sucursal_id,
+                'distrito' => $pueblito->distrito->nombre,
+                'sucursal' => $pueblito->sucursal->nombre_comercial,
+            ]
         ]);
     }
 
-    /**
-     * Actualizar un pueblito existente
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, Pueblito $pueblito)
     {
-        $pueblito = Pueblito::find($id);
-
-        if (!$pueblito) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pueblito no encontrado',
-            ], 404);
-        }
-
         $validator = Validator::make($request->all(), [
-            'descripcion' => ['sometimes', 'required', 'string', 'max:255'],
-            'distrito_id' => ['sometimes', 'required', 'integer', 'exists:distritos,id'],
-            'sucursal_id' => ['sometimes', 'required', 'integer', 'exists:sucursales,id'],
+            'descripcion' => 'required|string|max:255',
+            'distrito_id' => 'required|exists:distritos,id',
+            'sucursal_id' => 'required|exists:sucursales,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
+                'errors' => $validator->errors()
             ], 422);
         }
 
         $pueblito->update($validator->validated());
 
+        $pueblito->load(['distrito', 'sucursal']);
+
         return response()->json([
-            'success' => true,
-            'message' => 'Pueblito actualizado correctamente',
-            'data' => $pueblito->load(['distrito', 'sucursal']),
+            'message' => 'Pueblito actualizado correctamente.',
+            'data' => [
+                'id' => $pueblito->id,
+                'descripcion' => $pueblito->descripcion,
+                'distrito_id' => $pueblito->distrito_id,
+                'sucursal_id' => $pueblito->sucursal_id,
+                'distrito' => $pueblito->distrito->nombre,
+                'sucursal' => $pueblito->sucursal->nombre_comercial,
+            ]
         ]);
     }
 
-    /**
-     * Eliminar un pueblito
-     */
-    public function destroy($id)
+    public function destroy(Pueblito $pueblito)
     {
-        $pueblito = Pueblito::find($id);
-
-        if (!$pueblito) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pueblito no encontrado',
-            ], 404);
-        }
-
         $pueblito->delete();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Pueblito eliminado correctamente',
+            'message' => 'Pueblito eliminado correctamente.'
         ]);
     }
 }

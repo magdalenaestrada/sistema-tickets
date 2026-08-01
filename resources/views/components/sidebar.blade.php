@@ -1,6 +1,6 @@
 <nav class="sidebar">
     @php
-        $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*', 'series-sucursal.*');
+        $empresaOpen = request()->routeIs('empresas.*', 'empleados.*', 'usuarios.*', 'series-sucursal.*', 'paradas.*');
         $maestrosOpen = request()->routeIs('cargos.*', 'tipo-encomienda.*', 'tipo-cupones.*');
 
         $personalOpen = request()->routeIs('eventos.*');
@@ -161,6 +161,9 @@
 
                                 <li class="nav-item"><a href="{{ route('empleados.index') }}"
                                         class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}">Empleados</a>
+                                </li>
+                                <li class="nav-item"><a href="{{ route('paradas.index') }}"
+                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Paradas</a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="{{ route('usuarios.index') }}"
