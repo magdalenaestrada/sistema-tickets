@@ -92,6 +92,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function actualizarTotales(data) {
         if (!data) return;
 
+        console.log(data);
+        
         const tablaContenedor = document.getElementById(
             "contenedor-tabla-movimientos",
         );
@@ -102,7 +104,33 @@ document.addEventListener("DOMContentLoaded", function () {
         const totalIngresos = document.getElementById("total_ingresos");
         const totalEgresos = document.getElementById("total_egresos");
         const efectivoEsperado = document.getElementById("efectivo_esperado");
+        const totalYape = document.getElementById("total_yape");
+        const totalPlin = document.getElementById("total_plin");
+        const totalTransferencia = document.getElementById(
+            "total_transferencia",
+        );
+        const totalTarjeta = document.getElementById("total_tarjeta");
+        const totalEfectivo = document.getElementById("total_efectivo");
 
+        if (totalYape && data.total_yape !== undefined) {
+            totalYape.textContent = `S/ ${parseFloat(data.total_yape).toFixed(2)}`;
+        }
+
+        if (totalPlin && data.total_plin !== undefined) {
+            totalPlin.textContent = `S/ ${parseFloat(data.total_plin).toFixed(2)}`;
+        }
+
+        if (totalTransferencia && data.total_transferencia !== undefined) {
+            totalTransferencia.textContent = `S/ ${parseFloat(data.total_transferencia).toFixed(2)}`;
+        }
+
+        if (totalTarjeta && data.total_tarjeta !== undefined) {
+            totalTarjeta.textContent = `S/ ${parseFloat(data.total_tarjeta).toFixed(2)}`;
+        }
+
+        if (totalEfectivo && data.total_efectivo !== undefined) {
+            totalEfectivo.textContent = `S/ ${parseFloat(data.total_efectivo).toFixed(2)}`;
+        }
         if (totalIngresos && data.total_ingresos !== undefined) {
             totalIngresos.textContent = `S/ ${parseFloat(data.total_ingresos).toFixed(2)}`;
         }

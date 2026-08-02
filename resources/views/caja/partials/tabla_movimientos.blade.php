@@ -7,9 +7,7 @@
 
     <div class="card-body py-2">
         @if ($caja->detalles->count())
-            {{-- Cambiamos a overflow-y (vertical) y limitamos la altura a 400px (puedes variarlo) --}}
             <div class="table-responsive" style="max-height: 600px; overflow-y: auto; -webkit-overflow-scrolling: touch;">
-                {{-- table-sticky-header hace que los encabezados se queden fijos arriba mientras bajas --}}
                 <table class="table table-sm table-hover align-middle mb-0">
                     <thead class="table-primary position-sticky top-0" style="z-index: 1;">
                         <tr>
@@ -21,7 +19,6 @@
                             <th>Descripción</th>
                             <th>Monto</th>
                             <th>Estado</th>
-                            <th width="120">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -44,7 +41,7 @@
                                     @endif
                                 </td>
                                 <td>{{ $detalle->subtipo->descripcion ?? '---' }}</td>
-                                <td>{{ $detalle->metodoPago->descripcion ?? '---' }}</td>
+                                <td>{{ $detalle->metodoPago->descripcion ?? '---' }} {{ $detalle->billetera_digital->descripcion ?? '' }}</td>
                                 <td>{{ $detalle->description ?? '---' }}</td>
                                 <td><strong>S/ {{ number_format(abs($detalle->amount), 2) }}</strong></td>
                                 <td>
@@ -54,19 +51,7 @@
                                         <span class="badge bg-primary">Activo</span>
                                     @endif
                                 </td>
-                                <td>
-                                    <div class="d-flex flex-wrap gap-1">
-                                        @if (!$detalle->anulado && !in_array($caja->estado, ['C', 'cerrada']))
-                                            <form action="{{ route('caja.anular', $detalle->id) }}" method="POST"
-                                                class="d-inline form-anular-ticket">
-                                                @csrf
-                                                <button type="button" class="btn btn-danger btn-xs btn-anular-ticket">
-                                                    <i data-lucide="trash"></i>
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </td>
+                              
                             </tr>
                         @endforeach
                     </tbody>

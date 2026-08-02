@@ -184,7 +184,7 @@ class CajaController extends Controller
             ->where('caja_id', $caja->id)
             ->latest()
             ->get();
-            
+
         $caja->load([
             'usuario',
             'sucursal'
@@ -387,6 +387,12 @@ class CajaController extends Controller
                     'total_ingresos'    => $caja->total_ingresos,
                     'total_salidas'     => $caja->total_salidas,
                     'efectivo_esperado' => $caja->efectivo_esperado,
+
+                    'total_yape'         => $caja->saldo_yape,
+                    'total_plin'         => $caja->saldo_plin,
+                    'total_transferencia' => $caja->saldo_transferencia,
+                    'total_tarjeta'      => $caja->saldo_tarjeta,
+                    'total_efectivo'     => $caja->saldo_efectivo,
                 ]);
             }
 

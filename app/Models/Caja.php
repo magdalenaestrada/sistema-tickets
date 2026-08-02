@@ -108,45 +108,42 @@ class Caja extends Model
         return $this->hasMany(CajaDetalle::class, 'caja_id');
     }
 
-    public function getIngresosYapeAttribute(): float
+    public function getSaldoYapeAttribute(): float
     {
         return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 1)
-            ->where('amount', '>', 0)
             ->sum('amount');
     }
 
-    public function getIngresosPlinAttribute(): float
+    public function getSaldoPlinAttribute(): float
     {
         return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 2)
-            ->where('amount', '>', 0)
             ->sum('amount');
     }
 
-    public function getIngresosTarjetaAttribute(): float
+    public function getSaldoTarjetaAttribute(): float
     {
         return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 3)
-            ->where('amount', '>', 0)
             ->sum('amount');
     }
 
-    public function getIngresosTransferenciaAttribute(): float
+    public function getSaldoTransferenciaAttribute(): float
     {
         return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 4)
-            ->where('amount', '>', 0)
             ->sum('amount');
     }
-    public function getIngresosEfectivoAttribute(): float
+
+    public function getSaldoEfectivoAttribute(): float
     {
         return (float) $this->detallesActivos()
             ->where('metodo_pago_id', 1)
             ->where('subtipo_movimiento_caja_id', '!=', 10)
-            ->where('amount', '>', 0)
             ->sum('amount');
     }
+
 
     public function getMontoCajaAttribute()
     {
