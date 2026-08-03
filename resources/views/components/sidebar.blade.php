@@ -163,7 +163,7 @@
                                         class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}">Empleados</a>
                                 </li>
                                 <li class="nav-item"><a href="{{ route('paradas.index') }}"
-                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Paradas</a>
+                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Ubi. Sucursales</a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="{{ route('usuarios.index') }}"

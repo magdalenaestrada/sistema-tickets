@@ -38,13 +38,8 @@ class FacturacionController extends Controller
             'tipoDocumentoFactura',
         ]);
 
-        // Fecha desde
-        if ($request->filled('fecha_desde')) {
-            $query->whereDate('fecha_emision', '>=', $request->fecha_desde);
-        }
-
         // Fecha hasta
-        if ($request->filled('fecha_hasta')) {
+        if ($request->filled('fecha')) {
             $query->whereDate('fecha_emision', '<=', $request->fecha_hasta);
         }
 

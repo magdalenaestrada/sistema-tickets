@@ -92,10 +92,11 @@ class UbigeoController extends Controller
         return Pueblito::select(
             'id',
             'descripcion',
-            'distrito_id'
+            'distrito_id',
+            'sucursal_id'
         )->get();
     }
-
+    
     public function listaSucursales()
     {
         return Sucursal::all();

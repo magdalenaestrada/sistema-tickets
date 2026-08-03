@@ -74,16 +74,21 @@
 
                         <div class="row g-2">
 
-                            <div class="col-md-2">
-                                <label class="form-label">Desde</label>
-                                <input type="date" class="form-control" name="fecha_desde"
-                                    value="{{ request('fecha_desde') }}">
+                            <div class="col-md-3">
+
+                                <label class="form-label">
+                                    N° Documento
+                                </label>
+
+                                <input type="text" class="form-control" name="documento"
+                                    value="{{ request('documento') }}">
+
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="form-label">Hasta</label>
-                                <input type="date" class="form-control" name="fecha_hasta"
-                                    value="{{ request('fecha_hasta') }}">
+
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" class="form-control" name="fecha" value="{{ request('fecha') }}">
                             </div>
 
                             <div class="col-md-2">
@@ -122,16 +127,6 @@
 
                             </div>
 
-                            <div class="col-md-2">
-
-                                <label class="form-label">
-                                    N° Documento
-                                </label>
-
-                                <input type="text" class="form-control" name="documento"
-                                    value="{{ request('documento') }}">
-
-                            </div>
 
                             <div class="col-md-1 d-grid">
 
@@ -277,7 +272,7 @@
                                                     CDR
                                                 </a>
                                             @endif
-                                            
+
                                             @hasrole('Administrador')
                                                 @if ($venta->estado === \App\Enums\EstadoVenta::EMITIDO)
                                                     @if ($venta->tipo_documento_factura_id == 3)

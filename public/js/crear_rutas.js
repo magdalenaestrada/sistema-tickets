@@ -213,13 +213,14 @@ window.agregarPunto = function (data = null) {
     listaPueblitos.sort((a, b) => a.descripcion.localeCompare(b.descripcion));
 
     listaPueblitos.forEach((p) => {
-        selectPueblito.append(`
-            <option value="${p.id}">
-                ${p.descripcion}
-            </option>
-        `);
-    });
+        let asignado = !!p.sucursal_id;
 
+        selectPueblito.append(`
+        <option value="${p.id}" ${asignado ? "disabled" : ""}>
+            ${p.descripcion}${asignado ? " (Ya asignado a sucursal)" : ""}
+        </option>
+    `);
+    });
     let sucursalSelect = punto.find(".sucursal");
 
     let listaSucursales = [...sucursales];
@@ -238,6 +239,9 @@ window.agregarPunto = function (data = null) {
 
     if (data) {
         selectPueblito.val(String(data.pueblito_id));
+        selectPueblito
+            .find(`option[value="${data.pueblito_id}"]`)
+            .prop("disabled", false);
 
         if (data?.sucursal_id) {
             sucursalSelect.val(String(data.sucursal_id));

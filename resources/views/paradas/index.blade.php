@@ -1,170 +1,162 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid mt-4">
+    <div class="container-fluid mt-4">
 
-    <div class="card shadow-sm">
+        <div class="card shadow-sm">
 
-        <div class="card-header">
-            <h5 class="mb-0">Pueblitos</h5>
-        </div>
+            <div class="card-header">
+                <h5 class="mb-0">Pueblitos</h5>
+            </div>
 
-        <div class="card-body">
+            <div class="card-body">
 
-            <div id="alertaPueblitos"></div>
+                <div id="alertaPueblitos"></div>
 
-            <table class="table table-bordered table-hover align-middle">
+                <table class="table table-bordered table-hover align-middle">
 
-                <thead class="table-light">
-                    <tr>
-                        <th style="width:20%">Sucursal</th>
-                        <th style="width:20%">Distrito</th>
-                        <th style="width:30%">Descripción</th>
-                        <th style="width:30%">Acciones</th>
-                    </tr>
-                </thead>
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:20%">Sucursal</th>
+                            <th style="width:20%">Distrito</th>
+                            <th style="width:30%">Descripción</th>
+                            <th style="width:30%">Acciones</th>
+                        </tr>
+                    </thead>
 
-                {{-- Formulario --}}
-                <tbody>
+                    {{-- Formulario --}}
+                    <tbody>
 
-                <tr>
+                        <tr>
 
-                    <td>
+                            <td>
 
-                        <select id="sucursal_id" class="form-control">
+                                <select id="sucursal_id" class="form-control">
 
-                            <option value="">Seleccione</option>
+                                    <option value="">Seleccione</option>
 
-                            @foreach($sucursales as $sucursal)
+                                    @foreach ($sucursales as $sucursal)
+                                        <option value="{{ $sucursal->id }}">
+                                            {{ $sucursal->nombre_comercial }}
+                                        </option>
+                                    @endforeach
 
-                                <option value="{{ $sucursal->id }}">
-                                    {{ $sucursal->nombre_comercial }}
-                                </option>
+                                </select>
 
-                            @endforeach
+                            </td>
 
-                        </select>
+                            <td>
 
-                    </td>
+                                <select id="distrito_id" class="form-control">
 
-                    <td>
+                                    <option value="">Seleccione</option>
 
-                        <select id="distrito_id" class="form-control">
+                                    @foreach ($distritos as $distrito)
+                                        <option value="{{ $distrito->id }}">
+                                            {{ $distrito->nombre }}
+                                        </option>
+                                    @endforeach
 
-                            <option value="">Seleccione</option>
+                                </select>
 
-                            @foreach($distritos as $distrito)
+                            </td>
 
-                                <option value="{{ $distrito->id }}">
-                                    {{ $distrito->nombre }}
-                                </option>
+                            <td>
 
-                            @endforeach
+                                <input type="text" id="descripcion" class="form-control" placeholder="Descripción">
 
-                        </select>
+                            </td>
 
-                    </td>
+                            <td>
 
-                    <td>
+                                <button class="btn btn-primary w-100" id="btnGuardar">
 
-                        <input
-                            type="text"
-                            id="descripcion"
-                            class="form-control"
-                            placeholder="Descripción">
+                                    Guardar
 
-                    </td>
+                                </button>
 
-                    <td>
+                            </td>
 
-                        <button
-                            class="btn btn-primary w-100"
-                            id="btnGuardar">
+                        </tr>
 
-                            Guardar
+                    </tbody>
 
-                        </button>
+                    {{-- Tabla --}}
+                    <tbody id="tbodyPueblitos">
 
-                    </td>
+                        @forelse($pueblitos as $item)
+                            <tr id="fila-{{ $item->id }}" data-id="{{ $item->id }}"
+                                data-sucursal="{{ $item->sucursal_id }}" data-distrito="{{ $item->distrito_id }}"
+                                data-descripcion="{{ $item->descripcion }}">
 
-                </tr>
+                                <td class="celdaSucursal">
+                                    {{ $item->sucursal->nombre_comercial ?? '-' }}
+                                </td>
 
-                </tbody>
+                                <td class="celdaDistrito">
+                                    {{ $item->distrito->nombre }}
+                                </td>
 
-                {{-- Tabla --}}
-                <tbody id="tbodyPueblitos">
+                                <td class="celdaDescripcion">
+                                    {{ $item->descripcion }}
+                                </td>
 
-                @forelse($pueblitos as $item)
+                                <td class="celdaAcciones">
 
-                    <tr
-                        id="fila-{{ $item->id }}"
-                        data-id="{{ $item->id }}"
-                        data-sucursal="{{ $item->sucursal_id }}"
-                        data-distrito="{{ $item->distrito_id }}"
-                        data-descripcion="{{ $item->descripcion }}"
-                    >
+                                    <button class="btn btn-outline-primary btn-sm btnEditar" data-id="{{ $item->id }}">
 
-                        <td class="celdaSucursal">
-                            {{ $item->sucursal->nombre_comercial ?? "-"}}
-                        </td>
+                                        Editar
 
-                        <td class="celdaDistrito">
-                            {{ $item->distrito->nombre }}
-                        </td>
+                                    </button>
 
-                        <td class="celdaDescripcion">
-                            {{ $item->descripcion }}
-                        </td>
+                                    <button class="btn btn-outline-danger btn-sm btnEliminar"
+                                        data-id="{{ $item->id }}">
 
-                        <td class="celdaAcciones">
+                                        Eliminar
 
-                            <button
-                                class="btn btn-outline-primary btn-sm btnEditar"
-                                data-id="{{ $item->id }}">
+                                    </button>
 
-                                Editar
+                                </td>
 
-                            </button>
+                            </tr>
 
-                            <button
-                                class="btn btn-outline-danger btn-sm btnEliminar"
-                                data-id="{{ $item->id }}">
+                        @empty
 
-                                Eliminar
+                            <tr id="filaVacia">
 
-                            </button>
+                                <td colspan="4" class="text-center text-muted">
 
-                        </td>
+                                    No existen registros.
 
-                    </tr>
+                                </td>
 
-                @empty
+                            </tr>
+                        @endforelse
 
-                    <tr id="filaVacia">
+                    </tbody>
 
-                        <td colspan="4" class="text-center text-muted">
+                </table>
 
-                            No existen registros.
-
-                        </td>
-
-                    </tr>
-
-                @endforelse
-
-                </tbody>
-
-            </table>
+            </div>
 
         </div>
 
     </div>
-
-</div>
 @endsection
 
 @push('scripts')
+    <script>
+        window.distritos = @json($distritos);
+        window.sucursales = @json($sucursales);
+    </script>
+
+    <script>
+        window.routes = {
+            storeParada: "{{ route('paradas.store') }}",
+            updateParada: "{{ route('paradas.update', ':id') }}",
+            destroyParada: "{{ route('paradas.destroy', ':id') }}"
+        };
+    </script>
+
     <script src="{{ asset('js/paradas.js') }}"></script>
 @endpush
-
-

@@ -113,9 +113,10 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <small class="text-muted d-block">Yape</small>
-<div id="saldo_yape" class="fw-bold">
-    S/ {{ number_format($caja->saldo_yape, 2) }}
-</div>                    </div>
+                        <div id="saldo_yape" class="fw-bold">
+                            S/ {{ number_format($caja->saldo_yape, 2) }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -123,9 +124,10 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <small class="text-muted d-block">Plin</small>
-<div id="saldo_plin" class="fw-bold">
-    S/ {{ number_format($caja->saldo_plin, 2) }}
-</div>                    </div>
+                        <div id="saldo_plin" class="fw-bold">
+                            S/ {{ number_format($caja->saldo_plin, 2) }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -133,9 +135,10 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <small class="text-muted d-block">Transferencia</small>
-<div id="saldo_transferencia" class="fw-bold">
-    S/ {{ number_format($caja->saldo_transferencia, 2) }}
-</div>                    </div>
+                        <div id="saldo_transferencia" class="fw-bold">
+                            S/ {{ number_format($caja->saldo_transferencia, 2) }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -143,9 +146,10 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body py-2 px-3">
                         <small class="text-muted d-block">Tarjeta</small>
-<div id="saldo_tarjeta" class="fw-bold">
-    S/ {{ number_format($caja->saldo_tarjeta, 2) }}
-</div>                    </div>
+                        <div id="saldo_tarjeta" class="fw-bold">
+                            S/ {{ number_format($caja->saldo_tarjeta, 2) }}
+                        </div>
+                    </div>
                 </div>
             </div>
 

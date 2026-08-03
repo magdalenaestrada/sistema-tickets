@@ -1,22 +1,18 @@
+document.addEventListener("DOMContentLoaded", function () {
+    const CSRF = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
+    const tbody = document.getElementById("tbodyPueblitos");
 
+    const alerta = document.getElementById("alertaPueblitos");
 
-document.addEventListener('DOMContentLoaded',function(){
+    const sucursales = window.sucursales;
 
-const CSRF=document
-.querySelector('meta[name="csrf-token"]')
-.getAttribute('content');
+    const distritos = window.distritos;
 
-const tbody=document.getElementById('tbodyPueblitos');
-
-const alerta=document.getElementById('alertaPueblitos');
-
-const sucursales=@json($sucursales);
-
-const distritos=@json($distritos);
-    function mostrarAlerta(mensaje,tipo){
-
-        alerta.innerHTML=`
+    function mostrarAlerta(mensaje, tipo) {
+        alerta.innerHTML = `
         <div class="alert alert-${tipo} alert-dismissible fade show">
 
             ${mensaje}
@@ -26,30 +22,35 @@ const distritos=@json($distritos);
         </div>`;
     }
 
-    function limpiarFormulario(){
-
-        document.getElementById('sucursal_id').value='';
-        document.getElementById('distrito_id').value='';
-        document.getElementById('descripcion').value='';
-
+    function limpiarFormulario() {
+        document.getElementById("sucursal_id").value = "";
+        document.getElementById("distrito_id").value = "";
+        document.getElementById("descripcion").value = "";
     }
 
-    function agregarFila(data){
+    function agregarFila(data) {
+        const vacia = document.getElementById("filaVacia");
 
-        const vacia=document.getElementById('filaVacia');
+        if (vacia) vacia.remove();
 
-        if(vacia) vacia.remove();
+        const fila = document.createElement("tr");
 
-        const fila=document.createElement('tr');
+        fila.id = "fila-" + data.id;
 
-        fila.id='fila-'+data.id;
+        fila.dataset.id = data.id;
+        fila.dataset.sucursal = data.sucursal_id;
+        console.log("Distrito guardado:", fila.dataset.distrito);
+        console.log("Distritos:", distritos);
 
-        fila.dataset.id=data.id;
-        fila.dataset.sucursal=data.sucursal_id;
-        fila.dataset.distrito=data.distrito_id;
-        fila.dataset.descripcion=data.descripcion;
+        const distrito = distritos.find(
+            (x) => String(x.id) === String(fila.dataset.distrito),
+        );
 
-        fila.innerHTML=`
+        console.log("Encontrado:", distrito);
+        fila.dataset.distrito = data.distrito_id;
+        fila.dataset.descripcion = data.descripcion;
+
+        fila.innerHTML = `
 
         <td class="celdaSucursal">
             ${data.sucursal}
@@ -86,189 +87,149 @@ const distritos=@json($distritos);
         `;
 
         tbody.prepend(fila);
-
     }
 
     document
-    .getElementById('btnGuardar')
-    .addEventListener('click',function(){
+        .getElementById("btnGuardar")
+        .addEventListener("click", function () {
+            const sucursal_id = document.getElementById("sucursal_id").value;
 
-        const sucursal_id=document.getElementById('sucursal_id').value;
+            const distrito_id = document.getElementById("distrito_id").value;
 
-        const distrito_id=document.getElementById('distrito_id').value;
+            const descripcion = document
+                .getElementById("descripcion")
+                .value.trim();
 
-        const descripcion=document.getElementById('descripcion').value.trim();
+            if (!sucursal_id || !distrito_id || !descripcion) {
+                mostrarAlerta("Complete todos los campos", "warning");
 
-        if(!sucursal_id || !distrito_id || !descripcion){
+                return;
+            }
 
-            mostrarAlerta('Complete todos los campos','warning');
+            this.disabled = true;
 
-            return;
+            this.innerText = "Guardando...";
 
-        }
+            fetch(window.routes.storeParada, {
+                method: "POST",
 
-        this.disabled=true;
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": CSRF,
+                },
 
-        this.innerText='Guardando...';
+                body: JSON.stringify({
+                    sucursal_id,
+                    distrito_id,
+                    descripcion,
+                }),
+            })
+                .then(async (r) => {
+                    const j = await r.json();
 
-        fetch("{{ route('pueblitos.store') }}",{
+                    if (!r.ok) throw j;
 
-            method:'POST',
+                    return j;
+                })
 
-            headers:{
-                'Content-Type':'application/json',
-                'Accept':'application/json',
-                'X-CSRF-TOKEN':CSRF
+                .then((j) => {
+                    agregarFila(j.data);
+
+                    limpiarFormulario();
+
+                    mostrarAlerta(j.message, "success");
+                })
+
+                .catch((e) => {
+                    let m = "Error al guardar";
+
+                    if (e.errors) {
+                        m = Object.values(e.errors).flat().join("<br>");
+                    }
+
+                    mostrarAlerta(m, "danger");
+                })
+
+                .finally(() => {
+                    this.disabled = false;
+
+                    this.innerText = "Guardar";
+                });
+        });
+
+    tbody.addEventListener("click", function (e) {
+        const btn = e.target.closest(".btnEliminar");
+
+        if (!btn) return;
+
+        if (!confirm("¿Eliminar este pueblito?")) return;
+
+        const id = btn.dataset.id;
+
+        fetch(window.routes.destroyParada.replace(":id", id), {
+            method: "DELETE",
+
+            headers: {
+                "X-CSRF-TOKEN": CSRF,
+                Accept: "application/json",
             },
+        })
+            .then((r) => r.json())
 
-            body:JSON.stringify({
+            .then((j) => {
+                document.getElementById("fila-" + id).remove();
 
-                sucursal_id,
-                distrito_id,
-                descripcion
-
+                mostrarAlerta(j.message, "success");
             })
 
-        })
-
-        .then(async r=>{
-
-            const j=await r.json();
-
-            if(!r.ok) throw j;
-
-            return j;
-
-        })
-
-        .then(j=>{
-
-            agregarFila(j.data);
-
-            limpiarFormulario();
-
-            mostrarAlerta(j.message,'success');
-
-        })
-
-        .catch(e=>{
-
-            let m='Error al guardar';
-
-            if(e.errors){
-
-                m=Object.values(e.errors).flat().join('<br>');
-
-            }
-
-            mostrarAlerta(m,'danger');
-
-        })
-
-        .finally(()=>{
-
-            this.disabled=false;
-
-            this.innerText='Guardar';
-
-        });
-
-    });
-
-    tbody.addEventListener('click',function(e){
-
-        const btn=e.target.closest('.btnEliminar');
-
-        if(!btn) return;
-
-        if(!confirm('¿Eliminar este pueblito?')) return;
-
-        const id=btn.dataset.id;
-
-        fetch("{{ url('pueblitos') }}/"+id,{
-
-            method:'DELETE',
-
-            headers:{
-
-                'X-CSRF-TOKEN':CSRF,
-                'Accept':'application/json'
-
-            }
-
-        })
-
-        .then(r=>r.json())
-
-        .then(j=>{
-
-            document.getElementById('fila-'+id).remove();
-
-            mostrarAlerta(j.message,'success');
-
-        })
-
-        .catch(()=>{
-
-            mostrarAlerta('No se pudo eliminar','danger');
-
-        });
-
-    });    // ============================
+            .catch(() => {
+                mostrarAlerta("No se pudo eliminar", "danger");
+            });
+    }); // ============================
     // EDICIÓN INLINE
     // ============================
 
-    function construirSelect(id, opciones, seleccionado, campo){
+    function construirSelect(id, opciones, seleccionado, campo) {
+        let html = `<select id="${id}" class="form-control form-control-sm">`;
 
-        let html=`<select id="${id}" class="form-control form-control-sm">`;
+        html += `<option value="">Seleccione</option>`;
 
-        html+=`<option value="">Seleccione</option>`;
+        opciones.forEach((op) => {
+            const texto =
+                campo === "sucursal" ? op.nombre_comercial : op.nombre; // <-- aquí
 
-        opciones.forEach(op=>{
-
-            const texto=campo=='sucursal'
-                ? op.nombre_comercial
-                : op.descripcion;
-
-            html+=`
-                <option
-                    value="${op.id}"
-                    ${String(op.id)==String(seleccionado)?'selected':''}>
-                    ${texto}
-                </option>
-            `;
-
+            html += `
+            <option value="${op.id}"
+                ${String(op.id) === String(seleccionado) ? "selected" : ""}>
+                ${texto}
+            </option>
+        `;
         });
 
-        html+=`</select>`;
+        html += `</select>`;
 
         return html;
-
     }
 
-    function entrarEdicion(fila){
+    function entrarEdicion(fila) {
+        const id = fila.dataset.id;
 
-        const id=fila.dataset.id;
+        fila.querySelector(".celdaSucursal").innerHTML = construirSelect(
+            "editSucursal" + id,
+            sucursales,
+            fila.dataset.sucursal,
+            "sucursal",
+        );
 
-        fila.querySelector('.celdaSucursal').innerHTML=
+        fila.querySelector(".celdaDistrito").innerHTML = construirSelect(
+            "editDistrito" + id,
+            distritos,
+            fila.dataset.distrito,
+            "distrito",
+        );
 
-            construirSelect(
-                'editSucursal'+id,
-                sucursales,
-                fila.dataset.sucursal,
-                'sucursal'
-            );
-
-        fila.querySelector('.celdaDistrito').innerHTML=
-
-            construirSelect(
-                'editDistrito'+id,
-                distritos,
-                fila.dataset.distrito,
-                'distrito'
-            );
-
-        fila.querySelector('.celdaDescripcion').innerHTML=`
+        fila.querySelector(".celdaDescripcion").innerHTML = `
 
             <input
                 id="editDescripcion${id}"
@@ -277,7 +238,7 @@ const distritos=@json($distritos);
 
         `;
 
-        fila.querySelector('.celdaAcciones').innerHTML=`
+        fila.querySelector(".celdaAcciones").innerHTML = `
 
             <button
                 class="btn btn-success btn-sm btnGuardarEdicion"
@@ -296,24 +257,22 @@ const distritos=@json($distritos);
             </button>
 
         `;
-
     }
 
-    function salirEdicion(fila,data){
+    function salirEdicion(fila, data) {
+        fila.dataset.sucursal = data.sucursal_id;
 
-        fila.dataset.sucursal=data.sucursal_id;
+        fila.dataset.distrito = data.distrito_id;
 
-        fila.dataset.distrito=data.distrito_id;
+        fila.dataset.descripcion = data.descripcion;
 
-        fila.dataset.descripcion=data.descripcion;
+        fila.querySelector(".celdaSucursal").innerHTML = data.sucursal;
 
-        fila.querySelector('.celdaSucursal').innerHTML=data.sucursal;
+        fila.querySelector(".celdaDistrito").innerHTML = data.distrito;
 
-        fila.querySelector('.celdaDistrito').innerHTML=data.distrito;
+        fila.querySelector(".celdaDescripcion").innerHTML = data.descripcion;
 
-        fila.querySelector('.celdaDescripcion').innerHTML=data.descripcion;
-
-        fila.querySelector('.celdaAcciones').innerHTML=`
+        fila.querySelector(".celdaAcciones").innerHTML = `
 
             <button
                 class="btn btn-outline-primary btn-sm btnEditar"
@@ -332,146 +291,114 @@ const distritos=@json($distritos);
             </button>
 
         `;
-
     }
 
-    tbody.addEventListener('click',function(e){
+    tbody.addEventListener("click", function (e) {
+        const editar = e.target.closest(".btnEditar");
 
-        const editar=e.target.closest('.btnEditar');
-
-        if(editar){
-
-            entrarEdicion(
-                document.getElementById('fila-'+editar.dataset.id)
-            );
+        if (editar) {
+            entrarEdicion(document.getElementById("fila-" + editar.dataset.id));
 
             return;
-
         }
 
-        const cancelar=e.target.closest('.btnCancelar');
+        const cancelar = e.target.closest(".btnCancelar");
 
-        if(cancelar){
+        if (cancelar) {
+            const fila = document.getElementById("fila-" + cancelar.dataset.id);
 
-            const fila=document.getElementById('fila-'+cancelar.dataset.id);
+            salirEdicion(fila, {
+                id: fila.dataset.id,
 
-            salirEdicion(fila,{
+                sucursal_id: fila.dataset.sucursal,
 
-                id:fila.dataset.id,
+                distrito_id: fila.dataset.distrito,
 
-                sucursal_id:fila.dataset.sucursal,
+                descripcion: fila.dataset.descripcion,
 
-                distrito_id:fila.dataset.distrito,
-
-                descripcion:fila.dataset.descripcion,
-
-                sucursal:sucursales.find(
-                    x=>String(x.id)==fila.dataset.sucursal
+                sucursal: sucursales.find(
+                    (x) => String(x.id) == fila.dataset.sucursal,
                 ).nombre_comercial,
 
-                distrito:distritos.find(
-                    x=>String(x.id)==fila.dataset.distrito
-                ).descripcion
-
+                distrito: distritos.find(
+                    (x) => String(x.id) == fila.dataset.distrito,
+                ).nombre,
             });
 
             return;
-
         }
 
-        const guardar=e.target.closest('.btnGuardarEdicion');
+        const guardar = e.target.closest(".btnGuardarEdicion");
 
-        if(!guardar) return;
+        if (!guardar) return;
 
-        const id=guardar.dataset.id;
+        const id = guardar.dataset.id;
 
-        const fila=document.getElementById('fila-'+id);
+        const fila = document.getElementById("fila-" + id);
 
-        const sucursal_id=document.getElementById('editSucursal'+id).value;
+        const sucursal_id = document.getElementById("editSucursal" + id).value;
 
-        const distrito_id=document.getElementById('editDistrito'+id).value;
+        const distrito_id = document.getElementById("editDistrito" + id).value;
 
-        const descripcion=document
-            .getElementById('editDescripcion'+id)
-            .value
-            .trim();
+        const descripcion = document
+            .getElementById("editDescripcion" + id)
+            .value.trim();
 
-        if(!sucursal_id || !distrito_id || !descripcion){
-
-            mostrarAlerta('Complete todos los campos','warning');
+        if (!sucursal_id || !distrito_id || !descripcion) {
+            mostrarAlerta("Complete todos los campos", "warning");
 
             return;
-
         }
 
-        guardar.disabled=true;
+        guardar.disabled = true;
 
-        guardar.innerText='Guardando...';
+        guardar.innerText = "Guardando...";
 
-        fetch("{{ url('pueblitos') }}/"+id,{
+        fetch(window.routes.updateParada.replace(":id", id), {
+            method: "PUT",
 
-            method:'PUT',
+            headers: {
+                "Content-Type": "application/json",
 
-            headers:{
+                Accept: "application/json",
 
-                'Content-Type':'application/json',
-
-                'Accept':'application/json',
-
-                'X-CSRF-TOKEN':CSRF
-
+                "X-CSRF-TOKEN": CSRF,
             },
 
-            body:JSON.stringify({
-
+            body: JSON.stringify({
                 sucursal_id,
 
                 distrito_id,
 
-                descripcion
+                descripcion,
+            }),
+        })
+            .then(async (r) => {
+                const j = await r.json();
 
+                if (!r.ok) throw j;
+
+                return j;
             })
 
-        })
+            .then((j) => {
+                salirEdicion(fila, j.data);
 
-        .then(async r=>{
+                mostrarAlerta(j.message, "success");
+            })
 
-            const j=await r.json();
+            .catch((e) => {
+                let m = "No se pudo actualizar";
 
-            if(!r.ok) throw j;
+                if (e.errors) {
+                    m = Object.values(e.errors).flat().join("<br>");
+                }
 
-            return j;
+                mostrarAlerta(m, "danger");
 
-        })
+                guardar.disabled = false;
 
-        .then(j=>{
-
-            salirEdicion(fila,j.data);
-
-            mostrarAlerta(j.message,'success');
-
-        })
-
-        .catch(e=>{
-
-            let m='No se pudo actualizar';
-
-            if(e.errors){
-
-                m=Object.values(e.errors)
-                    .flat()
-                    .join('<br>');
-
-            }
-
-            mostrarAlerta(m,'danger');
-
-            guardar.disabled=false;
-
-            guardar.innerText='Guardar';
-
-        });
-
+                guardar.innerText = "Guardar";
+            });
     });
-
 });
