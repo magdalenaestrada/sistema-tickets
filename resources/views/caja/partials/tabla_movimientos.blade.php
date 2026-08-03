@@ -32,7 +32,7 @@
                                 </td>
                                 </td>
                                 <td>
-                                    @if ($detalle->amount > 0)
+                                    @if ($detalle->amount > 0 && $detalle->subtipo_movimiento_caja_id != 10)
                                         <span class="badge bg-success">Ingreso</span>
                                     @elseif ($detalle->amount < 0)
                                         <span class="badge bg-danger">Egreso</span>

@@ -105,10 +105,11 @@ class Caja extends Model
 
     public function detalles()
     {
-        return $this->hasMany(CajaDetalle::class, 'caja_id');
+        return $this->hasMany(CajaDetalle::class)
+            ->orderByDesc('created_at');
     }
 
-     public function getSaldoYapeAttribute(): float
+    public function getSaldoYapeAttribute(): float
     {
         return (float) $this->detallesActivos()
             ->where('billetera_digital_id', 1)
