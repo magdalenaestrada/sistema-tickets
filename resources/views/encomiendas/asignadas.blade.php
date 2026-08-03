@@ -58,11 +58,11 @@
                             <th width="40">
                                 <input type="checkbox" id="checkAll">
                             </th>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Receptor</th>
                             <th>DNI Receptor</th>
-                            <th>Origen</th>
+
+                            <th>Receptor</th>
+                            <th>DNI autorizado</th>
+                            <th>Autorizado</th>
                             <th>Destino</th>
                             <th>Salida</th>
                             <th>Estado</th>

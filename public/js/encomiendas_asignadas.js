@@ -50,22 +50,15 @@ $(function () {
         },
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
-            {
-                data: null,
-                orderable: false,
-                searchable: false,
-                render: function (data, type, row, meta) {
-                    const api = $("#tablaEncomiendas").DataTable();
-                    const info = api.page.info();
-
-                    return info.recordsTotal - (info.start + meta.row);
-                },
-            },
-            { data: "fecha", name: "fecha" },
-            { data: "receptor", name: "receptor" },
+            
             { data: "dni_receptor", name: "dni_receptor" },
-            { data: "origen", name: "origen" },
+            { data: "receptor", name: "receptor" },
+
+            { data: "dni_receptor2", name: "dni_receptor2" },
+
+            { data: "receptor2", name: "receptor2" },
             { data: "destino", name: "destino" },
+            
             { data: "salida", name: "salida" },
             { data: "estado", name: "estado" },
             { data: "acciones", orderable: false, searchable: false },

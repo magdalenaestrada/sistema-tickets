@@ -28,21 +28,10 @@
             background-color: #fff;
         }
 
-        .center {
-            text-align: center;
-        }
-
-        .bold {
-            font-weight: bold;
-        }
-
-        .right {
-            text-align: right;
-        }
-
-        .left {
-            text-align: left;
-        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .right { text-align: right; }
+        .left { text-align: left; }
 
         .logo-container {
             text-align: center;
@@ -51,6 +40,7 @@
 
         .logo-container img {
             max-width: 110px;
+            max-height: 60px;
             height: auto;
             display: inline-block;
         }
@@ -186,7 +176,7 @@
 
     @foreach ($venta->pasajes as $pasaje)
         {{-- ═══════════════════════════════════════════════ --}}
-        {{-- BOLETA DE PASAJE DESTACADA --}}
+        {{-- BOLETA DE PASAJE --}}
         {{-- ═══════════════════════════════════════════════ --}}
         <div class="{{ $loop->first ? '' : 'ticket-pasajero' }}">
 
@@ -232,11 +222,11 @@
                 $destinoText = $pasaje->destino?->descripcion ?? ($salida->destino ?? '—');
             @endphp
 
-            {{-- ENCABEZADO --}}
+            {{-- 1. ENCABEZADO + DATOS EMISIÓN Y CLIENTE --}}
             <div class="center">
                 @if ($empresa && $empresa->logo)
                     <div class="logo-container">
-                        <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($empresa->logo) ? asset('storage/' . $empresa->logo) : asset($empresa->logo) }}" alt="Logo">
                     </div>
                 @endif
 
@@ -256,47 +246,22 @@
                 <div class="bold" style="font-size: 13px;">{{ $venta->serie }} - {{ $venta->numero }}</div>
             </div>
 
-            {{-- 🚨 BLOQUE PRINCIPAL DESTACADO DE EMBARQUE --}}
-            <div class="highlight-box">
-                <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">DETALLE</div>
-                <div class="asiento-box">N° {{ $pasaje->asiento_numero ?? '—' }}</div>
-                <div class="line" style="margin: 4px 0;"></div>
-                <div class="ruta-box">{{ $origenText }} - {{ $destinoText }}</div>
-                @if ($salida)
-                    <div class="fecha-hora-box">
-                        {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') }} —
-                        {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
-                    </div>
-                @endif
-            </div>
-
-            {{-- DATOS VISIBLES DEL PASAJERO --}}
-            <div class="bold" style="font-size: 10px; margin-bottom: 2px; margin-top: 4px;">PASAJERO(A)</div>
-            <table class="table-data w-100" style="margin-bottom: 4px;">
-                <tr>
-                    <td class="bold" style="width: 30%;">Nombre:</td>
-                    <td class="right bold" style="font-size: 12px; text-transform: uppercase;">
-                        {{ $pasaje->persona->nombre_completo }}
-                    </td>
-                </tr>
-                <tr>
-                    <td class="bold">N° Doc:</td>
-                    <td class="right bold" style="font-size: 11px;">
-                        {{ $pasaje->persona->documento ?? '—' }}
-                    </td>
-                </tr>
-            </table>
-
             <div class="line"></div>
 
-            {{-- DATOS DEL CLIENTE / EMISIÓN --}}
+            {{-- CLIENTE Y EMISIÓN --}}
             <table class="table-data w-100">
                 <tr>
-                    <td class="bold">Comprador:</td>
-                    <td class="right">
-                        {{ $cliente ? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}
+                    <td class="bold">Cliente:</td>
+                    <td class="right bold">
+                        {{ $cliente ? ($cliente->nombre_completo ?? $cliente->nombres . ' ' . $cliente->apellidos) : 'CLIENTE VARIOS' }}
                     </td>
                 </tr>
+                @if($cliente && $cliente->documento)
+                <tr>
+                    <td class="bold">Doc. Cliente:</td>
+                    <td class="right">{{ $cliente->documento }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td class="bold">F. Emisión:</td>
                     <td class="right">
@@ -309,9 +274,41 @@
                 </tr>
             </table>
 
+            {{-- 2. BLOQUE DESTACADO DE ASIENTO Y RUTA --}}
+            <div class="highlight-box">
+                <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">DATOS DE EMBARQUE</div>
+                <div class="asiento-box">ASIENTO N° {{ $pasaje->asiento_numero ?? '—' }}</div>
+                <div class="line" style="margin: 4px 0;"></div>
+                <div class="ruta-box">{{ $origenText }} - {{ $destinoText }}</div>
+                @if ($salida)
+                    <div class="fecha-hora-box">
+                        {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') }} —
+                        {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
+                    </div>
+                @endif
+            </div>
+
+            {{-- 3. DATOS VISIBLES DEL PASAJERO --}}
+            <div class="bold" style="font-size: 10px; margin-bottom: 2px; margin-top: 4px;">DATOS DEL PASAJERO(A)</div>
+            <table class="table-data w-100" style="margin-bottom: 4px;">
+                <tr>
+                    <td class="bold" style="width: 30%;">Nombre:</td>
+                    <td class="right bold" style="font-size: 11px; text-transform: uppercase;">
+                        {{ $pasaje->persona->nombre_completo ?? ($pasaje->persona->nombres . ' ' . $pasaje->persona->apellidos) }}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="bold">N° Doc:</td>
+                    <td class="right bold" style="font-size: 11px;">
+                        {{ $pasaje->persona->documento ?? '—' }}
+                    </td>
+                </tr>
+            </table>
+
             <div class="line"></div>
 
-            {{-- ÍTEMS / DETALLE --}}
+            {{-- 4. ÍTEMS / DETALLE DE LA BOLETA --}}
+            <div class="bold" style="font-size: 10px; margin-bottom: 3px;">DETALLE DEL COMPROBANTE</div>
             <table class="table-items w-100">
                 <thead>
                     <tr>
@@ -335,7 +332,6 @@
 
             {{-- TOTALES --}}
             <table class="table-data w-100">
-
                 @if ($opGravada > 0)
                     <tr>
                         <td class="bold">Op. Gravada:</td>
@@ -377,7 +373,6 @@
                         S/ {{ number_format($totalPasaje, 2) }}
                     </td>
                 </tr>
-
             </table>
 
             <div class="line"></div>
@@ -395,11 +390,10 @@
                 <div>¡Gracias por su preferencia!</div>
             </div>
 
-
         </div>
 
         {{-- ═══════════════════════════════════════════════════════════════ --}}
-        {{-- TICKET DE SOBREEQUIPAJE DESTACADO --}}
+        {{-- TICKET DE SOBREEQUIPAJE --}}
         {{-- ═══════════════════════════════════════════════════════════════ --}}
         @foreach ($sobreEquipajeItems as $seItem)
             @php
@@ -412,7 +406,7 @@
                 <div class="center" style="margin-bottom: 4px;">
                     @if ($empresa && $empresa->logo)
                         <div class="logo-container">
-                            <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($empresa->logo) ? asset('storage/' . $empresa->logo) : asset($empresa->logo) }}" alt="Logo">
                         </div>
                     @endif
                     <div class="bold" style="font-size: 11px;">
@@ -433,13 +427,12 @@
                     <div class="ruta-box">{{ $origenText }} ➔ {{ $destinoText }}</div>
                 </div>
 
-                <div class="bold" style="font-size: 10px; margin-top: 6px; margin-bottom: 2px;">DATOS DEL PASAJERO
-                </div>
+                <div class="bold" style="font-size: 10px; margin-top: 6px; margin-bottom: 2px;">DATOS DEL PASAJERO</div>
                 <table class="table-data w-100">
                     <tr>
                         <td class="bold" style="width: 35%;">Pasajero:</td>
                         <td class="right bold" style="font-size: 11px; text-transform: uppercase;">
-                            {{ $pasaje->persona->nombre_completo }}
+                            {{ $pasaje->persona->nombre_completo ?? ($pasaje->persona->nombres . ' ' . $pasaje->persona->apellidos) }}
                         </td>
                     </tr>
                     <tr>

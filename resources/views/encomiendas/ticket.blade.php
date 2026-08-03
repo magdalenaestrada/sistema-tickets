@@ -13,28 +13,24 @@
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace;
-            width: 260px;
-            margin: 0 auto;
-            padding: 10px 5px;
+            width: 270px;
+            margin: auto;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
             font-size: 11px;
             color: #000;
-            line-height: 1.2;
-            background-color: #fff;
+            background: #fff;
+            line-height: 1.3;
         }
 
         .center {
             text-align: center;
-        }
-
-        .bold {
-            font-weight: bold;
         }
 
         .right {
@@ -45,76 +41,155 @@
             text-align: left;
         }
 
+        .bold {
+            font-weight: bold;
+        }
+
         .logo-container {
-            text-align: center;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .logo-container img {
-            max-width: 110px;
-            height: auto;
-            display: inline-block;
+            max-width: 95px;
+            max-height: 70px;
+        }
+
+        .empresa {
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .ruc {
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .direccion {
+            font-size: 10px;
+        }
+
+        .documento {
+            border: 1px solid #000;
+            padding: 4px;
+            margin: 6px 0;
+        }
+
+        .documento .tipo {
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .documento .numero {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 2px;
         }
 
         .line {
             border-top: 1px dashed #000;
-            margin: 5px 0;
-            height: 0;
+            margin: 6px 0;
         }
 
-        .anulado {
-            border: 1px solid #000;
-            font-weight: bold;
-            font-size: 13px;
+        .section-title {
             text-align: center;
-            margin-bottom: 5px;
-            padding: 2px;
+            font-weight: bold;
+            font-size: 11px;
+            background: #efefef;
+            padding: 3px;
+            margin-bottom: 4px;
+            border: 1px solid #d9d9d9;
         }
 
-        .w-100 {
+        .table-data {
             width: 100%;
             border-collapse: collapse;
         }
 
         .table-data td {
-            padding: 1px 0;
+            padding: 2px 0;
             vertical-align: top;
-            font-size: 11px;
         }
 
-        .table-items th {
+        .table-items {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-items thead th {
+            border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            font-weight: bold;
+            padding: 4px 0;
             font-size: 11px;
-            padding-bottom: 2px;
         }
 
-        .table-items td {
-            padding: 3px 0;
+        .table-items tbody td {
+            padding: 4px 0;
             vertical-align: top;
+        }
+
+        .box {
+            border: 1px dashed #000;
+            padding: 5px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .alerta {
+            border: 2px solid #000;
+            padding: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 6px;
             font-size: 11px;
-            word-break: break-word;
+        }
+
+        .total-box {
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            padding: 6px 0;
+            margin-top: 5px;
+        }
+
+        .total-label {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 8px;
+        }
+
+        .anulado {
+            border: 2px solid #000;
+            padding: 4px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
         }
 
         .btn-print {
-            display: block;
             width: 100%;
-            background-color: #000;
-            color: #fff;
+            margin-top: 10px;
+            padding: 7px;
             border: none;
-            padding: 6px;
-            margin-top: 15px;
+            background: #000;
+            color: #fff;
             cursor: pointer;
-            font-family: Arial, sans-serif;
             font-weight: bold;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 11px;
         }
 
         @media print {
             .btn-print {
-                display: none !important;
+                display: none;
             }
 
             body {
@@ -124,7 +199,11 @@
         }
     </style>
 
-    <script>window.onload = function () { window.print(); };</script>
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
 </head>
 
 <body>
@@ -135,236 +214,493 @@
 
     @php
         $empresa = $venta->sucursal?->empresa;
-        $emisor = $encomienda->emisor;      // quien envía
-        $receptor = $encomienda->receptor;   // quien recibe
+        $emisor = $encomienda->emisor; // quien envía
+        $receptor = $encomienda->receptor; // quien recibe
 
         // Descuento (ajusta el campo según tu modelo)
         $montoDescuento = 0;
 
         // Op. Gravada
-        $opGravada = $venta->subtotal ?? ($venta->total - $venta->impuesto);
+        $opGravada = $venta->subtotal ?? $venta->total - $venta->impuesto;
     @endphp
 
     {{-- ── ENCABEZADO ── --}}
+    {{-- ───────────── ENCABEZADO ───────────── --}}
+
     <div class="center">
+
         @if ($empresa && $empresa->logo)
             <div class="logo-container">
                 <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
             </div>
         @endif
 
-        <div class="bold" style="font-size: 12px;">
+        <div class="empresa">
             {{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}
         </div>
-        <div class="bold">RUC: {{ $empresa->documento ?? '20513247495' }}</div>
-        <div style="font-size: 10px;">
-            {{ $venta->sucursal->direccion ?? ($empresa->direccion ?? 'Av. El Sol 789') }}
+
+        <div class="ruc">
+            RUC {{ $empresa->documento ?? '20513247495' }}
         </div>
 
-        <div class="line"></div>
+        @if ($venta->sucursal?->direccion || $empresa?->direccion)
+            <div class="direccion">
+                {{ $venta->sucursal->direccion ?? $empresa->direccion }}
+            </div>
+        @endif
 
-        <div class="bold" style="text-transform: uppercase;">
-            {{ $venta->tipoDocumentoFactura->descripcion ?? 'NOTA DE VENTA' }}
+        <div class="documento">
+
+            <div class="tipo">
+                {{ strtoupper($venta->tipoDocumentoFactura->descripcion ?? 'NOTA DE VENTA') }}
+            </div>
+
+            <div class="numero">
+                {{ $venta->serie }} - {{ $venta->numero }}
+            </div>
+
         </div>
-        <div class="bold" style="font-size: 12px;">{{ $venta->serie }} - {{ $venta->numero }}</div>
 
-        <div class="line"></div>
     </div>
 
-    {{-- ── EMISIÓN ── --}}
-    <table class="table-data w-100">
+    <div class="section-title">
+        INFORMACIÓN DE EMISIÓN
+    </div>
+
+    <table class="table-data">
+
         <tr>
-            <td class="bold">F. Emisión:</td>
+            <td width="38%"><strong>Fecha</strong></td>
             <td class="right">
-                {{ $venta->fecha_emision
-    ? $venta->fecha_emision->format('d/m/Y H:i')
-    : $venta->created_at->format('d/m/Y H:i') }}
+                {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
             </td>
         </tr>
+
         <tr>
-            <td class="bold">Cajero:</td>
-            <td class="right">{{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}</td>
+            <td><strong>Cajero</strong></td>
+            <td class="right">
+                {{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}
+            </td>
         </tr>
+
     </table>
 
     <div class="line"></div>
 
-    {{-- ── DATOS DEL EMISOR ── --}}
-    <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL EMISOR</div>
-    <table class="table-data w-100">
+
+    {{-- ================= PERSONAS ================= --}}
+
+    <div class="section-title">
+        REMITENTE
+    </div>
+
+    <table class="table-data">
         <tr>
-            <td class="bold" style="width: 35%;">Nombre:</td>
-            <td class="right">
-                {{ $emisor
-    ? $emisor->nombres . ' ' . $emisor->apellidos
-    : 'CLIENTE VARIOS' }}
+            <td width="28%"><strong>Nombre</strong></td>
+            <td>
+                {{ $emisor ? $emisor->nombres . ' ' . $emisor->apellidos : 'CLIENTE VARIOS' }}
             </td>
         </tr>
+
         <tr>
-            <td class="bold">Documento:</td>
-            <td class="right">{{ $emisor->documento ?? '00000000' }}</td>
+            <td><strong>DNI</strong></td>
+            <td>{{ $emisor->documento ?? '---' }}</td>
         </tr>
-        @if (!empty($emisor->telefono))
+
+        @if ($emisor?->telefono)
             <tr>
-                <td class="bold">Teléfono:</td>
-                <td class="right">{{ $emisor->telefono }}</td>
+                <td><strong>Celular</strong></td>
+                <td>{{ $emisor->telefono }}</td>
             </tr>
         @endif
     </table>
 
     <div class="line"></div>
 
-    {{-- ── DATOS DEL RECEPTOR ── --}}
-    <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DEL RECEPTOR</div>
-    <table class="table-data w-100">
-        <tr>
-            <td class="bold" style="width: 35%;">Nombre:</td>
-            <td class="right">
-                {{ $receptor
-    ? $receptor->nombres . ' ' . $receptor->apellidos
-    : 'CLIENTE VARIOS' }}
-            </td>
-        </tr>
-        <tr>
-            <td class="bold">Documento:</td>
-            <td class="right">{{ $receptor->documento ?? '00000000' }}</td>
-        </tr>
-        @if (!empty($receptor->telefono))
+    <div class="section-title">
+        PERSONAS AUTORIZADAS PARA EL RECOJO
+    </div>
+
+    <div class="box">
+
+        <div class="bold center" style="margin-bottom:5px;">
+            RECEPTOR PRINCIPAL
+        </div>
+
+        <table class="table-data">
+
             <tr>
-                <td class="bold">Teléfono:</td>
-                <td class="right">{{ $receptor->telefono }}</td>
+                <td width="28%"><strong>Nombre</strong></td>
+                <td>
+                    {{ $receptor ? $receptor->nombres . ' ' . $receptor->apellidos : '---' }}
+                </td>
             </tr>
+
+            <tr>
+                <td><strong>DNI</strong></td>
+                <td>{{ $receptor->documento ?? '---' }}</td>
+            </tr>
+
+            @if ($receptor?->telefono)
+                <tr>
+                    <td><strong>Celular</strong></td>
+                    <td>{{ $receptor->telefono }}</td>
+                </tr>
+            @endif
+
+        </table>
+
+        @if ($encomienda->receptor2)
+            <div class="line"></div>
+
+            <div class="bold center" style="margin-bottom:5px;">
+                RESPONSABLE ADICIONAL
+            </div>
+
+            <table class="table-data">
+
+                <tr>
+                    <td width="28%"><strong>Nombre</strong></td>
+                    <td>
+                        {{ $encomienda->receptor2->nombres }}
+                        {{ $encomienda->receptor2->apellidos }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td><strong>DNI</strong></td>
+                    <td>{{ $encomienda->receptor2->documento }}</td>
+                </tr>
+
+            </table>
+
+            <div class="alerta">
+                ✓ ESTA PERSONA TAMBIÉN ESTÁ AUTORIZADA PARA RECOGER LA ENCOMIENDA
+            </div>
+        @else
+            <div class="alerta">
+                SOLO EL RECEPTOR PRINCIPAL PUEDE RECOGER LA ENCOMIENDA
+            </div>
         @endif
-    </table>
+
+    </div>
 
     <div class="line"></div>
 
     {{-- ── DATOS DE LA ENCOMIENDA ── --}}
-    <div class="bold" style="font-size: 10px; margin-bottom: 2px;">DATOS DE LA ENCOMIENDA</div>
-    <table class="table-data w-100">
-        <tr>
-            <td class="bold" style="width: 35%;">Origen:</td>
-            <td class="right">
-                {{ $encomienda->origenPueblito?->descripcion ?? '—' }}
-            </td>
-        </tr>
-        <tr>
-            <td class="bold">Destino:</td>
-            <td class="right">
-                {{ $encomienda->destinoPueblito?->descripcion ?? '—' }}
-            </td>
-        </tr>
-        <tr>
-            <td class="bold">F. Registro:</td>
-            <td class="right">
-                {{ $encomienda->created_at->format('d/m/Y') }}
-            </td>
-        </tr>
-        {{-- Si la encomienda va en una salida programada, muestra la hora --}}
-        @if (!empty($encomienda->salida?->hora_salida ?? $encomienda->salida?->hora))
+    {{-- ================= ENCOMIENDA ================= --}}
+
+    <div class="section-title">
+        DATOS DE LA ENCOMIENDA
+    </div>
+
+    <div class="box">
+
+        <table class="table-data">
+
             <tr>
-                <td class="bold">H. Salida:</td>
-                <td class="right">
-                    {{ $encomienda->salida->hora_salida ?? $encomienda->salida->hora }}
+                <td width="32%"><strong>Origen</strong></td>
+                <td>
+                    {{ $encomienda->origenPueblito?->descripcion ?? '---' }}
                 </td>
             </tr>
-        @endif
-        @if (!empty($encomienda->codigo))
+
             <tr>
-                <td class="bold">Cód. Envío:</td>
-                <td class="right bold">{{ $encomienda->codigo }}</td>
+                <td><strong>Destino</strong></td>
+                <td>
+                    {{ $encomienda->destinoPueblito?->descripcion ?? '---' }}
+                </td>
             </tr>
-        @endif
-    </table>
+
+            <tr>
+                <td><strong>Registro</strong></td>
+                <td>
+                    {{ optional($encomienda->created_at)->format('d/m/Y H:i') }}
+                </td>
+            </tr>
+
+            @php
+                $salida = $encomienda->salidaActual?->salida;
+            @endphp
+
+            @if ($salida)
+                <tr>
+                    <td><strong>Ruta</strong></td>
+                    <td>
+                        {{ $salida->horario?->ruta?->nombre ?? '---' }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td><strong>Salida</strong></td>
+                    <td>
+                        {{ \Carbon\Carbon::parse($salida->fecha_salida)->format('d/m/Y') }}
+                        -
+                        {{ \Carbon\Carbon::parse($salida->horario->hora_salida)->format('h:i A') }}
+                    </td>
+                </tr>
+            @endif
+
+            @if ($encomienda->codigo)
+                <tr>
+                    <td><strong>Código</strong></td>
+                    <td class="bold">
+                        {{ $encomienda->codigo }}
+                    </td>
+                </tr>
+            @endif
+
+        </table>
+
+    </div>
+
+    @if ($encomienda->observaciones)
+        <div class="box" style="margin-top:6px;">
+
+            <div class="bold center" style="margin-bottom:4px;">
+                OBSERVACIONES
+            </div>
+
+            {{ $encomienda->observaciones }}
+
+        </div>
+    @endif
 
     <div class="line"></div>
 
     {{-- ── ÍTEMS ── --}}
-    <table class="table-items w-100">
-        <thead>
-            <tr>
-                <th class="left" style="width: 60%;">Descripción</th>
-                <th class="center" style="width: 15%;">Peso</th>
-                <th class="right" style="width: 25%;">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($encomienda->detalles as $detalle)
-                <tr>
-                    <td class="left">
-                        {{ $detalle->tipo_encomienda?->descripcion ?? '-' }}
-                        @if ($detalle->descripcion)
-                            <br><span style="font-size: 10px;">{{ $detalle->descripcion }}</span>
-                        @endif
-                    </td>
-                    <td class="center">
-                        {{ $detalle->peso ? number_format($detalle->peso, 1) . ' kg' : '—' }}
-                    </td>
-                    <td class="right">S/ {{ number_format($detalle->costo, 2) }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
+    {{-- ================= DETALLE ================= --}}
 
-    <div class="line"></div>
-
-    @php
-        $monto_total = $encomienda->detalles->sum('costo');
-    @endphp
-    <table class="table-data w-100">
-        <tr>
-            <td class="bold">Op. Gravada:</td>
-            <td class="right">S/ {{ number_format($opGravada, 2) }}</td>
-        </tr>
-        <tr>
-            <td class="bold">IGV ({{ $empresa->igv ?? 18 }}.%):</td>
-            <td class="right">S/ {{ number_format($venta->impuesto, 2) }}</td>
-        </tr>
-        <tr>
-            <td class="bold">Descuentos:</td>
-            <td class="right">- S/ {{ number_format($montoDescuento, 2) }}</td>
-        </tr>
-        <tr style="font-size: 12px; border-top: 1px dashed #000;">
-            <td class="bold" style="padding-top: 3px;">TOTAL A PAGAR:</td>
-            <td class="right bold" style="padding-top: 3px;">
-                S/ {{ number_format($monto_total, 2) }}
-            </td>
-        </tr>
-    </table>
-
-    <div class="line"></div>
-
-    {{-- ── PAGOS (opcional, si cargas la relación) ── --}}
-    @if ($venta->pagos?->isNotEmpty())
-        <div class="bold" style="font-size: 10px; margin-bottom: 2px;">FORMA DE PAGO</div>
-        <table class="table-data w-100">
-            @foreach ($venta->pagos as $pago)
-                <tr>
-                    <td class="bold">{{ $pago->metodoPago->descripcion ?? 'Efectivo' }}:</td>
-                    <td class="right">S/ {{ number_format($pago->monto, 2) }}</td>
-                </tr>
-            @endforeach
-        </table>
-        <div class="line"></div>
-    @endif
-
-    {{-- ── PIE ── --}}
-    @if ($venta->observacion)
-        <div style="font-size: 10px; font-style: italic; margin-bottom: 5px; word-break: break-word;">
-            <strong>Obs:</strong> {{ $venta->observacion }}
-        </div>
-        <div class="line"></div>
-    @endif
-
-    <div class="center" style="font-size: 10px;">
-        <div>¡Gracias por su compra!</div>
-        <div>Representación impresa de la</div>
-        <div class="bold">
-            {{ $venta->tipoDocumentoFactura->descripcion ?? 'Nota de venta' }} Electrónica.
-        </div>
+    <div class="section-title">
+        DETALLE DE LA ENCOMIENDA
     </div>
 
-    <button class="btn-print" onclick="window.print()">Imprimir Ticket</button>
+    <table class="table-items">
+
+        <thead>
+            <tr>
+                <th class="left" width="55%">Descripción</th>
+                <th class="center" width="18%">Peso</th>
+                <th class="right" width="27%">Importe</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach ($encomienda->detalles as $detalle)
+                <tr>
+
+                    <td>
+
+                        <strong>
+                            {{ $detalle->tipo_encomienda?->descripcion ?? 'ENCOMIENDA' }}
+                        </strong>
+
+                        @if ($detalle->descripcion)
+                            <div style="font-size:10px;margin-top:2px;">
+                                {{ $detalle->descripcion }}
+                            </div>
+                        @endif
+
+                    </td>
+
+                    <td class="center">
+
+                        @if ($detalle->peso)
+                            {{ number_format($detalle->peso, 1) }} kg
+                        @else
+                            —
+                        @endif
+
+                    </td>
+
+                    <td class="right bold">
+                        S/ {{ number_format($detalle->costo, 2) }}
+                    </td>
+
+                </tr>
+            @endforeach
+
+        </tbody>
+
+    </table>
+
+    <div class="line"></div>
+
+    <table class="table-data">
+
+        <tr>
+            <td><strong>Op. Gravada</strong></td>
+            <td class="right">
+                S/ {{ number_format($opGravada, 2) }}
+            </td>
+        </tr>
+
+        <tr>
+            <td><strong>IGV ({{ $empresa->igv ?? 18 }}%)</strong></td>
+            <td class="right">
+                S/ {{ number_format($venta->impuesto, 2) }}
+            </td>
+        </tr>
+
+        @if ($montoDescuento > 0)
+            <tr>
+                <td><strong>Descuento</strong></td>
+                <td class="right">
+                    - S/ {{ number_format($montoDescuento, 2) }}
+                </td>
+            </tr>
+        @endif
+
+    </table>
+
+    <div class="total-box">
+
+        <div class="center total-label">
+            TOTAL PAGADO
+        </div>
+
+        <div class="center total">
+            S/ {{ number_format($monto_total, 2) }}
+        </div>
+
+    </div>
+
+    {{-- ── PAGOS (opcional, si cargas la relación) ── --}}
+    {{-- ================= FORMA DE PAGO ================= --}}
+
+    @if ($venta->pagos?->isNotEmpty())
+
+        <div class="section-title">
+            FORMA DE PAGO
+        </div>
+
+        <table class="table-data">
+
+            @foreach ($venta->pagos as $pago)
+                <tr>
+
+                    <td width="65%">
+                        {{ $pago->metodoPago->descripcion ?? 'Efectivo' }}
+
+                        @if ($pago->billetera_digital)
+                            <br>
+                            <small>{{ $pago->billetera_digital->descripcion }}</small>
+                        @endif
+
+                    </td>
+
+                    <td class="right bold">
+                        S/ {{ number_format($pago->monto, 2) }}
+                    </td>
+
+                </tr>
+            @endforeach
+
+        </table>
+
+        <div class="line"></div>
+
+    @endif
+
+
+    {{-- ================= OBSERVACIONES ================= --}}
+
+    @if ($venta->observacion)
+        <div class="box">
+
+            <div class="bold center" style="margin-bottom:4px;">
+                OBSERVACIONES
+            </div>
+
+            <div style="word-break: break-word;">
+                {{ $venta->observacion }}
+            </div>
+
+        </div>
+    @endif
+
+
+    {{-- ================= IMPORTANTE ================= --}}
+
+    <div class="alerta">
+
+        PRESENTE ESTE COMPROBANTE
+        AL MOMENTO DE RECOGER
+        LA ENCOMIENDA.
+
+    </div>
+
+
+    @if ($encomienda->receptor2)
+        <div class="box">
+
+            <div class="bold center">
+                PERSONAS AUTORIZADAS
+            </div>
+
+            <br>
+
+            <strong>1.</strong>
+            {{ $receptor?->nombre_completo }}
+
+            <br>
+
+            DNI:
+            {{ $receptor?->documento }}
+
+            <br><br>
+
+            <strong>2.</strong>
+            {{ $encomienda->receptor2->nombre_completo }}
+
+            <br>
+
+            DNI:
+            {{ $encomienda->receptor2->documento }}
+
+        </div>
+    @endif
+
+
+    <div class="line"></div>
+
+
+    {{-- ================= PIE ================= --}}
+
+    <div class="footer">
+
+        <div class="bold" style="font-size:11px;">
+            ¡GRACIAS POR SU PREFERENCIA!
+        </div>
+
+        <br>
+
+        <div>
+            Conserve este comprobante.
+        </div>
+
+        <div>
+            Será solicitado para el retiro
+            de la encomienda.
+        </div>
+
+        <br>
+
+        <div>
+            {{ $venta->tipoDocumentoFactura->descripcion ?? 'Nota de Venta' }}
+            Electrónica
+        </div>
+
+        <div>
+            {{ $venta->serie }}-{{ $venta->numero }}
+        </div>
+
+    </div>
+
+    <button class="btn-print" onclick="window.print()">
+        IMPRIMIR
+    </button>
 
 </body>
 

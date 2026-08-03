@@ -246,6 +246,7 @@ class EncomiendaController extends Controller
                     <i class="link-icon" data-lucide="printer"></i>
                 </button>
                 
+                
             ';
             })
             ->rawColumns(['checkbox', 'estado', 'acciones'])
@@ -292,6 +293,12 @@ class EncomiendaController extends Controller
             ->addColumn('dni_receptor', function ($row) {
                 return $row->receptor->documento ?? '-';
             })
+            ->addColumn('receptor2', function ($row) {
+                return $row->receptor2->nombre_completo ?? '-';
+            })
+            ->addColumn('dni_receptor2', function ($row) {
+                return $row->receptor2->documento ?? '-';
+            })
             ->addColumn('origen', function ($row) {
                 return $row->origenPueblito->descripcion ?? '-';
             })
@@ -299,7 +306,30 @@ class EncomiendaController extends Controller
                 return $row->destinoPueblito->descripcion ?? '-';
             })
             ->addColumn('salida', function ($row) {
-                return $row->salidaActual->salida->fecha_salida ?? '-';
+                $salida = $row->salidaActual?->salida;
+
+                if (!$salida) {
+                    return '<span class="text-muted">Sin salida</span>';
+                }
+
+                $ruta = $salida->horario?->ruta?->nombre ?? 'Sin ruta';
+                $fecha = $salida->fecha_salida
+                    ? Carbon::parse($salida->fecha_salida)->format('d/m/Y')
+                    : '-';
+                $hora = $salida->horario?->hora_salida
+                    ? Carbon::parse($salida->horario->hora_salida)->format('h:i A')
+                    : '-';
+
+                return '
+        <div>
+            <div class="fw-semibold text-primary">' . e($ruta) . '</div>
+            <small class="text-muted">
+                <i data-lucide="calendar" class="icon-sm"></i> ' . $fecha . '
+                &nbsp;|&nbsp;
+                <i data-lucide="clock" class="icon-sm"></i> ' . $hora . '
+            </small>
+        </div>
+    ';
             })
             // ->editColumn('estado', function ($row) {
             //     if ($row->estado === 'E') {
@@ -317,23 +347,45 @@ class EncomiendaController extends Controller
             //     return '<span class="badge bg-secondary">' . e($row->estado) . '</span>';
             // })
             ->editColumn('estado', function ($row) {
-                if ($row->estado === 'ET') {
-                    return '<span class="badge bg-success">ENTREGADO</span>';
-                }
 
-                if ($row->estado === 'PE') {
-                    return '<span class="badge bg-warning">POR ENTREGAR</span>';
-                }
+                return match ($row->estado) {
 
-                if ($row->estado === 'EC') {
-                    return '<span class="badge bg-info text-dark">EN CAMINO</span>';
-                }
+                    'ET' => '
+            <span class="badge rounded-pill bg-success-subtle text-dark border border-success-subtle px-3 py-2">
+                <i data-lucide="check-circle" class="me-1"></i> Entregado
+            </span>
+        ',
 
-                if ($row->estado === 'SA') {
-                    return '<span class="badge bg-danger">SIN ASIGNAR</span>';
-                }
+                    'PE' => '
+            <span class="badge rounded-pill bg-warning-subtle text-dark border border-warning-subtle px-3 py-2">
+                <i data-lucide="package-check" class="me-1"></i> Por entregar
+            </span>
+        ',
 
-                return '<span class="badge bg-secondary">' . e($row->estado) . '</span>';
+                    'EC' => '
+            <span class="badge rounded-pill bg-info-subtle text-dark border border-info-subtle px-3 py-2">
+                <i data-lucide="truck" class="me-1"></i> En camino
+            </span>
+        ',
+
+                    'X' => '
+            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+                <i data-lucide="x-circle" class="me-1"></i> Anulado
+            </span>
+        ',
+
+                    'SA' => '
+            <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-2">
+                <i data-lucide="clock-3" class="me-1"></i> Sin asignar
+            </span>
+        ',
+
+                    default => '
+            <span class="badge rounded-pill bg-light text-dark px-3 py-2">
+                ' . e($row->estado) . '
+            </span>
+        ',
+                };
             })
             ->addColumn('acciones', function ($row) {
                 $botones = '<button type="button" class="btn btn-xs btn-secondary imprimir" data-id="' . $row->id . '"><i class="link-icon" data-lucide="printer"></i></button> </button> ';
@@ -348,7 +400,7 @@ class EncomiendaController extends Controller
 
                 return $botones;
             })
-            ->rawColumns(['checkbox', 'estado', 'acciones'])
+            ->rawColumns(['checkbox', 'estado', 'acciones', 'salida'])
             ->make(true);
     }
 
