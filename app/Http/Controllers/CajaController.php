@@ -283,7 +283,7 @@ class CajaController extends Controller
                 ]);
 
                 $tabla = view('caja.partials.tabla_movimientos', compact('caja'))->render();
-                return response()->json([
+                 return response()->json([
                     'success' => true,
                     'message' => 'Ingreso registrado correctamente.',
                     'tabla'   => $tabla,
@@ -291,6 +291,12 @@ class CajaController extends Controller
                     'total_ingresos'    => $caja->total_ingresos,
                     'total_salidas'     => $caja->total_salidas,
                     'efectivo_esperado' => $caja->efectivo_esperado,
+
+                    'total_yape'         => $caja->saldo_yape,
+                    'total_plin'         => $caja->saldo_plin,
+                    'total_transferencia' => $caja->saldo_transferencia,
+                    'total_tarjeta'      => $caja->saldo_tarjeta,
+                    'total_efectivo'     => $caja->saldo_efectivo,
                 ]);
             }
 
@@ -381,7 +387,7 @@ class CajaController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Ingreso registrado correctamente.',
+                    'message' => 'Egreso registrado correctamente.',
                     'tabla'   => $tabla,
 
                     'total_ingresos'    => $caja->total_ingresos,

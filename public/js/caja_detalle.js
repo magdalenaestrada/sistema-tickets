@@ -139,8 +139,8 @@ document.addEventListener("DOMContentLoaded", function () {
             totalEgresos.textContent = `S/ ${parseFloat(data.total_salidas).toFixed(2)}`;
         }
 
-        if (efectivoEsperado && data.efectivo_esperado !== undefined) {
-            efectivoEsperado.textContent = `S/ ${parseFloat(data.efectivo_esperado).toFixed(2)}`;
+        if (efectivoEsperado && data.total_efectivo !== undefined) {
+            efectivoEsperado.textContent = `S/ ${parseFloat(data.total_efectivo).toFixed(2)}`;
         }
 
         if (typeof lucide !== "undefined") {

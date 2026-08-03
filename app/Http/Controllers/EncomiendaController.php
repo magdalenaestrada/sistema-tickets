@@ -100,6 +100,8 @@ class EncomiendaController extends Controller
                     ->with('warning', 'Debe abrir una caja antes de crear una encomienda.');
             }
         }
+        $pueblitoOrigenSeleccionado = Pueblito::where('sucursal_id', $user->sucursal_id)
+            ->value('id');
 
         $metodos_pago = MetodoPago::all();
         $sucursales = Sucursal::with('distrito')
@@ -134,7 +136,8 @@ class EncomiendaController extends Controller
                 'metodos_pago',
                 'billeteras_digitales',
                 'cajas_emision',
-                'seriesSucursal'
+                'seriesSucursal',
+                'pueblitoOrigenSeleccionado'
             ),
             [
                 'esSobreequipaje' => false,

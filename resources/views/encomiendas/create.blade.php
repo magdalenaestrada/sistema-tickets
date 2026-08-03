@@ -374,7 +374,8 @@
                             <select id="origen" class="form-select" name="origen_pueblito_id" required>
                                 <option value="">Seleccione una parada</option>
                                 @foreach ($pueblitos as $pueblito)
-                                    <option value="{{ $pueblito->id }}">
+                                    <option value="{{ $pueblito->id }}"
+                                        {{ old('pueblito_origen_id', $pueblitoOrigenSeleccionado) == $pueblito->id ? 'selected' : '' }}>
                                         {{ $pueblito->descripcion }}
                                     </option>
                                 @endforeach
