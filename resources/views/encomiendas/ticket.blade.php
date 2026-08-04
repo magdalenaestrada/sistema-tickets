@@ -117,8 +117,6 @@
         }
 
         .table-items thead th {
-            border-top: 1px dashed #000;
-            border-bottom: 1px dashed #000;
             padding: 4px 0;
             font-size: 11px;
         }
@@ -129,10 +127,9 @@
         }
 
         .box {
-            border: 1px dashed #000;
-            padding: 5px;
-            margin-top: 5px;
-            margin-bottom: 5px;
+            padding: 3px;
+            margin-top: 3px;
+            margin-bottom: 3px;
         }
 
         .alerta {
@@ -285,11 +282,6 @@
 
     </table>
 
-    <div class="line"></div>
-
-
-    {{-- ================= PERSONAS ================= --}}
-
     <div class="section-title">
         REMITENTE
     </div>
@@ -314,8 +306,6 @@
             </tr>
         @endif
     </table>
-
-    <div class="line"></div>
 
     <div class="section-title">
         PERSONAS AUTORIZADAS PARA EL RECOJO
@@ -373,22 +363,9 @@
                 </tr>
 
             </table>
-
-            <div class="alerta">
-                ✓ ESTA PERSONA TAMBIÉN ESTÁ AUTORIZADA PARA RECOGER LA ENCOMIENDA
-            </div>
-        @else
-            <div class="alerta">
-                SOLO EL RECEPTOR PRINCIPAL PUEDE RECOGER LA ENCOMIENDA
-            </div>
         @endif
 
     </div>
-
-    <div class="line"></div>
-
-    {{-- ── DATOS DE LA ENCOMIENDA ── --}}
-    {{-- ================= ENCOMIENDA ================= --}}
 
     <div class="section-title">
         DATOS DE LA ENCOMIENDA
@@ -439,6 +416,16 @@
                         {{ \Carbon\Carbon::parse($salida->horario->hora_salida)->format('h:i A') }}
                     </td>
                 </tr>
+
+                @if ($encomienda->observaciones)
+                    <tr>
+                        <td><strong>Observaciones</strong></td>
+                        <td>
+                            {{ $encomienda->observaciones }}
+                        </td>
+                    </tr>
+                @endif
+
             @endif
 
             @if ($encomienda->codigo)
@@ -454,22 +441,7 @@
 
     </div>
 
-    @if ($encomienda->observaciones)
-        <div class="box" style="margin-top:6px;">
 
-            <div class="bold center" style="margin-bottom:4px;">
-                OBSERVACIONES
-            </div>
-
-            {{ $encomienda->observaciones }}
-
-        </div>
-    @endif
-
-    <div class="line"></div>
-
-    {{-- ── ÍTEMS ── --}}
-    {{-- ================= DETALLE ================= --}}
 
     <div class="section-title">
         DETALLE DE LA ENCOMIENDA
@@ -525,19 +497,20 @@
 
     </table>
 
-    <div class="line"></div>
-
+    <div class="section-title">
+        DETALLE DE PAGOS
+    </div>
     <table class="table-data">
 
         <tr>
-            <td><strong>Op. Gravada</strong></td>
+            <td>Op. Gravada</td>
             <td class="right">
                 S/ {{ number_format($opGravada, 2) }}
             </td>
         </tr>
 
         <tr>
-            <td><strong>IGV ({{ $empresa->igv ?? 18 }}%)</strong></td>
+            <td>IGV ({{ $empresa->igv_encomienda ?? 18 }}%)</td>
             <td class="right">
                 S/ {{ number_format($venta->impuesto, 2) }}
             </td>
@@ -545,29 +518,21 @@
 
         @if ($montoDescuento > 0)
             <tr>
-                <td><strong>Descuento</strong></td>
+                <td>Descuento</td>
                 <td class="right">
                     - S/ {{ number_format($montoDescuento, 2) }}
                 </td>
             </tr>
         @endif
 
+        <tr>
+            <td><strong>Total pagado</strong></td>
+            <td class="right">
+                S/ {{ number_format($encomienda->total, 2) }}
+            </td>
+        </tr>
+
     </table>
-
-    <div class="total-box">
-
-        <div class="center total-label">
-            TOTAL PAGADO
-        </div>
-
-        <div class="center total">
-            S/ {{ number_format($monto_total, 2) }}
-        </div>
-
-    </div>
-
-    {{-- ── PAGOS (opcional, si cargas la relación) ── --}}
-    {{-- ================= FORMA DE PAGO ================= --}}
 
     @if ($venta->pagos?->isNotEmpty())
 
@@ -602,11 +567,9 @@
         <div class="line"></div>
 
     @endif
-
-
-    {{-- ================= OBSERVACIONES ================= --}}
-
-    @if ($venta->observacion)
+    <br>
+    @if ($encomienda->observaciones)
+        <div class="line"></div>
         <div class="box">
 
             <div class="bold center" style="margin-bottom:4px;">
@@ -614,86 +577,18 @@
             </div>
 
             <div style="word-break: break-word;">
-                {{ $venta->observacion }}
+                {{ $encomienda->observaciones }}
             </div>
 
         </div>
+        <div class="line"></div>
     @endif
 
-
-    {{-- ================= IMPORTANTE ================= --}}
-
-    <div class="alerta">
-
-        PRESENTE ESTE COMPROBANTE
-        AL MOMENTO DE RECOGER
-        LA ENCOMIENDA.
-
-    </div>
-
-
-    @if ($encomienda->receptor2)
-        <div class="box">
-
-            <div class="bold center">
-                PERSONAS AUTORIZADAS
-            </div>
-
-            <br>
-
-            <strong>1.</strong>
-            {{ $receptor?->nombre_completo }}
-
-            <br>
-
-            DNI:
-            {{ $receptor?->documento }}
-
-            <br><br>
-
-            <strong>2.</strong>
-            {{ $encomienda->receptor2->nombre_completo }}
-
-            <br>
-
-            DNI:
-            {{ $encomienda->receptor2->documento }}
-
-        </div>
-    @endif
-
-
-    <div class="line"></div>
-
-
-    {{-- ================= PIE ================= --}}
 
     <div class="footer">
 
-        <div class="bold" style="font-size:11px;">
-            ¡GRACIAS POR SU PREFERENCIA!
-        </div>
-
-        <br>
-
-        <div>
-            Conserve este comprobante.
-        </div>
-
-        <div>
-            Será solicitado para el retiro
-            de la encomienda.
-        </div>
-
-        <br>
-
-        <div>
-            {{ $venta->tipoDocumentoFactura->descripcion ?? 'Nota de Venta' }}
-            Electrónica
-        </div>
-
-        <div>
-            {{ $venta->serie }}-{{ $venta->numero }}
+        <div style="font-size:11px;">
+            {{ $empresa->mensaje }}
         </div>
 
     </div>
