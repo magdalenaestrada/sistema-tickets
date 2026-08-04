@@ -715,7 +715,7 @@ class PasajeController extends Controller
                             'destino_pueblito_id' => $request->destino_id,
                         ]);
 
-                        EncomiendaDetalle::create([
+                        $detalle_encomienda = EncomiendaDetalle::create([
                             'encomienda_id' => $encomienda->id,
                             'tipo_encomienda_id' => $sobre['tipo_encomienda_id'],
                             'descripcion'        => $sobre['descripcion'],
@@ -738,8 +738,8 @@ class PasajeController extends Controller
 
                             if ($detalleVenta) {
                                 $detalleVenta->update([
-                                    'referencia_type' => Encomienda::class,
-                                    'referencia_id'   => $encomienda->id,
+                                    'referencia_type' => EncomiendaDetalle::class,
+                                    'referencia_id'   => $detalle_encomienda->id,
                                 ]);
                             }
                         }

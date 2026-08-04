@@ -46,14 +46,19 @@ class EncomiendaService
                 'fecha_creacion' => now(),
             ]);
 
+            $detallesEncomienda = [];
+
             foreach ($request->detalles as $detalle) {
-                EncomiendaDetalle::create([
-                    'encomienda_id' => $encomienda->id,
+
+                $detalleEncomienda = EncomiendaDetalle::create([
+                    'encomienda_id'      => $encomienda->id,
                     'tipo_encomienda_id' => $detalle['tipo_encomienda_id'],
-                    'descripcion' => $detalle['descripcion'],
-                    'peso' => $detalle['peso'],
-                    'costo' => $detalle['costo'],
+                    'descripcion'        => $detalle['descripcion'],
+                    'peso'               => $detalle['peso'],
+                    'costo'              => $detalle['costo'],
                 ]);
+
+                $detallesEncomienda[] = $detalleEncomienda;
             }
 
             $ventaData = null;
@@ -95,15 +100,33 @@ class EncomiendaService
                     'origen_nombre' => $origenNombre,
                     'destino_nombre' => $destinoNombre,
                 ]),
-                Encomienda::class,
-                $encomienda->id
+                EncomiendaDetalle::class,
+                null
 
             );
 
             $venta = $ventaData['venta'];
+
             $encomienda->update([
                 'venta_id' => $venta->id
             ]);
+
+            $ventaDetalles = $venta->detalles()
+                ->where('tipo_servicio_id', 2)
+                ->whereNull('referencia_id')
+                ->get();
+
+            foreach ($detallesEncomienda as $index => $detalleEncomienda) {
+
+                if (isset($ventaDetalles[$index])) {
+
+                    $ventaDetalles[$index]->update([
+                        'referencia_type' => EncomiendaDetalle::class,
+                        'referencia_id'   => $detalleEncomienda->id,
+                    ]);
+                }
+            }
+
             $pagos = $request->pagos ?? [];
 
             $sumaPagos = collect($pagos)->sum(function ($pago) {

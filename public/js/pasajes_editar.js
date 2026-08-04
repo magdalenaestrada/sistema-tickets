@@ -1132,7 +1132,7 @@ $(function () {
 
         const formData = construirPayload("vender");
 
-         const pagos = [];
+        const pagos = [];
 
         if (pagoEfectivo > 0) {
             pagos.push({

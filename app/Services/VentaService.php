@@ -9,6 +9,7 @@ use App\Models\ComunicacionBaja;
 use App\Models\CorrelativoVenta;
 use App\Models\Empresa;
 use App\Models\Encomienda;
+use App\Models\EncomiendaDetalle;
 use App\Models\Pasaje;
 use App\Models\Persona;
 use App\Models\SubtipoMovimientoCaja;
@@ -116,12 +117,12 @@ class VentaService
                         . ($detalle['peso'] ?? 0)
                         . 'kg';
                     $tipoServicioDetalle = 2;
-                    $referenciaType = Encomienda::class;
+                    $referenciaType = EncomiendaDetalle::class;
                     $igv = $empresa->igv_encomienda;
                 } else {
                     $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
                     $tipoServicioDetalle = 3;
-                    $referenciaType = Encomienda::class;
+                    $referenciaType = EncomiendaDetalle::class;
                     $igv = $empresa->igv_encomienda;
                 }
 

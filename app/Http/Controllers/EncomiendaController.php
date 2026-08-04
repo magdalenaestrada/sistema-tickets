@@ -777,6 +777,8 @@ class EncomiendaController extends Controller
                             'correo' => $request->input('receptor.correo'),
                             'direccion' => $request->input('receptor.direccion'),
                             'estado' => 'A',
+                            'fecha_creacion' => now(),
+
                         ]
                     );
                 }
@@ -989,6 +991,7 @@ class EncomiendaController extends Controller
             'venta.pagos.metodoPago',
         ]);
         $venta = $encomienda->venta;
-        return view('encomiendas.ticket', compact('encomienda', 'venta'));
+        $detalle_venta = $venta->detalles::where("referencia_type", "encomienda")->where("referencia_id", $encomienda->id)->first();
+        return view('encomiendas.ticket', compact('encomienda', 'venta', 'detalle_venta'));
     }
 }
