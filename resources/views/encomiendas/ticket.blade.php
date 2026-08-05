@@ -217,8 +217,8 @@
         // Descuento (ajusta el campo según tu modelo)
         $montoDescuento = 0;
 
-        // Op. Gravada
-        $opGravada = $venta->subtotal ?? $venta->total - $venta->impuesto;
+        $opGravada = $venta->detalles->sum('base_igv');
+        $igv = $venta->detalles->sum('igv');
     @endphp
 
     {{-- ── ENCABEZADO ── --}}
@@ -512,7 +512,7 @@
         <tr>
             <td>IGV ({{ $empresa->igv_encomienda ?? 18 }}%)</td>
             <td class="right">
-                S/ {{ number_format($venta->impuesto, 2) }}
+                S/ {{ number_format($igv, 2) }}
             </td>
         </tr>
 

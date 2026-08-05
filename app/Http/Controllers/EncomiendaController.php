@@ -84,6 +84,7 @@ class EncomiendaController extends Controller
         return view('encomiendas.asignadas', compact('sucursales', 'tipos_documentos', 'asignaciones'));
     }
 
+
     public function formulario()
     {
         Carbon::now();
@@ -252,18 +253,26 @@ class EncomiendaController extends Controller
             ->rawColumns(['checkbox', 'estado', 'acciones'])
             ->make(true);
     }
+
     public function datatable_asignadas(Request $request)
     {
         $query = Encomienda::query()
             ->with([
                 'receptor',
+                'receptor2',
                 'emisor',
                 'origenPueblito',
                 'destinoPueblito',
                 'salidaActual'
             ])->when($request->documento, function ($q) use ($request) {
-                $q->whereHas('receptor', function ($sub) use ($request) {
-                    $sub->where('documento', 'like', $request->documento . '%');
+                $q->where(function ($query) use ($request) {
+
+                    $query->whereHas('receptor', function ($sub) use ($request) {
+                        $sub->where('documento', 'like', $request->documento . '%');
+                    })
+                        ->orWhereHas('receptor2', function ($sub) use ($request) {
+                            $sub->where('documento', 'like', $request->documento . '%');
+                        });
                 });
             })
             ->when(
@@ -288,16 +297,36 @@ class EncomiendaController extends Controller
                 return optional($row->created_at)->format('d/m/Y H:i');
             })
             ->addColumn('receptor', function ($row) {
-                return $row->receptor->nombre_completo ?? '-';
-            })
-            ->addColumn('dni_receptor', function ($row) {
-                return $row->receptor->documento ?? '-';
+
+                if (!$row->receptor) {
+                    return '-';
+                }
+
+                return '
+        <div style="line-height:1.2">
+            <div class="fw-semibold">'
+                    . e($row->receptor->nombre_completo) .
+                    '</div>
+            <small class="text-muted">'
+                    . e($row->receptor->documento) .
+                    '</small>
+        </div>';
             })
             ->addColumn('receptor2', function ($row) {
-                return $row->receptor2->nombre_completo ?? '-';
-            })
-            ->addColumn('dni_receptor2', function ($row) {
-                return $row->receptor2->documento ?? '-';
+
+                if (!$row->receptor2) {
+                    return '<span class="text-muted">-</span>';
+                }
+
+                return '
+        <div style="line-height:1.2">
+            <div class="fw-semibold">'
+                    . e($row->receptor2->nombre_completo) .
+                    '</div>
+            <small class="text-muted">'
+                    . e($row->receptor2->documento) .
+                    '</small>
+        </div>';
             })
             ->addColumn('origen', function ($row) {
                 return $row->origenPueblito->descripcion ?? '-';
@@ -400,8 +429,14 @@ class EncomiendaController extends Controller
 
                 return $botones;
             })
-            ->rawColumns(['checkbox', 'estado', 'acciones', 'salida'])
-            ->make(true);
+            ->rawColumns([
+                'checkbox',
+                'receptor',
+                'receptor2',
+                'estado',
+                'acciones',
+                'salida'
+            ])->make(true);
     }
 
     public function entregarMasivo(Request $request)
@@ -991,7 +1026,6 @@ class EncomiendaController extends Controller
             'venta.pagos.metodoPago',
         ]);
         $venta = $encomienda->venta;
-        $detalle_venta = $venta->detalles::where("referencia_type", "encomienda")->where("referencia_id", $encomienda->id)->first();
-        return view('encomiendas.ticket', compact('encomienda', 'venta', 'detalle_venta'));
+        return view('encomiendas.ticket', compact('encomienda', 'venta'));
     }
 }

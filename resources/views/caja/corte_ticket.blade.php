@@ -351,23 +351,23 @@
                 </tr>
                 <tr>
                     <td class="lbl">Yape</td>
-                    <td class="val">S/ {{ number_format($caja->ingresos_yape, 2) }}</td>
+                    <td class="val">S/ {{ number_format($caja->saldo_yape, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="lbl">Plin</td>
-                    <td class="val">S/ {{ number_format($caja->ingresos_plin, 2) }}</td>
+                    <td class="val">S/ {{ number_format($caja->saldo_plin, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="lbl">Transferencia</td>
-                    <td class="val">S/ {{ number_format($caja->ingresos_transferencia, 2) }}</td>
+                    <td class="val">S/ {{ number_format($caja->saldo_transferencia, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="lbl">Tarjeta</td>
-                    <td class="val">S/ {{ number_format($caja->ingresos_tarjeta, 2) }}</td>
+                    <td class="val">S/ {{ number_format($caja->saldo_tarjeta, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="lbl">Efectivo</td>
-                    <td class="val">S/ {{ number_format($caja->ingresos_efectivo, 2) }}</td>
+                    <td class="val">S/ {{ number_format($caja->saldo_efectivo, 2) }}</td>
                 </tr>
                 <tr class="row-total">
                     <td class="lbl">Total ingresos</td>
@@ -386,7 +386,7 @@
                     <td class="val">S/ {{ number_format($caja->efectivo_esperado, 2) }}</td>
                 </tr>
                 <tr class="row-total">
-                    <td class="lbl">Saldo sistema</td>
+                    <td class="lbl">Saldo total</td>
                     <td class="val">S/ {{ number_format($caja->monto_actual, 2) }}</td>
                 </tr>
             </tbody>

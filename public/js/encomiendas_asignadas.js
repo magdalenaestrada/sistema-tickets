@@ -50,12 +50,7 @@ $(function () {
         },
         columns: [
             { data: "checkbox", orderable: false, searchable: false },
-            
-            { data: "dni_receptor", name: "dni_receptor" },
             { data: "receptor", name: "receptor" },
-
-            { data: "dni_receptor2", name: "dni_receptor2" },
-
             { data: "receptor2", name: "receptor2" },
             { data: "destino", name: "destino" },
             

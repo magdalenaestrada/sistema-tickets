@@ -85,9 +85,9 @@
             <div class="col-6 col-md-3">
                 <div class="card border-success shadow-sm h-100">
                     <div class="card-body py-2 px-3">
-                        <h6 class="text-muted d-block mb-1"><strong>Efectivo esperado</strong></h6>
+                        <h6 class="text-muted d-block mb-1"><strong>Total caja</strong></h6>
                         <div id="efectivo_esperado" class="fw-bold text-success">S/
-                            {{ number_format($caja->saldo_efectivo, 2) }}</div>
+                            {{ number_format($caja->monto_actual, 2) }}</div>
                     </div>
                 </div>
             </div>

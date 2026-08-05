@@ -99,8 +99,7 @@ class Caja extends Model
     public function getEfectivoEsperadoAttribute(): float
     {
         return (float) $this->monto_apertura
-            + $this->ingresos_efectivo
-            - $this->egresos_efectivo;
+            + $this->saldo_efectivo;
     }
 
     public function detalles()
