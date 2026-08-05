@@ -287,7 +287,8 @@ class EncomiendaController extends Controller
 
         return datatables()->of($query)
             ->addColumn('checkbox', function ($row) {
-                if ($row->estado === 'P') {
+
+                if ($row->estado !== 'EC') {
                     return '';
                 }
 
