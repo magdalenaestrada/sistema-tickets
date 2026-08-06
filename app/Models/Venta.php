@@ -94,13 +94,18 @@ class Venta extends Model
         return $this->hasMany(Pasaje::class);
     }
 
+    public function encomiendas()
+    {
+        return $this->hasMany(Encomienda::class);
+    }
+
     public function ventaReferencia()
     {
         return $this->belongsTo(Venta::class, 'venta_referencia_id');
     }
 
     public function devoluciones()
-{
-    return $this->hasMany(NotaVentaAnulada::class);
-}
+    {
+        return $this->hasMany(NotaVentaAnulada::class);
+    }
 }

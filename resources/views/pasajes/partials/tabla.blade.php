@@ -4,10 +4,8 @@
             <tr>
                 <th>ID</th>
                 <th>Compr.</th>
-                <th>DNI</th>
                 <th>Pasajero</th>
                 <th>Fecha</th>
-                <th>Hora</th>
                 <th>Origen</th>
                 <th>Destino</th>
                 <th>Asiento</th>
@@ -27,10 +25,29 @@
                             -
                         @endif
                     </td>
-                    <td>{{ $pasaje->persona->documento ?? '-' }}</td>
-                    <td>{{ $pasaje->persona->nombres ?? '' }} {{ $pasaje->persona->apellidos ?? '' }}</td>
-                    <td>{{ optional($pasaje->salida)->fecha_salida?->format('d/m/Y') }}</td>
-                    <td>{{ optional(optional($pasaje->salida)->horario)->hora_formateada ?? '-' }}</td>
+                    <td>
+
+                        <div style="line-height:1.2">
+                            <div class="fw-semibold">
+                                {{ $pasaje->persona->nombre_completo }}
+                                </div>
+                            <small class="text-muted">
+                                {{ $pasaje->persona->documento }}
+                            </small>
+                        </div>
+                    </td>
+                    <td>
+
+                        <div style="line-height:1.2">
+                            <div class="fw-semibold">
+                                {{ optional($pasaje->salida)->fecha_salida?->format('d/m/Y') }}
+                            </div>
+                            <small class="text-muted">
+                                {{ optional(optional($pasaje->salida)->horario)->hora_formateada ?? '-' }}
+                            </small>
+                        </div>
+                    </td>
+
                     <td>{{ $pasaje->origen->descripcion ?? '-' }}</td>
                     <td>{{ $pasaje->destino->descripcion ?? '-' }}</td>
                     <td>{{ $pasaje->asiento_numero }}</td>
@@ -64,7 +81,8 @@
                         <div class="gap-1">
 
                             @if ($pasaje->estado == 'R')
-                                <a href="{{ route('pasajes.editar', $pasaje->id) }}" class="btn btn-xs btn-success btn-editar-pasaje">
+                                <a href="{{ route('pasajes.editar', $pasaje->id) }}"
+                                    class="btn btn-xs btn-success btn-editar-pasaje">
                                     <i data-lucide="receipt"></i>
                                 </a>
 
