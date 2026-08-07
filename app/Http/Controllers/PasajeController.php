@@ -1475,36 +1475,54 @@ class PasajeController extends Controller
         return view('pasajes.ticket', compact('pasaje'));
     }
 
-    public function ticketsVenta(Venta $venta)
+    private function cargarVentaParaTicket(Venta $venta): Venta
     {
-        $venta->load([
+        return $venta->load([
+            // Cabecera / emisor
             'caja.sucursal.empresa',
+            'sucursal.empresa',      // por si Venta tiene el shortcut directo, como usa el blade actual
+            'persona',
+            'usuario.persona',
+            'tipoDocumentoFactura',
+            'detalles',
+            'pagos.metodoPago',
+            'pagos.billeteraDigital',
+
+            // Pasajes
             'pasajes.persona',
             'pasajes.usuario.persona',
             'pasajes.origen',
             'pasajes.destino',
-            'pagos.metodoPago',
+            'pasajes.salida',
+            'pasajes.descuento',
+            'pasajes.sobreEquipajes.encomienda.detalles',
+
+            // Encomiendas
+            'encomiendas.emisor',
+            'encomiendas.receptor',
+            'encomiendas.receptor2',
+            'encomiendas.origenPueblito',
+            'encomiendas.destinoPueblito',
+            'encomiendas.detalles.tipo_encomienda',
+            'encomiendas.salidaActual.salida.horario.ruta',
         ]);
+    }
+
+    public function ticketsVenta(Venta $venta)
+    {
+        $venta = $this->cargarVentaParaTicket($venta);
 
         return view('caja.ticket', compact('venta'));
     }
 
     public function ticketVentaPdf(Venta $venta)
     {
-        $venta->load([
-            'caja.sucursal.empresa',
-            'pasajes.persona',
-            'pasajes.usuario.persona',
-            'pasajes.origen',
-            'pasajes.destino',
-            'pagos.metodoPago',
-        ]);
+        $venta = $this->cargarVentaParaTicket($venta);
 
         $pdf = Pdf::loadView('caja.ticket', [
             'venta' => $venta,
             'esPdf' => true,
-        ])
-            ->setPaper([0, 0, 226.77, 1500], 'portrait');
+        ])->setPaper([0, 0, 226.77, 1500], 'portrait');
 
         $nombreArchivo = "ticket-{$venta->serie}-{$venta->numero}.pdf";
 

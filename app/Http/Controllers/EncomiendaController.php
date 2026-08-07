@@ -38,6 +38,8 @@ class EncomiendaController extends Controller
 {
     public function index_no_asignadas()
     {
+        $user = Auth::user();
+
         $sucursales = Sucursal::where('estado', 'A')
             ->select('id', 'nombre_comercial')
             ->orderBy('nombre_comercial')
@@ -47,20 +49,22 @@ class EncomiendaController extends Controller
 
         $asignaciones = AsignarHorario::with('horario')->get();
 
-        $user = Auth::user();
-
         $tipos_documentos = TipoDocumentoPersona::all();
 
+        $pueblitoId = Pueblito::where('sucursal_id', $user->sucursal_id)
+            ->value('id');
+
         $salidas = Salida::with([
-            'horario.ruta.puntos.sucursal'
+            'horario.ruta.puntos.sucursal',
+            'horario.ruta.puntos.pueblito',
         ])
             ->whereIn('estado', ['en_ruta'])
             ->whereDate('fecha_salida', '>=', Carbon::today()->subDay())
+            ->whereHas('horario.ruta.puntos', function ($q) use ($pueblitoId) {
+                $q->where('pueblito_id', $pueblitoId);
+            })
             ->orderBy('fecha_salida')
-            ->get() // 👈 Traemos los datos de la BD primero
-            ->filter(fn($s) => $s->horario?->ruta) // 👈 Ahora sí filter() funciona sobre la colección
-            ->values();
-
+            ->get();
 
         return view('encomiendas.index', compact(
             'sucursales',
@@ -252,6 +256,47 @@ class EncomiendaController extends Controller
                 $q->where('destino_pueblito_id', $request->destino_id);
             })
             ->orderByDesc('id');
+        $user = Auth::user();
+
+        $data = Encomienda::with([
+            'emisor:id,documento,nombres,apellidos',
+            'receptor:id,documento,nombres,apellidos',
+            'origenPueblito:id,descripcion',
+            'destinoPueblito:id,descripcion',
+        ])
+            ->where('estado', 'SA')
+            ->where('sobre_equipaje', false);
+
+        if (!$user->hasRole('Administrador')) {
+
+            $pueblitoId = Pueblito::where('sucursal_id', $user->sucursal_id)
+                ->value('id');
+
+            $data->where('origen_pueblito_id', $pueblitoId);
+        }
+
+        $data
+            ->when($request->filled('documento'), function ($q) use ($request) {
+                $doc = trim($request->documento);
+
+                $q->where(function ($sub) use ($doc) {
+                    $sub->whereHas('emisor', function ($p) use ($doc) {
+                        $p->where('documento', 'like', "%{$doc}%");
+                    })->orWhereHas('receptor', function ($p) use ($doc) {
+                        $p->where('documento', 'like', "%{$doc}%");
+                    });
+                });
+            })
+            ->when($request->filled('fecha'), function ($q) use ($request) {
+                $q->whereDate('fecha_creacion', $request->fecha);
+            })
+            ->when($request->filled('origen_id'), function ($q) use ($request) {
+                $q->where('origen_pueblito_id', $request->origen_id);
+            })
+            ->when($request->filled('destino_id'), function ($q) use ($request) {
+                $q->where('destino_pueblito_id', $request->destino_id);
+            })
+            ->orderByDesc('id');
 
         return DataTables::of($data)
             ->addColumn('checkbox', function ($e) {
@@ -334,6 +379,8 @@ class EncomiendaController extends Controller
 
     public function datatable_asignadas(Request $request)
     {
+        $user = Auth::user();
+
         $query = Encomienda::query()
             ->with([
                 'receptor',
@@ -342,7 +389,18 @@ class EncomiendaController extends Controller
                 'origenPueblito',
                 'destinoPueblito',
                 'salidaActual'
-            ])->when($request->documento, function ($q) use ($request) {
+            ]);
+
+        if (!$user->hasRole('Administrador')) {
+
+            $pueblitoId = Pueblito::where('sucursal_id', $user->sucursal_id)
+                ->value('id');
+
+            $query->where('destino_pueblito_id', $pueblitoId);
+        }
+        
+        $query
+            ->when($request->documento, function ($q) use ($request) {
                 $q->where(function ($query) use ($request) {
 
                     $query->whereHas('receptor', function ($sub) use ($request) {
@@ -353,15 +411,12 @@ class EncomiendaController extends Controller
                         });
                 });
             })
-            ->when(
-                $request->origen_id,
-                fn($q) => $q->where('origen_pueblito_id', $request->origen_id)
-            )
+            ->when($request->origen_id, fn($q) => $q->where('origen_pueblito_id', $request->origen_id))
             ->whereNotIn('estado', ['SA'])
-            ->where("sobre_equipaje", false)
+            ->where('sobre_equipaje', false)
             ->when($request->destino_id, fn($q) => $q->where('destino_id', $request->destino_id))
             ->when($request->salida_id, fn($q) => $q->where('salida_id', $request->salida_id))
-            ->orderBy("fecha_creacion", "desc");
+            ->orderBy('fecha_creacion', 'desc');
 
         return datatables()->of($query)
             ->addColumn('checkbox', function ($row) {
@@ -976,13 +1031,28 @@ class EncomiendaController extends Controller
             'destino_id' => 'nullable|exists:pueblitos,id',
         ]);
 
+        $user = Auth::user();
+
         $salidas = Salida::with([
             'horario.ruta.puntos.sucursal',
+            'horario.ruta.puntos.pueblito',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
             ->whereIn('estado', ['en_ruta', 'programado'])
-            ->whereDate('fecha_salida', $request->fecha_salida)
+            ->whereDate('fecha_salida', $request->fecha_salida);
+
+        if (!$user->hasRole('Administrador')) {
+
+            $pueblitoId = Pueblito::where('sucursal_id', $user->sucursal_id)
+                ->value('id');
+
+            $salidas->whereHas('horario.ruta.puntos', function ($q) use ($pueblitoId) {
+                $q->where('pueblito_id', $pueblitoId);
+            });
+        }
+
+        $salidas = $salidas
             ->orderBy('fecha_salida')
             ->get();
 
@@ -1000,8 +1070,6 @@ class EncomiendaController extends Controller
                 $ruta = $salida->horario?->ruta;
                 $puntos = $ruta?->puntos?->sortBy('orden')->values();
 
-                $origenNombre = $puntos?->first()?->pueblito?->descripcion ?? 'Origen';
-                $destinoNombre = $puntos?->last()?->pueblito?->descripcion ?? 'Destino';
                 $hora = $salida->horario?->hora_formateada ?? '-';
 
                 $estado = match ($salida->estado) {
@@ -1012,7 +1080,6 @@ class EncomiendaController extends Controller
                     'reprogramado' => 'REPROGRAMADO',
                     default        => $salida->estado,
                 };
-
 
                 return [
                     'value' => $salida->id,
