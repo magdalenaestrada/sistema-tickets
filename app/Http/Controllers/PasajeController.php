@@ -39,7 +39,6 @@ class PasajeController extends Controller
     public function index()
     {
         $hoy = now('America/Lima')->format('Y-m-d');
-
         $ayer = now('America/Lima')->subDay()->format('Y-m-d');
 
         $esAdmin = auth()->user()->hasRole('Administrador');
@@ -50,6 +49,17 @@ class PasajeController extends Controller
             ->exists();
 
         $ruta = route('caja.index');
+
+        $esCoracora = false;
+
+        if (!$esAdmin) {
+            $sucursalUsuario = auth()->user()->sucursal_id;
+
+            $esCoracora = Pueblito::where('sucursal_id', $sucursalUsuario)
+                ->where('descripcion', 'CORA CORA')
+                ->exists();
+        }
+
         $salidas = Salida::with([
             'horario.ruta.puntos.pueblito',
             'horario.ruta.puntos.sucursal',
@@ -58,19 +68,20 @@ class PasajeController extends Controller
         ])
             ->join('horarios', 'horarios.id', '=', 'salidas.horario_id')
             ->whereIn('salidas.estado', ['en_ruta', 'programado'])
+            ->whereDate('salidas.fecha_salida', '>=', $hoy)
             ->orderBy('salidas.fecha_salida')
             ->orderBy('horarios.hora_salida')
             ->select('salidas.*')
             ->get()
-            ->map(function ($salida) {
+            ->map(function ($salida) use ($esAdmin, $esCoracora) {
                 $ruta = $salida->horario->ruta;
                 $puntos = $ruta->puntos->sortBy('orden')->values();
                 $hora = Carbon::parse($salida->fecha_salida);
                 $hora->setTimeFromTimeString($salida->horario->hora_salida);
                 $puntosConHora = [];
+                $ultimoIndex = $puntos->count() - 1;
 
                 foreach ($puntos as $i => $p) {
-
                     if ($i > 0) {
                         $tramo = $ruta->tramos()
                             ->where('punto_origen_id', $puntos[$i - 1]->id)
@@ -82,6 +93,23 @@ class PasajeController extends Controller
                         }
                     }
 
+                    $esPuntoCoracora = $p->pueblito?->descripcion === 'CORA CORA';
+
+                    // ¿Este punto puede usarse como ORIGEN para vender, según el usuario?
+                    // - No puede ser origen si es el último punto de la ruta (no hay destino después).
+                    // - Admin: cualquier punto (menos el último).
+                    // - Usuario de Cora Cora: solo puntos que sean Cora Cora.
+                    // - Otros usuarios: cualquier punto que NO sea Cora Cora.
+                    if ($i === $ultimoIndex) {
+                        $origenPermitido = false;
+                    } elseif ($esAdmin) {
+                        $origenPermitido = true;
+                    } elseif ($esCoracora) {
+                        $origenPermitido = $esPuntoCoracora;
+                    } else {
+                        $origenPermitido = !$esPuntoCoracora;
+                    }
+
                     $puntosConHora[] = [
                         'pueblito_id' => (string) $p->pueblito_id,
                         'orden' => (int) $p->orden,
@@ -89,11 +117,16 @@ class PasajeController extends Controller
                             ($p->pueblito?->descripcion ?? '') .
                                 ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')
                         ),
-                        'hora' => $hora->format('H:i')
+                        'hora' => $hora->format('H:i'),
+                        'origen_permitido' => $origenPermitido, // 👈 nuevo flag para el frontend
                     ];
                 }
 
                 $salida->puntos_json = json_encode($puntosConHora, JSON_UNESCAPED_UNICODE);
+
+                // La salida se puede vender si al menos un punto es válido como origen
+                $salida->tiene_origen_permitido = collect($puntosConHora)
+                    ->contains(fn($p) => $p['origen_permitido'] === true);
 
                 $origen = $puntos->first();
                 $destino = $puntos->last();
@@ -107,45 +140,36 @@ class PasajeController extends Controller
                     ($destino?->pueblito?->descripcion ?? '') .
                         ($destino?->sucursal ? ' - ' . $destino->sucursal->nombre_comercial : '')
                 );
-                $ruta = $salida->horario->ruta;
 
                 $puntosOrdenados = $ruta->puntos->sortBy('orden')->values();
-
                 $inicio = $puntosOrdenados->first()?->pueblito?->descripcion;
                 $fin    = $puntosOrdenados->last()?->pueblito?->descripcion;
 
-                $salida->ruta_completa = $inicio && $fin
-                    ? "{$inicio} → {$fin}"
-                    : '-';
+                $salida->ruta_completa = $inicio && $fin ? "{$inicio} → {$fin}" : '-';
+
                 $origenId = $puntos->first()?->pueblito_id;
                 $destinoId = $puntos->last()?->pueblito_id;
                 $asientosMap = $salida->asientosDisponibles($origenId, $destinoId);
                 $salida->capacidad_bus = collect($asientosMap)->filter(fn($estado) => $estado === 'libre')->count();
 
                 return $salida;
-            });
+            })
+            // Solo mostrar salidas donde el usuario tenga al menos un punto válido como origen
+            ->filter(fn($salida) => $salida->tiene_origen_permitido)
+            ->values();
 
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
-        if ($esAdmin) {
 
+        if ($esAdmin) {
             $pueblitosOrigen = Pueblito::orderBy('descripcion')->get();
         } else {
-
-            $sucursalUsuario = auth()->user()->sucursal_id;
-
-            $esCoracora = Pueblito::where('sucursal_id', $sucursalUsuario)
-                ->where('descripcion', 'CORA CORA')
-                ->exists();
-
             if ($esCoracora) {
-
-                $pueblitosOrigen = Pueblito::where('sucursal_id', $sucursalUsuario)
+                $pueblitosOrigen = Pueblito::where('sucursal_id', auth()->user()->sucursal_id)
                     ->orderBy('descripcion')
                     ->get();
             } else {
-
                 $pueblitosOrigen = Pueblito::where('descripcion', '!=', 'CORA CORA')
                     ->orderBy('descripcion')
                     ->get();
@@ -154,7 +178,6 @@ class PasajeController extends Controller
 
         return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitosOrigen', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
     }
-
     public function listarPasajes(Request $request)
     {
         $query = Pasaje::query()
