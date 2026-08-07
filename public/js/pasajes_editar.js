@@ -258,6 +258,7 @@ $(function () {
     });
 
     function cargarSobreEquipajesGuardados() {
+        console.log(sobreEquipajes);
         if (!sobreEquipajes || !sobreEquipajes.length) return;
 
         const index = 0;
@@ -266,15 +267,17 @@ $(function () {
         $(`#card_sobre_equipaje_${index}`).show();
 
         sobreEquipajes.forEach((item) => {
-            agregarFilaSobreEquipaje(index);
+            item.encomienda.detalles.forEach((detalle) => {
+                agregarFilaSobreEquipaje(index);
 
-            const fila = $(`#tablaSobreEquipaje_${index} tbody tr`).last();
-            fila.find(".sobre-tipo").val(item.tipo_encomienda_id);
-            fila.find(".sobre-desc").val(item.descripcion);
-            fila.find(".sobre-peso").val(item.peso);
-            fila.find(".sobre-costo").val(item.costo);
+                const fila = $(`#tablaSobreEquipaje_${index} tbody tr`).last();
+
+                fila.find(".sobre-tipo").val(detalle.tipo_encomienda_id);
+                fila.find(".sobre-desc").val(detalle.descripcion);
+                fila.find(".sobre-peso").val(detalle.peso);
+                fila.find(".sobre-costo").val(detalle.costo);
+            });
         });
-
         recalcularTotalSobre($(`#tablaSobreEquipaje_${index}`));
     }
 

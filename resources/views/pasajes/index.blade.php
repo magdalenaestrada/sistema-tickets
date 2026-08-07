@@ -293,12 +293,12 @@
 
         <div class="card-body">
             <div class="filtros-bar">
-               
+
                 <div class="filtro-group">
                     <label>Origen</label>
                     <select id="filtro_origen" class="form-select">
                         <option value="">Seleccionar origen</option>
-                        @foreach ($pueblitos as $pueblito)
+                        @foreach ($pueblitosOrigen as $pueblito)
                             <option value="{{ $pueblito->id }}">
                                 {{ $pueblito->descripcion }}
                             </option>
@@ -317,11 +317,11 @@
                     </select>
                 </div>
 
-                 <div class="filtro-group">
+                <div class="filtro-group">
                     <label>Fecha</label>
                     <input type="date" id="filtro_fecha" min="{{ $ayer }}" class="form-control">
                 </div>
-                
+
                 <button id="btn-limpiar-filtros" class="btn btn-outline-secondary">
                     Limpiar
                 </button>

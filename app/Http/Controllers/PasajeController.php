@@ -43,6 +43,7 @@ class PasajeController extends Controller
         $ayer = now('America/Lima')->subDay()->format('Y-m-d');
 
         $esAdmin = auth()->user()->hasRole('Administrador');
+        $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
 
         $cajaAbierta = Caja::where('usuario_id', auth()->id())
             ->where('estado', 'A')
@@ -127,9 +128,31 @@ class PasajeController extends Controller
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
-        $pueblitos = Pueblito::orderBy('descripcion')
-            ->get();
-        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
+        if ($esAdmin) {
+
+            $pueblitosOrigen = Pueblito::orderBy('descripcion')->get();
+        } else {
+
+            $sucursalUsuario = auth()->user()->sucursal_id;
+
+            $esCoracora = Pueblito::where('sucursal_id', $sucursalUsuario)
+                ->where('descripcion', 'CORA CORA')
+                ->exists();
+
+            if ($esCoracora) {
+
+                $pueblitosOrigen = Pueblito::where('sucursal_id', $sucursalUsuario)
+                    ->orderBy('descripcion')
+                    ->get();
+            } else {
+
+                $pueblitosOrigen = Pueblito::where('descripcion', '!=', 'CORA CORA')
+                    ->orderBy('descripcion')
+                    ->get();
+            }
+        }
+
+        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitosOrigen', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
     }
 
     public function listarPasajes(Request $request)
@@ -834,7 +857,7 @@ class PasajeController extends Controller
         $pasaje->load([
             'persona',
             'salida.horario',
-            'sobreEquipajes',
+            'sobreEquipajes.encomienda.detalles',
             'descuento',
         ]);
 
@@ -1275,7 +1298,7 @@ class PasajeController extends Controller
                     return (float) $pago['total'];
                 });
 
-               
+
                 if (round($sumaPagos, 2) !== round($totalVenta, 2)) {
                     throw ValidationException::withMessages([
                         'pagos' => 'La suma de pagos no coincide con el total a cobrar.',
@@ -1306,14 +1329,33 @@ class PasajeController extends Controller
             ]);
 
             $pasaje->sobreEquipajes()->delete();
+            $total = collect($detallesEquipaje)->sum('costo');
 
             foreach ($detallesEquipaje as $sobre) {
+
+                $encomienda = Encomienda::create([
+                    'emisor_persona_id' => $persona->id,
+                    'usuario_id' => Auth::id(),
+                    'pago_instantaneo' => false,
+                    'total' => $total,
+                    'estado' => 'P',
+                    'sobre_equipaje' => true,
+                    'fecha_creacion' => now(),
+                    'origen_pueblito_id' => $pasaje->origen_pueblito_id,
+                    'destino_pueblito_id' => $pasaje->destino_pueblito_id,
+                ]);
+
+                EncomiendaDetalle::create([
+                    'encomienda_id' => $encomienda->id,
+                    'tipo_encomienda_id' => $sobre['tipo_encomienda_id'],
+                    'descripcion' => $sobre['descripcion'],
+                    'peso' => $sobre['peso'],
+                    'costo' => $sobre['costo'],
+                ]);
+
                 PasajeSobreEquipaje::create([
                     'pasaje_id' => $pasaje->id,
-                    'tipo_encomienda_id' => $sobre['tipo_encomienda_id'] ?? null,
-                    'descripcion' => $sobre['descripcion'] ?? null,
-                    'peso' => $sobre['peso'] ?? 0,
-                    'costo' => $sobre['costo'] ?? 0,
+                    'encomienda_id' => $encomienda->id,
                 ]);
             }
 

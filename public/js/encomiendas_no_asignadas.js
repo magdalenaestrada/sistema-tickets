@@ -26,6 +26,8 @@ $(function () {
     const tabla = $("#tablaEncomiendas").DataTable({
         processing: true,
         serverSide: true,
+        autoWidth: false,
+        responsive: true,
         dom: "rtip",
         ajax: {
             url: route("encomiendas.datatable-no-asignadas"),
@@ -50,11 +52,7 @@ $(function () {
             },
             { data: "fecha" },
             { data: "emisor" },
-            { data: "dni_emisor" },
             { data: "receptor" },
-            { data: "dni_receptor" },
-            { data: "origen" },
-            { data: "destino" },
             { data: "total" },
             { data: "estado", orderable: false, searchable: false },
             { data: "acciones", orderable: false, searchable: false },

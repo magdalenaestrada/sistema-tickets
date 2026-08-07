@@ -83,13 +83,9 @@
                                 <input type="checkbox" id="checkAll">
                             </th>
                             <th>ID</th>
-                            <th>Fecha</th>
+                            <th>Recorrido</th>
                             <th>Emisor</th>
-                            <th>DNI Emisor</th>
                             <th>Receptor</th>
-                            <th>DNI Receptor</th>
-                            <th>Origen</th>
-                            <th>Destino</th>
                             <th>Total</th>
                             <th>Estado</th>
                             <th width="100">Acciones</th>

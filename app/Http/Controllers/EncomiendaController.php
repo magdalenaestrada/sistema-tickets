@@ -116,7 +116,33 @@ class EncomiendaController extends Controller
             ->where('estado', 'A')
             ->get();
 
+        $esAdmin = auth()->user()->hasRole('Administrador');
         $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
+
+
+        if ($esAdmin) {
+
+            $pueblitosOrigen = Pueblito::orderBy('descripcion')->get();
+        } else {
+
+            $sucursalUsuario = auth()->user()->sucursal_id;
+
+            $esCoracora = Pueblito::where('sucursal_id', $sucursalUsuario)
+                ->where('descripcion', 'CORA CORA')
+                ->exists();
+
+            if ($esCoracora) {
+
+                $pueblitosOrigen = Pueblito::where('sucursal_id', $sucursalUsuario)
+                    ->orderBy('descripcion')
+                    ->get();
+            } else {
+
+                $pueblitosOrigen = Pueblito::where('descripcion', '!=', 'CORA CORA')
+                    ->orderBy('descripcion')
+                    ->get();
+            }
+        }
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
@@ -138,7 +164,8 @@ class EncomiendaController extends Controller
                 'billeteras_digitales',
                 'cajas_emision',
                 'seriesSucursal',
-                'pueblitoOrigenSeleccionado'
+                'pueblitoOrigenSeleccionado',
+                'pueblitosOrigen'
             ),
             [
                 'esSobreequipaje' => false,
@@ -230,14 +257,65 @@ class EncomiendaController extends Controller
             ->addColumn('checkbox', function ($e) {
                 return '<input type="checkbox" class="check-encomienda" value="' . $e->id . '">';
             })
-            ->addColumn('fecha', function ($e) {
-                return optional($e->fecha_creacion)?->format('d/m/Y H:i');
+
+
+
+            ->addColumn('fecha', function ($row) {
+
+                if (!$row->fecha_creacion) {
+                    return '-';
+                }
+
+                return '
+        <div style="line-height:1.2">
+            <div class="fw-semibold">'
+                    .                e($row->origenPueblito?->descripcion ?? '-') . ' → ' . ($row->destinoPueblito?->descripcion ?? '-')
+                    .                    '</div>
+            <small class="text-muted">'
+
+                    . e(optional($row->fecha_creacion)?->format('d/m/Y')) .
+                    '</small>
+        </div>';
             })
-            ->addColumn('emisor', fn($e) => trim(($e->emisor?->nombres ?? '') . ' ' . ($e->emisor?->apellidos ?? '')))
-            ->addColumn('dni_emisor', fn($e) => $e->emisor?->documento ?? '-')
-            ->addColumn('receptor', fn($e) => trim(($e->receptor?->nombres ?? '') . ' ' . ($e->receptor?->apellidos ?? '')))
+
+            ->addColumn('emisor', function ($row) {
+
+                if (!$row->emisor) {
+                    return '-';
+                }
+
+                return '
+        <div style="line-height:1.2">
+            <div class="fw-semibold">'
+                    . e($row->emisor->nombre_completo) .
+                    '</div>
+            <small class="text-muted">'
+                    . e($row->emisor->documento) .
+                    '</small>
+        </div>';
+            })
+            ->addColumn('receptor', function ($row) {
+
+                if (!$row->receptor) {
+                    return '-';
+                }
+
+                return '
+        <div style="line-height:1.2">
+            <div class="fw-semibold">'
+                    . e($row->receptor->nombre_completo) .
+                    '</div>
+            <small class="text-muted">'
+                    . e($row->receptor->documento) .
+                    '</small>
+        </div>';
+            })
+
             ->addColumn('dni_receptor', fn($e) => $e->receptor?->documento ?? '-')
-            ->addColumn('origen', fn($e) => $e->origenPueblito?->descripcion ?? '-')
+            ->addColumn(
+                'recorrido',
+                fn($e) => ($e->origenPueblito?->descripcion ?? '-') . ' → ' . ($e->destinoPueblito?->descripcion ?? '-')
+            )
             ->addColumn('destino', fn($e) => $e->destinoPueblito?->descripcion ?? '-')
             ->addColumn('total', fn($e) => 'S/ ' . number_format($e->total ?? 0, 2))
             ->addColumn('estado', fn() => '<span class="badge bg-danger">Sin asignar</span>')
@@ -250,7 +328,7 @@ class EncomiendaController extends Controller
                 
             ';
             })
-            ->rawColumns(['checkbox', 'estado', 'acciones'])
+            ->rawColumns(['checkbox', 'estado', 'acciones', 'receptor', 'emisor', 'receptor2', 'fecha'])
             ->make(true);
     }
 
@@ -436,7 +514,7 @@ class EncomiendaController extends Controller
                 'receptor2',
                 'estado',
                 'acciones',
-                'salida'
+                'salida',
             ])->make(true);
     }
 
