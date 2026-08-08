@@ -215,6 +215,9 @@
 
     {{-- Sobreequipaje sigue igual, también usando 'ticket-pasajero' como clase de salto --}}
     @foreach ($pasaje->sobreEquipajes ?? collect() as $seItem)
+        @php
+            $enc = $seItem->encomienda;
+        @endphp
         <div class="ticket-pasajero">
 
             <div class="center" style="margin-bottom: 4px;">
@@ -232,7 +235,7 @@
             <div class="line"></div>
 
             <div class="sobreequipaje-header">
-                SOBREEQUIPAJE {{ $numEtiq }}
+                SOBREEQUIPAJE {{ $enc->codigo ?? '' }}
             </div>
 
             <div class="highlight-box">

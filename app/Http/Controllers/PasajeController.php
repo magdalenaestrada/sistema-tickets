@@ -13,6 +13,7 @@ use App\Models\Caja;
 use App\Models\CajaDetalle;
 use App\Models\Cliente;
 use App\Models\Descuento;
+use App\Models\Empresa;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\PasajeSobreEquipaje;
@@ -1032,6 +1033,7 @@ class PasajeController extends Controller
 
     public function vender(Request $request)
     {
+        dd($request->all());
 
         $user = Auth::user();
         $request->validate([
@@ -1534,8 +1536,9 @@ class PasajeController extends Controller
     public function ticketsVenta(Venta $venta)
     {
         $venta = $this->cargarVentaParaTicket($venta);
-
-        return view('caja.ticket', compact('venta'));
+        $empresa = Empresa::first();
+        $cliente = $venta->persona;
+        return view('caja.ticket', compact('venta', 'empresa', 'cliente'));
     }
 
     public function ticketVentaPdf(Venta $venta)

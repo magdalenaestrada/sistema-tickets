@@ -62,13 +62,28 @@ class Encomienda extends Model
         return $this->belongsTo(Distrito::class, 'distrito_id');
     }
 
-
     protected static function booted()
     {
+        static::created(function ($registro) {
+            $prefijo = $registro->sobre_equipaje
+                ? 'SB'
+                : 'EC';
+
+            $registro->codigo = $prefijo . str_pad(
+                $registro->id,
+                6,
+                '0',
+                STR_PAD_LEFT
+            );
+
+            $registro->saveQuietly();
+        });
+
         static::deleting(function ($encomienda) {
             $encomienda->detalles()->delete();
         });
     }
+
     public function sucursal_origen()
     {
         return $this->belongsTo(Sucursal::class, 'origen', 'id');

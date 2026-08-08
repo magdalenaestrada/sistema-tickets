@@ -46,20 +46,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
 
-                // flujo normal con filtros
                 if (tipoViajeId === 2) {
                     manejarViajePorTramo(salidaId, this);
                 } else {
-                    let puntos = [];
-                    try {
-                        puntos = JSON.parse(this.dataset.puntos || "[]");
-                    } catch (e) {}
-                    const primero = puntos[0];
-                    const ultimo = puntos[puntos.length - 1];
                     cargarAsientos(
                         salidaId,
-                        primero?.pueblito_id || null,
-                        ultimo?.pueblito_id || null,
+                        origenSelect.value,
+                        destinoSelect.value,
                     );
                 }
             });
@@ -645,6 +638,174 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         mostrarSalidasPorOrigenDestinoFecha(origen, destino, fecha);
+    }
+
+    function mostrarSalidasPorOrigenFecha(origen, fecha) {
+        const estadoInicial = document.getElementById("estado-inicial");
+        const rows = document.querySelectorAll(".horario-row");
+
+        const selectOrigen = document.getElementById("filtro_origen");
+        const nombreOrigen =
+            selectOrigen.options[selectOrigen.selectedIndex]?.text?.trim() ||
+            "";
+
+        let visibles = 0;
+
+        rows.forEach((row) => {
+            const rowFecha = row.dataset.fecha || "";
+
+            let puntos = [];
+            try {
+                puntos = JSON.parse(row.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+
+            const puntoOrigen = puntos.find(
+                (p) => String(p.pueblito_id) === String(origen),
+            );
+
+            const matchOrigen = !!puntoOrigen;
+            const matchFecha = rowFecha === fecha;
+
+            const ordenMax = puntos.length
+                ? Math.max(...puntos.map((p) => Number(p.orden)))
+                : null;
+            const esUltimoPunto =
+                puntoOrigen && Number(puntoOrigen.orden) === ordenMax;
+
+            const visible = matchOrigen && matchFecha && !esUltimoPunto;
+
+            const label = row.querySelector(".hr-route-label");
+
+            if (visible) {
+                row.style.display = "flex";
+                visibles++;
+
+                const puntoFinal = puntos[puntos.length - 1];
+                const nombreDestinoReal =
+                    puntoFinal?.nombre ||
+                    puntoFinal?.pueblito_nombre ||
+                    row.dataset.destinoNombre ||
+                    "";
+
+                if (label) {
+                    label.textContent = `${nombreOrigen} → ${nombreDestinoReal}`;
+                }
+
+                const horaEl = row.querySelector(".hr-date-time");
+                if (horaEl && puntoOrigen?.hora) {
+                    horaEl.textContent = puntoOrigen.hora;
+                }
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        actualizarContador(visibles);
+
+        if (estadoInicial) {
+            estadoInicial.style.display = visibles === 0 ? "block" : "none";
+            if (visibles === 0) {
+                estadoInicial.innerHTML = `No hay salidas el ${fecha} desde ${nombreOrigen || "ese origen"}`;
+            }
+        }
+
+        if (visibles === 0) {
+            svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
+        }
+    }
+
+    function mostrarSalidasPorOrigenDestinoFecha(origen, destino, fecha) {
+        const estadoInicial = document.getElementById("estado-inicial");
+        const rows = document.querySelectorAll(".horario-row");
+
+        const selectOrigen = document.getElementById("filtro_origen");
+        const selectDestino = document.getElementById("filtro_destino");
+        const nombreOrigen =
+            selectOrigen.options[selectOrigen.selectedIndex]?.text?.trim() ||
+            "";
+        const nombreDestino =
+            selectDestino.options[selectDestino.selectedIndex]?.text?.trim() ||
+            "";
+
+        let visibles = 0;
+
+        rows.forEach((row) => {
+            const rowFecha = row.dataset.fecha || "";
+            const tipoViajeId = parseInt(row.dataset.tipoViajeId || "0");
+
+            let puntos = [];
+            try {
+                puntos = JSON.parse(row.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+
+            const puntoOrigen = puntos.find(
+                (p) => String(p.pueblito_id) === String(origen),
+            );
+            const puntoDestino = puntos.find(
+                (p) => String(p.pueblito_id) === String(destino),
+            );
+
+            const matchFecha = rowFecha === fecha;
+            const matchOrigen = !!puntoOrigen;
+            const matchDestino = !!puntoDestino;
+
+            let matchOrden = false;
+            if (puntoOrigen && puntoDestino) {
+                matchOrden =
+                    Number(puntoOrigen.orden) < Number(puntoDestino.orden);
+            }
+
+            let visible =
+                matchFecha && matchOrigen && matchDestino && matchOrden;
+
+            if (visible && tipoViajeId !== 2) {
+                const primero = puntos[0];
+                const ultimo = puntos[puntos.length - 1];
+
+                const coincideExacto =
+                    primero &&
+                    ultimo &&
+                    String(primero.pueblito_id) === String(origen) &&
+                    String(ultimo.pueblito_id) === String(destino);
+
+                visible = coincideExacto;
+            }
+
+            const label = row.querySelector(".hr-route-label");
+
+            if (visible) {
+                row.style.display = "flex";
+                visibles++;
+
+                if (label) {
+                    label.textContent = `${nombreOrigen} → ${nombreDestino}`;
+                }
+
+                const horaEl = row.querySelector(".hr-date-time");
+                if (horaEl && puntoOrigen?.hora) {
+                    horaEl.textContent = puntoOrigen.hora;
+                }
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        actualizarContador(visibles);
+
+        if (estadoInicial) {
+            estadoInicial.style.display = visibles === 0 ? "block" : "none";
+            if (visibles === 0) {
+                estadoInicial.innerHTML = `No hay salidas el ${fecha} de ${nombreOrigen} a ${nombreDestino}`;
+            }
+        }
+
+        if (visibles === 0) {
+            svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
+        }
     }
 
     function actualizarContador(total) {
