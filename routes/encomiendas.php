@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\EncomiendaConsultaController;
 use App\Http\Controllers\EncomiendaController;
 
 Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(function () {
 
     Route::middleware('can:gestionar encomiendas')->group(function () {
         Route::post('/guardar', [EncomiendaController::class, 'guardar'])->name('guardar');
+        Route::get('/consulta', [EncomiendaConsultaController::class, 'index'])->name('consulta.index');
+    Route::get('/consulta/buscar', [EncomiendaConsultaController::class, 'buscar'])->name('consulta.buscar');
         Route::get('/mostrar/{id}', [EncomiendaController::class, 'mostrar'])->name('mostrar');
         Route::get('/crear-encomienda', [EncomiendaController::class, 'formulario'])->name('crear-encomienda');
         Route::get('/{encomienda}/ticket', [EncomiendaController::class, 'ticket'])->name('ticket');
@@ -20,6 +23,7 @@ Route::middleware(['auth'])->prefix('encomiendas')->name('encomiendas.')->group(
         Route::post('/entregar-masivo', [EncomiendaController::class, 'entregarMasivo'])->name('entregar-masivo');
         Route::post('/{id}/entregar', [EncomiendaController::class, 'entregar'])->name('entregar');
         Route::post('/{id}/agencia', [EncomiendaController::class, 'enAgencia'])->name('agencia');
+
         Route::get(
     '{encomienda}/ticket-entrega',
     [EncomiendaController::class, 'ticketEntrega']

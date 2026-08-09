@@ -51,18 +51,14 @@ class PasajeController extends Controller
 
         $ruta = route('caja.index');
 
-        $esCoracora = false;
+        $sucursalUsuario = null;
 
         if (!$esAdmin) {
-            $sucursalUsuario = auth()->user()->sucursal_id;
-
-            $esCoracora = Pueblito::where('sucursal_id', $sucursalUsuario)
-                ->where('descripcion', 'CORA CORA')
-                ->exists();
+            $sucursalUsuario = Sucursal::find(auth()->user()->sucursal_id);
         }
 
         $salidas = Salida::with([
-            'horario.ruta.puntos.pueblito',
+            'horario.ruta.puntos.pueblito.sucursal',
             'horario.ruta.puntos.sucursal',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
@@ -74,7 +70,7 @@ class PasajeController extends Controller
             ->orderBy('horarios.hora_salida')
             ->select('salidas.*')
             ->get()
-            ->map(function ($salida) use ($esAdmin, $esCoracora) {
+            ->map(function ($salida) use ($esAdmin, $sucursalUsuario) {
                 $ruta = $salida->horario->ruta;
                 $puntos = $ruta->puntos->sortBy('orden')->values();
                 $hora = Carbon::parse($salida->fecha_salida);
@@ -94,21 +90,21 @@ class PasajeController extends Controller
                         }
                     }
 
-                    $esPuntoCoracora = $p->pueblito?->descripcion === 'CORA CORA';
-
-                    // ¿Este punto puede usarse como ORIGEN para vender, según el usuario?
-                    // - No puede ser origen si es el último punto de la ruta (no hay destino después).
-                    // - Admin: cualquier punto (menos el último).
-                    // - Usuario de Cora Cora: solo puntos que sean Cora Cora.
-                    // - Otros usuarios: cualquier punto que NO sea Cora Cora.
                     if ($i === $ultimoIndex) {
+
                         $origenPermitido = false;
                     } elseif ($esAdmin) {
+
                         $origenPermitido = true;
-                    } elseif ($esCoracora) {
-                        $origenPermitido = $esPuntoCoracora;
+                    } elseif (!$sucursalUsuario?->venta_otras) {
+
+                        $origenPermitido =
+                            $p->pueblito?->sucursal_id === $sucursalUsuario->id;
                     } else {
-                        $origenPermitido = !$esPuntoCoracora;
+
+                        $origenPermitido =
+                            $p->pueblito?->sucursal_id === $sucursalUsuario->id
+                            || $p->pueblito?->sucursal?->venta_otras == 1;
                     }
 
                     $puntosConHora[] = [
@@ -164,17 +160,31 @@ class PasajeController extends Controller
             ->get();
 
         if ($esAdmin) {
-            $pueblitosOrigen = Pueblito::orderBy('descripcion')->get();
+
+            $pueblitosOrigen = Pueblito::with('sucursal')
+                ->orderBy('descripcion')
+                ->get();
+        } elseif (!$sucursalUsuario?->venta_otras) {
+
+            $pueblitosOrigen = Pueblito::where(
+                'sucursal_id',
+                $sucursalUsuario->id
+            )
+                ->with('sucursal')
+                ->orderBy('descripcion')
+                ->get();
         } else {
-            if ($esCoracora) {
-                $pueblitosOrigen = Pueblito::where('sucursal_id', auth()->user()->sucursal_id)
-                    ->orderBy('descripcion')
-                    ->get();
-            } else {
-                $pueblitosOrigen = Pueblito::where('descripcion', '!=', 'CORA CORA')
-                    ->orderBy('descripcion')
-                    ->get();
-            }
+
+            $pueblitosOrigen = Pueblito::where(function ($query) use ($sucursalUsuario) {
+
+                $query->where('sucursal_id', $sucursalUsuario->id)
+                    ->orWhereHas('sucursal', function ($q) {
+                        $q->where('venta_otras', 1);
+                    });
+            })
+                ->with('sucursal')
+                ->orderBy('descripcion')
+                ->get();
         }
 
         return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitosOrigen', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
@@ -1033,7 +1043,6 @@ class PasajeController extends Controller
 
     public function vender(Request $request)
     {
-        dd($request->all());
 
         $user = Auth::user();
         $request->validate([

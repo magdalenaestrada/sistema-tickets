@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedSeats = [];
     let currentSalidaId = null;
     let selectedReservedPasajeId = null;
+    let currentOrigenId = null; // NUEVO
+    let currentDestinoId = null; // NUEVO
 
     actualizarContador(-1);
     attachRowEvents();
@@ -56,37 +58,70 @@ document.addEventListener("DOMContentLoaded", function () {
                     );
                 }
             });
+            row.addEventListener("click", function () {
+                const salidaId = this.dataset.salidaId;
+                const tipoViajeId = parseInt(this.dataset.tipoViajeId);
+                currentSalidaId = salidaId;
+
+                document
+                    .querySelectorAll(".horario-row")
+                    .forEach((r) => r.classList.remove("active"));
+                this.classList.add("active");
+                resetSeleccion();
+
+                const origenSelect = document.getElementById("filtro_origen");
+                const destinoSelect = document.getElementById("filtro_destino");
+
+                let puntos = [];
+                try {
+                    puntos = JSON.parse(this.dataset.puntos || "[]");
+                } catch (e) {}
+
+                const primero = puntos[0];
+                const ultimo = puntos[puntos.length - 1];
+
+                let origenId = origenSelect.value;
+                let destinoId = destinoSelect.value;
+
+                // Ninguno seleccionado -> usar ruta completa
+                if (!origenId && !destinoId) {
+                    if (primero && ultimo) {
+                        cargarAsientos(
+                            salidaId,
+                            primero.pueblito_id,
+                            ultimo.pueblito_id,
+                        );
+                    }
+                    return;
+                }
+
+                if (origenId && !destinoId) {
+                    destinoId = ultimo?.pueblito_id;
+                }
+
+                if (!origenId && destinoId) {
+                    origenId = primero?.pueblito_id;
+                }
+
+                if (tipoViajeId === 2) {
+                    manejarViajePorTramo(salidaId, this, origenId, destinoId);
+                    console.log(origenId, destinoId);
+                } else {
+                    cargarAsientos(salidaId, origenId, destinoId);
+                }
+            });
         });
     }
 
-    function manejarViajePorTramo(salidaId, row) {
-        const origenId = document.getElementById("filtro_origen").value;
-        const destinoId = document.getElementById("filtro_destino").value;
-
+    function manejarViajePorTramo(salidaId, row, origenId, destinoId) {
         if (!origenId || !destinoId) {
-            let puntos = [];
-            try {
-                puntos = JSON.parse(row?.dataset.puntos || "[]");
-            } catch (e) {
-                puntos = [];
-            }
-
-            const primero = puntos[0];
-            const ultimo = puntos[puntos.length - 1];
-
-            if (!primero || !ultimo) {
-                svgContainer.innerHTML = `
-                <div class="no-results">
-                    Selecciona origen y destino para ver asientos
-                </div>
-            `;
-                return;
-            }
-
-            cargarAsientos(salidaId, primero.pueblito_id, ultimo.pueblito_id);
+            svgContainer.innerHTML = `
+            <div class="no-results">
+                Selecciona origen y destino para ver asientos
+            </div>
+        `;
             return;
         }
-
         cargarAsientos(salidaId, origenId, destinoId);
     }
 
@@ -115,15 +150,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function cargarAsientos(salidaId, origenId, destinoId) {
         if (!salidaId) return;
-
+        currentOrigenId = origenId;
+        currentDestinoId = destinoId;
         svgContainer.innerHTML = `
             <div style="text-align:center;padding:30px;">
                 <div class="spinner-border spinner-border-sm text-primary"></div>
             </div>
         `;
-
         let url = route("pasajes.asientos", { salida: salidaId });
-
         if (origenId && destinoId) {
             url += `?origen_id=${origenId}&destino_id=${destinoId}`;
         }
@@ -383,24 +417,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!selectedSeats.length || !currentSalidaId) return;
 
         const seats = selectedSeats.sort((a, b) => a - b).join(",");
+
         let origenId = document.getElementById("filtro_origen").value;
         let destinoId = document.getElementById("filtro_destino").value;
 
-        if (!origenId || !destinoId) {
-            const rowActiva = document.querySelector(".horario-row.active");
-            if (rowActiva) {
-                let puntos = [];
-                try {
-                    puntos = JSON.parse(rowActiva.dataset.puntos || "[]");
-                } catch (e) {}
-                const primero = puntos[0];
-                const ultimo = puntos[puntos.length - 1];
-                origenId = primero?.pueblito_id || null;
-                destinoId = ultimo?.pueblito_id || null;
-            }
-        }
-
-        if (!origenId || !destinoId) {
+        if (!currentOrigenId || !currentDestinoId) {
             Swal.fire(
                 "Atención",
                 "Selecciona origen y destino antes de vender.",
@@ -412,8 +433,8 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = route("pasajes.vender", {
             salida: currentSalidaId,
             asientos: seats,
-            origen_id: origenId,
-            destino_id: destinoId,
+            origen_id: currentOrigenId,
+            destino_id: currentDestinoId,
         });
     });
 

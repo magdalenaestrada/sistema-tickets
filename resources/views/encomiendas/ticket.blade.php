@@ -374,7 +374,12 @@
     <div class="box">
 
         <table class="table-data">
-
+            <tr>
+                <td width="32%"><strong>Código</strong></td>
+                <td>
+                    {{ $encomienda->codigo ?? '---' }}
+                </td>
+            </tr>
             <tr>
                 <td width="32%"><strong>Origen</strong></td>
                 <td>

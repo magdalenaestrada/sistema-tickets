@@ -96,7 +96,12 @@
                     <div class="collapse {{ $encomiendasOpen ? 'show' : '' }}" id="encomiendas"
                         data-bs-parent="#sidebarNav">
                         <ul class="nav sub-menu">
-
+                            <li class="nav-item">
+                                <a href="{{ route('encomiendas.consulta.index') }}"
+                                    class="nav-link {{ request()->routeIs('encomiendas.consulta.index') ? 'active' : '' }}">
+                                    Buscar encomienda
+                                </a>
+                            </li>
                             <li class="nav-item">
                                 <a href="{{ route('encomiendas.crear-encomienda') }}"
                                     class="nav-link {{ request()->routeIs('encomiendas.crear-encomienda') ? 'active' : '' }}">
@@ -163,7 +168,8 @@
                                         class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}">Empleados</a>
                                 </li>
                                 <li class="nav-item"><a href="{{ route('paradas.index') }}"
-                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Ubi. Sucursales</a>
+                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Ubi.
+                                        Sucursales</a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="{{ route('usuarios.index') }}"

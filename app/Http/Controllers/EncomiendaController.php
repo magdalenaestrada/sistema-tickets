@@ -92,7 +92,7 @@ class EncomiendaController extends Controller
     public function formulario()
     {
         Carbon::now();
-        $user = Auth::user();
+        $user = Auth::user()->load('sucursal');
 
         if (!$user->hasRole('Administrador')) {
             $cajaAbierta = Caja::where('usuario_id', $user->id)
@@ -120,29 +120,41 @@ class EncomiendaController extends Controller
             ->where('estado', 'A')
             ->get();
 
-        $esAdmin = auth()->user()->hasRole('Administrador');
         $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
 
+        $esAdmin = $user->hasRole('Administrador');
 
         if ($esAdmin) {
 
-            $pueblitosOrigen = Pueblito::orderBy('descripcion')->get();
+            $pueblitosOrigen = Pueblito::with('sucursal')
+                ->orderBy('descripcion')
+                ->get();
         } else {
 
-            $sucursalUsuario = auth()->user()->sucursal_id;
+            $sucursalUsuario = Sucursal::find($user->sucursal_id);
 
-            $esCoracora = Pueblito::where('sucursal_id', $sucursalUsuario)
-                ->where('descripcion', 'CORA CORA')
-                ->exists();
+            if (!$sucursalUsuario) {
+                $pueblitosOrigen = collect();
+            } elseif (!$sucursalUsuario->venta_otras) {
 
-            if ($esCoracora) {
-
-                $pueblitosOrigen = Pueblito::where('sucursal_id', $sucursalUsuario)
+                $pueblitosOrigen = Pueblito::where(
+                    'sucursal_id',
+                    $user->sucursal_id
+                )
+                    ->with('sucursal')
                     ->orderBy('descripcion')
                     ->get();
             } else {
 
-                $pueblitosOrigen = Pueblito::where('descripcion', '!=', 'CORA CORA')
+                $pueblitosOrigen = Pueblito::where(function ($query) use ($user) {
+
+                    $query->where('sucursal_id', $user->sucursal_id)
+
+                        ->orWhereHas('sucursal', function ($q) {
+                            $q->where('venta_otras', 1);
+                        });
+                })
+                    ->with('sucursal')
                     ->orderBy('descripcion')
                     ->get();
             }
@@ -398,7 +410,7 @@ class EncomiendaController extends Controller
 
             $query->where('destino_pueblito_id', $pueblitoId);
         }
-        
+
         $query
             ->when($request->documento, function ($q) use ($request) {
                 $q->where(function ($query) use ($request) {
