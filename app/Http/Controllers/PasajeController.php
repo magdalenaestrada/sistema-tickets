@@ -98,12 +98,19 @@ class PasajeController extends Controller
                         $origenPermitido = true;
                     } elseif (!$sucursalUsuario?->venta_otras) {
 
+                        // Sucursal que NO puede vender de otros lugares:
+                        // solamente sus propios pueblitos.
                         $origenPermitido =
                             $p->pueblito?->sucursal_id === $sucursalUsuario->id;
                     } else {
 
+                        // Sucursal que SÍ puede vender de otros lugares:
+                        // - sus propios pueblitos
+                        // - pueblitos sin sucursal
+                        // - pueblitos de sucursales que permiten venta_otras
                         $origenPermitido =
                             $p->pueblito?->sucursal_id === $sucursalUsuario->id
+                            || $p->pueblito?->sucursal_id === null
                             || $p->pueblito?->sucursal?->venta_otras == 1;
                     }
 
@@ -121,7 +128,6 @@ class PasajeController extends Controller
 
                 $salida->puntos_json = json_encode($puntosConHora, JSON_UNESCAPED_UNICODE);
 
-                // La salida se puede vender si al menos un punto es válido como origen
                 $salida->tiene_origen_permitido = collect($puntosConHora)
                     ->contains(fn($p) => $p['origen_permitido'] === true);
 
@@ -151,7 +157,6 @@ class PasajeController extends Controller
 
                 return $salida;
             })
-            // Solo mostrar salidas donde el usuario tenga al menos un punto válido como origen
             ->filter(fn($salida) => $salida->tiene_origen_permitido)
             ->values();
 
@@ -178,6 +183,7 @@ class PasajeController extends Controller
             $pueblitosOrigen = Pueblito::where(function ($query) use ($sucursalUsuario) {
 
                 $query->where('sucursal_id', $sucursalUsuario->id)
+                    ->orWhereNull('sucursal_id')
                     ->orWhereHas('sucursal', function ($q) {
                         $q->where('venta_otras', 1);
                     });
