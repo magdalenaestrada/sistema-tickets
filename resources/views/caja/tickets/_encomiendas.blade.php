@@ -223,16 +223,6 @@
                         </tr>
                     @endif
                 @endif
-
-                @if ($encomienda->codigo)
-                    <tr>
-                        <td><strong>Código</strong></td>
-                        <td class="bold">
-                            {{ $encomienda->codigo }}
-                        </td>
-                    </tr>
-                @endif
-
             </table>
 
         </div>
