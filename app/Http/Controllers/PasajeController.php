@@ -57,6 +57,14 @@ class PasajeController extends Controller
             $sucursalUsuario = Sucursal::find(auth()->user()->sucursal_id);
         }
 
+        $pueblitoSucursalId = null;
+
+        if (!$esAdmin && $sucursalUsuario) {
+            $pueblitoSucursalId = Pueblito::where('sucursal_id', $sucursalUsuario->id)
+                ->orderBy('descripcion')
+                ->value('id');
+        }
+
         $salidas = Salida::with([
             'horario.ruta.puntos.pueblito.sucursal',
             'horario.ruta.puntos.sucursal',
@@ -193,8 +201,9 @@ class PasajeController extends Controller
                 ->get();
         }
 
-        return view('pasajes.index', compact('hoy', 'salidas', 'sucursales', 'ayer', 'pueblitosOrigen', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
+        return view('pasajes.index', compact('hoy', 'pueblitoSucursalId', 'salidas', 'sucursales', 'ayer', 'pueblitosOrigen', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
     }
+
     public function listarPasajes(Request $request)
     {
         $query = Pasaje::query()
@@ -1364,6 +1373,7 @@ class PasajeController extends Controller
                 'venta_id' => $venta?->id,
                 'descuento_id' => $descuentoId,
                 'es_promocion' => $esPromocion,
+                'precio_pasaje' => $request->precio_manual,
                 'precio_cobrado' => $precioFinalReal,
                 'estado' => $accion === 'vender' ? 'V' : 'R',
             ]);
@@ -1520,7 +1530,7 @@ class PasajeController extends Controller
         return $venta->load([
             // Cabecera / emisor
             'caja.sucursal.empresa',
-            'sucursal.empresa',      // por si Venta tiene el shortcut directo, como usa el blade actual
+            'sucursal.empresa',
             'persona',
             'usuario.persona',
             'tipoDocumentoFactura',

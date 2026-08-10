@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caja;
 use App\Models\Cargo;
 use App\Models\Departamento;
 use App\Models\Distrito;
@@ -164,6 +165,29 @@ class EmpleadoController extends Controller
                     'fecha_inicio' => $request->fecha_nacimiento,
                     'fecha_fin' => $request->fecha_nacimiento,
                 ]);
+            }
+            if ($request->empleado_id) {
+
+                $userExistente = User::where('persona_id', $persona->id)->first();
+
+                if ($userExistente) {
+
+                    $cajaActiva = Caja::where('usuario_id', $userExistente->id)
+                        ->where('estado', 'A')
+                        ->first();
+
+                    if (
+                        $cajaActiva &&
+                        (int) $cajaActiva->sucursal_id !== (int) $request->sucursal_id
+                    ) {
+                        DB::rollBack();
+
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'No se puede cambiar la sucursal porque el usuario tiene una caja activa.'
+                        ], 422);
+                    }
+                }
             }
 
             $empleado = Empleado::updateOrCreate(

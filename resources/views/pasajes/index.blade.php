@@ -423,6 +423,8 @@
             esAdmin: @json($esAdmin),
             cajaAbierta: @json($cajaAbierta),
             rutaCaja: @json($ruta),
+            pueblitoSucursalId: @json($pueblitoSucursalId ?? null), // NUEVO
+
         };
     </script>
     <script src="{{ asset('js/pasajes.js') }}"></script>

@@ -237,7 +237,7 @@ class SalidaController extends Controller
         $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
-        $datos = $salida->datosManifiesto($sucursalId, true);
+        $datos = $salida->datosManifiesto($sucursalId);
         abort_unless($datos, 404, 'La sucursal no pertenece a la ruta.');
 
         $pasajes = $salida->pasajerosEnTramo($sucursalId);
@@ -333,7 +333,7 @@ class SalidaController extends Controller
     public function manifiestoPasajerosReal(Salida $salida, PdfService $pdfService)
     {
 
-    
+
         $salida->load([
             'horario.ruta.puntos.sucursal',
             'horario.tipo_vehiculo',

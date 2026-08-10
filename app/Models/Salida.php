@@ -217,10 +217,16 @@ class Salida extends Model
 
     public function puntoActual($sucursalId)
     {
-        return $this->horario
+        $puntos = $this->horario
             ->ruta
-            ->puntos
-            ->firstWhere('sucursal_id', $sucursalId);
+            ->puntos()
+            ->with('pueblito')
+            ->orderBy('orden')
+            ->get();
+
+        return $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
     }
 
     public function siguientePunto($sucursalId)
@@ -239,46 +245,68 @@ class Salida extends Model
 
     public function pasajerosEnTramo($sucursalId)
     {
-        $ruta = $this->horario->ruta;
+        $ruta = $this->horario?->ruta;
 
-        $puntos = $ruta->puntos;
+        if (!$ruta) {
+            return collect();
+        }
 
-        $actual = $puntos->firstWhere('sucursal_id', $sucursalId);
+        $puntos = $ruta->puntos()
+            ->with('pueblito')
+            ->orderBy('orden')
+            ->get();
+
+        $actual = $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
 
         if (!$actual) {
             return collect();
         }
 
+        $ordenActual = $actual->orden;
+
         return $this->pasajes
             ->whereIn('estado', ['V', 'F'])
-            ->filter(function ($pasaje) use ($puntos, $actual) {
+            ->filter(function ($pasaje) use ($puntos, $ordenActual) {
 
                 $origen = $puntos->firstWhere(
                     'pueblito_id',
-                    $pasaje->origen_id
+                    $pasaje->origen_pueblito_id
                 );
 
                 $destino = $puntos->firstWhere(
                     'pueblito_id',
-                    $pasaje->destino_id
+                    $pasaje->destino_pueblito_id
                 );
 
                 if (!$origen || !$destino) {
                     return false;
                 }
 
-                return $origen->orden <= $actual->orden
-                    && $destino->orden > $actual->orden;
+                return $origen->orden <= $ordenActual
+                    && $destino->orden > $ordenActual;
             })
             ->sortBy('asiento_numero')
             ->values();
     }
 
-    public function datosManifiesto($sucursalId, bool $origenPrimeraRuta = false)
+    public function datosManifiesto($sucursalId)
     {
-        $puntos = $this->horario->ruta->puntos->sortBy('orden')->values();
+        $ruta = $this->horario?->ruta;
 
-        $actual = $puntos->firstWhere('sucursal_id', $sucursalId);
+        if (!$ruta) {
+            return null;
+        }
+
+        $puntos = $ruta->puntos()
+            ->with('pueblito')
+            ->orderBy('orden')
+            ->get();
+
+        $actual = $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
 
         if (!$actual) {
             return null;
@@ -288,13 +316,13 @@ class Salida extends Model
         $ultimoPunto = $puntos->last();
 
         return [
-            'origen' => $origenPrimeraRuta
-                ? ($primerPunto->pueblito?->descripcion ?? '-')
-                : ($actual->pueblito?->descripcion ?? '-'),
-
+            'origen' => $primerPunto->pueblito?->descripcion ?? '-',
             'destino' => $ultimoPunto->pueblito?->descripcion ?? '-',
 
             'orden' => $actual->orden,
+
+            'origenTramo' => $actual->pueblito?->descripcion ?? '-',
+            'destinoTramo' => $ultimoPunto->pueblito?->descripcion ?? '-',
         ];
     }
 

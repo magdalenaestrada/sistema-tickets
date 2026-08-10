@@ -89,7 +89,7 @@
                     <a class="nav-link" data-bs-toggle="collapse" href="#encomiendas"
                         aria-expanded="{{ $encomiendasOpen ? 'true' : 'false' }}">
                         <i class="link-icon" data-lucide="package"></i>
-                        <span class="link-title">Encomiendas</span>
+                        <span class="link-title">Acciones encomiendas</span>
                         <i class="link-arrow" data-lucide="chevron-down"></i>
                     </a>
 

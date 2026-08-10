@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const sellButton = document.getElementById("sell-button");
     const editButton = document.getElementById("edit-button");
     const resultadosInfo = document.getElementById("resultados-info");
+    const estadoInicial = document.getElementById("estado-inicial"); // NUEVO: declarado una sola vez aquí
+
+    const pueblitoDefaultId = window.VENTA_CONFIG?.pueblitoSucursalId || null;
 
     let selectedSeats = [];
     let currentSalidaId = null;
@@ -12,52 +15,46 @@ document.addEventListener("DOMContentLoaded", function () {
 
     actualizarContador(-1);
     attachRowEvents();
-    mostrarPrimeras10Salidas();
+    aplicarEstadoPorDefecto();
+
+    function aplicarEstadoPorDefecto() {
+        document.getElementById("filtro_fecha").value = "";
+        document.getElementById("filtro_destino").value = "";
+
+        document.querySelectorAll(".horario-row").forEach((row) => {
+            row.classList.remove("active");
+        });
+
+        sellButton.style.display = "none";
+        editButton.style.display = "none";
+        svgContainer.innerHTML = `
+            <div class="no-results">
+                Selecciona una salida para ver los asientos
+            </div>
+        `;
+        resetSeleccion();
+
+        if (pueblitoDefaultId) {
+            document.getElementById("filtro_origen").value = pueblitoDefaultId;
+            estadoInicial.style.display = "none";
+            filtrarSalidas();
+        } else {
+            document.getElementById("filtro_origen").value = "";
+            estadoInicial.style.display = "block";
+            mostrarPrimeras10Salidas();
+        }
+
+        console.log("pueblitoDefaultId:", pueblitoDefaultId);
+        console.log(
+            "Opciones disponibles en origen:",
+            [...document.getElementById("filtro_origen").options].map(
+                (o) => o.value,
+            ),
+        );
+    }
+
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
-            row.addEventListener("click", function () {
-                const salidaId = this.dataset.salidaId;
-                const tipoViajeId = parseInt(this.dataset.tipoViajeId);
-                currentSalidaId = salidaId;
-
-                document
-                    .querySelectorAll(".horario-row")
-                    .forEach((r) => r.classList.remove("active"));
-                this.classList.add("active");
-                resetSeleccion();
-
-                const origenSelect = document.getElementById("filtro_origen");
-                const destinoSelect = document.getElementById("filtro_destino");
-
-                if (!origenSelect.value || !destinoSelect.value) {
-                    let puntos = [];
-                    try {
-                        puntos = JSON.parse(this.dataset.puntos || "[]");
-                    } catch (e) {}
-
-                    const primero = puntos[0];
-                    const ultimo = puntos[puntos.length - 1];
-
-                    if (primero && ultimo) {
-                        cargarAsientos(
-                            salidaId,
-                            primero.pueblito_id,
-                            ultimo.pueblito_id,
-                        );
-                        return;
-                    }
-                }
-
-                if (tipoViajeId === 2) {
-                    manejarViajePorTramo(salidaId, this);
-                } else {
-                    cargarAsientos(
-                        salidaId,
-                        origenSelect.value,
-                        destinoSelect.value,
-                    );
-                }
-            });
             row.addEventListener("click", function () {
                 const salidaId = this.dataset.salidaId;
                 const tipoViajeId = parseInt(this.dataset.tipoViajeId);
@@ -83,7 +80,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 let origenId = origenSelect.value;
                 let destinoId = destinoSelect.value;
 
-                // Ninguno seleccionado -> usar ruta completa
                 if (!origenId && !destinoId) {
                     if (primero && ultimo) {
                         cargarAsientos(
@@ -105,7 +101,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (tipoViajeId === 2) {
                     manejarViajePorTramo(salidaId, this, origenId, destinoId);
-                    console.log(origenId, destinoId);
                 } else {
                     cargarAsientos(salidaId, origenId, destinoId);
                 }
@@ -128,24 +123,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const btnLimpiar = document.getElementById("btn-limpiar-filtros");
 
     btnLimpiar?.addEventListener("click", () => {
-        document.getElementById("filtro_fecha").value = fechaHoy;
-        document.getElementById("filtro_origen").value = "";
-        document.getElementById("filtro_destino").value = "";
-        document.querySelectorAll(".horario-row").forEach((row) => {
-            row.style.display = "none";
-            row.classList.remove("active");
-        });
-        document.getElementById("resultados-info").innerHTML = "";
-        document.getElementById("svg-container").innerHTML = `
-        <div class="no-results">
-            Selecciona una salida para ver los asientos
-        </div>
-    `;
-        document.getElementById("sell-button").style.display = "none";
-        document.getElementById("edit-button").style.display = "none";
-        document.getElementById("estado-inicial").style.display = "block";
-
-        filtrarSalidas();
+        aplicarEstadoPorDefecto();
     });
 
     function cargarAsientos(salidaId, origenId, destinoId) {
