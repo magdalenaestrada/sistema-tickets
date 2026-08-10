@@ -332,6 +332,8 @@ class SalidaController extends Controller
 
     public function manifiestoPasajerosReal(Salida $salida, PdfService $pdfService)
     {
+
+    
         $salida->load([
             'horario.ruta.puntos.sucursal',
             'horario.tipo_vehiculo',

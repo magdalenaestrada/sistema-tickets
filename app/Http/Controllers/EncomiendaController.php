@@ -123,42 +123,41 @@ class EncomiendaController extends Controller
         $pueblitos = Pueblito::orderBy("descripcion", "asc")->get();
 
         $esAdmin = $user->hasRole('Administrador');
+        $sucursalUsuario = null;
+
+        if (!$esAdmin) {
+            $sucursalUsuario = Sucursal::find(auth()->user()->sucursal_id);
+        }
 
         if ($esAdmin) {
 
             $pueblitosOrigen = Pueblito::with('sucursal')
                 ->orderBy('descripcion')
                 ->get();
+        } elseif (!$sucursalUsuario?->venta_otras) {
+
+            $pueblitosOrigen = Pueblito::where(
+                'sucursal_id',
+                $sucursalUsuario->id
+            )
+                ->with('sucursal')
+                ->orderBy('descripcion')
+                ->get();
         } else {
 
-            $sucursalUsuario = Sucursal::find($user->sucursal_id);
+            $pueblitosOrigen = Pueblito::where(function ($query) use ($sucursalUsuario) {
 
-            if (!$sucursalUsuario) {
-                $pueblitosOrigen = collect();
-            } elseif (!$sucursalUsuario->venta_otras) {
-
-                $pueblitosOrigen = Pueblito::where(
-                    'sucursal_id',
-                    $user->sucursal_id
-                )
-                    ->with('sucursal')
-                    ->orderBy('descripcion')
-                    ->get();
-            } else {
-
-                $pueblitosOrigen = Pueblito::where(function ($query) use ($user) {
-
-                    $query->where('sucursal_id', $user->sucursal_id)
-
-                        ->orWhereHas('sucursal', function ($q) {
-                            $q->where('venta_otras', 1);
-                        });
-                })
-                    ->with('sucursal')
-                    ->orderBy('descripcion')
-                    ->get();
-            }
+                $query->where('sucursal_id', $sucursalUsuario->id)
+                    ->orWhereNull('sucursal_id')
+                    ->orWhereHas('sucursal', function ($q) {
+                        $q->where('venta_otras', 1);
+                    });
+            })
+                ->with('sucursal')
+                ->orderBy('descripcion')
+                ->get();
         }
+
         $tipos_documentos = TipoDocumentoPersona::all();
         $tipos_documentos_facturas = TipoDocumentoFactura::all();
         $tipo_encomiendas = TipoEncomienda::all();
