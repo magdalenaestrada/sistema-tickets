@@ -79,7 +79,7 @@
                     <div class="position-relative my-4 px-2">
                         <div class="row text-center position-relative z-1">
                             <!-- Paso 1: Registrado -->
-                            <div class="col-3">
+                            <div class="col">
                                 <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-2 shadow-sm bg-secondary"
                                     style="width: 48px; height: 48px;" id="stepBgRegistrado">
                                     <i data-lucide="receipt"></i>
@@ -88,7 +88,15 @@
                             </div>
 
                             <!-- Paso 2: En Tránsito -->
-                            <div class="col-3">
+                            <div class="col">
+                                <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-2 shadow-sm bg-secondary"
+                                    style="width: 48px; height: 48px;" id="stepBgAsignado">
+                                    <i data-lucide="forklift"></i>
+                                </div>
+                                <div class="fw-bold small text-dark d-block">Asignado</div>
+                            </div>
+
+                            <div class="col">
                                 <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-2 shadow-sm bg-secondary"
                                     style="width: 48px; height: 48px;" id="stepBgTransito">
                                     <i data-lucide="truck"></i>
@@ -96,8 +104,9 @@
                                 <div class="fw-bold small text-dark d-block">En Tránsito</div>
                             </div>
 
+
                             <!-- Paso 3: En Agencia -->
-                            <div class="col-3">
+                            <div class="col">
                                 <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-2 shadow-sm bg-secondary"
                                     style="width: 48px; height: 48px;" id="stepBgLlegada">
                                     <i data-lucide="map-pin"></i>
@@ -106,7 +115,7 @@
                             </div>
 
                             <!-- Paso 4: Entregado -->
-                            <div class="col-3">
+                            <div class="col">
                                 <div class="rounded-circle text-white d-inline-flex align-items-center justify-content-center mb-2 shadow-sm bg-secondary"
                                     style="width: 48px; height: 48px;" id="stepBgEntregado">
                                     <i data-lucide="circle-check"></i>
@@ -121,10 +130,10 @@
             <!-- Detalles de Origen, Destino y Personas -->
             <div class="row g-3 mb-4">
                 <!-- Trayecto -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-white font-semibold text-secondary py-3 border-0 fw-bold">
-                            <i class="bi bi-signpost-split me-2 text-primary"></i> Trayecto
+                            <i class="bi bi-signpost-split me-2 text-primary"></i> Ruta
                         </div>
                         <div class="card-body pt-0">
                             <div class="mb-3">
@@ -140,7 +149,7 @@
                 </div>
 
                 <!-- Remitente -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-white font-semibold text-secondary py-3 border-0 fw-bold">
                             <i class="bi bi-person-up me-2 text-primary"></i> Remitente (Envía)
@@ -160,7 +169,7 @@
                 </div>
 
                 <!-- Destinatario -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-white font-semibold text-secondary py-3 border-0 fw-bold">
                             <i class="bi bi-person-down me-2 text-primary"></i> Destinatario (Recibe)
@@ -173,6 +182,24 @@
                             </div>
                             <div class="text-muted small">
                                 <i class="bi bi-telephone me-1"></i> Tel: <span id="resReceptorTel"
+                                    class="text-dark fw-semibold">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white font-semibold text-secondary py-3 border-0 fw-bold">
+                            <i class="bi bi-person-down me-2 text-primary"></i> Destinatario Opcional (Recibe)
+                        </div>
+                        <div class="card-body pt-0">
+                            <div class="fw-bold text-dark mb-2 fs-6" id="resReceptor2Nombre">-</div>
+                            <div class="text-muted small mb-1">
+                                <i class="bi bi-card-heading me-1"></i> Doc: <span id="resReceptor2Doc"
+                                    class="text-dark fw-semibold">-</span>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="bi bi-telephone me-1"></i> Tel: <span id="resReceptor2Tel"
                                     class="text-dark fw-semibold">-</span>
                             </div>
                         </div>
@@ -263,7 +290,7 @@
                 document.getElementById('resCodigo').textContent = data.codigo || '-';
 
                 const badge = document.getElementById('resEstado');
-                const estadoConfig = getEstadoConfig(data.estado);
+                const estadoConfig = getEstadoConfig(data);
 
                 badge.className = `badge px-3 py-2 fs-6 border ${estadoConfig.badge}`;
                 badge.innerHTML = `
@@ -287,7 +314,7 @@
                     btnComprobante.classList.add('d-none');
                 }
 
-                actualizarLineaTiempo(data.estado);
+                actualizarLineaTiempo(data);
 
                 document.getElementById('resOrigen').textContent = data.sucursal_origen ? data.sucursal_origen
                     .nombre : (data.origen_pueblito ? data.origen_pueblito.descripcion : '-');
@@ -306,6 +333,12 @@
                         data.receptor.nombres + ' ' + (data.receptor.apellidos || ''));
                     document.getElementById('resReceptorDoc').textContent = data.receptor.documento || '-';
                     document.getElementById('resReceptorTel').textContent = data.receptor.celular || '-';
+                }
+                 if (data.receptor2) {
+                    document.getElementById('resReceptor2Nombre').textContent = data.receptor2.nombre_completo || (
+                        data.receptor2.nombres + ' ' + (data.receptor2.apellidos || ''));
+                    document.getElementById('resReceptor2Doc').textContent = data.receptor2.documento || '-';
+                    document.getElementById('resReceptor2Tel').textContent = data.receptor2.celular || '-';
                 }
 
                 const tbody = document.getElementById('resDetallesBody');
@@ -332,45 +365,64 @@
                     2);
             }
 
-            function getEstadoConfig(estado) {
-                switch (estado) {
+            function getEstadoConfig(data) {
+                switch (data.estado) {
                     case 'SA':
-                    case 'SA1':
                         return {
-                            label: 'REGISTRADO', badge:
-                                'bg-secondary-subtle text-secondary border-secondary-subtle', icon: 'receipt'
+                            label: 'REGISTRADO',
+                                badge: 'bg-secondary-subtle text-secondary border-secondary-subtle',
+                                icon: 'receipt'
                         };
+
                     case 'EC':
-                        return {
-                            label: 'EN TRÁNSITO', badge: 'bg-primary-subtle text-primary border-primary-subtle',
+                        if (data.salida_actual?.salida?.estado === 'en_ruta') {
+                            return {
+                                label: 'EN TRÁNSITO',
+                                badge: 'bg-primary-subtle text-primary border-primary-subtle',
                                 icon: 'truck'
+                            };
+                        }
+
+                        return {
+                            label: 'ASIGNADO',
+                                badge: 'bg-warning-subtle text-warning border-warning-subtle',
+                                icon: 'forklift'
                         };
+
                     case 'PE':
                         return {
-                            label: 'EN AGENCIA', badge: 'bg-warning-subtle text-warning border-warning-subtle',
+                            label: 'EN AGENCIA',
+                                badge: 'bg-warning-subtle text-warning border-warning-subtle',
                                 icon: 'map-pin'
                         };
+
                     case 'ET':
                         return {
-                            label: 'ENTREGADO', badge: 'bg-success-subtle text-success border-success-subtle', icon:
-                                'circle-check'
+                            label: 'ENTREGADO',
+                                badge: 'bg-success-subtle text-success border-success-subtle',
+                                icon: 'circle-check'
                         };
+
                     case 'X':
                         return {
-                            label: 'ANULADO', badge: 'bg-danger-subtle text-danger border-danger-subtle', icon:
-                                'circle-x'
+                            label: 'ANULADO',
+                                badge: 'bg-danger-subtle text-danger border-danger-subtle',
+                                icon: 'circle-x'
                         };
+
                     default:
                         return {
-                            label: estado || 'SIN ESTADO', badge: 'bg-light text-dark border-secondary-subtle',
+                            label: data.estado || 'SIN ESTADO',
+                                badge: 'bg-light text-dark border-secondary-subtle',
                                 icon: 'package'
                         };
                 }
             }
 
-            function actualizarLineaTiempo(estado) {
+            function actualizarLineaTiempo(data) {
                 const pasos = [
                     document.getElementById('stepBgRegistrado'),
+                    document.getElementById('stepBgAsignado'),
                     document.getElementById('stepBgTransito'),
                     document.getElementById('stepBgLlegada'),
                     document.getElementById('stepBgEntregado')
@@ -384,33 +436,48 @@
                 });
 
                 let nivel = -1;
-                switch (estado) {
+
+                switch (data.estado) {
+
                     case 'SA':
                     case 'SA1':
                         nivel = 0;
                         break;
+
                     case 'EC':
-                        nivel = 1;
+                        if (data.salida_actual?.salida?.estado === 'en_ruta') {
+                            nivel = 2; // En tránsito
+                        } else {
+                            nivel = 1; // Asignado
+                        }
                         break;
+
                     case 'PE':
-                        nivel = 2;
+                        nivel = 3; // En agencia
                         break;
+
                     case 'ET':
-                        nivel = 3;
+                        nivel = 4; // Entregado
                         break;
+
                     case 'X':
-                        pasos.forEach(p => p && p.classList.replace('bg-secondary', 'bg-danger'));
+                        pasos.forEach(p => {
+                            if (p) {
+                                p.classList.remove('bg-secondary');
+                                p.classList.add('bg-danger');
+                            }
+                        });
                         return;
                 }
 
                 for (let i = 0; i <= nivel; i++) {
                     if (pasos[i]) {
                         pasos[i].classList.remove('bg-secondary');
-                        if (i === nivel && estado === 'ENTREGADO') {
-                            pasos[i].classList.add('bg-success');
-                        } else {
-                            pasos[i].classList.add('bg-primary');
-                        }
+                        pasos[i].classList.add(
+                            i === nivel && data.estado === 'ET' ?
+                            'bg-success' :
+                            'bg-primary'
+                        );
                     }
                 }
             }

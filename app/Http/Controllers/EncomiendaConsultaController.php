@@ -32,7 +32,9 @@ class EncomiendaConsultaController extends Controller
             'usuario',
             'entregado',
             'venta.pagos',
-            'salidaActual.salida.vehiculo'
+            'salidaActual.salida.vehiculo',
+            'salidaActual.salida',
+
         ])
             ->where('codigo', strtoupper($codigo))
             ->first();
