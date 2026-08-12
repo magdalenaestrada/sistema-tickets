@@ -1004,9 +1004,14 @@ class EncomiendaController extends Controller
                 $user_id
             );
 
+            $esSobreequipaje = $request->boolean('sobrequipaje');
+
+
             return response()->json([
                 'success' => true,
-                'redirect' => route('encomiendas.index-no-asignadas'),
+                'redirect' => $esSobreequipaje
+                    ? route('pasajes.listar')
+                    : route('encomiendas.index-no-asignadas'),
                 'ticket_id' => $encomienda->id
             ]);
         } catch (\Throwable $th) {

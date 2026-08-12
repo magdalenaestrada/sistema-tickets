@@ -298,6 +298,7 @@ class SalidaController extends Controller
         ])->filter();
 
         $conductores = Empleado::with('persona')
+            ->where("cargo_id", 3)
             ->where(function ($q) use ($conductoresOcupados, $permitidosDeEstaSalida) {
                 $q->whereNotIn('id', $conductoresOcupados)
                     ->orWhereIn('id', $permitidosDeEstaSalida);

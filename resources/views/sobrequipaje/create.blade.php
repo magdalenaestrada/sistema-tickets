@@ -11,6 +11,7 @@
                         <div class="card-body">
                             <h6><i data-lucide="bus"></i> Información del viaje</h6>
                             <hr>
+                            <input type="hidden" name="sobrequipaje" value="true">
                             <div class="row g-2">
                                 <div class="col-md-2">
                                     <label class="form-label small mb-0">Fecha de viaje</label>
