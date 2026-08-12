@@ -437,37 +437,50 @@ class SalidaController extends Controller
 
         return response()->json(['message' => 'Eliminadas correctamente']);
     }
-    public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService)
+    public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService, Request $request)
     {
         $salida->load([
+            'horario.ruta.puntos.pueblito',
             'horario.ruta.puntos.sucursal',
+            'horario.tipo_vehiculo',
             'vehiculo',
             'conductorPrincipal',
             'conductorSecundario',
-            'encomiendas',
+            'encomiendas.emisor',   // ajusta a tus relaciones reales
+            'encomiendas.receptor',
+            'encomiendas.receptor2',
+            'encomiendas.origenPueblito',
+            'encomiendas.destinoPueblito',
+            'encomiendas.venta',
         ]);
 
-        $puntos = $salida->horario->ruta->puntos
-            ->sortBy('orden')
-            ->values();
+        $empresa = Empresa::first();
+        $user = auth()->user();
 
-        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
-        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
+        $sucursalId = $user->hasRole('Administrador')
+            ? $request->sucursal_id
+            : $user->sucursal_id;
 
-        $encomiendas = $salida->encomiendas()
-            ->wherePivot('estado', 'A')
-            ->where('encomienda.sobre_equipaje', false)
-            ->get();
+        abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
-        $tipoManifiesto = 'encomiendas';
+        $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
+        abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
-        $html = view('salidas.manifiestos.encomiendas', compact(
-            'salida',
-            'encomiendas',
-            'origenNombre',
-            'destinoNombre',
-            'tipoManifiesto'
-        ))->render();
+        $datos = $salida->datosManifiesto($sucursalId);
+        $encomiendas = $salida->encomiendasEnTramo($sucursalId)->where('sobre_equipaje', false);
+
+
+        $origenNombre  = $datos['origen']  ?? 'Sin origen definido';
+        $destinoNombre = $datos['destino'] ?? 'Sin destino definido';
+
+
+        $html = view('salidas.manifiestos.encomiendas', [
+            'salida'        => $salida,
+            'empresa'       => $empresa,
+            'encomiendas'   => $encomiendas,
+            'origenNombre'  => $origenNombre,
+            'destinoNombre' => $destinoNombre,
+        ])->render();
 
         return $pdfService->generar(
             $html,
@@ -475,7 +488,6 @@ class SalidaController extends Controller
             'P'
         );
     }
-
 
     public function manifiestoBodega(Salida $salida, PdfService $pdfService)
     {
@@ -500,7 +512,7 @@ class SalidaController extends Controller
 
         $tipoManifiesto = 'bodega';
 
-        $html = view('salidas.manifiestos.encomiendas', compact(
+        $html = view('salidas.manifiestos.bodega', compact(
             'salida',
             'encomiendas',
             'origenNombre',

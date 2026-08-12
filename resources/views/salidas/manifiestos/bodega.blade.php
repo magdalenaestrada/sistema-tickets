@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Manifiesto de Encomiendas</title>
+    <title>Manifiesto de Bodega</title>
     <style>
         * {
             box-sizing: border-box;
@@ -115,7 +115,7 @@
 
     <!-- Encabezado Principal -->
     <div class="title-box">
-        <h1>Manifiesto de Encomiendas</h1>
+        <h1>Manifiesto de Bodega</h1>
         <p>SALIDA: {{ $origenNombre }} — {{ $destinoNombre }}</p>
     </div>
 
@@ -151,11 +151,10 @@
         </tr>
     </table>
 
-    <!-- Tabla de Carga / Encomiendas -->
     <table>
         <thead>
             <tr>
-                <th colspan="10" class="section-header">Detalle de Encomiendas Registradas</th>
+                <th colspan="10" class="section-header">Detalle de Bodegas Registradas</th>
             </tr>
             <tr>
                 <th width="4%" class="text-center">ITEM</th>
@@ -194,7 +193,7 @@
             @empty
                 <tr>
                     <td colspan="10" class="text-center" style="padding: 15px; color: #666;">
-                        No hay encomiendas registradas para esta salida.
+                        No hay encomiedas ni sobrequipaje registradas para esta salida.
                     </td>
                 </tr>
             @endforelse

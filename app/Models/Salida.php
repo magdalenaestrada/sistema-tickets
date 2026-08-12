@@ -291,6 +291,55 @@ class Salida extends Model
             ->values();
     }
 
+    public function encomiendasEnTramo($sucursalId)
+    {
+
+        $ruta = $this->horario?->ruta;
+
+        if (!$ruta) {
+            return collect();
+        }
+
+        $puntos = $ruta->puntos()
+            ->with('pueblito')
+            ->orderBy('orden')
+            ->get();
+
+
+        $actual = $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
+
+        if (!$actual) {
+            return collect();
+        }
+
+        $ordenActual = $actual->orden;
+        
+        return $this->encomiendas
+            ->filter(function ($encomienda) use ($puntos, $ordenActual) {
+
+                $origen = $puntos->firstWhere(
+                    'pueblito_id',
+                    $encomienda->origen_pueblito_id
+                );
+
+                $destino = $puntos->firstWhere(
+                    'pueblito_id',
+                    $encomienda->destino_pueblito_id
+                );
+
+                if (!$origen || !$destino) {
+                    return false;
+                }
+
+                return $origen->orden <= $ordenActual
+                    && $destino->orden > $ordenActual;
+            })
+            ->sortBy('asiento_numero')
+            ->values();
+    }
+
     public function datosManifiesto($sucursalId)
     {
         $ruta = $this->horario?->ruta;
@@ -305,7 +354,7 @@ class Salida extends Model
             ->get();
 
         $actual = $puntos->first(function ($punto) use ($sucursalId) {
-            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+            return (int) $punto->sucursal_id === (int) $sucursalId;
         });
 
         if (!$actual) {

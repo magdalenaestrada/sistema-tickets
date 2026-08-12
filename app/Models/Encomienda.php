@@ -157,4 +157,6 @@ class Encomienda extends Model
             'destino_pueblito_id'
         );
     }
+
+    
 }
