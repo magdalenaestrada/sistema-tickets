@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+@php
+    $esBodega = $tipoManifiesto === 'bodega';
+
+    $titulo = $esBodega ? 'BODEGA' : 'ENCOMIENDAS';
+
+    $tituloDetalle = $esBodega ? 'Detalle de Bodega' : 'Detalle de Encomiendas Registradas';
+@endphp
 
 <head>
     <meta charset="UTF-8">
-    <title>Manifiesto de Encomiendas</title>
+    <title>Manifiesto de {{ $titulo }}</title>
     <style>
         * {
             box-sizing: border-box;
@@ -49,7 +56,8 @@
             margin-bottom: 10px;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #cbd5e1;
             padding: 5px;
             text-align: left;
@@ -74,10 +82,22 @@
         }
 
         /* Clases Útiles */
-        .bg-light { background-color: #f8fafc; }
-        .font-bold { font-weight: bold; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
+        .bg-light {
+            background-color: #f8fafc;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
         .badge-transbordo {
             font-size: 8px;
             color: #c53030;
@@ -113,13 +133,12 @@
 
 <body>
 
-    <!-- Encabezado Principal -->
+
     <div class="title-box">
-        <h1>Manifiesto de Encomiendas</h1>
+        <h1>Manifiesto de {{ $titulo }}</h1>
         <p>SALIDA: {{ $origenNombre }} — {{ $destinoNombre }}</p>
     </div>
 
-    <!-- Cabecera de Datos del Viaje -->
     <table>
         <tr>
             <td colspan="6" class="section-header">Información del Viaje y Unidad</td>
@@ -135,17 +154,17 @@
         <tr>
             <td class="bg-light font-bold">Vehículo:</td>
             <td>
-                {{ strtoupper($salida->vehiculo?->tipo_vehiculo?->descripcion ?? '-') }} 
+                {{ strtoupper($salida->vehiculo?->tipo_vehiculo?->descripcion ?? '-') }}
                 ({{ $salida->vehiculo?->numero_placa ?? '-' }})
             </td>
             <td class="bg-light font-bold">Conductor 1:</td>
             <td>
-                {{ $salida->conductorPrincipal?->persona->nombres }} 
+                {{ $salida->conductorPrincipal?->persona->nombres }}
                 {{ $salida->conductorPrincipal?->persona->apellidos }}
             </td>
             <td class="bg-light font-bold">Conductor 2:</td>
             <td>
-                {{ $salida->conductorSecundario?->persona->nombres }} 
+                {{ $salida->conductorSecundario?->persona->nombres }}
                 {{ $salida->conductorSecundario?->persona->apellidos }}
             </td>
         </tr>
@@ -155,10 +174,13 @@
     <table>
         <thead>
             <tr>
-                <th colspan="10" class="section-header">Detalle de Encomiendas Registradas</th>
+                <th colspan="11" class="section-header">Detalle de {{ $tituloDetalle }}</th>
             </tr>
             <tr>
                 <th width="4%" class="text-center">ITEM</th>
+                @if ($esBodega)
+                    <th width="7%">TIPO</th>
+                @endif
                 <th width="9%" class="text-center">DNI REM.</th>
                 <th width="16%">REMITENTE</th>
                 <th width="9%" class="text-center">DNI DEST.</th>
@@ -168,6 +190,7 @@
                 <th width="18%">DESCRIPCIÓN</th>
                 <th width="5%" class="text-center">PESO</th>
                 <th width="7%" class="text-right">IMPORTE</th>
+
             </tr>
         </thead>
         <tbody>
@@ -175,6 +198,13 @@
                 @foreach ($encomienda->detalles as $detalle)
                     <tr>
                         <td class="text-center font-bold">{{ $loop->parent->iteration }}.{{ $loop->iteration }}</td>
+                        @if ($esBodega)
+                            @if ($encomienda->sobre_equipaje)
+                                <td style="font-size: 6px;">SOBRE-EQUIPAJE</td>
+                            @else
+                                <td style="font-size: 6px;">ENCOMIENDA</td>
+                            @endif
+                        @endif
                         <td class="text-center">{{ $encomienda->emisor?->documento ?? '-' }}</td>
                         <td>{{ $encomienda->emisor?->nombre_completo ?? '-' }}</td>
                         <td class="text-center">{{ $encomienda->receptor?->documento ?? '-' }}</td>
@@ -194,7 +224,7 @@
             @empty
                 <tr>
                     <td colspan="10" class="text-center" style="padding: 15px; color: #666;">
-                        No hay encomiendas registradas para esta salida.
+                        No hay {{ $titulo }} registradas para esta salida.
                     </td>
                 </tr>
             @endforelse
@@ -202,15 +232,15 @@
     </table>
 
     <!-- Totales -->
-    @if(count($encomiendas) > 0)
-    <table class="totals-table">
-        <tr>
-            <td width="70%" class="text-right font-bold">TOTAL GENERAL DE ENCOMIENDAS:</td>
-            <td width="30%" class="text-center font-bold">
-                S/ {{ number_format($encomiendas->flatMap->detalles->sum('costo'), 2) }}
-            </td>
-        </tr>
-    </table>
+    @if (count($encomiendas) > 0)
+        <table class="totals-table">
+            <tr>
+                <td width="70%" class="text-right font-bold">TOTAL GENERAL DE {{ $titulo }}:</td>
+                <td width="30%" class="text-center font-bold">
+                    S/ {{ number_format($encomiendas->flatMap->detalles->sum('costo'), 2) }}
+                </td>
+            </tr>
+        </table>
     @endif
 
     <!-- Firmas de Conformidad -->

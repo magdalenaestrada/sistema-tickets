@@ -548,6 +548,9 @@ function verSalida(id) {
                         <button class="btn btn-warning" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
                             Manifiesto de encomiendas
                         </button>
+                          <button class="btn btn-warning" onclick="abrirManifiesto(${salida.id}, 'bodega')">
+                            Manifiesto de bodega
+                        </button>
                         <button class="btn btn-success" onclick="abrirManifiesto(${salida.id}, 'conductores')">
                             Manifiesto de conductores
                         </button>
@@ -575,6 +578,65 @@ function verSalida(id) {
     });
 }
 
+function actualizarOpcionesConductores() {
+    let principal = $("#conductor_principal_id").val();
+    let secundario = $("#conductor_secundario_id").val();
+
+    $("#conductor_principal_id option").each(function () {
+        $(this).prop("disabled", !!secundario && $(this).val() === secundario);
+    });
+
+    $("#conductor_secundario_id option").each(function () {
+        $(this).prop("disabled", !!principal && $(this).val() === principal);
+    });
+}
+
+function cargarRecursosDisponibles(salida) {
+    $.get(
+        route("salidas.recursos_disponibles", { salida: salida.id }),
+        function (res) {
+            let vehiculosHtml = `<option value="">Seleccione vehículo</option>`;
+            res.vehiculos.forEach((v) => {
+                vehiculosHtml += `
+                <option value="${v.id}" ${v.id == salida.vehiculo_id ? "selected" : ""}>
+                    ${v.tipo_vehiculo.descripcion} - ${v.numero_placa}
+                </option>
+            `;
+            });
+            $("#vehiculo_id").html(vehiculosHtml);
+
+            let conductoresHtml = `<option value="">Seleccione</option>`;
+            res.conductores.forEach((c) => {
+                conductoresHtml += `<option value="${c.id}">${c.persona.nombres} ${c.persona.apellidos}</option>`;
+            });
+
+            $("#conductor_principal_id").html(conductoresHtml);
+            $("#conductor_secundario_id").html(
+                `<option value="">Opcional</option>` +
+                    conductoresHtml.replace(
+                        '<option value="">Seleccione</option>',
+                        "",
+                    ),
+            );
+
+            $("#conductor_principal_id").val(
+                salida.conductor_principal_id ?? "",
+            );
+            $("#conductor_secundario_id").val(
+                salida.conductor_secundario_id ?? "",
+            );
+
+            actualizarOpcionesConductores();
+        },
+    );
+}
+
+$(document).on(
+    "change",
+    "#conductor_principal_id, #conductor_secundario_id",
+    actualizarOpcionesConductores,
+);
+
 function abrirManifiesto(salidaId, tipo) {
     let sucursalId = $("#sucursal_manifiesto").val();
 
@@ -586,6 +648,7 @@ function abrirManifiesto(salidaId, tipo) {
     let rutasPorTipo = {
         pasajeros: "salidas.manifiesto_pasajeros",
         encomiendas: "salidas.manifiesto_encomiendas",
+        bodega: "salidas.manifiesto_bodega",
         conductores: "salidas.manifiesto_conductores",
         pasajeros_real: "salidas.manifiesto_pasajeros_real",
     };
@@ -706,17 +769,7 @@ function editarSalida(id) {
             <select id="vehiculo_id" class="form-select">
                 <option value="">Seleccione vehículo</option>
 
-                ${window.VEHICULOS.map(
-                    (v) => `
-                        <option
-                            value="${v.id}"
-                            ${v.id == salida.vehiculo_id ? "selected" : ""}>
-
-                            ${v.tipo_vehiculo.descripcion}
-                            - ${v.numero_placa}
-                        </option>
-                    `,
-                ).join("")}
+               ${cargarRecursosDisponibles(salida)}
             </select>
         </div>
 
@@ -729,17 +782,7 @@ function editarSalida(id) {
             <select id="conductor_principal_id" class="form-select">
                 <option value="">Seleccione</option>
 
-                ${window.CONDUCTORES.map(
-                    (c) => `
-                        <option
-                            value="${c.id}"
-                            ${c.id == salida.conductor_principal_id ? "selected" : ""}>
-
-                            ${c.persona.nombres}
-                            ${c.persona.apellidos}
-                        </option>
-                    `,
-                ).join("")}
+               ${cargarRecursosDisponibles(salida)}
             </select>
         </div>
 

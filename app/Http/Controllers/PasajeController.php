@@ -16,6 +16,7 @@ use App\Models\Descuento;
 use App\Models\Empresa;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
+use App\Models\EncomiendaSalida;
 use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\Pueblito;
@@ -798,6 +799,11 @@ class PasajeController extends Controller
 
                         PasajeSobreEquipaje::create([
                             'pasaje_id'     => $pasaje->id,
+                            'encomienda_id' => $encomienda->id,
+                        ]);
+
+                        EncomiendaSalida::create([
+                            'salida_id'     => $salida->id,
                             'encomienda_id' => $encomienda->id,
                         ]);
 

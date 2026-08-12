@@ -263,6 +263,53 @@ class SalidaController extends Controller
         );
     }
 
+    public function recursosDisponibles(Salida $salida)
+    {
+        $tipoVehiculoId = $salida->horario->tipo_vehiculo_id;
+
+        $vehiculosOcupados = Salida::where('id', '!=', $salida->id)
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereNotNull('vehiculo_id')
+            ->pluck('vehiculo_id');
+
+        $vehiculos = Vehiculo::with('tipo_vehiculo')
+            ->where('tipo_vehiculo_id', $tipoVehiculoId)
+            ->where(function ($q) use ($vehiculosOcupados, $salida) {
+                $q->whereNotIn('id', $vehiculosOcupados)
+                    ->orWhere('id', $salida->vehiculo_id);
+            })
+            ->get();
+
+        $ocupadosPrincipal = Salida::where('id', '!=', $salida->id)
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereNotNull('conductor_principal_id')
+            ->pluck('conductor_principal_id');
+
+        $ocupadosSecundario = Salida::where('id', '!=', $salida->id)
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereNotNull('conductor_secundario_id')
+            ->pluck('conductor_secundario_id');
+
+        $conductoresOcupados = $ocupadosPrincipal->merge($ocupadosSecundario)->unique();
+
+        $permitidosDeEstaSalida = collect([
+            $salida->conductor_principal_id,
+            $salida->conductor_secundario_id,
+        ])->filter();
+
+        $conductores = Empleado::with('persona')
+            ->where(function ($q) use ($conductoresOcupados, $permitidosDeEstaSalida) {
+                $q->whereNotIn('id', $conductoresOcupados)
+                    ->orWhereIn('id', $permitidosDeEstaSalida);
+            })
+            ->get();
+
+        return response()->json([
+            'vehiculos'   => $vehiculos,
+            'conductores' => $conductores,
+        ]);
+    }
+
     public function manifiestoPasajerosTodos(Salida $salida, PdfService $pdfService)
     {
         abort_unless(
@@ -390,7 +437,6 @@ class SalidaController extends Controller
 
         return response()->json(['message' => 'Eliminadas correctamente']);
     }
-
     public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService)
     {
         $salida->load([
@@ -401,20 +447,26 @@ class SalidaController extends Controller
             'encomiendas',
         ]);
 
-        $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();
+        $puntos = $salida->horario->ruta->puntos
+            ->sortBy('orden')
+            ->values();
+
         $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
         $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
 
-
         $encomiendas = $salida->encomiendas()
             ->wherePivot('estado', 'A')
+            ->where('encomienda.sobre_equipaje', false)
             ->get();
+
+        $tipoManifiesto = 'encomiendas';
 
         $html = view('salidas.manifiestos.encomiendas', compact(
             'salida',
             'encomiendas',
             'origenNombre',
-            'destinoNombre'
+            'destinoNombre',
+            'tipoManifiesto'
         ))->render();
 
         return $pdfService->generar(
@@ -423,6 +475,46 @@ class SalidaController extends Controller
             'P'
         );
     }
+
+
+    public function manifiestoBodega(Salida $salida, PdfService $pdfService)
+    {
+        $salida->load([
+            'horario.ruta.puntos.sucursal',
+            'vehiculo',
+            'conductorPrincipal',
+            'conductorSecundario',
+            'encomiendas',
+        ]);
+
+        $puntos = $salida->horario->ruta->puntos
+            ->sortBy('orden')
+            ->values();
+
+        $origenNombre = $puntos->first()?->pueblito?->descripcion ?? '-';
+        $destinoNombre = $puntos->last()?->pueblito?->descripcion ?? '-';
+
+        $encomiendas = $salida->encomiendas()
+            ->wherePivot('estado', 'A')
+            ->get();
+
+        $tipoManifiesto = 'bodega';
+
+        $html = view('salidas.manifiestos.encomiendas', compact(
+            'salida',
+            'encomiendas',
+            'origenNombre',
+            'destinoNombre',
+            'tipoManifiesto'
+        ))->render();
+
+        return $pdfService->generar(
+            $html,
+            "manifiesto_bodega_{$salida->id}.pdf",
+            'P'
+        );
+    }
+
     public function manifiestoConductores(Salida $salida, PdfService $pdfService)
     {
         $salida->load([
