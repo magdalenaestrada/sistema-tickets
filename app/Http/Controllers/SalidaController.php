@@ -228,7 +228,7 @@ class SalidaController extends Controller
         $empresa = Empresa::first();
         $user = auth()->user();
 
-        $sucursalId = $user->rol === 'Administrador'
+        $sucursalId = $user->hasRole('Administrador')
             ? $request->sucursal_id
             : $user->sucursal_id;
 
@@ -238,9 +238,10 @@ class SalidaController extends Controller
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
         $datos = $salida->datosManifiesto($sucursalId);
-        abort_unless($datos, 404, 'La sucursal no pertenece a la ruta.');
+        $origenNombre  = $datos['origen']  ?? 'Sin origen definido';
+        $destinoNombre = $datos['destino'] ?? 'Sin destino definido';
 
-        $pasajes = $salida->pasajerosEnTramo($sucursalId);
+        $pasajes = $salida->pasajerosEnTramo($sucursalId); // puede venir vacío, está bien
 
         $capacidad = $salida->horario->tipo_vehiculo->capacidad
             ?? $salida->horario->tipo_vehiculo->asientos
@@ -250,9 +251,9 @@ class SalidaController extends Controller
             'salida'        => $salida,
             'empresa'       => $empresa,
             'pasajes'       => $pasajes,
-            'origenNombre'  => $datos['origen'],
-            'destinoNombre' => $datos['destino'],
-            'capacidad'     => $capacidad,
+            'origenNombre'  => $datos['origen'] ?? '',
+            'destinoNombre' => $datos['destino'] ?? '',
+            'capacidad'     => $capacidad ?? '',
         ])->render();
 
         return $pdfService->generar(

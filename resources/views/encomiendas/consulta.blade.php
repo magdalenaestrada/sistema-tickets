@@ -187,7 +187,7 @@
                         </div>
                     </div>
                 </div>
-                 <div class="col-md-3">
+                <div class="col-md-3">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-white font-semibold text-secondary py-3 border-0 fw-bold">
                             <i class="bi bi-person-down me-2 text-primary"></i> Destinatario Opcional (Recibe)
@@ -303,12 +303,12 @@
                 }
 
                 const btnTicket = document.getElementById('btnImprimirTicket');
-                btnTicket.href = `/encomiendas/${data.id}/imprimir-ticket`;
+                btnTicket.href = route('encomiendas.ticket', data.id);
                 btnTicket.classList.remove('d-none');
 
                 const btnComprobante = document.getElementById('btnImprimirComprobante');
                 if (data.venta_id) {
-                    btnComprobante.href = `/ventas/${data.venta_id}/comprobante`;
+                    btnComprobante.href = route('encomiendas.ticket-entrega', data.id);
                     btnComprobante.classList.remove('d-none');
                 } else {
                     btnComprobante.classList.add('d-none');
@@ -334,7 +334,7 @@
                     document.getElementById('resReceptorDoc').textContent = data.receptor.documento || '-';
                     document.getElementById('resReceptorTel').textContent = data.receptor.celular || '-';
                 }
-                 if (data.receptor2) {
+                if (data.receptor2) {
                     document.getElementById('resReceptor2Nombre').textContent = data.receptor2.nombre_completo || (
                         data.receptor2.nombres + ' ' + (data.receptor2.apellidos || ''));
                     document.getElementById('resReceptor2Doc').textContent = data.receptor2.documento || '-';

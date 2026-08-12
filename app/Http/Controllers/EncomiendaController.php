@@ -600,7 +600,7 @@ class EncomiendaController extends Controller
 
             foreach ($encomiendas as $encomienda) {
                 $encomienda->update([
-                    'estado' => 'ET',
+                    'estado' => 'PE',
                     'fecha_procesado' => now(),
                 ]);
 
