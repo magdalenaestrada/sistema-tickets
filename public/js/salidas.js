@@ -545,7 +545,7 @@ function verSalida(id) {
                         <button class="btn btn-primary" onclick="abrirManifiesto(${salida.id}, 'pasajeros')">
                             Manifiesto de pasajeros
                         </button>
-                        <button class="btn btn-warning" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
+                        <button class="btn btn-info" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
                             Manifiesto de encomiendas
                         </button>
                           <button class="btn btn-warning" onclick="abrirManifiesto(${salida.id}, 'bodega')">
