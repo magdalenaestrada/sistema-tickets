@@ -73,6 +73,13 @@ new TomSelect("#filtroRuta", {
             .catch(() => callback());
     },
 });
+
+new TomSelect("#filtroEstado", {
+    create: false,
+    allowEmptyOption: false,
+    placeholder: "Todos los estados",
+});
+
 function hoy() {
     let fecha = new Date();
     return fecha.toISOString().split("T")[0];
@@ -442,97 +449,199 @@ window.generarSalidas = function () {
 };
 
 function verSalida(id) {
-    $.get(route("salidas.show", { id: id }), function (salida) {
-        let puntos = "";
+    // 1. Loader previo al GET
+    $("#tituloPanelSalida").text("Detalle de salida");
+    $("#panelSalidaContenido").html(`
+        <div class="text-center py-5 text-muted">
+            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+            <div>Cargando detalle de la salida...</div>
+        </div>
+    `);
 
+    $.get(route("salidas.show", { id: id }), function (salida) {
+        // 2. Timeline de la ruta
+        let timelineHtml = "";
         if (salida.ruta?.puntos?.length) {
-            puntos = `
-        <ul class="list-group mt-2">
-            ${salida.ruta.puntos
-                .map(
-                    (p) => `
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>${p.orden}. ${p.nombre}</span>
-                        <span class="badge bg-primary">${p.hora}</span>
-                    </li>
-                `,
-                )
-                .join("")}
-        </ul>
-    `;
+            timelineHtml = salida.ruta.puntos
+                .map((punto, index) => {
+                    const esCompletado = punto.check_registrado;
+                    const esActual = punto.es_actual;
+
+                    let iconClass = "border-secondary bg-white text-secondary";
+                    let badgeEstado = `<span class="text-muted fs-8"></span>`;
+
+                    if (esCompletado) {
+                        iconClass = "bg-success text-white border-success";
+                        badgeEstado = `<span class="text-success fw-bold fs-8">Check registrado</span>`;
+                    } else if (esActual) {
+                        iconClass = "bg-primary text-white border-primary";
+                        badgeEstado = `<span class="text-primary fw-bold fs-8">Próxima parada</span>`;
+                    }
+
+                    return `
+                    <div class="d-flex align-items-start mb-3 position-relative">
+                        <div class="me-3 position-relative" style="z-index: 1;">
+                            <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 28px; height: 28px;">
+                                <i data-lucide="${esCompletado ? "check" : esActual ? "play" : "circle"}" style="width: 14px;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 border-bottom pb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold fs-7 ${esActual ? "text-primary" : "text-dark"}">${String.fromCharCode(65 + index)}. ${punto.nombre}</span>
+                                <span class="fw-bold fs-7 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span>
+                            </div>
+                            <div>${badgeEstado}</div>
+                        </div>
+                    </div>
+                `;
+                })
+                .join("");
+        } else {
+            timelineHtml = `<p class="text-muted fs-7">No hay puntos de ruta registrados.</p>`;
         }
 
+        // 3. Estructura principal
         let html = `
-            <h6>${salida.ruta?.nombre ?? "Sin ruta"}</h6>
+            <div class="mb-3">
+                <h5 class="fw-bold text-dark mb-0">${salida.ruta?.nombre ?? "Sin ruta"}</h5>
+                <small class="text-muted">${salida.fecha_formateada ?? "-"} • ${salida.hora_salida ?? "-"}</small>
+            </div>
 
-            <div class="mb-2"><strong>Fecha:</strong> ${salida.fecha_formateada ?? "-"}</div>
-            <div class="mb-2"><strong>Hora salida:</strong> ${salida.hora_salida ?? "-"}</div>
-            <div class="mb-2"><strong>Hora llegada:</strong> ${salida.hora_llegada ?? "-"}</div>
-            <div class="mb-2"><strong>Tipo viaje:</strong> ${salida.tipo_viaje ?? "-"}</div>
-            <div class="mb-2"><strong>Tipo vehículo:</strong> ${salida.tipo_vehiculo ?? "-"}</div>
-            <div class="mb-2"><strong>Estado:</strong> ${salida.estado ?? "-"}</div>
+            <!-- KPIs Superiores -->
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="p-2 border rounded bg-light text-center">
+                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Progreso de ruta</span>
+                        <strong class="fs-5 text-dark">${salida.parada_actual_index ?? 0} / ${salida.ruta?.puntos?.length ?? 0}</strong>
+                        <span class="d-block text-muted fs-8">paradas</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2 border rounded bg-light text-center">
+                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ventas activas</span>
+                        <strong class="fs-5 text-dark">${salida.asientos_vendidos ?? 0}</strong>
+                        <span class="d-block text-muted fs-8">asientos</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold border-0 border-bottom border-2" id="tab-ruta-btn" data-bs-toggle="tab" data-bs-target="#tab-ruta" type="button">Ruta</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold border-0 border-bottom border-2 text-muted" id="tab-operaciones-btn" data-bs-toggle="tab" data-bs-target="#tab-operaciones" type="button">Operaciones</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="tab-ruta">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fs-8 fw-bold text-muted">Progreso de la ruta</span>
+                        <span class="fs-8 fw-bold text-muted">${salida.parada_actual_index ?? 0}/${salida.ruta?.puntos?.length ?? 0}</span>
+                    </div>
+
+                    <!-- Timeline Vertical -->
+                    <div class="timeline-container px-1 mb-3">
+                        ${timelineHtml}
+                    </div>
+
+                    <!-- AJAX Container de Sucursal, Dar Check y Manifiestos -->
+                    <div id="loadingSucursales" class="text-center text-muted py-3">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span class="fs-7 d-block mt-1">Cargando datos de sucursal...</span>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-operaciones">
+                    <div class="p-2 fs-7">
+                        <div class="mb-2"><strong>Tipo viaje:</strong> ${salida.tipo_viaje ?? "-"}</div>
+                        <div class="mb-2"><strong>Tipo vehículo:</strong> ${salida.tipo_vehiculo ?? "-"}</div>
+                        <div class="mb-2"><strong>Estado:</strong> <span class="badge bg-warning text-dark">${salida.estado ?? "-"}</span></div>
+                    </div>
+                </div>
+            </div>
         `;
 
-        // Render inicial sin selector/botones (llegan después vía AJAX)
         $("#tituloPanelSalida").text("Detalle de salida");
-        $("#panelSalidaContenido").html(html + puntos);
+        $("#panelSalidaContenido").html(html);
         lucide.createIcons();
 
         if (salida.estado !== "en_ruta" && salida.estado !== "finalizado") {
-            return; // no hay manifiestos que mostrar
+            $("#loadingSucursales").replaceWith(`
+                <div class="alert alert-info fs-7 mb-0">
+                    Inicia el viaje para habilitar el registro de check y bloquear ventas.
+                </div>
+            `);
+            return;
         }
 
-        $("#panelSalidaContenido").html(
-            html +
-                puntos +
-                '<div id="loadingSucursales" class="text-muted mt-3">Cargando opciones de manifiesto...</div>',
-        );
-
+        // 4. AJAX para renderizar Bloque de Check y Manifiestos
         $.get(
             route("salidas.sucursales_ruta", { salida: id }),
             function (sucursalesRuta) {
-                let selectorSucursal = "";
+                let tarjetaCheckHtml = "";
 
                 if (window.IS_ADMIN) {
-                    selectorSucursal = `
-                    <div class="mb-2 mt-3">
-                        <label class="form-label">Seleccionar sucursal</label>
-                        <select id="sucursal_manifiesto" class="form-select">
-                            ${sucursalesRuta
-                                .map(
-                                    (s) =>
-                                        `<option value="${s.id}">${s.nombre}</option>`,
-                                )
-                                .join("")}
-                        </select>
+                    // Vista Administrador: Puede elegir sucursal y dar check en nombre de cualquiera
+                    tarjetaCheckHtml = `
+                    <div class="card bg-light border-0 mb-3">
+                        <div class="card-body p-3">
+                            <label class="form-label fs-8 fw-bold text-muted mb-1">Sucursal actual (Modo Admin)</label>
+                            <select id="sucursal_manifiesto" class="form-select form-select-sm mb-2">
+                                ${sucursalesRuta.map((s) => `<option value="${s.id}">${s.nombre}</option>`).join("")}
+                            </select>
+                            <button class="btn btn-dark btn-sm w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-1" onclick="registrarCheck(${salida.id})">
+                                <i data-lucide="shield-check" style="width:16px;"></i> Dar check y bloquear ventas
+                            </button>
+                        </div>
                     </div>
                 `;
                 } else {
+                    // Vista Usuario Sucursal
                     let mia = sucursalesRuta.find(
                         (s) =>
                             String(s.id) === String(window.USER_SUCURSAL?.id),
                     );
 
                     if (!mia) {
-                        selectorSucursal = `
-                        <div class="alert alert-warning mt-3">
+                        tarjetaCheckHtml = `
+                        <div class="alert alert-warning fs-7 mt-3">
                             Tu sucursal no forma parte de esta ruta.
                         </div>
                     `;
                     } else {
-                        selectorSucursal = `
-                        <div class="mb-2 mt-3">
-                            <label class="form-label">Sucursal</label>
-                            <input type="text" class="form-control" value="${mia.nombre}" disabled>
-                            <input type="hidden" id="sucursal_manifiesto" value="${mia.id}">
+                        const yaDioCheck = mia.check_registrado; // Flag del backend si ya pasó el carro
+
+                        tarjetaCheckHtml = `
+                        <div class="card bg-light border-0 mb-3">
+                            <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block fs-8">Sucursal actual</small>
+                                    <strong class="d-block text-dark">${mia.nombre}</strong>
+                                    <small class="text-primary fs-8 fw-semibold">Próxima ${salida.hora_salida ?? ""}</small>
+                                    <input type="hidden" id="sucursal_manifiesto" value="${mia.id}">
+                                </div>
+                                <div>
+                                    ${
+                                        yaDioCheck
+                                            ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-2 fs-8">
+                                                <i data-lucide="check-circle" style="width:14px;"></i> Check dado
+                                           </span>`
+                                            : `<button class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-1" onclick="registrarCheck(${salida.id}, ${mia.id})">
+                                                <i data-lucide="shield-check" style="width:16px;"></i> Dar check
+                                           </button>`
+                                    }
+                                </div>
+                            </div>
                         </div>
                     `;
                     }
                 }
 
-                let botones = "";
-
-                // Solo mostramos botones si hay una sucursal válida seleccionable
+                // Botonera de Manifiestos
+                let botonesManifiestos = "";
                 if (
                     window.IS_ADMIN ||
                     sucursalesRuta.some(
@@ -540,30 +649,43 @@ function verSalida(id) {
                             String(s.id) === String(window.USER_SUCURSAL?.id),
                     )
                 ) {
-                    botones = `
-                    <div class="d-grid gap-2 mt-2">
-                        <button class="btn btn-primary" onclick="abrirManifiesto(${salida.id}, 'pasajeros')">
-                            Manifiesto de pasajeros
-                        </button>
-                        <button class="btn btn-info" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
-                            Manifiesto de encomiendas
-                        </button>
-                          <button class="btn btn-warning" onclick="abrirManifiesto(${salida.id}, 'bodega')">
-                            Manifiesto de bodega
-                        </button>
-                        <button class="btn btn-success" onclick="abrirManifiesto(${salida.id}, 'conductores')">
-                            Manifiesto de conductores
-                        </button>
-                        <button class="btn btn-secondary" onclick="abrirManifiesto(${salida.id}, 'pasajeros_real')">
-                            Manifiesto de pasajeros (Detallado)
-                        </button>
+                    botonesManifiestos = `
+                    <div class="mt-3">
+                        <small class="fw-bold text-muted d-block mb-2 fs-8">Manifiestos de la sucursal</small>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'pasajeros')">
+                                    <i data-lucide="user" style="width:14px;"></i> Pasajeros
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-info btn-sm text-white w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
+                                    <i data-lucide="package" style="width:14px;"></i> Encomiendas
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-warning btn-sm text-white w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'bodega')">
+                                    <i data-lucide="archive" style="width:14px;"></i> Bodega
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-success btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'conductores')">
+                                    <i data-lucide="truck" style="width:14px;"></i> Conductores
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                <button class="btn btn-secondary btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'pasajeros_real')">
+                                    <i data-lucide="file-text" style="width:14px;"></i> Pasajeros detallado
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 `;
 
                     if (salida.estado === "finalizado" && window.IS_ADMIN) {
-                        botones += `
-                        <div class="d-grid gap-2 mt-2">
-                            <button class="btn btn-dark" onclick="imprimirTodosManifiestos(${salida.id})">
+                        botonesManifiestos += `
+                        <div class="mt-2">
+                            <button class="btn btn-dark btn-sm w-100 py-2" onclick="imprimirTodosManifiestos(${salida.id})">
                                 Imprimir todos los manifiestos (todas las sucursales)
                             </button>
                         </div>
@@ -571,10 +693,57 @@ function verSalida(id) {
                     }
                 }
 
-                $("#loadingSucursales").replaceWith(selectorSucursal + botones);
+                $("#loadingSucursales").replaceWith(
+                    tarjetaCheckHtml + botonesManifiestos,
+                );
                 lucide.createIcons();
             },
         );
+    });
+}
+
+// 5. Función de Evento al hacer click en "Dar check"
+function registrarCheck(salidaId, sucursalId = null) {
+    let idSucursal = sucursalId || $("#sucursal_manifiesto").val();
+
+    if (!idSucursal) {
+        Swal.fire("Error", "Selecciona una sucursal válida", "error");
+        return;
+    }
+
+    Swal.fire({
+        title: "¿Confirmar llegada del vehículo?",
+        text: "Al dar 'check' se bloquearán las nuevas ventas para esta salida en esta sucursal.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#10b981",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, dar check",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.post(route("salidas.registrar_check"), {
+                _token: $('meta[name="csrf-token"]').attr("content"),
+                salida_id: salidaId,
+                sucursal_id: idSucursal,
+            })
+                .done(function (response) {
+                    Swal.fire(
+                        "¡Registrado!",
+                        "El check fue guardado y las ventas de esta sucursal se congelaron.",
+                        "success",
+                    );
+                    verSalida(salidaId); // Recargar panel lateral
+                })
+                .fail(function (err) {
+                    Swal.fire(
+                        "Error",
+                        err.responseJSON?.message ||
+                            "No se pudo registrar el check",
+                        "error",
+                    );
+                });
+        }
     });
 }
 

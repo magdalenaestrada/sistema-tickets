@@ -188,7 +188,7 @@ class SalidaController extends Controller
 
                 return match ($salida->estado) {
                     'en_ruta'      => '<span class="badge bg-warning">EN RUTA</span>',
-                    'programado'   => '<span class="badge bg-primary">PROGRAMADO</span>',
+                    'programado'   => '<span class="badge bg-success-subtle">PROGRAMADO</span>',
                     'finalizado'   => '<span class="badge bg-success">FINALIZADO</span>',
                     'cancelado'    => '<span class="badge bg-danger">CANCELADO</span>',
                     'reprogramado' => '<span class="badge bg-info">REPROGRAMADO</span>',
