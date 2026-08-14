@@ -448,6 +448,72 @@ window.generarSalidas = function () {
         });
 };
 
+
+// Configura jQuery para mandar el token CSRF en cada petición AJAX
+// (evita el error "CSRF token mismatch" en los POST como registrarCheck)
+$.ajaxSetup({
+    headers: {
+        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+    },
+});
+
+function registrarCheck(salidaId, sucursalId = null) {
+    let idSucursal = sucursalId || $("#sucursal_manifiesto").val();
+
+    if (!idSucursal) {
+        Swal.fire("Error", "Selecciona una sucursal válida", "error");
+        return;
+    }
+
+    Swal.fire({
+        title: "¿Confirmar llegada del vehículo?",
+        text: "Al dar 'check' se bloquearán las nuevas ventas para esta salida en esta sucursal.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#10b981",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, dar check",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: route("salidas.registrar_check", {
+                    salida: salidaId,
+                }),
+                method: "POST",
+                // 👇 se manda explícito aquí, sin depender del ajaxSetup
+                // global de arriba, por si otro script lo pisa o se
+                // ejecuta después (típico con módulos @vite con defer).
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                        "content",
+                    ),
+                },
+                data: {
+                    sucursal_id: idSucursal,
+                },
+                success: function (response) {
+                    Swal.fire(
+                        "¡Registrado!",
+                        "El check fue guardado y las ventas de esta sucursal se congelaron.",
+                        "success",
+                    );
+
+                    verSalida(salidaId);
+                },
+                error: function (xhr) {
+                    Swal.fire(
+                        "Error",
+                        xhr.responseJSON?.message ||
+                            "No se pudo registrar el check",
+                        "error",
+                    );
+                },
+            });
+        }
+    });
+}
+
 function verSalida(id) {
     // 1. Loader previo al GET
     $("#tituloPanelSalida").text("Detalle de salida");
@@ -459,7 +525,7 @@ function verSalida(id) {
     `);
 
     $.get(route("salidas.show", { id: id }), function (salida) {
-        // 2. Timeline de la ruta
+        // 2. Timeline de la ruta con estado de ventas por punto
         let timelineHtml = "";
         if (salida.ruta?.puntos?.length) {
             timelineHtml = salida.ruta.puntos
@@ -468,29 +534,40 @@ function verSalida(id) {
                     const esActual = punto.es_actual;
 
                     let iconClass = "border-secondary bg-white text-secondary";
-                    let badgeEstado = `<span class="text-muted fs-8"></span>`;
+                    let badgeEstado = `<span class="badge bg-light text-muted border fs-8 fw-semibold">
+                        <i data-lucide="circle" style="width:10px;"></i> Ventas habilitadas
+                    </span>`;
+                    let icono = "circle";
 
                     if (esCompletado) {
+                        // El bus ya pasó por esta sucursal: ventas bloqueadas
                         iconClass = "bg-success text-white border-success";
-                        badgeEstado = `<span class="text-success fw-bold fs-8">Check registrado</span>`;
+                        icono = "check";
+                        badgeEstado = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-8 fw-semibold">
+                            <i data-lucide="lock" style="width:10px;"></i> Bus ya pasó · Ventas bloqueadas
+                        </span>`;
                     } else if (esActual) {
+                        // Próxima parada: aún puede vender, está en camino
                         iconClass = "bg-primary text-white border-primary";
-                        badgeEstado = `<span class="text-primary fw-bold fs-8">Próxima parada</span>`;
+                        icono = "play";
+                        badgeEstado = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 fw-semibold">
+                            <i data-lucide="navigation" style="width:10px;"></i> Próxima parada · Vendiendo
+                        </span>`;
                     }
 
                     return `
                     <div class="d-flex align-items-start mb-3 position-relative">
                         <div class="me-3 position-relative" style="z-index: 1;">
                             <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 28px; height: 28px;">
-                                <i data-lucide="${esCompletado ? "check" : esActual ? "play" : "circle"}" style="width: 14px;"></i>
+                                <i data-lucide="${icono}" style="width: 14px;"></i>
                             </div>
                         </div>
                         <div class="flex-grow-1 border-bottom pb-2">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold fs-7 ${esActual ? "text-primary" : "text-dark"}">${String.fromCharCode(65 + index)}. ${punto.nombre}</span>
+                                <span class="fw-bold fs-7 ${esActual ? "text-primary" : esCompletado ? "text-muted text-decoration-line-through" : "text-dark"}">${String.fromCharCode(65 + index)}. ${punto.nombre}</span>
                                 <span class="fw-bold fs-7 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span>
                             </div>
-                            <div>${badgeEstado}</div>
+                            <div class="mt-1">${badgeEstado}</div>
                         </div>
                     </div>
                 `;
@@ -500,7 +577,13 @@ function verSalida(id) {
             timelineHtml = `<p class="text-muted fs-7">No hay puntos de ruta registrados.</p>`;
         }
 
-        // 3. Estructura principal
+        // Conteo rápido de sucursales bloqueadas vs habilitadas (según puntos de ruta)
+        const totalPuntos = salida.ruta?.puntos?.length ?? 0;
+        const bloqueadas =
+            salida.ruta?.puntos?.filter((p) => p.check_registrado).length ?? 0;
+        const habilitadas = totalPuntos - bloqueadas;
+
+        // 3. Estructura principal (sin tabs, solo vista de Ruta)
         let html = `
             <div class="mb-3">
                 <h5 class="fw-bold text-dark mb-0">${salida.ruta?.nombre ?? "Sin ruta"}</h5>
@@ -509,58 +592,43 @@ function verSalida(id) {
 
             <!-- KPIs Superiores -->
             <div class="row g-2 mb-3">
-                <div class="col-6">
+                <div class="col-4">
                     <div class="p-2 border rounded bg-light text-center">
-                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Progreso de ruta</span>
-                        <strong class="fs-5 text-dark">${salida.parada_actual_index ?? 0} / ${salida.ruta?.puntos?.length ?? 0}</strong>
+                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Progreso</span>
+                        <strong class="fs-5 text-dark">${salida.parada_actual_index ?? 0}/${totalPuntos}</strong>
                         <span class="d-block text-muted fs-8">paradas</span>
                     </div>
                 </div>
-                <div class="col-6">
+                <div class="col-4">
                     <div class="p-2 border rounded bg-light text-center">
-                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ventas activas</span>
+                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ventas</span>
                         <strong class="fs-5 text-dark">${salida.asientos_vendidos ?? 0}</strong>
                         <span class="d-block text-muted fs-8">asientos</span>
                     </div>
                 </div>
+                <div class="col-4">
+                    <div class="p-2 border rounded bg-light text-center">
+                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Bloqueadas</span>
+                        <strong class="fs-5 text-danger">${bloqueadas}</strong>
+                        <span class="d-block text-muted fs-8">de ${totalPuntos}</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tabs -->
-            <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active fw-bold border-0 border-bottom border-2" id="tab-ruta-btn" data-bs-toggle="tab" data-bs-target="#tab-ruta" type="button">Ruta</button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link fw-bold border-0 border-bottom border-2 text-muted" id="tab-operaciones-btn" data-bs-toggle="tab" data-bs-target="#tab-operaciones" type="button">Operaciones</button>
-                </li>
-            </ul>
+            <!-- Timeline Vertical -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fs-8 fw-bold text-muted">Estado de la ruta</span>
+                <span class="fs-8 fw-bold text-muted">${habilitadas} sucursal(es) aún venden</span>
+            </div>
 
-            <div class="tab-content">
-                <div class="tab-pane fade show active" id="tab-ruta">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fs-8 fw-bold text-muted">Progreso de la ruta</span>
-                        <span class="fs-8 fw-bold text-muted">${salida.parada_actual_index ?? 0}/${salida.ruta?.puntos?.length ?? 0}</span>
-                    </div>
+            <div class="timeline-container px-1 mb-3">
+                ${timelineHtml}
+            </div>
 
-                    <!-- Timeline Vertical -->
-                    <div class="timeline-container px-1 mb-3">
-                        ${timelineHtml}
-                    </div>
-
-                    <!-- AJAX Container de Sucursal, Dar Check y Manifiestos -->
-                    <div id="loadingSucursales" class="text-center text-muted py-3">
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                        <span class="fs-7 d-block mt-1">Cargando datos de sucursal...</span>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="tab-operaciones">
-                    <div class="p-2 fs-7">
-                        <div class="mb-2"><strong>Tipo viaje:</strong> ${salida.tipo_viaje ?? "-"}</div>
-                        <div class="mb-2"><strong>Tipo vehículo:</strong> ${salida.tipo_vehiculo ?? "-"}</div>
-                        <div class="mb-2"><strong>Estado:</strong> <span class="badge bg-warning text-dark">${salida.estado ?? "-"}</span></div>
-                    </div>
-                </div>
+            <!-- AJAX Container de Sucursal, Dar Check y Manifiestos -->
+            <div id="loadingSucursales" class="text-center text-muted py-3">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span class="fs-7 d-block mt-1">Cargando datos de sucursal...</span>
             </div>
         `;
 
@@ -584,13 +652,23 @@ function verSalida(id) {
                 let tarjetaCheckHtml = "";
 
                 if (window.IS_ADMIN) {
-                    // Vista Administrador: Puede elegir sucursal y dar check en nombre de cualquiera
+                    // Vista Administrador: puede elegir sucursal y dar check en nombre de cualquiera.
+                    // Las sucursales ya con check quedan marcadas como bloqueadas en el select.
+                    const opciones = sucursalesRuta
+                        .map((s) => {
+                            const bloqueada = s.check_registrado;
+                            return `<option value="${s.id}" ${bloqueada ? "disabled" : ""}>
+                                ${s.nombre}${bloqueada ? " — Ventas bloqueadas" : ""}
+                            </option>`;
+                        })
+                        .join("");
+
                     tarjetaCheckHtml = `
                     <div class="card bg-light border-0 mb-3">
                         <div class="card-body p-3">
                             <label class="form-label fs-8 fw-bold text-muted mb-1">Sucursal actual (Modo Admin)</label>
                             <select id="sucursal_manifiesto" class="form-select form-select-sm mb-2">
-                                ${sucursalesRuta.map((s) => `<option value="${s.id}">${s.nombre}</option>`).join("")}
+                                ${opciones}
                             </select>
                             <button class="btn btn-dark btn-sm w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-1" onclick="registrarCheck(${salida.id})">
                                 <i data-lucide="shield-check" style="width:16px;"></i> Dar check y bloquear ventas
@@ -620,14 +698,20 @@ function verSalida(id) {
                                 <div>
                                     <small class="text-muted d-block fs-8">Sucursal actual</small>
                                     <strong class="d-block text-dark">${mia.nombre}</strong>
-                                    <small class="text-primary fs-8 fw-semibold">Próxima ${salida.hora_salida ?? ""}</small>
+                                    ${
+                                        yaDioCheck
+                                            ? `<small class="text-danger fs-8 fw-semibold">
+                                                <i data-lucide="lock" style="width:12px;"></i> El bus ya pasó por esta sucursal
+                                               </small>`
+                                            : `<small class="text-primary fs-8 fw-semibold">Próxima ${salida.hora_salida ?? ""}</small>`
+                                    }
                                     <input type="hidden" id="sucursal_manifiesto" value="${mia.id}">
                                 </div>
                                 <div>
                                     ${
                                         yaDioCheck
-                                            ? `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-2 fs-8">
-                                                <i data-lucide="check-circle" style="width:14px;"></i> Check dado
+                                            ? `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-2 fs-8">
+                                                <i data-lucide="lock" style="width:14px;"></i> Ventas bloqueadas
                                            </span>`
                                             : `<button class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-1" onclick="registrarCheck(${salida.id}, ${mia.id})">
                                                 <i data-lucide="shield-check" style="width:16px;"></i> Dar check
@@ -699,51 +783,6 @@ function verSalida(id) {
                 lucide.createIcons();
             },
         );
-    });
-}
-
-// 5. Función de Evento al hacer click en "Dar check"
-function registrarCheck(salidaId, sucursalId = null) {
-    let idSucursal = sucursalId || $("#sucursal_manifiesto").val();
-
-    if (!idSucursal) {
-        Swal.fire("Error", "Selecciona una sucursal válida", "error");
-        return;
-    }
-
-    Swal.fire({
-        title: "¿Confirmar llegada del vehículo?",
-        text: "Al dar 'check' se bloquearán las nuevas ventas para esta salida en esta sucursal.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#10b981",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Sí, dar check",
-        cancelButtonText: "Cancelar",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.post(route("salidas.registrar_check"), {
-                _token: $('meta[name="csrf-token"]').attr("content"),
-                salida_id: salidaId,
-                sucursal_id: idSucursal,
-            })
-                .done(function (response) {
-                    Swal.fire(
-                        "¡Registrado!",
-                        "El check fue guardado y las ventas de esta sucursal se congelaron.",
-                        "success",
-                    );
-                    verSalida(salidaId); // Recargar panel lateral
-                })
-                .fail(function (err) {
-                    Swal.fire(
-                        "Error",
-                        err.responseJSON?.message ||
-                            "No se pudo registrar el check",
-                        "error",
-                    );
-                });
-        }
     });
 }
 

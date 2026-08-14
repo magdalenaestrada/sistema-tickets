@@ -30,5 +30,7 @@ Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function
     Route::get('/{salida}/manifiesto-bodega', [SalidaController::class, 'manifiestoBodega'])->name('manifiesto_bodega');
     Route::get('/{salida}/manifiesto-conductores', [SalidaController::class, 'manifiestoConductores'])->name('manifiesto_conductores');
     Route::get('/{salida}/recursos-disponibles', [SalidaController::class, 'recursosDisponibles'])
-    ->name('recursos_disponibles');
+        ->name('recursos_disponibles');
+    Route::post('/{salida}/registrar-check', [SalidaController::class, 'registrarCheck'])
+        ->name('registrar_check');
 });

@@ -315,7 +315,7 @@ class Salida extends Model
         }
 
         $ordenActual = $actual->orden;
-        
+
         return $this->encomiendas
             ->filter(function ($encomienda) use ($puntos, $ordenActual) {
 
@@ -384,5 +384,43 @@ class Salida extends Model
             ->filter()
             ->unique('id')
             ->values();
+    }
+
+    public function checks()
+    {
+        return $this->hasMany(SalidaCheck::class);
+    }
+
+    // IDs de puntos ya bloqueados para ESTA salida
+    public function puntosBloqueadosIds()
+    {
+        return $this->checks()->pluck('punto_id');
+    }
+
+    // Arma el array de puntos con check_registrado y es_actual, listo para el frontend
+    public function puntosConEstado()
+    {
+        $puntos = $this->horario->ruta->puntos()->orderBy('orden')->get();
+        $bloqueados = $this->puntosBloqueadosIds();
+
+        // La "próxima parada" es el primer punto sin check
+        $indiceActual = $puntos->search(fn($p) => !$bloqueados->contains($p->id));
+
+        return $puntos->values()->map(function ($p, $i) use ($bloqueados, $indiceActual) {
+            return [
+                'id' => $p->id,
+                'nombre' => trim(($p->pueblito?->descripcion ?? '') . ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')),
+                'orden' => $p->orden,
+                'check_registrado' => $bloqueados->contains($p->id),
+                'es_actual' => $i === $indiceActual,
+                'hora' => null, // aquí puedes calcular la hora igual que en index()
+            ];
+        });
+    }
+
+    // true si ese pueblito/punto ya fue "pasado" por el bus en esta salida
+    public function puntoEstaBloqueado($puntoId)
+    {
+        return $this->puntosBloqueadosIds()->contains($puntoId);
     }
 }

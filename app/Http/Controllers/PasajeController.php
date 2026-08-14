@@ -86,7 +86,7 @@ class PasajeController extends Controller
                 $hora->setTimeFromTimeString($salida->horario->hora_salida);
                 $puntosConHora = [];
                 $ultimoIndex = $puntos->count() - 1;
-
+                $bloqueados = $salida->puntosBloqueadosIds();
                 foreach ($puntos as $i => $p) {
                     if ($i > 0) {
                         $tramo = $ruta->tramos()
@@ -99,11 +99,15 @@ class PasajeController extends Controller
                         }
                     }
 
+                    $estaBloqueado = $bloqueados->contains($p->id);
+
+
                     if ($i === $ultimoIndex) {
 
                         $origenPermitido = false;
+                    } elseif ($estaBloqueado) {
+                        $origenPermitido = false;
                     } elseif ($esAdmin) {
-
                         $origenPermitido = true;
                     } elseif (!$sucursalUsuario?->venta_otras) {
 
@@ -131,7 +135,9 @@ class PasajeController extends Controller
                                 ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')
                         ),
                         'hora' => $hora->format('H:i'),
-                        'origen_permitido' => $origenPermitido, // 👈 nuevo flag para el frontend
+                        'origen_permitido' => $origenPermitido,
+                        'check_registrado' => $estaBloqueado,
+
                     ];
                 }
 

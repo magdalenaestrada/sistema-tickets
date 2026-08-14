@@ -188,7 +188,7 @@ class SalidaController extends Controller
 
                 return match ($salida->estado) {
                     'en_ruta'      => '<span class="badge bg-warning">EN RUTA</span>',
-                    'programado'   => '<span class="badge bg-success-subtle">PROGRAMADO</span>',
+                    'programado'   => '<span class="badge bg-primary">PROGRAMADO</span>',
                     'finalizado'   => '<span class="badge bg-success">FINALIZADO</span>',
                     'cancelado'    => '<span class="badge bg-danger">CANCELADO</span>',
                     'reprogramado' => '<span class="badge bg-info">REPROGRAMADO</span>',
@@ -554,13 +554,29 @@ class SalidaController extends Controller
         );
     }
 
+
     public function show($id)
     {
         $salida = Salida::with([
             'horario.ruta.puntos.pueblito',
+            'horario.ruta.puntos.sucursal', // 👈 nuevo: para check_registrado por sucursal
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
+            'checks',                       // 👈 nuevo: relación de checks registrados en salida_checks
         ])->findOrFail($id);
+
+        $puntos = $salida->horario?->ruta?->puntos?->sortBy('orden')->values() ?? collect();
+
+        $bloqueados = $salida->puntosBloqueadosIds(); // helper en el modelo Salida
+
+        // La "próxima parada" es el primer punto que aún NO tiene check
+        $indiceActual = $puntos->search(fn($p) => !$bloqueados->contains($p->id));
+
+        $asientosVendidos = \DB::table('pasajes')
+            ->where('salida_id', $salida->id)
+            ->whereIn('estado', ['R', 'V'])
+            ->distinct()
+            ->count('asiento_numero');
 
         return response()->json([
             'id' => $salida->id,
@@ -581,21 +597,27 @@ class SalidaController extends Controller
             'hora_llegada' => $salida->horario?->hora_llegada,
             'tipo_viaje' => $salida->horario?->tipo_viaje?->descripcion,
             'tipo_vehiculo' => $salida->horario?->tipo_vehiculo?->descripcion,
+
+            'asientos_vendidos' => $asientosVendidos,
+            'parada_actual_index' => $bloqueados->count(),
+
             'ruta' => [
                 'nombre' => $salida->horario?->ruta?->nombre,
-                'puntos' => $salida->horario?->ruta?->puntos
-                    ?->sortBy('orden')
-                    ->values()
-                    ->map(function ($p) use ($salida) {
-                        return [
-                            'orden' => $p->orden,
-                            'nombre' => $p->pueblito?->descripcion,
-                            'hora' => $salida->horario->horaEnPunto($p->id),
-                        ];
-                    }),
+                'puntos' => $puntos->map(function ($p, $i) use ($salida, $bloqueados, $indiceActual) {
+                    return [
+                        'id' => $p->id,                      
+                        'sucursal_id' => $p->sucursal_id,         
+                        'orden' => $p->orden,
+                        'nombre' => $p->pueblito?->descripcion,
+                        'hora' => $salida->horario->horaEnPunto($p->id),
+                        'check_registrado' => $bloqueados->contains($p->id), 
+                        'es_actual' => $i === $indiceActual,                 
+                    ];
+                })->values(),
             ],
         ]);
     }
+
 
     public function store(Request $request)
     {
@@ -845,5 +867,50 @@ class SalidaController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function registrarCheck(Request $request, Salida $salida)
+    {
+        $validated = $request->validate([
+            'sucursal_id' => 'required|exists:sucursales,id',
+        ]);
+
+        $esAdmin = auth()->user()->hasRole('Administrador');
+
+        // Un usuario de sucursal solo puede dar check en la suya propia.
+        if (!$esAdmin && (int) $validated['sucursal_id'] !== (int) auth()->user()->sucursal_id) {
+            return response()->json([
+                'message' => 'No tienes permiso para registrar el check en esa sucursal.',
+            ], 403);
+        }
+
+        $punto = $salida->horario->ruta->puntos()
+            ->where('sucursal_id', $validated['sucursal_id'])
+            ->first();
+
+        if (!$punto) {
+            return response()->json([
+                'message' => 'Esa sucursal no forma parte de la ruta de esta salida.',
+            ], 422);
+        }
+
+        $yaExiste = $salida->checks()->where('punto_id', $punto->id)->exists();
+
+        if ($yaExiste) {
+            return response()->json([
+                'message' => 'Ya se registró el check para esta sucursal.',
+            ], 422);
+        }
+
+        $salida->checks()->create([
+            'punto_id' => $punto->id,
+            'usuario_id' => auth()->id(),
+            'registrado_en' => now(),
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Check registrado. Ventas bloqueadas desde esta sucursal.',
+        ]);
     }
 }
