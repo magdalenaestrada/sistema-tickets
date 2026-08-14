@@ -3,15 +3,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const sellButton = document.getElementById("sell-button");
     const editButton = document.getElementById("edit-button");
     const resultadosInfo = document.getElementById("resultados-info");
-    const estadoInicial = document.getElementById("estado-inicial"); // NUEVO: declarado una sola vez aquí
+    const estadoInicial = document.getElementById("estado-inicial");
 
     const pueblitoDefaultId = window.VENTA_CONFIG?.pueblitoSucursalId || null;
 
     let selectedSeats = [];
     let currentSalidaId = null;
     let selectedReservedPasajeId = null;
-    let currentOrigenId = null; // NUEVO
-    let currentDestinoId = null; // NUEVO
+    let currentOrigenId = null;
+    let currentDestinoId = null;
 
     actualizarContador(-1);
     attachRowEvents();
@@ -43,14 +43,12 @@ document.addEventListener("DOMContentLoaded", function () {
             estadoInicial.style.display = "block";
             mostrarPrimeras10Salidas();
         }
+    }
 
-        console.log("pueblitoDefaultId:", pueblitoDefaultId);
-        console.log(
-            "Opciones disponibles en origen:",
-            [...document.getElementById("filtro_origen").options].map(
-                (o) => o.value,
-            ),
-        );
+    // Helper único: decide si un punto de la ruta es un origen válido
+    // para vender. Debe existir Y no estar bloqueado (check ya registrado).
+    function esOrigenValido(punto) {
+        return !!punto && punto.origen_permitido !== false;
     }
 
     function attachRowEvents() {
@@ -77,16 +75,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 const primero = puntos[0];
                 const ultimo = puntos[puntos.length - 1];
 
+                const primerOrigenValido = puntos.find(
+                    (p) => p.origen_permitido !== false,
+                );
+
                 let origenId = origenSelect.value;
                 let destinoId = destinoSelect.value;
 
                 if (!origenId && !destinoId) {
-                    if (primero && ultimo) {
+                    if (primerOrigenValido && ultimo) {
                         cargarAsientos(
                             salidaId,
-                            primero.pueblito_id,
+                            primerOrigenValido.pueblito_id,
                             ultimo.pueblito_id,
                         );
+                    } else {
+                        svgContainer.innerHTML = `
+                            <div class="no-results">
+                                Ya no quedan sucursales habilitadas para vender en esta salida
+                            </div>
+                        `;
                     }
                     return;
                 }
@@ -96,7 +104,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 if (!origenId && destinoId) {
-                    origenId = primero?.pueblito_id;
+                    // 👇 mismo criterio aquí
+                    origenId = primerOrigenValido?.pueblito_id;
                 }
 
                 if (tipoViajeId === 2) {
@@ -177,13 +186,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     e.stopPropagation();
                     toggleSeatSelection(seat, numero);
                 };
-            } else if (estado === "reservado" || estado === "ocupado") {
-                seat.style.cursor = "pointer";
-                seat.style.opacity = "1";
-                seat.onclick = (e) => {
-                    e.stopPropagation();
-                    obtenerPasajeAsiento(salidaId, numero);
-                };
             } else {
                 seat.style.cursor = "pointer";
                 seat.style.opacity = "1";
@@ -258,41 +260,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 "No se pudo obtener el pasaje del asiento",
                 "error",
             );
-        }
-    }
-
-    async function obtenerPasajeReservado(salidaId, numeroAsiento) {
-        try {
-            const seatElement = document.querySelector(
-                `#seat-${numeroAsiento}`,
-            );
-
-            if (seatElement?.classList.contains("selected-seat")) {
-                seatElement.classList.remove("selected-seat");
-                selectedReservedPasajeId = null;
-                actualizarBotones();
-                return;
-            }
-
-            const res = await fetch(
-                route("pasajes.buscar") +
-                    `?salida_id=${salidaId}&asiento=${numeroAsiento}`,
-            );
-            const data = await res.json();
-
-            if (data.success && data.pasaje_id) {
-                selectedReservedPasajeId = data.pasaje_id;
-                selectedSeats = [];
-
-                document
-                    .querySelectorAll(".selected-seat")
-                    .forEach((s) => s.classList.remove("selected-seat"));
-
-                seatElement?.classList.add("selected-seat");
-                actualizarBotones();
-            }
-        } catch (err) {
-            console.error(err);
         }
     }
 
@@ -396,9 +363,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const seats = selectedSeats.sort((a, b) => a - b).join(",");
 
-        let origenId = document.getElementById("filtro_origen").value;
-        let destinoId = document.getElementById("filtro_destino").value;
-
         if (!currentOrigenId || !currentDestinoId) {
             Swal.fire(
                 "Atención",
@@ -461,7 +425,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 (p) => String(p.pueblito_id) === String(origen),
             );
 
-            const matchOrigen = !!puntoOrigen;
+            // 👇 FIX: ya no basta con que exista el punto, tiene que
+            // seguir habilitado para vender (el bus no debe haber pasado).
+            const matchOrigen = esOrigenValido(puntoOrigen);
             const matchSemana = fechasSemana.includes(rowFecha);
 
             const ordenMax = puntos.length
@@ -547,7 +513,8 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
             const matchSemana = fechasSemana.includes(rowFecha);
-            const matchOrigen = !!puntoOrigen;
+            // 👇 FIX: mismo criterio, el origen debe seguir habilitado
+            const matchOrigen = esOrigenValido(puntoOrigen);
             const matchDestino = !!puntoDestino;
 
             let matchOrden = false;
@@ -664,7 +631,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 (p) => String(p.pueblito_id) === String(origen),
             );
 
-            const matchOrigen = !!puntoOrigen;
+            // 👇 FIX
+            const matchOrigen = esOrigenValido(puntoOrigen);
             const matchFecha = rowFecha === fecha;
 
             const ordenMax = puntos.length
@@ -749,7 +717,8 @@ document.addEventListener("DOMContentLoaded", function () {
             );
 
             const matchFecha = rowFecha === fecha;
-            const matchOrigen = !!puntoOrigen;
+            // 👇 FIX
+            const matchOrigen = esOrigenValido(puntoOrigen);
             const matchDestino = !!puntoDestino;
 
             let matchOrden = false;
@@ -844,17 +813,31 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     precargarDesdeUrl();
 
+    // 👇 FIX: el listado inicial (sin filtro de origen, típicamente admin)
+    // ya no debe listar una salida donde TODOS los orígenes están bloqueados.
     function mostrarPrimeras10Salidas() {
-        const rows = document.querySelectorAll(".horario-row");
+        const rows = Array.from(
+            document.querySelectorAll(".horario-row"),
+        ).filter((row) => {
+            let puntos = [];
+            try {
+                puntos = JSON.parse(row.dataset.puntos || "[]");
+            } catch (e) {
+                puntos = [];
+            }
+            return puntos.some((p) => p.origen_permitido !== false);
+        });
 
         let visibles = 0;
+
+        document.querySelectorAll(".horario-row").forEach((row) => {
+            row.style.display = "none";
+        });
 
         rows.forEach((row) => {
             if (visibles < 10) {
                 row.style.display = "flex";
                 visibles++;
-            } else {
-                row.style.display = "none";
             }
         });
 

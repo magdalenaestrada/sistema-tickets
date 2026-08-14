@@ -394,7 +394,21 @@ class Salida extends Model
     // IDs de puntos ya bloqueados para ESTA salida
     public function puntosBloqueadosIds()
     {
-        return $this->checks()->pluck('punto_id');
+        $puntos = $this->horario->ruta->puntos()->orderBy('orden')->get();
+
+        $idsConCheckPropio = $this->checks()->pluck('punto_id');
+
+        if ($idsConCheckPropio->isEmpty()) {
+            return collect();
+        }
+
+        $ordenMaximoConCheck = $puntos
+            ->whereIn('id', $idsConCheckPropio)
+            ->max('orden');
+
+        return $puntos
+            ->where('orden', '<=', $ordenMaximoConCheck)
+            ->pluck('id');
     }
 
     // Arma el array de puntos con check_registrado y es_actual, listo para el frontend

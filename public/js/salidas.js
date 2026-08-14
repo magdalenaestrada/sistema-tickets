@@ -448,7 +448,6 @@ window.generarSalidas = function () {
         });
 };
 
-
 // Configura jQuery para mandar el token CSRF en cada petición AJAX
 // (evita el error "CSRF token mismatch" en los POST como registrarCheck)
 $.ajaxSetup({
@@ -534,43 +533,45 @@ function verSalida(id) {
                     const esActual = punto.es_actual;
 
                     let iconClass = "border-secondary bg-white text-secondary";
-                    let badgeEstado = `<span class="badge bg-light text-muted border fs-8 fw-semibold">
-                        <i data-lucide="circle" style="width:10px;"></i> Ventas habilitadas
-                    </span>`;
+                    let badgeEstado = `<span class="badge bg-light text-muted border fs-9 fw-semibold py-0 px-1"> 
+                <i data-lucide="circle" style="width:8px;"></i> Habilitado 
+            </span>`;
                     let icono = "circle";
 
                     if (esCompletado) {
-                        // El bus ya pasó por esta sucursal: ventas bloqueadas
                         iconClass = "bg-success text-white border-success";
                         icono = "check";
-                        badgeEstado = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-8 fw-semibold">
-                            <i data-lucide="lock" style="width:10px;"></i> Bus ya pasó · Ventas bloqueadas
-                        </span>`;
+                        badgeEstado = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-9 fw-semibold py-0 px-1"> 
+                    <i data-lucide="lock" style="width:8px;"></i> Bloqueado 
+                </span>`;
                     } else if (esActual) {
-                        // Próxima parada: aún puede vender, está en camino
                         iconClass = "bg-primary text-white border-primary";
                         icono = "play";
-                        badgeEstado = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-8 fw-semibold">
-                            <i data-lucide="navigation" style="width:10px;"></i> Próxima parada · Vendiendo
-                        </span>`;
+                        badgeEstado = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-9 fw-semibold py-0 px-1"> 
+                    <i data-lucide="navigation" style="width:8px;"></i> Próxima 
+                </span>`;
                     }
 
-                    return `
-                    <div class="d-flex align-items-start mb-3 position-relative">
-                        <div class="me-3 position-relative" style="z-index: 1;">
-                            <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 28px; height: 28px;">
-                                <i data-lucide="${icono}" style="width: 14px;"></i>
-                            </div>
+                    return ` 
+            <div class="d-flex align-items-center mb-1 py-1 position-relative"> 
+                <div class="me-2 flex-shrink-0" style="z-index: 1;"> 
+                    <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 22px; height: 22px;"> 
+                        <i data-lucide="${icono}" style="width: 10px;"></i> 
+                    </div> 
+                </div> 
+                <div class="flex-grow-1 border-bottom pb-1 min-w-0"> 
+                    <div class="d-flex justify-content-between align-items-center gap-2"> 
+                        <span class="fw-bold fs-8 text-truncate ${esActual ? "text-primary" : esCompletado ? "text-muted text-decoration-line-through" : "text-dark"}" title="${punto.nombre}">
+                            ${String.fromCharCode(65 + index)}. ${punto.nombre}
+                        </span> 
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span> 
+                            ${badgeEstado}
                         </div>
-                        <div class="flex-grow-1 border-bottom pb-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold fs-7 ${esActual ? "text-primary" : esCompletado ? "text-muted text-decoration-line-through" : "text-dark"}">${String.fromCharCode(65 + index)}. ${punto.nombre}</span>
-                                <span class="fw-bold fs-7 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span>
-                            </div>
-                            <div class="mt-1">${badgeEstado}</div>
-                        </div>
-                    </div>
-                `;
+                    </div> 
+                </div> 
+            </div> 
+        `;
                 })
                 .join("");
         } else {
