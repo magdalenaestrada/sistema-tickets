@@ -302,7 +302,7 @@
                             <option value="{{ $pueblito->id }}">
                                 {{ $pueblito->descripcion }}
                                 @if ($pueblito->sucursal?->nombre_comercial)
-                                    - <span class="fw-bold">{{ strtoupper($pueblito->sucursal->nombre_comercial) }}</span>
+                                    - <strong>{{ strtoupper($pueblito->sucursal->nombre_comercial) }}</strong>
                                 @endif
                             </option>
                         @endforeach
