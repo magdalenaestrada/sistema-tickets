@@ -103,20 +103,38 @@
                             </div>
 
                             <!-- Venta por usuario -->
+                            <!-- Venta por usuario -->
                             <div class="col-12 col-md-6 border-bottom pb-3 border-bottom-md-0">
-                                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person me-2 text-primary"></i>Ventas
-                                    por Usuario</h6>
+                                <h6 class="fw-bold text-dark mb-3">
+                                    <i class="bi bi-person me-2 text-primary"></i>
+                                    Ventas por Usuario
+                                </h6>
+
                                 <div class="mb-3">
                                     <label class="form-label micro-text mb-1">Usuario / Cajero</label>
-                                    <select class="form-select form-select-sm">
+                                    <select id="reporte_usuario_id" class="form-select form-select-sm">
                                         <option value="">Todos los Usuarios</option>
+
+                                        @foreach ($usuarios as $usuario)
+                                            <option value="{{ $usuario->id }}">
+                                                {{ $usuario->persona->nombre_completo }}
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
+
                                 <div class="d-flex gap-2 pt-md-4 mt-md-2">
-                                    <button class="btn btn-outline-danger btn-sm w-100"><i
-                                            class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                    <button class="btn btn-outline-success btn-sm w-100"><i
-                                            class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                        onclick="exportarVentasUsuario('pdf')">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>
+                                        PDF
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                        onclick="exportarVentasUsuario('excel')">
+                                        <i class="bi bi-file-earmark-excel me-1"></i>
+                                        Excel
+                                    </button>
                                 </div>
                             </div>
 
@@ -293,6 +311,53 @@
             toggleDateInputs();
         });
 
+          function obtenerFiltrosGlobales() {
+        const form = document.getElementById('filterForm');
+
+        const formData = new FormData(form);
+
+        return {
+            period: formData.get('period'),
+            date_from: formData.get('date_from'),
+            date_to: formData.get('date_to'),
+        };
+    }
+
+    function exportarVentasUsuario(tipo) {
+
+        const filtros = obtenerFiltrosGlobales();
+
+        filtros.usuario_id = document.getElementById(
+            'reporte_usuario_id'
+        ).value;
+
+        const params = new URLSearchParams();
+
+        params.append('period', filtros.period);
+
+        if (filtros.date_from) {
+            params.append('date_from', filtros.date_from);
+        }
+
+        if (filtros.date_to) {
+            params.append('date_to', filtros.date_to);
+        }
+
+        if (filtros.usuario_id) {
+            params.append('usuario_id', filtros.usuario_id);
+        }
+
+        let url;
+
+        if (tipo === 'excel') {
+            url = "{{ route('reportes.ventas.usuario.excel') }}";
+        } else {
+            url = "{{ route('reportes.ventas.usuario.pdf') }}";
+        }
+
+        window.location.href = url + '?' + params.toString();
+    }
+
         function toggleDateInputs() {
             const customSelected = document.getElementById('period_custom').checked;
             const dateFrom = document.getElementById('date_from');
@@ -344,7 +409,8 @@
             const to = document.getElementById('date_to').value;
 
             alert(
-                `Filtros Aplicados:\nPeríodo: ${period}\nDesde: ${from}\nHasta: ${to}\n\nLos reportes generados tomarán estos rangos.`);
+                `Filtros Aplicados:\nPeríodo: ${period}\nDesde: ${from}\nHasta: ${to}\n\nLos reportes generados tomarán estos rangos.`
+                );
         }
     </script>
 @endsection
