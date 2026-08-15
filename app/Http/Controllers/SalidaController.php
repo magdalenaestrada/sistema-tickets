@@ -230,7 +230,7 @@ class SalidaController extends Controller
                     if ($puedeIniciar) {
                         $botones .= '
                 <button class="btn btn-success btn-xs iniciar-ruta" data-id="' . $salida->id . '" title="Iniciar ruta">
-                    <i class="link-icon" data-lucide="play"></i>
+                    <i class="link-icon" data-lucide="rocket"></i>
                 </button>
             ';
                     }
@@ -319,10 +319,10 @@ class SalidaController extends Controller
 
         $vehiculos = Vehiculo::with('tipo_vehiculo')
             ->where('tipo_vehiculo_id', $tipoVehiculoId)
-            ->where(function ($q) use ($vehiculosOcupados, $salida) {
-                $q->whereNotIn('id', $vehiculosOcupados)
-                    ->orWhere('id', $salida->vehiculo_id);
-            })
+            // ->where(function ($q) use ($vehiculosOcupados, $salida) {
+            //     $q->whereNotIn('id', $vehiculosOcupados)
+            //         ->orWhere('id', $salida->vehiculo_id);
+            // })
             ->get();
 
         $ocupadosPrincipal = Salida::where('id', '!=', $salida->id)
@@ -344,10 +344,10 @@ class SalidaController extends Controller
 
         $conductores = Empleado::with('persona')
             ->where("cargo_id", 3)
-            ->where(function ($q) use ($conductoresOcupados, $permitidosDeEstaSalida) {
-                $q->whereNotIn('id', $conductoresOcupados)
-                    ->orWhereIn('id', $permitidosDeEstaSalida);
-            })
+            // ->where(function ($q) use ($conductoresOcupados, $permitidosDeEstaSalida) {
+            //     $q->whereNotIn('id', $conductoresOcupados)
+            //         ->orWhereIn('id', $permitidosDeEstaSalida);
+            // })
             ->get();
 
         return response()->json([
@@ -604,17 +604,16 @@ class SalidaController extends Controller
     {
         $salida = Salida::with([
             'horario.ruta.puntos.pueblito',
-            'horario.ruta.puntos.sucursal', // 👈 nuevo: para check_registrado por sucursal
+            'horario.ruta.puntos.sucursal',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
-            'checks',                       // 👈 nuevo: relación de checks registrados en salida_checks
+            'checks',
         ])->findOrFail($id);
 
         $puntos = $salida->horario?->ruta?->puntos?->sortBy('orden')->values() ?? collect();
 
-        $bloqueados = $salida->puntosBloqueadosIds(); // helper en el modelo Salida
+        $bloqueados = $salida->puntosBloqueadosIds();
 
-        // La "próxima parada" es el primer punto que aún NO tiene check
         $indiceActual = $puntos->search(fn($p) => !$bloqueados->contains($p->id));
 
         $asientosVendidos = \DB::table('pasajes')
@@ -622,6 +621,24 @@ class SalidaController extends Controller
             ->whereIn('estado', ['R', 'V'])
             ->distinct()
             ->count('asiento_numero');
+
+        // 👇 NUEVO: ¿el usuario actual puede editar vehículo/conductor de emergencia?
+        $isAdmin = auth()->user()->hasRole('Administrador');
+        $sucursalId = auth()->user()->empleado->sucursal_id ?? null;
+
+        $origenPunto = $puntos->first();
+        $origenSucursalId = $origenPunto?->sucursal_id;
+        $esOrigen = $origenSucursalId && (int) $origenSucursalId === (int) $sucursalId;
+
+        // origen ya dio su check ⇒ ya no se puede editar
+        $origenYaConfirmado = $origenPunto
+            ? $bloqueados->contains($origenPunto->id)
+            : false;
+
+        $puedeEditarAsignacion = !$isAdmin
+            && $salida->estado === 'en_ruta'
+            && $esOrigen
+            && !$origenYaConfirmado;
 
         return response()->json([
             'id' => $salida->id,
@@ -645,6 +662,8 @@ class SalidaController extends Controller
 
             'asientos_vendidos' => $asientosVendidos,
             'parada_actual_index' => $bloqueados->count(),
+
+            'puede_editar_asignacion' => $puedeEditarAsignacion, // 👈 NUEVO
 
             'ruta' => [
                 'nombre' => $salida->horario?->ruta?->nombre,
@@ -799,7 +818,10 @@ class SalidaController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user = Auth::id();
+        $user = Auth::user();
+        $isAdmin = $user->hasRole('Administrador');
+        $sucursalId = $user->empleado->sucursal_id ?? null;
+
         $request->validate([
             'horario_id' => 'required|exists:horarios,id',
             'fecha_cambio_estado' => 'nullable|date|after_or_equal:today',
@@ -823,13 +845,24 @@ class SalidaController extends Controller
         }
 
         try {
-            $salida = Salida::with('pasajes')->findOrFail($id);
+            $salida = Salida::with(['pasajes', 'horario.ruta.puntos'])->findOrFail($id);
+
+            // 🔒 Autorización: un vendedor (no admin) solo puede hacer 3 cosas puntuales
+            if (!$isAdmin) {
+                $error = $this->validarAccionVendedor($request, $salida, $sucursalId);
+
+                if ($error) {
+                    return response()->json([
+                        'ok' => false,
+                        'message' => $error,
+                    ], 403);
+                }
+            }
 
             $existe = Salida::where('horario_id', $request->horario_id)
                 ->where('fecha_salida', $request->fecha_salida)
                 ->where('hora_salida', $request->hora_salida)
-                ->where('id', '!=', $id) // 👈 IMPORTANTE
-
+                ->where('id', '!=', $id)
                 ->exists();
 
             if ($existe) {
@@ -837,6 +870,7 @@ class SalidaController extends Controller
                     'message' => 'Ya existe una salida programada para esta hora'
                 ], 422);
             }
+
             if ($request->estado === 'en_ruta') {
                 if (!$request->vehiculo_id || !$request->conductor_principal_id) {
                     return response()->json([
@@ -857,7 +891,7 @@ class SalidaController extends Controller
                 'horario_id' => $request->horario_id,
                 'fecha_salida' => $request->fecha_salida,
                 'estado' => $request->estado,
-                'usuario_cambio_estado_id' => $user,
+                'usuario_cambio_estado_id' => $user->id,
                 'vehiculo_id' => $request->vehiculo_id,
                 'hora_salida' => $request->hora_salida,
                 'conductor_principal_id' => $request->conductor_principal_id,
@@ -888,6 +922,46 @@ class SalidaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Valida que un usuario NO administrador solo pueda ejecutar una
+     * de estas 3 acciones puntuales, sin tocar horario/fecha/motivo/etc.
+     * Devuelve un mensaje de error (string) si está prohibido, o null si está permitido.
+     */
+    private function validarAccionVendedor(Request $request, Salida $salida, $sucursalId)
+    {
+        if (
+            (string) $request->horario_id !== (string) $salida->horario_id
+            || (string) $request->fecha_salida !== (string) $salida->fecha_salida?->format('Y-m-d')
+        ) {
+            return 'No tienes permiso para modificar el horario o la fecha de esta salida.';
+        }
+
+        if (in_array($request->estado, ['reprogramado', 'cancelado'])) {
+            return 'No tienes permiso para reprogramar o cancelar salidas.';
+        }
+
+        if ($request->estado === 'en_ruta' && in_array($salida->estado, ['programado', 'reprogramado'])) {
+            return $salida->esSucursalOrigen($sucursalId)
+                ? null
+                : 'Solo la sucursal de origen puede iniciar esta ruta.';
+        }
+
+        if ($request->estado === 'finalizado' && $salida->estado === 'en_ruta') {
+            return $salida->esSucursalDestino($sucursalId)
+                ? null
+                : 'Solo la sucursal de destino puede finalizar esta ruta.';
+        }
+
+        if ($request->estado === 'en_ruta' && $salida->estado === 'en_ruta') {
+            return $salida->puedeEditarAsignacion($sucursalId)
+                ? null
+                : 'No tienes permiso para editar la asignación de esta salida.';
+        }
+
+        return 'No tienes permiso para realizar este cambio de estado.';
+    }
+
     public function destroy($id)
     {
         try {

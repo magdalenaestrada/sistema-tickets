@@ -54,7 +54,6 @@
                         <table id="tablaSalidas" class="table table-hover align-middle w-100">
                             <thead class="table-primary">
                                 <tr>
-                                    <th><input type="checkbox" id="chk-todos"></th>
                                     <th>ID</th>
                                     <th>Ruta</th>
                                     <th>Fecha</th>

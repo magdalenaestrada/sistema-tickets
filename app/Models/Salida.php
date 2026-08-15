@@ -432,9 +432,47 @@ class Salida extends Model
         });
     }
 
-    // true si ese pueblito/punto ya fue "pasado" por el bus en esta salida
     public function puntoEstaBloqueado($puntoId)
     {
         return $this->puntosBloqueadosIds()->contains($puntoId);
+    }
+
+
+    public function origenSucursalId()
+    {
+        $primerPunto = $this->horario?->ruta?->puntos?->sortBy('orden')->first();
+        return $primerPunto?->sucursal_id;
+    }
+
+    public function destinoSucursalId()
+    {
+        $ultimoPunto = $this->horario?->ruta?->puntos?->sortBy('orden')->last();
+        return $ultimoPunto?->sucursal_id;
+    }
+
+    public function esSucursalOrigen($sucursalId)
+    {
+        return $sucursalId && (int) $this->origenSucursalId() === (int) $sucursalId;
+    }
+
+    public function esSucursalDestino($sucursalId)
+    {
+        return $sucursalId && (int) $this->destinoSucursalId() === (int) $sucursalId;
+    }
+
+    public function origenYaConfirmado()
+    {
+        $origenPunto = $this->horario?->ruta?->puntos?->sortBy('orden')->first();
+
+        return $origenPunto
+            ? $this->puntosBloqueadosIds()->contains($origenPunto->id)
+            : false;
+    }
+
+    public function puedeEditarAsignacion($sucursalId)
+    {
+        return $this->estado === 'en_ruta'
+            && $this->esSucursalOrigen($sucursalId)
+            && !$this->origenYaConfirmado();
     }
 }

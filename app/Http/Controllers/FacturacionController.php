@@ -104,7 +104,13 @@ class FacturacionController extends Controller
             ->where('estado', 'A')
             ->get();
         $porcentajeIgv = $empresa->igv;
-        $tiposDocumento = TipoDocumentoFactura::all();
+        
+        if ($user->hasRole('Administrador')) {
+            $tiposDocumento = TipoDocumentoFactura::all();
+        } else {
+            $tiposDocumento = TipoDocumentoFactura::whereIn('id', [1, 2, 3])->get();
+        }
+
         $personas = Persona::all();
 
         return view('facturacion.index', compact(

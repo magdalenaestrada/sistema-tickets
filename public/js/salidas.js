@@ -25,14 +25,6 @@ $(document).ready(function () {
             },
         },
         columns: [
-            {
-                data: null,
-                orderable: false,
-                searchable: false,
-                render: function (data) {
-                    return `<input type="checkbox" class="chk-salida" value="${data.id}">`;
-                },
-            },
             { data: "DT_RowIndex" },
             { data: "ruta" },
             { data: "fecha_formateada" },
@@ -578,11 +570,21 @@ function verSalida(id) {
             timelineHtml = `<p class="text-muted fs-7">No hay puntos de ruta registrados.</p>`;
         }
 
-        // Conteo rápido de sucursales bloqueadas vs habilitadas (según puntos de ruta)
         const totalPuntos = salida.ruta?.puntos?.length ?? 0;
         const bloqueadas =
             salida.ruta?.puntos?.filter((p) => p.check_registrado).length ?? 0;
         const habilitadas = totalPuntos - bloqueadas;
+
+        let botonEditarAsignacion = "";
+        if (salida.puede_editar_asignacion) {
+            botonEditarAsignacion = `
+        <button class="btn btn-outline-warning btn-sm w-100 mb-3 d-flex align-items-center justify-content-center gap-1"
+            onclick="editarAsignacion(${salida.id})">
+            <i data-lucide="user-cog" style="width:14px;"></i>
+            Cambiar vehículo / conductor
+        </button>
+    `;
+        }
 
         // 3. Estructura principal (sin tabs, solo vista de Ruta)
         let html = `
@@ -615,6 +617,9 @@ function verSalida(id) {
                     </div>
                 </div>
             </div>
+
+            ${botonEditarAsignacion}
+
 
             <!-- Timeline Vertical -->
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -786,6 +791,97 @@ function verSalida(id) {
         );
     });
 }
+
+function editarAsignacion(id) {
+    $.get(route("salidas.show", { id: id }), function (salida) {
+        let html = `
+    <div class="alert alert-warning fs-7 mb-3">
+        Estás cambiando el vehículo/conductor de una salida ya iniciada.
+        Usa esto solo en caso de imprevistos (ej. conductor no puede salir).
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Vehículo <span class="text-danger">*</span></label>
+        <select id="vehiculo_id" class="form-select">
+            <option value="">Seleccione vehículo</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Conductor principal <span class="text-danger">*</span></label>
+        <select id="conductor_principal_id" class="form-select">
+            <option value="">Seleccione</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Conductor secundario</label>
+        <select id="conductor_secundario_id" class="form-select">
+            <option value="">Opcional</option>
+            ${window.CONDUCTORES.map(
+                (c) => `
+                    <option value="${c.id}" ${c.id == salida.conductor_secundario_id ? "selected" : ""}>
+                        ${c.persona.nombres} ${c.persona.apellidos}
+                    </option>
+                `,
+            ).join("")}
+        </select>
+    </div>
+
+    <button class="btn btn-warning w-100 mt-2" onclick="guardarEdicionAsignacion(${salida.id}, '${salida.horario_id}', '${salida.fecha_salida}')">
+        Guardar cambio
+    </button>
+
+    <button class="btn btn-link w-100 mt-1" onclick="verSalida(${salida.id})">
+        Cancelar
+    </button>
+`;
+
+        $("#tituloPanelSalida").text("Editar asignación (emergencia)");
+        $("#panelSalidaContenido").html(html);
+
+        cargarRecursosDisponibles(salida);
+        lucide.createIcons();
+    });
+}
+
+window.guardarEdicionAsignacion = function (id, horario_id, fecha_salida) {
+    let vehiculo_id = $("#vehiculo_id").val();
+    let conductor_principal_id = $("#conductor_principal_id").val();
+    let conductor_secundario_id = $("#conductor_secundario_id").val();
+
+    if (!vehiculo_id || !conductor_principal_id) {
+        Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
+        return;
+    }
+
+    $.ajax({
+        url: route("salidas.update", { id: id }),
+        method: "POST",
+        data: {
+            _token: $("meta[name=csrf-token]").attr("content"),
+            _method: "PUT",
+            horario_id,
+            fecha_salida,
+            estado: "en_ruta", // no cambia el estado, solo la asignación
+            vehiculo_id,
+            conductor_principal_id,
+            conductor_secundario_id,
+        },
+        success: function () {
+            Swal.fire("Actualizado", "Vehículo/conductor cambiado", "success");
+            tablaSalidas.ajax.reload();
+            verSalida(id); // vuelve al detalle
+        },
+        error: function (err) {
+            Swal.fire(
+                "Error",
+                err.responseJSON?.message || "No se pudo actualizar",
+                "error",
+            );
+        },
+    });
+};
 
 function actualizarOpcionesConductores() {
     let principal = $("#conductor_principal_id").val();
