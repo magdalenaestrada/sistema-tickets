@@ -924,6 +924,180 @@ function bloqueCambioEstado(salida = {}) {
 `;
 }
 
+$(document).on("click", ".iniciar-ruta", function () {
+    let id = $(this).data("id");
+    iniciarRuta(id);
+});
+
+function iniciarRuta(id) {
+    $.get(route("salidas.show", { id: id }), function (salida) {
+        let html = `
+    <div class="alert alert-info fs-7 mb-3">
+        Vas a iniciar la ruta <strong>${salida.ruta?.nombre ?? ""}</strong>,
+        programada para el ${salida.fecha_formateada ?? "-"} a las ${salida.hora_salida ?? "-"}.
+    </div>
+
+    <input type="hidden" id="fecha_salida_hidden" value="${salida.fecha_salida}">
+
+    <div class="mb-2">
+        <label class="form-label">
+            Vehículo <span class="text-danger">*</span>
+        </label>
+
+        <select id="vehiculo_id" class="form-select">
+            <option value="">Seleccione vehículo</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">
+            Conductor principal <span class="text-danger">*</span>
+        </label>
+
+        <select id="conductor_principal_id" class="form-select">
+            <option value="">Seleccione</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">
+            Conductor secundario
+        </label>
+
+        <select id="conductor_secundario_id" class="form-select">
+            <option value="">Opcional</option>
+
+            ${window.CONDUCTORES.map(
+                (c) => `
+                    <option value="${c.id}">
+                        ${c.persona.nombres} ${c.persona.apellidos}
+                    </option>
+                `,
+            ).join("")}
+        </select>
+    </div>
+
+    <button
+        class="btn btn-success w-100 mt-2"
+        onclick="guardarInicioRuta(${salida.id}, ${salida.horario_id})">
+        Iniciar ruta
+    </button>
+`;
+
+        $("#tituloPanelSalida").text("Iniciar ruta");
+        $("#panelSalidaContenido").html(html);
+
+        // Reutiliza el mismo endpoint que ya usa editarSalida
+        // para llenar vehículo y conductores disponibles
+        cargarRecursosDisponibles(salida);
+
+        lucide.createIcons();
+    });
+}
+
+window.guardarInicioRuta = function (id, horario_id) {
+    let fecha_salida = $("#fecha_salida_hidden").val();
+    let vehiculo_id = $("#vehiculo_id").val();
+    let conductor_principal_id = $("#conductor_principal_id").val();
+    let conductor_secundario_id = $("#conductor_secundario_id").val();
+
+    if (!vehiculo_id || !conductor_principal_id) {
+        Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
+        return;
+    }
+
+    Swal.fire({
+        title: "¿Iniciar esta ruta?",
+        text: "El estado cambiará a 'En ruta'.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, iniciar",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.ajax({
+            url: route("salidas.update", { id: id }),
+            method: "POST",
+            data: {
+                _token: $("meta[name=csrf-token]").attr("content"),
+                _method: "PUT",
+                horario_id,
+                fecha_salida,
+                estado: "en_ruta",
+                vehiculo_id,
+                conductor_principal_id,
+                conductor_secundario_id,
+            },
+            success: function () {
+                Swal.fire("Ruta iniciada", "", "success");
+                tablaSalidas.ajax.reload();
+                $("#panelSalidaContenido").html(
+                    '<p class="text-muted">Selecciona una salida</p>',
+                );
+            },
+            error: function (err) {
+                Swal.fire(
+                    "Error",
+                    err.responseJSON?.message || "No se pudo iniciar la ruta",
+                    "error",
+                );
+            },
+        });
+    });
+};
+
+$(document).on("click", ".finalizar-ruta", function () {
+    let id = $(this).data("id");
+    finalizarRuta(id);
+});
+
+function finalizarRuta(id) {
+    Swal.fire({
+        title: "¿Finalizar esta ruta?",
+        text: "El estado cambiará a 'Finalizado'. Esta acción no se puede deshacer.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#0d6efd",
+        confirmButtonText: "Sí, finalizar",
+        cancelButtonText: "Cancelar",
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.get(route("salidas.show", { id: id }), function (salida) {
+            $.ajax({
+                url: route("salidas.update", { id: id }),
+                method: "POST",
+                data: {
+                    _token: $("meta[name=csrf-token]").attr("content"),
+                    _method: "PUT",
+                    horario_id: salida.horario_id,
+                    fecha_salida: salida.fecha_salida,
+                    estado: "finalizado",
+                    vehiculo_id: salida.vehiculo_id,
+                    conductor_principal_id: salida.conductor_principal_id,
+                    conductor_secundario_id: salida.conductor_secundario_id,
+                },
+                success: function () {
+                    Swal.fire("Ruta finalizada", "", "success");
+                    tablaSalidas.ajax.reload();
+                    $("#panelSalidaContenido").html(
+                        '<p class="text-muted">Selecciona una salida</p>',
+                    );
+                },
+                error: function (err) {
+                    Swal.fire(
+                        "Error",
+                        err.responseJSON?.message ||
+                            "No se pudo finalizar la ruta",
+                        "error",
+                    );
+                },
+            });
+        });
+    });
+}
+
 function editarSalida(id) {
     $.get(route("salidas.show", { id: id }), function (salida) {
         let html = `

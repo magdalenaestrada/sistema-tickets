@@ -14,7 +14,7 @@
                 <small class="text-muted">Gestión de boletas, facturas y notas SUNAT</small>
             </div>
 
-            <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalVentaRapida">
+            <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalOpcionesComprobante">
                 + Nueva venta
             </button>
         </div>
@@ -320,6 +320,8 @@
         @include('facturacion.modals.crear')
         @include('facturacion.modals.anular_nota_venta')
         @include('facturacion.modals.solicitud_anulacion')
+        @include('facturacion.modals.seleccionar')
+        @include('facturacion.modals.existente')
 
     @endsection
     @push('scripts')

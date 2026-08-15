@@ -109,8 +109,11 @@ class SalidaController extends Controller
         $nowDate = now()->format('Y-m-d');
         $nowTime = now()->format('H:i:s');
 
+        $isAdmin = auth()->user()->hasRole('Administrador');
+        $sucursalId = auth()->user()->empleado->sucursal_id ?? null;
+
         $salidas = Salida::with([
-            'horario.ruta',
+            'horario.ruta.puntos',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
@@ -118,20 +121,20 @@ class SalidaController extends Controller
             ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
             ->select('salidas.*')
             ->selectRaw("
-            CASE 
-                WHEN salidas.fecha_salida < ? THEN 1
-                WHEN salidas.fecha_salida = ? AND horarios.hora_salida < ? THEN 1
-                ELSE 0
-            END as vencida
-        ", [$nowDate, $nowDate, $nowTime])
+        CASE 
+            WHEN salidas.fecha_salida < ? THEN 1
+            WHEN salidas.fecha_salida = ? AND horarios.hora_salida < ? THEN 1
+            ELSE 0
+        END as vencida
+    ", [$nowDate, $nowDate, $nowTime])
             ->selectRaw("
-            CASE 
-                WHEN (salidas.fecha_salida < ? OR (salidas.fecha_salida = ? AND horarios.hora_salida < ?)) 
-                     AND salidas.estado IN ('programado', 'reprogramado') THEN 2
-                WHEN salidas.estado = 'programado' THEN 0
-                ELSE 1
-            END as orden_prioridad
-        ", [$nowDate, $nowDate, $nowTime]);
+        CASE 
+            WHEN (salidas.fecha_salida < ? OR (salidas.fecha_salida = ? AND horarios.hora_salida < ?)) 
+                 AND salidas.estado IN ('programado', 'reprogramado') THEN 2
+            WHEN salidas.estado = 'programado' THEN 0
+            ELSE 1
+        END as orden_prioridad
+    ", [$nowDate, $nowDate, $nowTime]);
 
         if ($request->filled('estado')) {
             if ($request->estado === 'vencido') {
@@ -195,15 +198,57 @@ class SalidaController extends Controller
                     default        => '',
                 };
             })
-            ->addColumn('acciones', function ($salida) {
-                return '
-            <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
-                <i class="link-icon" data-lucide="info"></i>
-            </button>
+            ->addColumn('acciones', function ($salida) use ($isAdmin, $sucursalId) {
+
+                $botones = '
+        <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
+            <i class="link-icon" data-lucide="info"></i>
+        </button>
+    ';
+
+                if ($isAdmin) {
+                    // Admin: solo Ver + Editar
+                    $botones .= '
             <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
                 <i class="link-icon" data-lucide="pen"></i>
             </button>
         ';
+
+                    return $botones;
+                }
+
+                // Vendedor: Ver + Iniciar ruta / Finalizar, según sucursal
+                $puntos = $salida->horario?->ruta?->puntos;
+                $puntosOrdenados = $puntos && $puntos->count() ? $puntos->sortBy('orden')->values() : null;
+
+                $origenSucursalId = $puntosOrdenados?->first()->sucursal_id;
+                $destinoSucursalId = $puntosOrdenados?->last()->sucursal_id;
+
+                if (in_array($salida->estado, ['programado', 'reprogramado'])) {
+                    $puedeIniciar = $origenSucursalId && (int) $origenSucursalId === (int) $sucursalId;
+
+                    if ($puedeIniciar) {
+                        $botones .= '
+                <button class="btn btn-success btn-xs iniciar-ruta" data-id="' . $salida->id . '" title="Iniciar ruta">
+                    <i class="link-icon" data-lucide="play"></i>
+                </button>
+            ';
+                    }
+                }
+
+                if ($salida->estado === 'en_ruta') {
+                    $puedeFinalizar = $destinoSucursalId && (int) $destinoSucursalId === (int) $sucursalId;
+
+                    if ($puedeFinalizar) {
+                        $botones .= '
+                <button class="btn btn-primary btn-xs finalizar-ruta" data-id="' . $salida->id . '" title="Finalizar ruta">
+                    <i class="link-icon" data-lucide="flag"></i>
+                </button>
+            ';
+                    }
+                }
+
+                return $botones;
             })
             ->rawColumns(['acciones', 'estado_badge'])
             ->addIndexColumn()
@@ -605,13 +650,13 @@ class SalidaController extends Controller
                 'nombre' => $salida->horario?->ruta?->nombre,
                 'puntos' => $puntos->map(function ($p, $i) use ($salida, $bloqueados, $indiceActual) {
                     return [
-                        'id' => $p->id,                      
-                        'sucursal_id' => $p->sucursal_id,         
+                        'id' => $p->id,
+                        'sucursal_id' => $p->sucursal_id,
                         'orden' => $p->orden,
                         'nombre' => $p->pueblito?->descripcion,
                         'hora' => $salida->horario->horaEnPunto($p->id),
-                        'check_registrado' => $bloqueados->contains($p->id), 
-                        'es_actual' => $i === $indiceActual,                 
+                        'check_registrado' => $bloqueados->contains($p->id),
+                        'es_actual' => $i === $indiceActual,
                     ];
                 })->values(),
             ],

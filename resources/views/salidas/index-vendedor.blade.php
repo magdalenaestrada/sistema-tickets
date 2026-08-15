@@ -54,8 +54,8 @@
                                     <th>ID</th>
                                     <th>RUTA</th>
                                     <th>FECHA</th>
-                                    <th>SALIDA PROGRAMADA</th>
-                                    <th>LLEGADA PROGRAMADA</th>
+                                    <th>SALIDA</th>
+                                    <th>LLEGADA</th>
                                     <th>ESTADO</th>
                                     <th class="text-center">ACCIONES</th>
                                 </tr>
