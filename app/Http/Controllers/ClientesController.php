@@ -62,28 +62,30 @@ class ClientesController extends Controller
             ->addColumn('telefono', fn($c) => $c->persona->telefono ?? '-')
             ->addColumn('celular', fn($c) => $c->persona->celular ?? '-')
             ->addColumn('correo', fn($c) => $c->persona->correo ?? '-')
+
             ->addColumn('acciones', function ($c) {
                 $botones = '
-                    <button class="btn btn-info btn-xs ver" data-id="' . $c->id . '" title="Ver detalle">
-                        <i data-lucide="info"></i>
-                    </button>
-                ';
+            <button class="btn btn-info btn-xs ver" data-id="' . $c->id . '" title="Ver detalle">
+                <i data-lucide="info"></i>
+            </button>
+        ';
 
-                if ((int)$c->id !== 3) {
+                if ((int) $c->id !== 3) {
                     $botones .= '
-                        <button class="btn btn-primary btn-xs editar" data-id="' . $c->id . '" title="Editar">
-                            <i data-lucide="edit"></i>
-                        </button>
-                        <button class="btn btn-danger btn-xs eliminar" data-id="' . $c->id . '" title="Eliminar">
-                            <i data-lucide="trash-2"></i>
-                        </button>
-                    ';
+                <button class="btn btn-primary btn-xs editar" data-id="' . $c->id . '" title="Editar">
+                    <i data-lucide="edit"></i>
+                </button>
+
+                <button class="btn btn-danger btn-xs eliminar" data-id="' . $c->id . '" title="Eliminar">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            ';
                 }
 
                 return $botones;
             })
-            ->orderColumn('id', 'id $1')
 
+            ->orderColumn('id', 'clientes.id $1')
             ->rawColumns(['acciones'])
             ->make(true);
     }

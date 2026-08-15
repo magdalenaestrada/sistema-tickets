@@ -18,6 +18,12 @@ $(document).ready(async function () {
             },
         },
         columns: [
+            {
+                data: "DT_RowIndex",
+                name: "DT_RowIndex",
+                orderable: false,
+                searchable: false,
+            },
             { data: "id" },
             { data: "documento" },
             { data: "nombre" },
@@ -440,5 +446,4 @@ $(document).ready(async function () {
     $("#modalCliente").on("hidden.bs.modal", () => {
         habilitarModoEdicion();
     });
-
 });
