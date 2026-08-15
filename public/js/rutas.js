@@ -185,9 +185,10 @@ function agregarPunto(data = null) {
                 <option value="">Parada</option>
             </select>
 
-            <select class="form-select form-select-sm sucursal">
-                <option value="">Sucursal</option>
-            </select>
+         <div class="form-control form-control-sm bg-light text-muted sucursal-display" style="pointer-events:none;">
+                Selecciona una parada
+            </div>
+            <input type="hidden" class="sucursal" value="">
 
             <button type="button"
                 class="btn btn-danger btn-xs"
@@ -224,32 +225,36 @@ function agregarPunto(data = null) {
     `);
     });
 
-    let sucursalSelect = punto.find(".sucursal");
-
-    let listaSucursales = [...sucursales];
-
-    listaSucursales.sort((a, b) =>
-        a.nombre_comercial.localeCompare(b.nombre_comercial),
-    );
-
-    listaSucursales.forEach((s) => {
-        sucursalSelect.append(`
-            <option value="${s.id}">
-                ${s.nombre_comercial}
-            </option>
-        `);
-    });
-
     if (data) {
         selectPueblito.val(String(data.pueblito_id));
-
-        if (data?.sucursal_id) {
-            sucursalSelect.val(String(data.sucursal_id));
-        }
     }
+
+    actualizarSucursalPunto(punto);
 
     generarTramos();
     lucide.createIcons();
+}
+
+function actualizarSucursalPunto(puntoEl) {
+    let pueblitoId = puntoEl.find(".pueblito").val();
+    let pueblito = pueblitos.find((p) => String(p.id) === String(pueblitoId));
+
+    let sucursalId = pueblito?.sucursal_id || "";
+    let texto = "Selecciona un pueblito";
+
+    if (pueblitoId) {
+        if (sucursalId) {
+            let sucursal = sucursales.find(
+                (s) => String(s.id) === String(sucursalId),
+            );
+            texto = sucursal?.nombre_comercial || "Sucursal no encontrada";
+        } else {
+            texto = "Sin sucursal asignada";
+        }
+    }
+
+    puntoEl.find(".sucursal").val(sucursalId);
+    puntoEl.find(".sucursal-display").text(texto);
 }
 
 function eliminarPunto(btn) {
@@ -310,6 +315,8 @@ $(document).on("change", "#contenedorPuntos select", function () {
 let timeout;
 
 $(document).on("change", ".pueblito", function () {
+    actualizarSucursalPunto($(this).closest(".punto"));
+
     clearTimeout(timeout);
 
     timeout = setTimeout(() => {
