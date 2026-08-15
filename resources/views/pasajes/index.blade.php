@@ -301,8 +301,12 @@
                         @foreach ($pueblitosOrigen as $pueblito)
                             <option value="{{ $pueblito->id }}">
                                 {{ $pueblito->descripcion }}
+                                @if ($pueblito->sucursal?->nombre_comercial)
+                                    - <span class="fw-bold">{{ strtoupper($pueblito->sucursal->nombre_comercial) }}</span>
+                                @endif
                             </option>
                         @endforeach
+
                     </select>
                 </div>
                 <div class="filtro-group">
