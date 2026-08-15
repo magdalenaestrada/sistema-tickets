@@ -2,81 +2,157 @@
 
 @section('content')
     <div class="container-fluid py-4">
-        <!-- Encabezado Principal -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="h4 fw-bold mb-0">Reportes</h2>
-            <button class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-calendar3 me-2"></i>Filtrar por rango de fechas
-            </button>
+        <!-- Header Principal -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h2 class="h4 fw-bold mb-1 text-dark">Centro de Reportes</h2>
+                <p class="text-muted small mb-0">Selecciona el rango de tiempo y genera tus reportes parametrizados.</p>
+            </div>
         </div>
 
-        <!-- FILA 1: VENTAS, PASAJEROS -->
-        <div class="row g-4 mb-4">
-            <!-- Bloque Reportes de Ventas -->
-            <div class="col-12 col-md-8">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-primary text-white text-center py-1 fw-bold text-uppercase small">
-                        Reportes de Ventas
+        <!-- BARRA DE FILTROS UNIFICADA -->
+        <div class="card shadow-sm border-0 mb-4 bg-white">
+            <div class="card-body p-3">
+                <form id="filterForm" class="row g-3 align-items-center">
+                    <!-- Accesos Rápidos de Período -->
+                    <div class="col-12 col-lg-5">
+                        <label class="form-label small fw-bold text-secondary mb-1">Período de Tiempo</label>
+                        <div class="btn-group w-100" role="group" id="periodGroup">
+                            <input type="radio" class="btn-check" name="period" id="period_today" value="today"
+                                onchange="toggleDateInputs()">
+                            <label class="btn btn-outline-primary btn-sm" for="period_today">Hoy</label>
+
+                            <input type="radio" class="btn-check" name="period" id="period_week" value="week"
+                                onchange="toggleDateInputs()">
+                            <label class="btn btn-outline-primary btn-sm" for="period_week">Esta Semana</label>
+
+                            <input type="radio" class="btn-check" name="period" id="period_month" value="month" checked
+                                onchange="toggleDateInputs()">
+                            <label class="btn btn-outline-primary btn-sm" for="period_month">Este Mes</label>
+
+                            <input type="radio" class="btn-check" name="period" id="period_year" value="year"
+                                onchange="toggleDateInputs()">
+                            <label class="btn btn-outline-primary btn-sm" for="period_year">Año</label>
+
+                            <input type="radio" class="btn-check" name="period" id="period_custom" value="custom"
+                                onchange="toggleDateInputs()">
+                            <label class="btn btn-outline-primary btn-sm" for="period_custom">Personalizado</label>
+                        </div>
                     </div>
-                    <div class="card-body">
+
+                    <!-- Fechas Desde / Hasta (Intercalado/Intervalo) -->
+                    <div class="col-12 col-sm-6 col-lg-3 custom-date-container" id="customDateInputs">
+                        <label class="form-label small fw-bold text-secondary mb-1">Intervalo de Fechas</label>
+                        <div class="input-group input-group-sm">
+                            <input type="date" class="form-control" name="date_from" id="date_from">
+                            <span class="input-group-text bg-light text-muted">a</span>
+                            <input type="date" class="form-control" name="date_to" id="date_to">
+                        </div>
+                    </div>
+
+                    <!-- Botón Aplicar Filtro Global -->
+                    <div class="col-12 col-sm-6 col-lg-4 d-flex align-items-end pt-sm-3 pt-lg-0">
+                        <button type="button" class="btn btn-primary btn-sm w-100 fw-semibold"
+                            onclick="applyGlobalFilters()">
+                            <i class="bi bi-funnel-fill me-1"></i> Aplicar Filtros a Reportes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- SECCIONES DE REPORTES -->
+        <div class="row g-4">
+            <!-- SECCIÓN 1: VENTAS -->
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="card-title fw-bold mb-0 text-primary">
+                            <i class="bi bi-currency-dollar me-2"></i>Reportes de Ventas
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
                         <div class="row g-4">
-                            <!-- Reporte de venta de pasajes -->
-                            <div class="col-md-6">
-                                <h6 class="fw-bold"><i class="bi bi-ticket-perforated me-2 text-primary"></i>Reporte de
-                                    venta de pasajes</h6>
-                                <div class="mb-2"><select class="form-select form-select-sm">
-                                        <option>Agencia: Todas</option>
-                                    </select></div>
-                                <div class="mb-2"><select class="form-select form-select-sm">
-                                        <option>Ruta: Todas</option>
-                                    </select></div>
-                                <div class="mb-3"><select class="form-select form-select-sm">
-                                        <option>Estado: Todos</option>
-                                    </select></div>
+                            <!-- Venta de pasajes -->
+                            <div class="col-12 col-md-6 border-bottom pb-3 border-bottom-md-0">
+                                <h6 class="fw-bold text-dark mb-3"><i
+                                        class="bi bi-ticket-perforated me-2 text-primary"></i>Venta de Pasajes General</h6>
+                                <div class="mb-2">
+                                    <label class="form-label micro-text mb-1">Agencia</label>
+                                    <select class="form-select form-select-sm">
+                                        <option value="">Todas las Agencias</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label micro-text mb-1">Ruta</label>
+                                    <select class="form-select form-select-sm">
+                                        <option value="">Todas las Rutas</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label micro-text mb-1">Estado</label>
+                                    <select class="form-select form-select-sm">
+                                        <option value="">Todos los Estados</option>
+                                    </select>
+                                </div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-pdf"></i>
-                                        PDF</button>
-                                    <button class="btn btn-outline-success btn-sm w-100"><i class="bi bi-file-excel"></i>
-                                        Excel</button>
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel me-1"></i> Excel</button>
                                 </div>
                             </div>
+
                             <!-- Venta por usuario -->
-                            <div class="col-md-6">
-                                <h6 class="fw-bold"><i class="bi bi-person me-2 text-primary"></i>Venta por usuario</h6>
-                                <div class="mb-3"><select class="form-select form-select-sm">
-                                        <option>Usuario: Todos</option>
-                                    </select></div>
-                                <div class="d-flex gap-2 pt-4">
-                                    <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-pdf"></i>
-                                        PDF</button>
-                                    <button class="btn btn-outline-success btn-sm w-100"><i class="bi bi-file-excel"></i>
-                                        Excel</button>
+                            <div class="col-12 col-md-6 border-bottom pb-3 border-bottom-md-0">
+                                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person me-2 text-primary"></i>Ventas
+                                    por Usuario</h6>
+                                <div class="mb-3">
+                                    <label class="form-label micro-text mb-1">Usuario / Cajero</label>
+                                    <select class="form-select form-select-sm">
+                                        <option value="">Todos los Usuarios</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex gap-2 pt-md-4 mt-md-2">
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel me-1"></i> Excel</button>
                                 </div>
                             </div>
+
                             <!-- Venta por agencia -->
-                            <div class="col-md-6">
-                                <h6 class="fw-bold"><i class="bi bi-building me-2 text-primary"></i>Venta por agencia</h6>
-                                <div class="mb-3"><select class="form-select form-select-sm">
-                                        <option>Agencia: Todas</option>
-                                    </select></div>
+                            <div class="col-12 col-md-6">
+                                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-building me-2 text-primary"></i>Ventas
+                                    por Agencia</h6>
+                                <div class="mb-3">
+                                    <label class="form-label micro-text mb-1">Agencia Específica</label>
+                                    <select class="form-select form-select-sm">
+                                        <option value="">Todas las Agencias</option>
+                                    </select>
+                                </div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-pdf"></i>
-                                        PDF</button>
-                                    <button class="btn btn-outline-success btn-sm w-100"><i class="bi bi-file-excel"></i>
-                                        Excel</button>
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel me-1"></i> Excel</button>
                                 </div>
                             </div>
+
                             <!-- Venta por ruta -->
-                            <div class="col-md-6">
-                                <h6 class="fw-bold"><i class="bi bi-signpost-2 me-2 text-primary"></i>Venta por ruta</h6>
-                                <div class="mb-3"><select class="form-select form-select-sm">
-                                        <option>Ruta: Todas</option>
-                                    </select></div>
+                            <div class="col-12 col-md-6">
+                                <h6 class="fw-bold text-dark mb-3"><i
+                                        class="bi bi-signpost-2 me-2 text-primary"></i>Ventas por Ruta</h6>
+                                <div class="mb-3">
+                                    <label class="form-label micro-text mb-1">Ruta de Viaje</label>
+                                    <select class="form-select form-select-sm">
+                                        <option value="">Todas las Rutas</option>
+                                    </select>
+                                </div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-pdf"></i>
-                                        PDF</button>
-                                    <button class="btn btn-outline-success btn-sm w-100"><i class="bi bi-file-excel"></i>
-                                        Excel</button>
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel me-1"></i> Excel</button>
                                 </div>
                             </div>
                         </div>
@@ -84,152 +160,191 @@
                 </div>
             </div>
 
-            <!-- Bloque Reportes de Pasajeros -->
-            <div class="col-12 col-md-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-success text-white text-center py-1 fw-bold text-uppercase small">
-                        Reportes de Pasajeros
+            <!-- SECCIÓN 2: PASAJEROS Y SOBREEQUIPAJE -->
+            <div class="col-12 col-lg-4">
+                <div class="d-flex flex-column gap-4 h-100">
+                    <!-- Pasajeros -->
+                    <div class="card border-0 shadow-sm flex-fill">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="card-title fw-bold mb-0 text-success">
+                                <i class="bi bi-people me-2"></i>Pasajeros
+                            </h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="mb-3">
+                                <h6 class="fw-bold small text-muted mb-2">Transportados por Ruta</h6>
+                                <select class="form-select form-select-sm mb-2">
+                                    <option value="">Todas las Rutas</option>
+                                </select>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel"></i> Excel</button>
+                                </div>
+                            </div>
+                            <hr class="text-muted opacity-25">
+                            <div>
+                                <h6 class="fw-bold small text-muted mb-2">Historial de Pasajero</h6>
+                                <input type="text" class="form-control form-control-sm mb-2"
+                                    placeholder="DNI, Nombre o Teléfono">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel"></i> Excel</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <!-- Pasajeros transportados -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold"><i class="bi bi-people me-2 text-success"></i>Pasajeros transportados</h6>
-                            <div class="mb-2"><select class="form-select form-select-sm">
-                                    <option>Ruta: Todas</option>
-                                </select></div>
+
+                    <!-- Sobreequipaje -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="card-title fw-bold mb-0 text-danger">
+                                <i class="bi bi-bag-dash me-2"></i>Sobreequipaje
+                            </h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <select class="form-select form-select-sm mb-3">
+                                <option value="">Todas las Rutas</option>
+                            </select>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-pdf"></i>
+                                <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-earmark-pdf"></i>
                                     PDF</button>
-                                <button class="btn btn-outline-success btn-sm w-100"><i class="bi bi-file-excel"></i>
-                                    Excel</button>
-                            </div>
-                        </div>
-                        <!-- Historial de un pasajero -->
-                        <div class="mb-4">
-                            <h6 class="fw-bold"><i class="bi bi-person-badge me-2 text-success"></i>Historial de un pasajero
-                            </h6>
-                            <div class="mb-2"><input type="text" class="form-control form-control-sm"
-                                    placeholder="DNI, Nombre o Teléfono"></div>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-file-pdf"></i>
-                                    PDF</button>
-                                <button class="btn btn-outline-success btn-sm w-100"><i class="bi bi-file-excel"></i>
-                                    Excel</button>
+                                <button class="btn btn-outline-success btn-sm w-100"><i
+                                        class="bi bi-file-earmark-excel"></i> Excel</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- FILA 2: VIAJES, ASIENTOS, SOBREEQUIPAJE -->
-        <div class="row g-4 mb-4">
-            <!-- Reportes de Viajes -->
-            <div class="col-12 col-md-5">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-warning text-dark text-center py-1 fw-bold text-uppercase small">
-                        Reportes de Viajes
+            <!-- SECCIÓN 3: VIAJES Y ASIENTOS -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="card-title fw-bold mb-0 text-dark">
+                            <i class="bi bi-bus-front me-2 text-warning"></i>Operativa de Viajes y Asientos
+                        </h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <h6 class="fw-bold small"><i class="bi bi-bus-front text-warning me-1"></i>Viajes realizados
-                                </h6>
-                                <div class="mb-2"><select class="form-select form-select-sm">
-                                        <option>Bus: Todos</option>
-                                    </select></div>
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-outline-danger btn-sm p-1 small w-100">PDF</button>
-                                    <button class="btn btn-outline-success btn-sm p-1 small w-100">Excel</button>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-12 col-md-4">
+                                <h6 class="fw-bold small text-muted mb-2">Viajes Realizados</h6>
+                                <select class="form-select form-select-sm mb-3">
+                                    <option value="">Todos los Buses</option>
+                                </select>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel"></i> Excel</button>
                                 </div>
                             </div>
-                            <div class="col-6">
-                                <h6 class="fw-bold small"><i class="bi bi-x-circle text-danger me-1"></i>Viajes cancelados
-                                </h6>
-                                <div class="mb-2"><select class="form-select form-select-sm">
-                                        <option>Ruta: Todas</option>
-                                    </select></div>
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-outline-danger btn-sm p-1 small w-100">PDF</button>
-                                    <button class="btn btn-outline-success btn-sm p-1 small w-100">Excel</button>
+                            <div class="col-12 col-md-4 border-start-md">
+                                <h6 class="fw-bold small text-muted mb-2">Viajes Cancelados</h6>
+                                <select class="form-select form-select-sm mb-3">
+                                    <option value="">Todas las Rutas</option>
+                                </select>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel"></i> Excel</button>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4 border-start-md">
+                                <h6 class="fw-bold small text-muted mb-2">Ocupación de Asientos</h6>
+                                <select class="form-select form-select-sm mb-3">
+                                    <option value="">Todos los Buses</option>
+                                </select>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-danger btn-sm w-100"><i
+                                            class="bi bi-file-earmark-pdf"></i> PDF</button>
+                                    <button class="btn btn-outline-success btn-sm w-100"><i
+                                            class="bi bi-file-earmark-excel"></i> Excel</button>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reportes de Asientos -->
-            <div class="col-12 col-md-3">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-purple text-white text-center py-1 fw-bold text-uppercase small"
-                        style="background-color: #6f42c1;">
-                        Reportes de Asientos
-                    </div>
-                    <div class="card-body">
-                        <h6 class="fw-bold small"><i class="bi bi-chair text-purple me-1"></i>Estado de ocupación</h6>
-                        <div class="mb-2"><select class="form-select form-select-sm">
-                                <option>Bus: Todos</option>
-                            </select></div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-danger btn-sm w-100">PDF</button>
-                            <button class="btn btn-outline-success btn-sm w-100">Excel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reportes de Sobreequipaje -->
-            <div class="col-12 col-md-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-danger text-white text-center py-1 fw-bold text-uppercase small">
-                        Reportes de Sobreequipaje
-                    </div>
-                    <div class="card-body">
-                        <h6 class="fw-bold small"><i class="bi bi-bag-dash text-danger me-1"></i>Venta de sobreequipaje
-                        </h6>
-                        <div class="mb-2"><select class="form-select form-select-sm">
-                                <option>Ruta: Todas</option>
-                            </select></div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-danger btn-sm w-100">PDF</button>
-                            <button class="btn btn-outline-success btn-sm w-100">Excel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- DASHBOARD GERENCIAL (INFERIOR) -->
-        <div class="card shadow-sm mt-4">
-            <div class="card-header text-white text-center py-1 fw-bold text-uppercase small"
-                style="background-color: #0f2c59;">
-                Reportes Gerenciales (Dashboard)
-            </div>
-            <div class="card-body p-0">
-                <div class="row g-0 text-center divide-x">
-                    <div class="col border-end p-3">
-                        <i class="bi bi-list-ol fs-3 text-secondary"></i>
-                        <p class="mb-0 fw-bold small mt-2">Ranking de rutas</p>
-                        <span class="text-muted muted-text">Rutas más vendidas</span>
-                    </div>
-                    <div class="col border-end p-3">
-                        <i class="bi bi-building-up fs-3 text-secondary"></i>
-                        <p class="mb-0 fw-bold small mt-2">Ranking de agencias</p>
-                        <span class="text-muted muted-text">Agencias con más ventas</span>
-                    </div>
-                    <div class="col border-end p-3">
-                        <i class="bi bi-graph-up-arrow fs-3 text-success"></i>
-                        <p class="mb-0 fw-bold small mt-2">Ingresos por mes</p>
-                        <span class="text-muted muted-text">Gráfico mensual</span>
-                    </div>
-                    <div class="col p-3">
-                        <i class="bi bi-currency-dollar fs-3 text-primary"></i>
-                        <p class="mb-0 fw-bold small mt-2">Utilidad</p>
-                        <span class="text-muted muted-text">Ingresos - Gastos</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- ESTILOS Y SCRIPTS -->
+    <style>
+        .micro-text {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        @media (min-width: 768px) {
+            .border-start-md {
+                border-left: 1px solid #dee2e6 !important;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            toggleDateInputs();
+        });
+
+        function toggleDateInputs() {
+            const customSelected = document.getElementById('period_custom').checked;
+            const dateFrom = document.getElementById('date_from');
+            const dateTo = document.getElementById('date_to');
+
+            if (customSelected) {
+                dateFrom.removeAttribute('disabled');
+                dateTo.removeAttribute('disabled');
+            } else {
+                dateFrom.setAttribute('disabled', 'true');
+                dateTo.setAttribute('disabled', 'true');
+
+                // Opcional: Asignar fechas automáticas según la selección rápida
+                const selectedPeriod = document.querySelector('input[name="period"]:checked').value;
+                setPredefinedDates(selectedPeriod);
+            }
+        }
+
+        function setPredefinedDates(period) {
+            const today = new Date();
+            let fromDate = new Date();
+            let toDate = new Date();
+
+            if (period === 'today') {
+                // Hoy
+            } else if (period === 'week') {
+                const firstDay = today.getDate() - today.getDay() + 1; // Lunes
+                fromDate = new Date(today.setDate(firstDay));
+                toDate = new Date();
+            } else if (period === 'month') {
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                toDate = new Date();
+            } else if (period === 'year') {
+                fromDate = new Date(today.getFullYear(), 0, 1);
+                toDate = new Date();
+            }
+
+            document.getElementById('date_from').value = formatDate(fromDate);
+            document.getElementById('date_to').value = formatDate(toDate);
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function applyGlobalFilters() {
+            const period = document.querySelector('input[name="period"]:checked').value;
+            const from = document.getElementById('date_from').value;
+            const to = document.getElementById('date_to').value;
+
+            alert(
+                `Filtros Aplicados:\nPeríodo: ${period}\nDesde: ${from}\nHasta: ${to}\n\nLos reportes generados tomarán estos rangos.`);
+        }
+    </script>
 @endsection
