@@ -616,6 +616,7 @@ class PasajeController extends Controller
                 }
 
                 $totalVenta += $precioFinalReal;
+                $observacion = $request->observacion_pasaje[$index] ?? null;
                 $pasajeros[] = [
                     'index' => $index,
                     'persona' => $persona,
@@ -626,6 +627,7 @@ class PasajeController extends Controller
                     'descuento_monto' => $descuentoMontoReal,
                     'precio_final' => $precioFinalReal,
                     'es_promocion' => $esPromocion,
+                    'observacion_pasaje' => $observacion,
                 ];
             }
 
@@ -735,13 +737,13 @@ class PasajeController extends Controller
             }
 
             $pasajesCreados = [];
-
             foreach ($pasajeros as $pasajeroData) {
                 $pasaje = Pasaje::create([
                     'venta_id' => $venta?->id ?? null,
                     'usuario_id' => Auth::id(),
                     'persona_id' => $pasajeroData['persona']->id,
                     'pasajero_menor' => $pasajeroData['pasajero_menor'],
+                    'observacion_pasaje' => $pasajeroData['observacion_pasaje'],
                     'autorizacion_pdf' => $pasajeroData['autorizacion_pdf'],
                     'descuento_id' => $pasajeroData['descuento_id'],
                     'asiento_numero' => $pasajeroData['asiento_numero'],

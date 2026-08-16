@@ -26,7 +26,8 @@ class Pasaje extends Model
         'fecha_creacion',
         'fecha_inactivacion',
         'descuento_id',
-        'precio_pasaje'
+        'precio_pasaje',
+        'observacion_pasaje'
 
     ];
 

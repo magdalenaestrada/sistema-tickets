@@ -46,7 +46,8 @@
                         <div class="resumen-item resumen-item-precio">
                             <div class="resumen-label">Costo por asiento:</div>
                             <div class="resumen-value">
-                                <input type="number" step="0.01" id="precio_manual" name="precio_manual" class="form-control form-control-sm"
+                                <input type="number" step="0.01" id="precio_manual" name="precio_manual"
+                                    class="form-control form-control-sm"
                                     value="{{ number_format($precioUnitario, 2, '.', '') }}">
                             </div>
                         </div>
@@ -149,6 +150,16 @@
                                             id="descuento_msg_{{ $index }}"></small>
                                     </div>
                                 </div>
+
+                                <div class="row mt-3 align-items-center">
+                                    <div class="col-md-12">
+                                        <label class="form-label">Observación</label>
+                                        <div class="form-check">
+                                            <textarea type="checkbox" class="form-check-input" id="observacion_{{ $index }}" name="observacion_pasaje[]"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
 
                                 {{-- Menor de edad --}}
                                 <div class="row mt-3 align-items-center">

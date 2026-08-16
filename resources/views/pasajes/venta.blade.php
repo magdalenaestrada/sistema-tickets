@@ -145,6 +145,15 @@
                                     </div>
                                 </div>
                                 <div class="row mt-3 align-items-center">
+                                    <div class="col-md-12">
+                                        <label class="form-label"
+                                            for="observacion_{{ $index }}">Observación</label>
+                                        <textarea class="form-control" id="observacion_{{ $index }}" name="observacion_pasaje[]"></textarea>
+                                    </div>
+                                </div>
+
+
+                                <div class="row mt-3 align-items-center">
                                     <div class="col-md-6">
                                         <div class="form-check">
                                             <input type="checkbox" class="form-check-input pasajero-menor-check"
