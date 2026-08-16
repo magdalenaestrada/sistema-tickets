@@ -316,6 +316,9 @@
                         @foreach ($pueblitos as $pueblito)
                             <option value="{{ $pueblito->id }}">
                                 {{ $pueblito->descripcion }}
+                                @if ($pueblito->sucursal?->nombre_comercial)
+                                    - <strong>{{ strtoupper($pueblito->sucursal->nombre_comercial) }}</strong>
+                                @endif
                             </option>
                         @endforeach
                     </select>

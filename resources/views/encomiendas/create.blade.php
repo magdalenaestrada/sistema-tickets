@@ -377,6 +377,10 @@
                                     <option value="{{ $pueblito->id }}"
                                         {{ old('pueblito_origen_id', $pueblitoOrigenSeleccionado) == $pueblito->id ? 'selected' : '' }}>
                                         {{ $pueblito->descripcion }}
+
+                                        @if ($pueblito->sucursal?->nombre_comercial)
+                                            - <strong>{{ strtoupper($pueblito->sucursal->nombre_comercial) }}</strong>
+                                        @endif
                                     </option>
                                 @endforeach
                             </select>
@@ -388,7 +392,11 @@
                             <select id="destino" class="form-select" name="destino_pueblito_id" required>
                                 <option value="" selected>Seleccione una parada</option>
                                 @foreach ($pueblitos as $pueblito)
-                                    <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}</option>
+                                    <option value="{{ $pueblito->id }}">{{ $pueblito->descripcion }}
+                                        @if ($pueblito->sucursal?->nombre_comercial)
+                                            - <strong>{{ strtoupper($pueblito->sucursal->nombre_comercial) }}</strong>
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
