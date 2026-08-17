@@ -333,6 +333,168 @@
             const IGV_VIAJE = {{ $empresa->igv ?? 0 }};
             const IGV_ENCOMIENDA = {{ $empresa->igv_encomienda ?? 0 }};
 
+            let comprobanteSeleccionado = null;
+
+            window.buscarComprobanteReferencia = async function() {
+                const q = document.getElementById('buscar_comprobante_input').value.trim();
+                const cont = document.getElementById('resultado_busqueda_comprobante');
+
+                if (!q) {
+                    cont.innerHTML = '<div class="text-danger small">Ingrese un criterio de búsqueda.</div>';
+                    return;
+                }
+
+                cont.innerHTML = '<div class="text-muted small">Buscando...</div>';
+
+                try {
+                    const res = await fetch(`/facturacion/buscar-comprobante?q=${encodeURIComponent(q)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const json = await res.json();
+
+                    if (!json.success || !json.data?.length) {
+                        cont.innerHTML =
+                            `<div class="text-muted small">${json.message ?? 'No se encontraron resultados.'}</div>`;
+                        resetSeleccion();
+                        return;
+                    }
+
+                    cont.innerHTML = json.data.map(c => `
+            <div class="bg-light bg-opacity-10 border border-primary-subtle rounded-3 p-3 d-flex align-items-center justify-content-between mb-2 comprobante-item" style="cursor:pointer" data-id="${c.id}">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-light bg-opacity-20 text-primary px-2 py-1 rounded">${c.tipo}</span>
+                    <div>
+                        <strong class="d-block text-dark small">${c.cliente}</strong>
+                        <span class="text-muted d-block" style="font-size:.75rem;">Doc: ${c.documento}</span>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <span class="text-muted d-block" style="font-size:.7rem;">Fecha emisión</span>
+                    <span class="fw-semibold text-dark small">${c.fecha_emision}</span>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted d-block" style="font-size:.7rem;">Total</span>
+                    <strong class="text-dark fs-6">S/ ${c.total}</strong>
+                </div>
+                <div class="small text-muted">${c.serie_numero}</div>
+            </div>
+        `).join('');
+
+                    document.querySelectorAll('.comprobante-item').forEach(el =>
+                        el.addEventListener('click', () => seleccionarComprobante(el.dataset.id, json.data))
+                    );
+                } catch (e) {
+                    cont.innerHTML = '<div class="text-danger small">Error al buscar el comprobante.</div>';
+                    console.error(e);
+                }
+            }
+
+            function seleccionarComprobante(id, lista) {
+                comprobanteSeleccionado = lista.find(c => c.id == id);
+                if (!comprobanteSeleccionado) return;
+
+                document.getElementById('referencia_venta_id').value = comprobanteSeleccionado.id;
+                document.getElementById('texto_documento_referencia').textContent =
+                    `${comprobanteSeleccionado.tipo} ${comprobanteSeleccionado.serie_numero}`;
+                document.getElementById('total_a_emitir').textContent = `S/ ${comprobanteSeleccionado.total}`;
+
+                document.querySelectorAll('.comprobante-item').forEach(el =>
+                    el.classList.toggle('border-primary', el.dataset.id == id)
+                );
+
+                // Consulta al backend si esta conversión requerirá NC (ver endpoint sugerido abajo)
+                consultarImpactoConversion();
+
+                document.getElementById('btnContinuarComprobanteExistente').disabled = false;
+            }
+
+            function resetSeleccion() {
+                comprobanteSeleccionado = null;
+                document.getElementById('referencia_venta_id').value = '';
+                document.getElementById('texto_documento_referencia').textContent = 'Ninguno seleccionado';
+                document.getElementById('total_a_emitir').textContent = 'S/ 0.00';
+                document.getElementById('aviso_anulacion_origen').style.display = 'none';
+                document.getElementById('btnContinuarComprobanteExistente').disabled = true;
+            }
+
+            async function consultarImpactoConversion() {
+                const aviso = document.getElementById('aviso_anulacion_origen');
+                const tipoDestino = document.getElementById('tipo_comprobante_destino').value;
+
+                if (!comprobanteSeleccionado) return;
+
+                try {
+                    const res = await fetch(
+                        `/facturacion/preview-conversion?venta_id=${comprobanteSeleccionado.id}&tipo_destino=${tipoDestino}`
+                    );
+                    const json = await res.json();
+
+                    if (json.requiere_nc) {
+                        aviso.className = 'rounded-3 p-2 px-3 mb-2 bg-warning bg-opacity-25 text-dark';
+                        aviso.innerHTML =
+                            '<i class="bi bi-exclamation-triangle me-1"></i> Este comprobante ya está fuera del plazo de anulación directa. Se generará automáticamente una <strong>Nota de Crédito</strong> antes de emitir el nuevo comprobante.';
+                    } else {
+                        aviso.className = 'rounded-3 p-2 px-3 mb-2 bg-info bg-opacity-25 text-dark';
+                        aviso.innerHTML =
+                            '<i class="bi bi-info-circle me-1"></i> El comprobante de origen será anulado directamente (dentro del plazo permitido).';
+                    }
+                    aviso.style.display = 'flex';
+                } catch (e) {
+                    aviso.style.display = 'none';
+                    console.error(e);
+                }
+            }
+
+            function actualizarSerieDestino() {
+                // Opcional: si tienes un endpoint que devuelva la próxima serie/número disponible
+                // por sucursal + tipo, actualiza serie_destino/numero_destino aquí.
+                // Si no, deja "—" y que el backend asigne la serie real al confirmar.
+                if (comprobanteSeleccionado) consultarImpactoConversion();
+            }
+
+            async function continuarConversion() {
+                if (!comprobanteSeleccionado) {
+                    alert('Seleccione un comprobante de referencia.');
+                    return;
+                }
+
+                const payload = {
+                    venta_referencia_id: comprobanteSeleccionado.id,
+                    tipo_documento_factura_id: document.getElementById('tipo_comprobante_destino').value,
+                    fecha_emision: document.getElementById('fecha_emision_destino').value,
+                };
+
+                try {
+                    const res = await fetch('/facturacion/convertir-comprobante', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    const json = await res.json();
+
+                    if (!json.success) {
+                        alert(json.message ?? 'No se pudo generar el comprobante.');
+                        return;
+                    }
+
+                    let mensaje = 'Comprobante generado correctamente.';
+                    if (json.data?.nota_credito) {
+                        mensaje += ` Se emitió la Nota de Crédito ${json.data.nota_credito} para anular el origen.`;
+                    }
+                    alert(mensaje);
+                    location.reload();
+                } catch (e) {
+                    alert('Ocurrió un error al generar el comprobante.');
+                    console.error(e);
+                }
+            }
+
+
             function buscarCliente() {
                 let documento = $("#doc_cliente").val().trim();
                 $("#btnBuscarCliente").prop("disabled", true);

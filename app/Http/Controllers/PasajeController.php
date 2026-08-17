@@ -135,6 +135,8 @@ class PasajeController extends Controller
                                 ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')
                         ),
                         'hora' => $hora->format('H:i'),
+                        'fecha' => $hora->format('Y-m-d'),
+                        'fecha_formateada' => $hora->format('d/m'),
                         'origen_permitido' => $origenPermitido,
                         'check_registrado' => $estaBloqueado,
 

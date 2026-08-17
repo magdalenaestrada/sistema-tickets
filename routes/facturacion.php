@@ -8,6 +8,16 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
         '/',
         [FacturacionController::class, 'index']
     )->name('index');
+
+    Route::get('/buscar-comprobante', [FacturacionController::class, 'buscarComprobante'])
+        ->name('buscar-comprobante');
+
+    Route::post('/convertir-comprobante', [FacturacionController::class, 'convertirComprobante'])
+        ->name('convertir-comprobante');
+
+    Route::get('/preview-conversion', [FacturacionController::class, 'previewConversion'])
+        ->name('preview-conversion');
+        
     Route::get(
         '/{venta}',
         [FacturacionController::class, 'show']
@@ -36,17 +46,12 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
     Route::post('/pos', [FacturacionController::class, 'store'])
         ->name('pos.store');
 
+
     Route::post('anular/{venta}', [FacturacionController::class, 'anularVenta'])
         ->name('anular');
 
     Route::post('/{venta}/anular-nota', [FacturacionController::class, 'crearNotaAnulacion'])
         ->name('anular.nota');
-
-    Route::get('/buscar-comprobante', [FacturacionController::class, 'buscarComprobante'])
-        ->name('buscar-comprobante');
-
-    Route::post('/convertir-comprobante', [FacturacionController::class, 'convertirComprobante'])
-        ->name('convertir-comprobante');
 });
 
 

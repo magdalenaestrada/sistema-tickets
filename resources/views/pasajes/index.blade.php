@@ -367,7 +367,10 @@
 
                                 </div>
                                 <div class="hr-date">
-                                    <span class="hr-date-day">{{ optional($salida->fecha_salida)->format('d/m') }}</span>
+                                    <span class="hr-date-day">
+                                        {{ optional($salida->fecha_salida)->format('d/m') }}
+                                    </span>
+
                                     <span class="hr-date-time"
                                         data-hora-original="{{ $salida->horario->hora_formateada }}">
                                         {{ $salida->horario->hora_formateada }}
