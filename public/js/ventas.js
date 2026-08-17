@@ -48,6 +48,31 @@ $(function () {
         });
     }
 
+    $(document).ready(function () {
+        function actualizarEstadoPasajeros() {
+            const precio = parseFloat($("#precio_manual").val()) || 0;
+            const precioValido = precio > 0;
+
+            $(".input-pasajero").prop("disabled", !precioValido);
+
+            $('[id^="precio_asiento_"]').each(function () {
+                $(this).text("S/ " + precio.toFixed(2));
+            });
+
+            if (!precioValido) {
+                $("#subtotal").text("0.00");
+                $("#total_descuento").text("0.00");
+                $("#total_pagar").text("0.00");
+                $("#costo_total").val("0");
+            }
+        }
+
+        $("#precio_manual").on("input change", function () {
+            actualizarEstadoPasajeros();
+        });
+        actualizarEstadoPasajeros();
+    });
+
     document.addEventListener("change", function (e) {
         if (e.target.matches("[id^='tipo_documento_id_']")) {
             const index = e.target.id.split("_").pop();

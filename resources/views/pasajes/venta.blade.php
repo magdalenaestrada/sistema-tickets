@@ -18,41 +18,71 @@
             <input type="hidden" name="pago_transferencia" id="pago_transferencia_hidden">
             <input type="hidden" name="costo_total" id="costo_total" value="0">
 
-            <div class="card shadow-sm border-0 mb-3 resumen-top-card">
-                <div class="card-body p-2">
-                    <div class="d-flex flex-wrap align-items-stretch resumen-top">
-                        <div class="resumen-item">
-                            <div class="resumen-label">Salida:</div>
-                            <div class="resumen-value">{{ $origen->descripcion }}</div>
-                        </div>
-
-                        <div class="resumen-item">
-                            <div class="resumen-label">Llegada:</div>
-                            <div class="resumen-value">{{ $destino->descripcion }}</div>
-                        </div>
-
-                        <div class="resumen-item">
-                            <div class="resumen-label">Fecha y hora:</div>
-                            <div class="resumen-value">
-                                {{ $salida->fecha_salida->format('d-m-Y') }} {{ $salida->horario->hora_formateada }}
+            <div class="sale-header mb-4">
+                <div class="sale-header-main">
+                    <div class="route-section">
+                        <div class="location-block">
+                            <span class="location-icon">
+                                <i class="link-icon" data-lucide="map-pin-house"></i>
+                            </span>
+                            <div>
+                                <small>ORIGEN</small>
+                                <strong>{{ $origen->descripcion }}</strong>
                             </div>
                         </div>
 
-                        <div class="resumen-item">
-                            <div class="resumen-label">Numero de asiento:</div>
-                            <div class="resumen-value">{{ implode(' ', $asientos) }}</div>
+                        <div class="route-line">
+                            <span></span>
+                            <i class="link-icon" data-lucide="bus-front"></i>
+                            <span></span>
                         </div>
 
-                        <div class="resumen-item resumen-item-precio">
-                            <div class="resumen-label">Costo por asiento:</div>
-                            <div class="resumen-value">
-                                <input type="number" step="0.01" id="precio_manual" name="precio_manual"
-                                    class="form-control form-control-sm"
-                                    value="{{ number_format($precioUnitario, 2, '.', '') }}">
+                        <div class="location-block">
+                            <span class="location-icon">
+                                <i class="link-icon" data-lucide="map-pinned"></i>
+                            </span>
+                            <div>
+                                <small>DESTINO</small>
+                                <strong>{{ $destino->descripcion }}</strong>
                             </div>
                         </div>
                     </div>
+
+                    <div class="trip-details">
+                        <div class="detail-item">
+                            <i class="bi bi-calendar3"></i>
+                            <div>
+                                <small>FECHA Y HORA</small>
+                                <strong>
+                                    {{ $salida->fecha_salida->format('d/m/Y') }}
+                                    · {{ $salida->horario->hora_formateada }}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <i class="bi bi-ticket-perforated-fill"></i>
+                            <div>
+                                <small>ASIENTO(S)</small>
+                                <div class="seat-list">
+                                    @foreach ($asientos as $asiento)
+                                        <span>{{ $asiento }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="price-box">
+                            <small>COSTO POR ASIENTO <span style="color:red">*</span> </small>
+                            <label for="precio_manual">
+                                <span>S/</span>
+                                <input type="number" step="0.01" min="0.01" id="precio_manual" name="precio_manual"
+                                    value="" placeholder="0.00" autocomplete="off">
+                            </label>
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
             <div class="row g-3">
@@ -78,8 +108,8 @@
                                 <div class="row g-2">
                                     <div class="col-md-2">
                                         <label class="form-label">Tipo <span class="text-danger">*</span></label>
-                                        <select class="form-select" name="tipo_documento_id[]"
-                                            id="tipo_documento_id_{{ $index }}" required>
+                                        <select class="form-select input-pasajero" name="tipo_documento_id[]"
+                                            id="tipo_documento_id_{{ $index }}" required disabled>
                                             @foreach ($tipos_documentos as $tipo_documento)
                                                 <option value="{{ $tipo_documento->id }}">
                                                     {{ $tipo_documento->codigo }}
@@ -87,18 +117,18 @@
                                             @endforeach
                                         </select>
                                     </div>
+
                                     <div class="col-md-2">
-                                        <label class="form-label">
-                                            Documento <span class="text-danger">*</span>
-                                        </label>
-
+                                        <label class="form-label">Documento <span class="text-danger">*</span></label>
                                         <div class="input-group">
-                                            <input type="text" class="form-control solo-numeros documento-input"
+                                            <input type="text"
+                                                class="form-control solo-numeros documento-input input-pasajero"
                                                 id="documento_{{ $index }}" data-index="{{ $index }}"
-                                                name="documento[]" required>
+                                                name="documento[]" required disabled>
 
-                                            <button type="button" class="btn btn-primary btn-buscar-documento"
-                                                data-index="{{ $index }}">
+                                            <button type="button"
+                                                class="btn btn-primary btn-buscar-documento input-pasajero"
+                                                data-index="{{ $index }}" disabled>
                                                 <i class="link-icon" data-lucide="search"></i>
                                             </button>
                                         </div>
@@ -106,59 +136,62 @@
 
                                     <div class="col-md-4">
                                         <label class="form-label">Nombres <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control solo-letras"
-                                            id="nombres_{{ $index }}" name="nombres[]" required>
+                                        <input type="text" class="form-control solo-letras input-pasajero"
+                                            id="nombres_{{ $index }}" name="nombres[]" required disabled>
                                     </div>
 
                                     <div class="col-md-4">
                                         <label class="form-label">Apellidos <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control solo-letras"
-                                            id="apellidos_{{ $index }}" name="apellidos[]" required>
+                                        <input type="text" class="form-control solo-letras input-pasajero"
+                                            id="apellidos_{{ $index }}" name="apellidos[]" required disabled>
                                     </div>
 
                                     <div class="col-md-3">
                                         <label class="form-label">Celular</label>
-                                        <input type="text" class="form-control solo-numeros"
-                                            id="celular_{{ $index }}" name="celular[]" maxlength="9">
+                                        <input type="text" class="form-control solo-numeros input-pasajero"
+                                            id="celular_{{ $index }}" name="celular[]" maxlength="9" disabled>
                                     </div>
 
                                     <div class="col-md-3">
                                         <label class="form-label">Teléfono</label>
-                                        <input type="text" class="form-control solo-numeros"
-                                            id="telefono_{{ $index }}" name="telefono[]" maxlength="9">
+                                        <input type="text" class="form-control solo-numeros input-pasajero"
+                                            id="telefono_{{ $index }}" name="telefono[]" maxlength="9" disabled>
                                     </div>
 
                                     <div class="col-md-4">
                                         <label class="form-label">Correo</label>
-                                        <input type="email" class="form-control" id="correo_{{ $index }}"
-                                            name="correo[]">
+                                        <input type="email" class="form-control input-pasajero"
+                                            id="correo_{{ $index }}" name="correo[]" disabled>
                                     </div>
 
                                     <div class="col-md-2">
                                         <label class="form-label">Descuento</label>
-                                        <select class="form-select descuento-input" data-index="{{ $index }}"
-                                            id="descuento_{{ $index }}" name="descuento_codigo[]">
+                                        <select class="form-select descuento-input input-pasajero"
+                                            data-index="{{ $index }}" id="descuento_{{ $index }}"
+                                            name="descuento_codigo[]" disabled>
                                             <option value="">Sin cupón</option>
                                         </select>
                                         <small class="text-muted d-block mt-1"
                                             id="descuento_msg_{{ $index }}"></small>
                                     </div>
                                 </div>
+
                                 <div class="row mt-3 align-items-center">
                                     <div class="col-md-12">
                                         <label class="form-label"
                                             for="observacion_{{ $index }}">Observación</label>
-                                        <textarea class="form-control" id="observacion_{{ $index }}" name="observacion_pasaje[]"></textarea>
+                                        <textarea class="form-control input-pasajero" id="observacion_{{ $index }}" name="observacion_pasaje[]"
+                                            disabled></textarea>
                                     </div>
                                 </div>
-
 
                                 <div class="row mt-3 align-items-center">
                                     <div class="col-md-6">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input pasajero-menor-check"
+                                            <input type="checkbox"
+                                                class="form-check-input pasajero-menor-check input-pasajero"
                                                 id="pasajero_menor_{{ $index }}" data-index="{{ $index }}"
-                                                name="pasajero_menor[{{ $index }}]" value="1">
+                                                name="pasajero_menor[{{ $index }}]" value="1" disabled>
                                             <label class="form-check-label" for="pasajero_menor_{{ $index }}">
                                                 ¿Pasajero menor de edad?
                                             </label>
@@ -168,63 +201,21 @@
                                     <div class="col-md-6 autorizacion-container"
                                         id="autorizacion_container_{{ $index }}" style="display:none;">
                                         <label class="form-label">Autorización PDF </label>
-                                        <input type="file" accept=".pdf,image/*" class="form-control"
-                                            id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]">
+                                        <input type="file" accept=".pdf,image/*" class="form-control input-pasajero"
+                                            id="autorizacion_pdf_{{ $index }}" name="autorizacion_pdf[]" disabled>
                                     </div>
                                 </div>
-                                <hr>
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input toggle-sobre-equipaje" type="checkbox"
-                                        id="toggle_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
-                                        name="registrar_sobre_equipaje[{{ $index }}]" value="1">
 
+                                <hr>
+
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input toggle-sobre-equipaje input-pasajero" type="checkbox"
+                                        id="toggle_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
+                                        name="registrar_sobre_equipaje[{{ $index }}]" value="1" disabled>
                                     <label class="form-check-label fw-semibold"
                                         for="toggle_sobre_equipaje_{{ $index }}">
                                         Registrar sobre equipaje para este pasajero
                                     </label>
-                                </div>
-
-                                <div class="card border-warning sobre-equipaje-card"
-                                    id="card_sobre_equipaje_{{ $index }}" data-index="{{ $index }}"
-                                    style="display:none;">
-
-                                    <div class="card-body p-2">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <h6 class="fw-bold mb-0">Sobre equipaje</h6>
-
-                                            <button type="button" class="btn btn-sm btn-success btn-agregar-sobre"
-                                                data-index="{{ $index }}">
-                                                Agregar maleta
-                                            </button>
-                                        </div>
-
-                                        <div class="small text-muted mb-2">
-                                            Pasajero:
-                                            <strong id="sobre_pasajero_nombre_{{ $index }}">—</strong>
-                                        </div>
-
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered tabla-sobre-equipaje"
-                                                id="tablaSobreEquipaje_{{ $index }}"
-                                                data-index="{{ $index }}">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Tipo</th>
-                                                        <th>Descripción</th>
-                                                        <th>Peso KG</th>
-                                                        <th>Costo S/</th>
-                                                        <th></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody></tbody>
-                                            </table>
-                                        </div>
-
-                                        <div class="text-end fw-bold">
-                                            Total sobre equipaje: S/
-                                            <span id="total_sobre_equipaje_{{ $index }}">0.00</span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -344,6 +335,186 @@
 
 @push('styles')
     <style>
+        .sale-header {
+            overflow: hidden;
+            color: #fff;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #174b8f, #123b78);
+            box-shadow: 0 10px 25px rgba(18, 59, 120, .18);
+        }
+
+        .sale-header-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 14px;
+        }
+
+        .route-section {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-width: 360px;
+        }
+
+        .location-block,
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .location-icon {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            place-items: center;
+            color: #173d78;
+            background: #ffc928;
+            border-radius: 50%;
+            font-size: 20px;
+        }
+
+        .location-block small,
+        .detail-item small,
+        .price-box small {
+            display: block;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, .68);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .08em;
+        }
+
+        .location-block strong,
+        .detail-item strong {
+            display: block;
+            font-size: 15px;
+        }
+
+        .route-line {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #ffc928;
+        }
+
+        .route-line span {
+            width: 28px;
+            border-top: 2px dashed rgba(255, 255, 255, .55);
+        }
+
+        .trip-details {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .detail-item>i {
+            color: #ffc928;
+            font-size: 23px;
+        }
+
+        .seat-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .seat-list span {
+            padding: 4px 9px;
+            color: #173d78;
+            background: #ffc928;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .price-box {
+            min-width: 145px;
+            padding: 11px 14px;
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .22);
+            border-radius: 12px;
+        }
+
+        .price-box label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #ffc928;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .price-box input {
+            width: 92px;
+            padding: 2px 0;
+            color: #fff;
+            background: transparent;
+            border: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .6);
+            outline: none;
+            font-size: 18px;
+            font-weight: 800;
+            text-align: right;
+        }
+
+        .sale-header-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 11px 24px;
+            color: rgba(255, 255, 255, .75);
+            background: rgba(0, 0, 0, .14);
+            font-size: 12px;
+        }
+
+        .status-badge {
+            color: #b9f6ce;
+            font-weight: 700;
+        }
+
+        @media (max-width: 991px) {
+
+            .sale-header-main,
+            .trip-details {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .route-section {
+                justify-content: center;
+                min-width: auto;
+            }
+
+            .trip-details {
+                gap: 14px;
+            }
+
+            .price-box {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .route-section {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .route-line {
+                justify-content: center;
+                transform: rotate(90deg);
+            }
+
+            .sale-header-footer {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
         .resumen-top-card,
         .asiento-card,
         .panel-venta,

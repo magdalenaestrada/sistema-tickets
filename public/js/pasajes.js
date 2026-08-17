@@ -455,10 +455,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     label.textContent = `${nombreOrigen} → ${nombreDestinoReal}`;
                 }
 
-                const horaEl = row.querySelector(".hr-date-time");
-                if (horaEl && puntoOrigen?.hora) {
-                    horaEl.textContent = puntoOrigen.hora;
-                }
+                actualizarFechaHoraSalida(row, puntoOrigen);
             } else {
                 row.style.display = "none";
             }
@@ -549,10 +546,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     label.textContent = `${nombreOrigen} → ${nombreDestino}`;
                 }
 
-                const horaEl = row.querySelector(".hr-date-time");
-                if (horaEl && puntoOrigen?.hora) {
-                    horaEl.textContent = puntoOrigen.hora;
-                }
+                actualizarFechaHoraSalida(row, puntoOrigen);
             } else {
                 row.style.display = "none";
             }
@@ -569,6 +563,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (visibles === 0) {
             svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
+        }
+    }
+
+    function actualizarFechaHoraSalida(row, puntoOrigen) {
+        if (!puntoOrigen) return;
+
+        const fechaEl = row.querySelector(".hr-date-day");
+        const horaEl = row.querySelector(".hr-date-time");
+
+        if (fechaEl && puntoOrigen.fecha_formateada) {
+            fechaEl.textContent = puntoOrigen.fecha_formateada;
+        }
+
+        if (horaEl && puntoOrigen.hora) {
+            horaEl.textContent = puntoOrigen.hora;
         }
     }
 
@@ -660,10 +669,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     label.textContent = `${nombreOrigen} → ${nombreDestinoReal}`;
                 }
 
-                const horaEl = row.querySelector(".hr-date-time");
-                if (horaEl && puntoOrigen?.hora) {
-                    horaEl.textContent = puntoOrigen.hora;
-                }
+                actualizarFechaHoraSalida(row, puntoOrigen);
             } else {
                 row.style.display = "none";
             }
@@ -753,10 +759,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     label.textContent = `${nombreOrigen} → ${nombreDestino}`;
                 }
 
-                const horaEl = row.querySelector(".hr-date-time");
-                if (horaEl && puntoOrigen?.hora) {
-                    horaEl.textContent = puntoOrigen.hora;
-                }
+                actualizarFechaHoraSalida(row, puntoOrigen);
             } else {
                 row.style.display = "none";
             }
