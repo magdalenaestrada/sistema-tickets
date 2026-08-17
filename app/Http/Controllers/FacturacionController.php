@@ -104,7 +104,7 @@ class FacturacionController extends Controller
             ->where('estado', 'A')
             ->get();
         $porcentajeIgv = $empresa->igv;
-        
+
         if ($user->hasRole('Administrador')) {
             $tiposDocumento = TipoDocumentoFactura::all();
         } else {
@@ -215,6 +215,61 @@ class FacturacionController extends Controller
             ], 500);
         }
     }
+
+    public function buscarComprobante(Request $request)
+    {
+        $buscar = strtoupper(trim($request->get('q', '')));
+
+        if ($buscar === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingrese un criterio de búsqueda.',
+            ], 422);
+        }
+
+        // Solo se pueden usar como referencia comprobantes que aún no fueron
+        // convertidos/emitidos electrónicamente (ajusta el estado si tu "nota de
+        // venta" usa otro criterio, ej. tipo_documento_factura_id = X)
+        $query = Venta::with(['persona', 'tipoDocumentoFactura'])
+            ->where('estado', EstadoVenta::GENERADO);
+
+        if (str_contains($buscar, '-')) {
+            [$serie, $numero] = explode('-', $buscar, 2);
+            $query->where('serie', $serie)->where('numero', 'like', "%{$numero}%");
+        } else {
+            $query->where(function ($q) use ($buscar) {
+                $q->where('numero', 'like', "%{$buscar}%")
+                    ->orWhereRaw("CONCAT(serie,'-',numero) LIKE ?", ["%{$buscar}%"])
+                    ->orWhereHas('persona', function ($qp) use ($buscar) {
+                        $qp->where('razon_social', 'like', "%{$buscar}%")
+                            ->orWhere('numero_documento', 'like', "%{$buscar}%");
+                    });
+            });
+        }
+
+        $comprobantes = $query->orderByDesc('fecha_emision')->limit(10)->get();
+
+        if ($comprobantes->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontraron comprobantes con ese criterio.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $comprobantes->map(fn($v) => [
+                'id'            => $v->id,
+                'tipo'          => $v->tipoDocumentoFactura->nombre ?? 'Nota de venta',
+                'serie_numero'  => $v->serie . '-' . $v->numero,
+                'cliente'       => $v->persona->razon_social ?? 'CLIENTE VARIOS',
+                'documento'     => $v->persona->numero_documento ?? '-',
+                'fecha_emision' => optional($v->fecha_emision)->format('d/m/Y'),
+                'total'         => number_format($v->total, 2),
+            ]),
+        ]);
+    }
+
 
     public function descargarXml(Venta $venta)
     {

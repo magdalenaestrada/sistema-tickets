@@ -41,6 +41,12 @@ Route::prefix('facturacion')->name('facturacion.')->group(function () {
 
     Route::post('/{venta}/anular-nota', [FacturacionController::class, 'crearNotaAnulacion'])
         ->name('anular.nota');
+
+    Route::get('/buscar-comprobante', [FacturacionController::class, 'buscarComprobante'])
+        ->name('buscar-comprobante');
+
+    Route::post('/convertir-comprobante', [FacturacionController::class, 'convertirComprobante'])
+        ->name('convertir-comprobante');
 });
 
 
