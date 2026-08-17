@@ -113,7 +113,7 @@ class SalidaController extends Controller
         $sucursalId = auth()->user()->empleado->sucursal_id ?? null;
 
         $salidas = Salida::with([
-            'horario.ruta.puntos',
+            'horario.ruta.puntos.pueblito.sucursal',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
         ])
@@ -217,25 +217,32 @@ class SalidaController extends Controller
                     return $botones;
                 }
 
-                // Vendedor: Ver + Iniciar ruta / Finalizar, según sucursal
                 $puntos = $salida->horario?->ruta?->puntos;
-                $puntosOrdenados = $puntos && $puntos->count() ? $puntos->sortBy('orden')->values() : null;
 
-                $origenSucursalId = $puntosOrdenados?->first()->sucursal_id;
-                $destinoSucursalId = $puntosOrdenados?->last()->sucursal_id;
+                $puntosOrdenados = $puntos && $puntos->count()
+                    ? $puntos->sortBy('orden')->values()
+                    : null;
+
+                $puntoInicio = $puntosOrdenados?->first();
+
+                $origenSucursalId = $puntoInicio?->pueblito?->sucursal_id;
+                $destinoSucursalId = $puntosOrdenados?->last()?->pueblito?->sucursal_id;
 
                 if (in_array($salida->estado, ['programado', 'reprogramado'])) {
-                    $puedeIniciar = $origenSucursalId && (int) $origenSucursalId === (int) $sucursalId;
+
+                    $puedeIniciar = $origenSucursalId
+                        && (int) $origenSucursalId === (int) $sucursalId;
 
                     if ($puedeIniciar) {
                         $botones .= '
-                <button class="btn btn-success btn-xs iniciar-ruta" data-id="' . $salida->id . '" title="Iniciar ruta">
-                    <i class="link-icon" data-lucide="rocket"></i>
-                </button>
-            ';
+            <button class="btn btn-success btn-xs iniciar-ruta"
+                data-id="' . $salida->id . '"
+                title="Iniciar ruta">
+                <i class="link-icon" data-lucide="rocket"></i>
+            </button>
+        ';
                     }
                 }
-
                 if ($salida->estado === 'en_ruta') {
                     $puedeFinalizar = $destinoSucursalId && (int) $destinoSucursalId === (int) $sucursalId;
 

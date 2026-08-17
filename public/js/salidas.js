@@ -586,48 +586,40 @@ function verSalida(id) {
     `;
         }
 
-        // 3. Estructura principal (sin tabs, solo vista de Ruta)
+        // 3. Estructura principal
         let html = `
             <div class="mb-3">
                 <h5 class="fw-bold text-dark mb-0">${salida.ruta?.nombre ?? "Sin ruta"}</h5>
                 <small class="text-muted">${salida.fecha_formateada ?? "-"} • ${salida.hora_salida ?? "-"}</small>
             </div>
 
-            <!-- KPIs Superiores -->
+            <!-- KPIs Superiores (Ajustado a 2 columnas sin Bloqueadas) -->
             <div class="row g-2 mb-3">
-                <div class="col-4">
+                <div class="col-6">
                     <div class="p-2 border rounded bg-light text-center">
                         <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Progreso</span>
                         <strong class="fs-5 text-dark">${salida.parada_actual_index ?? 0}/${totalPuntos}</strong>
                         <span class="d-block text-muted fs-8">paradas</span>
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
                     <div class="p-2 border rounded bg-light text-center">
                         <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ventas</span>
                         <strong class="fs-5 text-dark">${salida.asientos_vendidos ?? 0}</strong>
                         <span class="d-block text-muted fs-8">asientos</span>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="p-2 border rounded bg-light text-center">
-                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Bloqueadas</span>
-                        <strong class="fs-5 text-danger">${bloqueadas}</strong>
-                        <span class="d-block text-muted fs-8">de ${totalPuntos}</span>
-                    </div>
-                </div>
             </div>
 
             ${botonEditarAsignacion}
 
-
-            <!-- Timeline Vertical -->
+            <!-- Timeline Vertical (Sin contenedor de scroll) -->
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fs-8 fw-bold text-muted">Estado de la ruta</span>
                 <span class="fs-8 fw-bold text-muted">${habilitadas} sucursal(es) aún venden</span>
             </div>
 
-            <div class="timeline-container px-1 mb-3">
+            <div class="w-100 px-1 mb-3">
                 ${timelineHtml}
             </div>
 
@@ -658,8 +650,6 @@ function verSalida(id) {
                 let tarjetaCheckHtml = "";
 
                 if (window.IS_ADMIN) {
-                    // Vista Administrador: puede elegir sucursal y dar check en nombre de cualquiera.
-                    // Las sucursales ya con check quedan marcadas como bloqueadas en el select.
                     const opciones = sucursalesRuta
                         .map((s) => {
                             const bloqueada = s.check_registrado;
@@ -683,7 +673,6 @@ function verSalida(id) {
                     </div>
                 `;
                 } else {
-                    // Vista Usuario Sucursal
                     let mia = sucursalesRuta.find(
                         (s) =>
                             String(s.id) === String(window.USER_SUCURSAL?.id),
@@ -696,7 +685,7 @@ function verSalida(id) {
                         </div>
                     `;
                     } else {
-                        const yaDioCheck = mia.check_registrado; // Flag del backend si ya pasó el carro
+                        const yaDioCheck = mia.check_registrado;
 
                         tarjetaCheckHtml = `
                         <div class="card bg-light border-0 mb-3">
