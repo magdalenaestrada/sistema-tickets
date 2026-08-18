@@ -340,53 +340,104 @@
                 const cont = document.getElementById('resultado_busqueda_comprobante');
 
                 if (!q) {
-                    cont.innerHTML = '<div class="text-danger small">Ingrese un criterio de búsqueda.</div>';
+                    cont.innerHTML =
+                        '<div class="text-danger small">Ingrese un criterio de búsqueda.</div>';
                     return;
                 }
 
                 cont.innerHTML = '<div class="text-muted small">Buscando...</div>';
 
                 try {
-                    const res = await fetch(`/facturacion/buscar-comprobante?q=${encodeURIComponent(q)}`, {
+
+                    const url = route('facturacion.buscar-comprobante', {
+                        q: q
+                    });
+
+                    const res = await fetch(url, {
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
                         }
                     });
+
+                    if (!res.ok) {
+                        throw new Error(`Error HTTP ${res.status}`);
+                    }
+
                     const json = await res.json();
 
                     if (!json.success || !json.data?.length) {
                         cont.innerHTML =
                             `<div class="text-muted small">${json.message ?? 'No se encontraron resultados.'}</div>`;
+
                         resetSeleccion();
                         return;
                     }
 
                     cont.innerHTML = json.data.map(c => `
-            <div class="bg-light bg-opacity-10 border border-primary-subtle rounded-3 p-3 d-flex align-items-center justify-content-between mb-2 comprobante-item" style="cursor:pointer" data-id="${c.id}">
+            <div
+                class="bg-light bg-opacity-10 border border-primary-subtle rounded-3 p-3
+                       d-flex align-items-center justify-content-between mb-2 comprobante-item"
+                style="cursor:pointer"
+                data-id="${c.id}"
+            >
+
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-light bg-opacity-20 text-primary px-2 py-1 rounded">${c.tipo}</span>
+
+                    <span class="badge bg-light bg-opacity-20 text-primary px-2 py-1 rounded">
+                        ${c.tipo}
+                    </span>
+
                     <div>
-                        <strong class="d-block text-dark small">${c.cliente}</strong>
-                        <span class="text-muted d-block" style="font-size:.75rem;">Doc: ${c.documento}</span>
+                        <strong class="d-block text-dark small">
+                            ${c.cliente}
+                        </strong>
+
+                        <span class="text-muted d-block" style="font-size:.75rem;">
+                            Doc: ${c.documento}
+                        </span>
                     </div>
+
                 </div>
+
                 <div class="text-center">
-                    <span class="text-muted d-block" style="font-size:.7rem;">Fecha emisión</span>
-                    <span class="fw-semibold text-dark small">${c.fecha_emision}</span>
+                    <span class="text-muted d-block" style="font-size:.7rem;">
+                        Fecha emisión
+                    </span>
+
+                    <span class="fw-semibold text-dark small">
+                        ${c.fecha_emision}
+                    </span>
                 </div>
+
                 <div class="text-end">
-                    <span class="text-muted d-block" style="font-size:.7rem;">Total</span>
-                    <strong class="text-dark fs-6">S/ ${c.total}</strong>
+                    <span class="text-muted d-block" style="font-size:.7rem;">
+                        Total
+                    </span>
+
+                    <strong class="text-dark fs-6">
+                        S/ ${c.total}
+                    </strong>
                 </div>
-                <div class="small text-muted">${c.serie_numero}</div>
+
+                <div class="small text-muted">
+                    ${c.serie_numero}
+                </div>
+
             </div>
         `).join('');
 
-                    document.querySelectorAll('.comprobante-item').forEach(el =>
-                        el.addEventListener('click', () => seleccionarComprobante(el.dataset.id, json.data))
-                    );
+                    document.querySelectorAll('.comprobante-item').forEach(el => {
+                        el.addEventListener('click', () => {
+                            seleccionarComprobante(el.dataset.id, json.data);
+                        });
+                    });
+
                 } catch (e) {
-                    cont.innerHTML = '<div class="text-danger small">Error al buscar el comprobante.</div>';
+
+                    cont.innerHTML =
+                        '<div class="text-danger small">Error al buscar el comprobante.</div>';
+
                     console.error(e);
                 }
             }
