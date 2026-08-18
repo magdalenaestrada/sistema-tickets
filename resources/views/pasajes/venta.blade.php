@@ -337,11 +337,13 @@
     <style>
         .sale-header {
             overflow: hidden;
-            color: #fff;
+            color: #173d78;
             border-radius: 18px;
-            background: linear-gradient(135deg, #174b8f, #123b78);
-            box-shadow: 0 10px 25px rgba(18, 59, 120, .18);
+            background: #fff2;
+            border: 2px solid #067fef5a;
+            box-shadow: 0 1px 15px rgba(18, 59, 120, .18);
         }
+
 
         .sale-header-main {
             display: flex;
@@ -370,8 +372,8 @@
             width: 42px;
             height: 42px;
             place-items: center;
-            color: #173d78;
-            background: #ffc928;
+            color: #ffffff;
+            background: #6ec419;
             border-radius: 50%;
             font-size: 20px;
         }
@@ -381,7 +383,7 @@
         .price-box small {
             display: block;
             margin-bottom: 4px;
-            color: rgba(255, 255, 255, .68);
+            color: rgba(0, 0, 0, 0.68);
             font-size: 10px;
             font-weight: 700;
             letter-spacing: .08em;
@@ -397,7 +399,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            color: #ffc928;
+            color: #173d78;
         }
 
         .route-line span {
@@ -412,7 +414,7 @@
         }
 
         .detail-item>i {
-            color: #ffc928;
+            color: #6ec419;
             font-size: 23px;
         }
 
@@ -424,8 +426,8 @@
 
         .seat-list span {
             padding: 4px 9px;
-            color: #173d78;
-            background: #ffc928;
+            color: #ffffff;
+            background: #6ec419;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 800;
@@ -443,7 +445,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            color: #ffc928;
+            color: #000000;
             font-size: 18px;
             font-weight: 800;
         }
@@ -451,7 +453,7 @@
         .price-box input {
             width: 92px;
             padding: 2px 0;
-            color: #fff;
+            color: #173d78;
             background: transparent;
             border: 0;
             border-bottom: 1px solid rgba(255, 255, 255, .6);
