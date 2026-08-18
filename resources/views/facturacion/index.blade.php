@@ -14,7 +14,7 @@
                 <small class="text-muted">Gestión de boletas, facturas y notas SUNAT</small>
             </div>
 
-            <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalOpcionesComprobante">
+            <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modalComprobante">
                 + Nueva venta
             </button>
         </div>
@@ -1060,6 +1060,119 @@
                 $("#total").text(totalGeneral.toFixed(2));
 
                 $("#itemsInput").val(JSON.stringify(items));
+            }
+
+            function ocultarPasosComprobante() {
+                $("#pasoOpciones").addClass("d-none");
+                $("#pasoNuevo").addClass("d-none");
+                $("#pasoExistente").addClass("d-none");
+            }
+
+            function mostrarNuevoComprobante() {
+                ocultarPasosComprobante();
+
+                $("#pasoNuevo").removeClass("d-none");
+                $("#btnVolverModal").removeClass("d-none");
+
+                $("#modalComprobanteLabel").text("Generar comprobante");
+                $("#subtituloModalComprobante").text(
+                    "Completa los datos del cliente y del servicio."
+                );
+
+                actualizarSerie();
+            }
+
+            function mostrarComprobanteExistente() {
+                ocultarPasosComprobante();
+
+                $("#pasoExistente").removeClass("d-none");
+                $("#btnVolverModal").removeClass("d-none");
+
+                $("#modalComprobanteLabel").text("Generar desde comprobante existente");
+                $("#subtituloModalComprobante").text(
+                    "Selecciona un comprobante de referencia."
+                );
+            }
+
+            function volverOpciones() {
+                ocultarPasosComprobante();
+
+                $("#pasoOpciones").removeClass("d-none");
+                $("#btnVolverModal").addClass("d-none");
+
+                $("#modalComprobanteLabel").text("Nuevo comprobante");
+                $("#subtituloModalComprobante").text(
+                    "Selecciona cómo deseas generar el comprobante."
+                );
+            }
+
+            document.addEventListener("DOMContentLoaded", function() {
+                const modalComprobante = document.getElementById("modalComprobante");
+
+                if (!modalComprobante) return;
+
+                modalComprobante.addEventListener("hidden.bs.modal", function() {
+                    resetModalComprobante();
+                });
+            });
+
+            function resetModalComprobante() {
+                ocultarPasosComprobante();
+
+                $("#pasoOpciones").removeClass("d-none");
+                $("#btnVolverModal").addClass("d-none");
+
+                $("#modalComprobanteLabel").text("Nuevo comprobante");
+                $("#subtituloModalComprobante").text(
+                    "Selecciona cómo deseas generar el comprobante."
+                );
+
+                const formVenta = document.getElementById("formVentaRapida");
+
+                if (formVenta) {
+                    formVenta.reset();
+                }
+
+                items = [];
+
+                if (typeof render === "function") {
+                    render();
+                }
+
+                $("#doc_cliente").val("");
+                $("#nombres").val("");
+                $("#apellidos").val("");
+                $("#direccion").val("");
+
+                $("#descripcion").val("");
+                $("#unidad").val("");
+                $("#precio").val("");
+
+                $("#serie").val("");
+
+                actualizarCamposCliente();
+
+                $("#buscar_comprobante_input").val("");
+                $("#resultado_busqueda_comprobante").empty();
+
+                $("#referencia_venta_id").val("");
+
+                $("#texto_documento_referencia").text(
+                    "Ninguno seleccionado"
+                );
+
+                $("#total_a_emitir").text("S/ 0.00");
+
+                $("#aviso_anulacion_origen")
+                    .hide()
+                    .empty();
+
+                $("#btnContinuarComprobanteExistente").prop(
+                    "disabled",
+                    true
+                );
+
+                comprobanteSeleccionado = null;
             }
         </script>
     @endpush

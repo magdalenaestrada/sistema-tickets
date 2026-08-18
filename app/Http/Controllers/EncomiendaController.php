@@ -1058,14 +1058,28 @@ class EncomiendaController extends Controller
             ->whereIn('estado', ['en_ruta', 'programado'])
             ->whereDate('fecha_salida', $request->fecha_salida);
 
+        $salidas = $salidas
+            ->orderBy('fecha_salida')
+            ->get();
+
+
         if (!$user->hasRole('Administrador')) {
 
             $pueblitoId = Pueblito::where('sucursal_id', $user->sucursal_id)
                 ->value('id');
 
-            $salidas->whereHas('horario.ruta.puntos', function ($q) use ($pueblitoId) {
-                $q->where('pueblito_id', $pueblitoId);
-            });
+            $salidas = $salidas->filter(function ($salida) use ($pueblitoId) {
+
+                $puntoSucursal = $salida->horario?->ruta?->puntos
+                    ?->sortBy('orden')
+                    ->firstWhere('pueblito_id', $pueblitoId);
+
+                if (!$puntoSucursal) {
+                    return false;
+                }
+
+                return !$salida->puntoEstaBloqueado($puntoSucursal->id);
+            })->values();
         }
 
         $salidas = $salidas

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Distrito;
+use App\Models\Pueblito;
 use App\Models\Ruta;
 use App\Models\RutaPunto;
 use App\Models\RutaTramo;
@@ -68,7 +69,8 @@ class RutaController extends Controller
     {
         $distritos = Distrito::all();
         $sucursales = Sucursal::all();
-        return view('rutas.create', compact('sucursales', 'distritos'));
+        $pueblitos = Pueblito::with('sucursal')->get();
+        return view('rutas.create', compact('sucursales', 'distritos', 'pueblitos'));
     }
 
 
@@ -138,8 +140,8 @@ class RutaController extends Controller
         )->findOrFail($id);
         $sucursales = Sucursal::where("estado", "A")->get();
         $distritos = Distrito::all();
-
-        return view('rutas.edit', compact('ruta', 'sucursales', 'distritos'));
+        $pueblitos = Pueblito::with('sucursal')->get();
+        return view('rutas.edit', compact('ruta', 'sucursales', 'distritos', 'pueblitos'));
     }
 
     public function update(Request $request, $id)

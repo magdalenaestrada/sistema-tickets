@@ -30,7 +30,7 @@
                         <div style="line-height:1.2">
                             <div class="fw-semibold">
                                 {{ $pasaje->persona->nombre_completo }}
-                                </div>
+                            </div>
                             <small class="text-muted">
                                 {{ $pasaje->persona->documento }}
                             </small>
@@ -110,8 +110,8 @@
                                 </button>
                             @endif
                             @if ($pasaje->autorizacion_pdf)
-                                <a href="{{ Storage::url($pasaje->autorizacion_pdf) }}" class="btn btn-xs btn-danger"
-                                    target="_blank" download title="Descargar autorización">
+                                <a href="{{ Storage::disk('public')->url($pasaje->autorizacion_pdf) }}"
+                                    class="btn btn-xs btn-danger" target="_blank" title="Ver autorización">
                                     <i data-lucide="file"></i>
                                 </a>
                             @endif

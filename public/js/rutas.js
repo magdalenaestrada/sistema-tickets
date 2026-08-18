@@ -69,6 +69,11 @@ function modoCrear() {
 
     <h6>TRAMOS</h6>
     <div id="contenedorTramos"></div>
+ <div id="alertaTramos" class="alert alert-danger py-2 mb-2 d-none">
+    <strong>
+        Verifique los tiempos entre paradas antes de guardar.
+    </strong>
+</div>
 
     <button type="submit" class="btn btn-primary w-100 mt-2">
         Guardar ruta
@@ -101,40 +106,65 @@ function guardarRuta() {
     let duracion = [];
     let costo = [];
 
+    // VALIDAR Y ARMAR PUNTOS
     $("#contenedorPuntos .punto").each(function () {
-        // console.log("TRAMOS", tramosActuales);
-        // console.log("ORIGEN", origenActual);
-        // console.log("DESTINO", destinoActual);
-        // console.log("tramoExistente", tramoExistente);
-        let pueblitoId = $(this).find(".pueblito").val();
+        const pueblitoId = $(this).find(".pueblito").val();
 
-        let pueblito = pueblitos.find((p) => p.id == pueblitoId);
+        if (!pueblitoId) {
+            $(this).find(".pueblito").addClass("is-invalid");
+            return;
+        }
+
+        $(this).find(".pueblito").removeClass("is-invalid");
+
+        const pueblito = pueblitos.find(
+            (p) => String(p.id) === String(pueblitoId),
+        );
 
         puntos.push({
             distrito_id: pueblito?.distrito_id || null,
             pueblito_id: pueblitoId,
-            sucursal_id: $(this).find(".sucursal").val(),
+            sucursal_id: pueblito?.sucursal_id || null,
         });
     });
 
-    if (puntos.some((p) => !p.pueblito_id)) {
+    // Validar que TODOS los selects tengan parada
+    const totalPuntos = $("#contenedorPuntos .punto").length;
+
+    if (puntos.length !== totalPuntos) {
         Swal.fire("Error", "Todos los puntos deben tener parada", "error");
         return;
     }
 
-    $("input[name='horas[]']").each(function (index) {
-        let horas = parseInt($(this).val()) || "";
-        let minutos =
-            parseInt($("input[name='minutos[]']").eq(index).val()) || "";
+    if (puntos.length < 2) {
+        Swal.fire("Error", "Debe tener al menos 2 puntos", "error");
+        return;
+    }
 
-        let total = horas * 60 + minutos;
+    if (!nombre || nombre.trim() === "") {
+        Swal.fire("Error", "El nombre de la ruta es obligatorio", "error");
+        return;
+    }
+
+    // DURACIÓN
+    $("input[name='horas[]']").each(function (index) {
+        const horas = parseInt($(this).val()) || 0;
+        const minutos =
+            parseInt($("input[name='minutos[]']").eq(index).val()) || 0;
+
+        const total = horas * 60 + minutos;
 
         duracion.push(total);
     });
 
+    // COSTO
     $("input[name='costo[]']").each(function () {
         costo.push($(this).val() || null);
     });
+
+    console.log("PUNTOS A GUARDAR:", puntos);
+    console.log("DURACION:", duracion);
+    console.log("COSTO:", costo);
 
     Swal.fire({
         title: "Guardando...",
@@ -158,8 +188,12 @@ function guardarRuta() {
                 '<p class="text-muted">Selecciona una ruta</p>',
             );
         })
-        .fail(function () {
-            Swal.fire("Error", "No se pudo guardar", "error");
+        .fail(function (xhr) {
+            console.error(xhr.responseJSON);
+
+            let mensaje = xhr.responseJSON?.message || "No se pudo guardar";
+
+            Swal.fire("Error", mensaje, "error");
         });
 }
 
@@ -185,9 +219,7 @@ function agregarPunto(data = null) {
                 <option value="">Parada</option>
             </select>
 
-         <div class="form-control form-control-sm bg-light text-muted sucursal-display" style="pointer-events:none;">
-                Selecciona una parada
-            </div>
+      
             <input type="hidden" class="sucursal" value="">
 
             <button type="button"
@@ -218,9 +250,13 @@ function agregarPunto(data = null) {
     );
 
     pueblitosOrdenados.forEach((p) => {
+        let sucursalTexto = p.sucursal?.nombre_comercial
+            ? `<span class="badge bg-success">${p.sucursal.nombre_comercial.toUpperCase()}</span>`
+            : "Sin sucursal";
+
         selectPueblito.append(`
         <option value="${p.id}">
-            ${p.descripcion}
+            ${p.descripcion} - ${sucursalTexto}
         </option>
     `);
     });
@@ -254,7 +290,6 @@ function actualizarSucursalPunto(puntoEl) {
     }
 
     puntoEl.find(".sucursal").val(sucursalId);
-    puntoEl.find(".sucursal-display").text(texto);
 }
 
 function eliminarPunto(btn) {
@@ -274,7 +309,7 @@ function eliminarPunto(btn) {
 function reordenarPuntos() {
     $("#contenedorPuntos .punto").each(function (i) {
         $(this)
-            .find(".badge")
+            .find(".numero-punto")
             .text(`${i + 1}`);
     });
 }
@@ -283,23 +318,22 @@ function validarPuntos() {
     let valido = true;
 
     $("#contenedorPuntos .punto").each(function () {
-        let select = $(this).find(".pueblito");
+        let select = $(this).find(".pueblito")[0];
+        let valor = $(select).val();
+        let item = pueblitos.find((p) => String(p.id) === String(valor));
 
-        if (!select.length) {
-            valido = false;
-            return false;
-        }
-
-        let val = select.val();
-
-        if (val === null || val === undefined || val === "") {
-            $(select).addClass("is-invalid");
-            valido = false;
-            return false;
-        } else {
-            $(select).removeClass("is-invalid");
-        }
+        puntos.push({
+            pueblito_id: valor,
+            distrito_id: item?.distrito_id || null,
+            sucursal_id: item?.sucursal_id || null,
+        });
+        console.log(puntos);
     });
+
+    if (puntos.some((p) => !p.pueblito_id)) {
+        Swal.fire("Error", "Todos los puntos deben tener parada", "error");
+        return;
+    }
 
     return valido;
 }
@@ -348,7 +382,7 @@ function verRuta(id) {
                     <li class="list-group-item d-flex justify-content-between">
 
                         <span>
-                            ${i + 1}. ${p.pueblito || "Sin parada"}
+                            ${i + 1}. ${p.pueblito || "Sin parada" } - ${p.sucursal || "Sin sucursal"}
                         </span>
 
                     </li>
@@ -645,6 +679,7 @@ function generarTramos(tramosData = null) {
         puntos.push({
             id: valor,
             nombre: item?.descripcion || "Punto",
+            sucursal: item?.sucursal?.nombre_comercial || "",
         });
     });
 
@@ -698,18 +733,13 @@ function generarTramos(tramosData = null) {
 
         <div class="d-flex align-items-center justify-content-between gap-3">
 
-            <div class="flex-grow-1">
-
-                <small class="text-muted d-block">
-                    Tramo
-                </small>
-
+         <div class="flex-grow-1">
+                <small class="text-muted d-block">Tramo</small>
                 <strong>
-                    ${puntos[i].nombre}
+                    ${puntos[i].nombre}${puntos[i].sucursal ? ` (${puntos[i].sucursal})` : ""}
                     →
-                    ${puntos[i + 1].nombre}
+                    ${puntos[i + 1].nombre}${puntos[i + 1].sucursal ? ` (${puntos[i + 1].sucursal})` : ""}
                 </strong>
-
             </div>
 
             <div class="d-flex align-items-center gap-2">

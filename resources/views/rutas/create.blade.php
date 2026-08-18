@@ -27,7 +27,7 @@
                 <div class="text-end">
                     <button type="submit" class="btn btn-primary">
                         <i data-lucide="save"></i>
-                        Guardar Ruta
+                        Guardar Reweuta
                     </button>
                 </div>
             </form>

@@ -12,6 +12,7 @@ use App\Models\Descuento;
 use App\Models\Encomienda;
 use App\Models\MetodoPago;
 use App\Models\Pueblito;
+use App\Models\Ruta;
 use App\Models\RutaPunto;
 use App\Models\Salida;
 use App\Models\Sucursal;
@@ -31,7 +32,8 @@ class ReportesController extends Controller
         $sucursales = Sucursal::where('estado', 'A')->get();
         $usuarios = User::with("persona")->get();
         $tipos_documento = TipoDocumentoFactura::where('estado', 'A')->get();
-        return view('reportes.index', compact('sucursales', 'tipos_documento', 'usuarios'));
+        $rutas = Ruta::all();
+        return view('reportes.index', compact('sucursales', 'tipos_documento', 'usuarios', 'rutas'));
     }
 
     public function resumenVentas(Request $request)
@@ -180,5 +182,361 @@ class ReportesController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         return $pdf->download('ventas_por_usuario.pdf');
+    }
+
+
+    public function queryVentasGeneral(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Pasaje::query()
+            ->with([
+                'usuario',
+                'persona',
+                'venta',
+                'salida',
+                'origen',
+                'destino',
+            ])
+            ->whereHas('venta', function ($q) use ($desde, $hasta) {
+                $q->whereBetween('created_at', [$desde, $hasta]);
+            });
+
+        // Estado del pasaje
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        // Agencia
+        if ($request->filled('agencia_id')) {
+            $query->whereHas('venta', function ($q) use ($request) {
+                $q->where('sucursal_id', $request->agencia_id);
+            });
+        }
+
+        // Ruta
+        if ($request->filled('ruta_id')) {
+            $query->whereHas('salida.horario.ruta', function ($q) use ($request) {
+                $q->where('id', $request->ruta_id);
+            });
+        }
+
+        return $query;
+    }
+
+    public function ventasGeneralExcel(Request $request)
+    {
+        $pasajes = $this->queryVentasGeneral($request)
+            ->orderBy('venta_id')
+            ->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\VentasGeneralExport($pasajes),
+            'ventas_pasajes_general.xlsx'
+        );
+    }
+
+    public function ventasGeneralPdf(Request $request)
+    {
+        $pasajes = $this->queryVentasGeneral($request)
+            ->orderBy('venta_id')
+            ->get();
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'reportes.ventas.general',
+            compact(
+                'pasajes',
+                'desde',
+                'hasta'
+            )
+        );
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'ventas_pasajes_general.pdf'
+        );
+    }
+
+    private function queryVentasAgencia(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Pasaje::query()
+            ->with([
+                'usuario',
+                'persona',
+                'venta',
+                'salida',
+                'origen',
+                'destino',
+            ])
+            ->whereHas('venta', function ($q) use ($desde, $hasta) {
+                $q->whereBetween('created_at', [$desde, $hasta]);
+            });
+
+        if ($request->filled('agencia_id')) {
+            $query->whereHas('venta', function ($q) use ($request) {
+                $q->where('sucursal_id', $request->agencia_id);
+            });
+        }
+
+        return $query;
+    }
+
+    public function ventasPorAgenciaExcel(Request $request)
+    {
+        $pasajes = $this->queryVentasAgencia($request)
+            ->orderBy('usuario_id')
+            ->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\VentasPorAgenciaExport($pasajes),
+            'ventas_por_agencia.xlsx'
+        );
+    }
+
+    public function ventasPorAgenciaPdf(Request $request)
+    {
+        $pasajes = $this->queryVentasAgencia($request)
+            ->orderBy('usuario_id')
+            ->get();
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'reportes.ventas.agencia',
+            compact(
+                'pasajes',
+                'desde',
+                'hasta'
+            )
+        );
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'ventas_por_agencia.pdf'
+        );
+    }
+
+    private function queryVentasRuta(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Pasaje::query()
+            ->with([
+                'usuario',
+                'persona',
+                'venta',
+                'salida.horario.ruta',
+                'origen',
+                'destino',
+            ])
+            ->whereHas('venta', function ($q) use ($desde, $hasta) {
+                $q->whereBetween('created_at', [$desde, $hasta]);
+            });
+
+        if ($request->filled('ruta_id')) {
+            $query->whereHas('salida.horario.ruta', function ($q) use ($request) {
+                $q->where('id', $request->ruta_id);
+            });
+        }
+
+        return $query;
+    }
+
+    public function ventasPorRutaExcel(Request $request)
+    {
+        $pasajes = $this->queryVentasRuta($request)
+            ->orderBy('salida_id')
+            ->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\VentasPorRutaExport($pasajes),
+            'ventas_por_ruta.xlsx'
+        );
+    }
+
+    public function ventasPorRutaPdf(Request $request)
+    {
+        $pasajes = $this->queryVentasRuta($request)
+            ->orderBy('salida_id')
+            ->get();
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'reportes.ventas.ruta',
+            compact(
+                'pasajes',
+                'desde',
+                'hasta'
+            )
+        );
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'ventas_por_ruta.pdf'
+        );
+    }
+
+    private function queryPasajerosRuta(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Pasaje::query()
+            ->with([
+                'usuario',
+                'persona',
+                'venta',
+                'salida.horario.ruta',
+                'origen',
+                'destino',
+            ])
+            ->whereHas('venta', function ($q) use ($desde, $hasta) {
+                $q->whereBetween('created_at', [$desde, $hasta]);
+            });
+
+        $query->where('estado', 'V');
+
+        if ($request->filled('ruta_id')) {
+            $query->whereHas('salida.horario.ruta', function ($q) use ($request) {
+                $q->where('id', $request->ruta_id);
+            });
+        }
+
+        return $query;
+    }
+
+    public function pasajerosPorRutaExcel(Request $request)
+    {
+        $pasajes = $this->queryPasajerosRuta($request)
+            ->orderBy('salida_id')
+            ->orderBy('asiento_numero')
+            ->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\PasajerosPorRutaExport($pasajes),
+            'pasajeros_transportados_por_ruta.xlsx'
+        );
+    }
+
+    public function pasajerosPorRutaPdf(Request $request)
+    {
+        $pasajes = $this->queryPasajerosRuta($request)
+            ->orderBy('salida_id')
+            ->orderBy('asiento_numero')
+            ->get();
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'reportes.pasajeros.ruta',
+            compact(
+                'pasajes',
+                'desde',
+                'hasta'
+            )
+        );
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'pasajeros_transportados_por_ruta.pdf'
+        );
+    }
+
+    private function queryHistorialPasajero(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $busqueda = trim($request->busqueda ?? '');
+
+        $query = Pasaje::query()
+            ->with([
+                'usuario',
+                'persona',
+                'venta',
+                'salida.horario.ruta',
+                'origen',
+                'destino',
+            ])
+            ->whereHas('venta', function ($q) use ($desde, $hasta) {
+                $q->whereBetween('created_at', [$desde, $hasta]);
+            });
+
+        if ($busqueda !== '') {
+
+            $query->whereHas('persona', function ($q) use ($busqueda) {
+
+                $q->where(function ($q) use ($busqueda) {
+
+                    $q->where('numero_documento', 'like', "%{$busqueda}%")
+                        ->orWhere('nombres', 'like', "%{$busqueda}%")
+                        ->orWhere('apellido_paterno', 'like', "%{$busqueda}%")
+                        ->orWhere('apellido_materno', 'like', "%{$busqueda}%")
+                        ->orWhere('telefono', 'like', "%{$busqueda}%");
+                });
+            });
+        }
+
+        return $query;
+    }
+
+    private function querySobreequipaje(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Pasaje::query()
+            ->with([
+                'venta',
+                'usuario',
+                'persona',
+                'origen',
+                'destino',
+                'salida.horario.ruta',
+                'sobreEquipajes',
+            ])
+            ->whereHas('venta', function ($q) use ($desde, $hasta) {
+                $q->whereBetween('created_at', [$desde, $hasta]);
+            })
+            ->whereHas('sobreEquipajes');
+
+        if ($request->filled('ruta_id')) {
+            $query->whereHas('salida.horario.ruta', function ($q) use ($request) {
+                $q->where('id', $request->ruta_id);
+            });
+        }
+
+        return $query;
+    }
+
+    public function historialPasajeroPdf(Request $request)
+    {
+        $pasajes = $this->queryHistorialPasajero($request)
+            ->orderBy('salida_id')
+            ->orderBy('asiento_numero')
+            ->get();
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'reportes.pasajeros.historial',
+            compact(
+                'pasajes',
+                'desde',
+                'hasta'
+            )
+        );
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'historial_pasajero.pdf'
+        );
     }
 }

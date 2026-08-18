@@ -162,7 +162,7 @@
                 </button>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-semibold"
-                        data-bs-toggle="modal" data-bs-target="#modalOpcionesComprobante">
+                        onclick="cambiarModal('modalComprobanteExistente', 'modalOpcionesComprobante')">
                         <i class="bi bi-arrow-left me-1"></i> Volver
                     </button>
                     <button type="button" id="btnContinuarComprobanteExistente"
