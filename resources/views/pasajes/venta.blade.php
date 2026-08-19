@@ -217,6 +217,53 @@
                                         Registrar sobre equipaje para este pasajero
                                     </label>
                                 </div>
+                                <div id="card_sobre_equipaje_{{ $index }}" class="mt-3" style="display: none;">
+
+                                    <div class="card border">
+                                        <div
+                                            class="card-header bg-light d-flex justify-content-between align-items-center">
+                                            <strong>
+                                                <i class="bi bi-box-seam me-1"></i>
+                                                Sobre equipaje
+                                            </strong>
+
+                                            <button type="button" class="btn btn-primary btn-sm btn-agregar-sobre"
+                                                data-index="{{ $index }}">
+                                                <i class="bi bi-plus-lg"></i>
+                                                Agregar detalle
+                                            </button>
+                                        </div>
+
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table
+                                                    class="table table-bordered table-sm align-middle mb-2 tabla-sobre-equipaje"
+                                                    id="tablaSobreEquipaje_{{ $index }}"
+                                                    data-index="{{ $index }}">
+
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Tipo</th>
+                                                            <th>Descripción</th>
+                                                            <th style="width: 120px;">Peso</th>
+                                                            <th style="width: 130px;">Costo</th>
+                                                            <th style="width: 50px;"></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="text-end">
+                                                <strong>
+                                                    Total sobre equipaje:
+                                                    S/ <span id="total_sobre_equipaje_{{ $index }}">0.00</span>
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @endforeach

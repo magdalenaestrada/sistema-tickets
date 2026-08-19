@@ -211,23 +211,51 @@
 
 <body>
     @php
-        $tienePasajes = $venta->pasajes->isNotEmpty();
-        $tieneEncomiendas = $venta->encomiendas->isNotEmpty();
-        $esPrimerBloque = true; // se va actualizando conforme se incluyen partials
+        $pasajes = $venta->pasajes;
+
+        $encomiendasNormales = $venta->encomiendas->where('sobre_equipaje', false);
+
+        $sobreEquipajes = $venta->encomiendas->where('sobre_equipaje', true);
+
+        $tienePasajes = $pasajes->isNotEmpty();
+        $tieneEncomiendas = $encomiendasNormales->isNotEmpty();
+        $tieneSobreEquipaje = $sobreEquipajes->isNotEmpty();
+
+        $esPrimerBloque = true;
     @endphp
 
+
+    {{-- PASAJES --}}
     @if ($tienePasajes)
-        @include('caja.tickets._pasajes', ['venta' => $venta, 'esPrimerBloque' => $esPrimerBloque])
-        @php $esPrimerBloque = false; @endphp
+        @include('caja.tickets._pasajes', [
+            'venta' => $venta,
+            'pasajes' => $pasajes,
+            'esPrimerBloque' => $esPrimerBloque,
+        ])
+
+        @php
+            $esPrimerBloque = false;
+        @endphp
     @endif
 
+
+    {{-- ENCOMIENDAS NORMALES --}}
     @if ($tieneEncomiendas)
-        @include('caja.tickets._encomiendas', ['venta' => $venta, 'esPrimerBloque' => $esPrimerBloque])
-        @php $esPrimerBloque = false; @endphp
+        @include('caja.tickets._encomiendas', [
+            'venta' => $venta,
+            'encomiendas' => $encomiendasNormales,
+            'esPrimerBloque' => $esPrimerBloque,
+        ])
+
+        @php
+            $esPrimerBloque = false;
+        @endphp
     @endif
 
-    @unless ($tienePasajes || $tieneEncomiendas)
-        @include('caja.tickets._vacio', ['venta' => $venta])
+    @unless ($tienePasajes || $tieneEncomiendas || $tieneSobreEquipaje)
+        @include('caja.tickets._vacio', [
+            'venta' => $venta,
+        ])
     @endunless
 </body>
 

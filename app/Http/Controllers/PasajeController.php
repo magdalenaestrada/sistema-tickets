@@ -677,11 +677,13 @@ class PasajeController extends Controller
                     foreach ($grupo as $item) {
 
                         $costo = (float)$item['costo'];
+                        $peso = (float)$item['peso'];
 
                         $detalles[] = [
                             'tipo_servicio_id' => 3,
                             'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
                             'costo' => $costo,
+                            'peso' => $peso,
                             'descuento' => 0,
                         ];
 
@@ -934,7 +936,6 @@ class PasajeController extends Controller
         $asientos = [$pasaje->asiento_numero];
         $user = Auth::user();
 
-        // precio_manual = SIEMPRE precio_pasaje (el precio base del asiento, sin descuento)
         $precioUnitario   = $pasaje->precio_pasaje;
         $tiposEncomienda  = TipoEncomienda::all();
         $cajas_emision = Caja::with('sucursal.serie')
@@ -944,10 +945,9 @@ class PasajeController extends Controller
         $tipos_documentos = TipoDocumentoPersona::all();
         $user             = auth()->user();
 
-        // El monto del descuento se CALCULA contra precio_pasaje, no se guarda en BD
         $descuentosConfig = [];
         if ($pasaje->descuento_id && $pasaje->descuento) {
-            $tipo  = $pasaje->descuento->tipo;            // 'porcentaje' | 'monto_fijo'
+            $tipo  = $pasaje->descuento->tipo;           
             $valor = (float) $pasaje->descuento->valor;
 
             $monto = $tipo === 'porcentaje'

@@ -915,7 +915,10 @@ $(function () {
 
     $("#btnAbrirPago").on("click", function (e) {
         e.preventDefault();
+
         if (!datosPasajerosCompletos()) return;
+
+        if (!validarSobreEquipaje()) return;
 
         actualizarCostoTotal();
         limpiarPagosModal();
@@ -923,6 +926,7 @@ $(function () {
 
         const modalEl = document.getElementById("modalPago");
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
         modal.show();
     });
 
@@ -1241,11 +1245,12 @@ $(function () {
 
     function agregarFilaSobreEquipaje(index) {
         const fila = $("<tr>");
-        const tipoSelect = $(
-            '<select class="form-select form-select-sm sobre-tipo"></select>',
-        );
 
-        tipoSelect.append('<option value="" disabled selected>Tipo</option>');
+        const tipoSelect = $(
+            `<select class="form-select form-select-sm sobre-tipo">
+            <option value="" disabled selected>Seleccionar tipo</option>
+        </select>`,
+        );
 
         tiposEncomienda.forEach((t) => {
             tipoSelect.append(`
@@ -1258,30 +1263,177 @@ $(function () {
         `);
         });
 
-        fila.append($("<td>").append(tipoSelect));
         fila.append(
             $("<td>").append(
-                '<input type="text" class="form-control form-control-sm sobre-desc">',
+                tipoSelect,
+                `<div class="invalid-feedback">
+                Selecciona un tipo.
+            </div>`,
             ),
         );
+
         fila.append(
-            $("<td>").append(
-                '<input type="number" step="0.01" class="form-control form-control-sm sobre-peso">',
-            ),
+            $("<td>").append(`
+            <input type="text"
+                class="form-control form-control-sm sobre-desc"
+                placeholder="Descripción">
+
+            <div class="invalid-feedback">
+                Ingresa una descripción.
+            </div>
+        `),
         );
+
         fila.append(
-            $("<td>").append(
-                '<input type="number" step="0.01" class="form-control form-control-sm sobre-costo">',
-            ),
+            $("<td>").append(`
+            <input type="number"
+                step="0.01"
+                min="0.01"
+                class="form-control form-control-sm sobre-peso"
+                placeholder="0.00">
+
+            <div class="invalid-feedback">
+                Ingresa un peso válido.
+            </div>
+        `),
         );
+
         fila.append(
-            $("<td>").append(
-                '<button type="button" class="btn btn-danger btn-sm btnQuitarSobre">X</button>',
-            ),
+            $("<td>").append(`
+            <input type="number"
+                step="0.01"
+                min="0"
+                class="form-control form-control-sm sobre-costo"
+                placeholder="0.00">
+
+            <div class="invalid-feedback">
+                Ingresa el costo.
+            </div>
+        `),
+        );
+
+        fila.append(
+            $("<td>").append(`
+            <button type="button"
+                class="btn btn-danger btn-sm btnQuitarSobre">
+                <i class="link-icon" data-lucide="trash-2"></i>
+            </button>
+        `),
         );
 
         $(`#tablaSobreEquipaje_${index} tbody`).append(fila);
     }
+
+    function validarSobreEquipaje() {
+        let valido = true;
+        let primerError = null;
+
+        $(".toggle-sobre-equipaje:checked").each(function () {
+            const index = $(this).data("index");
+            const tabla = $(`#tablaSobreEquipaje_${index}`);
+            const filas = tabla.find("tbody tr");
+
+            if (filas.length === 0) {
+                valido = false;
+
+                Swal.fire(
+                    "Atención",
+                    `Agrega al menos un detalle de sobre equipaje para el asiento ${selectedSeatNumbers[index]}.`,
+                    "warning",
+                );
+
+                return false;
+            }
+
+            filas.each(function () {
+                const fila = $(this);
+
+                const tipo = fila.find(".sobre-tipo");
+                const descripcion = fila.find(".sobre-desc");
+                const peso = fila.find(".sobre-peso");
+                const costo = fila.find(".sobre-costo");
+
+                // Limpiar errores anteriores
+                tipo.removeClass("is-invalid");
+                descripcion.removeClass("is-invalid");
+                peso.removeClass("is-invalid");
+                costo.removeClass("is-invalid");
+
+                // TIPO
+                if (!tipo.val()) {
+                    tipo.addClass("is-invalid");
+                    valido = false;
+
+                    if (!primerError) {
+                        primerError = tipo;
+                    }
+                }
+
+                // DESCRIPCIÓN
+                if (!descripcion.val().trim()) {
+                    descripcion.addClass("is-invalid");
+                    valido = false;
+
+                    if (!primerError) {
+                        primerError = descripcion;
+                    }
+                }
+
+                // PESO
+                const pesoValor = parseFloat(peso.val());
+
+                if (isNaN(pesoValor) || pesoValor <= 0) {
+                    peso.addClass("is-invalid");
+                    valido = false;
+
+                    if (!primerError) {
+                        primerError = peso;
+                    }
+                }
+
+                // COSTO
+                const costoValor = parseFloat(costo.val());
+
+                if (isNaN(costoValor) || costoValor < 0) {
+                    costo.addClass("is-invalid");
+                    valido = false;
+
+                    if (!primerError) {
+                        primerError = costo;
+                    }
+                }
+            });
+        });
+
+        if (!valido) {
+            Swal.fire(
+                "Faltan datos",
+                "Completa los campos marcados en rojo del sobre equipaje.",
+                "warning",
+            );
+
+            if (primerError) {
+                primerError[0].scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+
+                primerError.trigger("focus");
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    $(document).on(
+        "input change",
+        ".sobre-tipo, .sobre-desc, .sobre-peso, .sobre-costo",
+        function () {
+            $(this).removeClass("is-invalid");
+        },
+    );
 
     $(document).on("change", ".toggle-sobre-equipaje", function () {
         const index = $(this).data("index");

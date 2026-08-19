@@ -41,7 +41,8 @@ class EncomiendaService
                 'distrito_id' => $request->distrito_id,
                 'total' => $request->total,
                 'estado' => 'SA',
-                'pago_instantaneo' => $request->boolean('pago_instantaneo'),
+                'sobre_equipaje' => $request->boolean('sobrequipaje'),
+                'pago_instantaneo' => true,
                 'transbordo' => $request->boolean('transbordo_incuyo'),
                 'fecha_creacion' => now(),
             ]);
@@ -77,20 +78,22 @@ class EncomiendaService
             );
 
             $detalles = [];
-
             foreach ($request->detalles as $detalle) {
                 $detalles[] = [
                     'descripcion' => $detalle['descripcion'],
+                    'peso' => $detalle['peso'],
                     'costo' => $detalle['costo'],
                     'descuento' => 0,
                 ];
             }
+
             $origenNombre = Pueblito::find($request->origen_pueblito_id)?->descripcion;
             $destinoNombre = Pueblito::find($request->destino_pueblito_id)?->descripcion;
+            $tipo_servicio = $request->boolean('sobrequipaje') ? 3 : 2;
 
             $ventaData = $ventaService->crearVenta(
                 new Request([
-                    'tipo_servicio_id' => 2,
+                    'tipo_servicio_id' => $tipo_servicio,
                     'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->nombres,

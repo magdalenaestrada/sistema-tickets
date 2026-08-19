@@ -995,6 +995,7 @@ class EncomiendaController extends Controller
 
             $receptorId = $receptor ? $receptor->id : null;
             $receptor2Id = $receptor2 ? $receptor2->id : null;
+            $esSobreequipaje = $request->boolean('sobrequipaje');
 
             $encomienda = $encomiendaService->crearEncomienda(
                 $request,
@@ -1004,7 +1005,6 @@ class EncomiendaController extends Controller
                 $user_id
             );
 
-            $esSobreequipaje = $request->boolean('sobrequipaje');
 
 
             return response()->json([
@@ -1056,12 +1056,9 @@ class EncomiendaController extends Controller
             'horario.tipo_vehiculo',
         ])
             ->whereIn('estado', ['en_ruta', 'programado'])
-            ->whereDate('fecha_salida', $request->fecha_salida);
-
-        $salidas = $salidas
+            ->whereDate('fecha_salida', $request->fecha_salida)
             ->orderBy('fecha_salida')
             ->get();
-
 
         if (!$user->hasRole('Administrador')) {
 
@@ -1082,21 +1079,18 @@ class EncomiendaController extends Controller
             })->values();
         }
 
-        $salidas = $salidas
-            ->orderBy('fecha_salida')
-            ->get();
-
         if ($request->origen_id && $request->destino_id) {
             $salidas = $salidas->filter(function ($salida) use ($request) {
                 return $salida->puedeTransportarEncomienda(
                     $request->origen_id,
                     $request->destino_id
                 );
-            });
+            })->values();
         }
 
         return response()->json(
             $salidas->map(function ($salida) {
+
                 $ruta = $salida->horario?->ruta;
                 $puntos = $ruta?->puntos?->sortBy('orden')->values();
 
@@ -1113,7 +1107,10 @@ class EncomiendaController extends Controller
 
                 return [
                     'value' => $salida->id,
-                    'text' => strtoupper($ruta?->nombre) . ' ( ' . $hora . ' ) - ' . strtoupper($estado),
+                    'text' => strtoupper($ruta?->nombre)
+                        . ' ( ' . $hora . ' ) - '
+                        . strtoupper($estado),
+
                     'puntos' => $puntos
                         ?->map(fn($p) => $p->pueblito?->descripcion ?? 'Punto')
                         ->values()

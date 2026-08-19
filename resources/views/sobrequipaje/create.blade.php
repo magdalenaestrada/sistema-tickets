@@ -245,9 +245,7 @@
                                     <th>Tipo</th>
                                     <th>Descripción</th>
                                     <th>Peso (KG)</th>
-                                    @if ($esSobreequipaje)
-                                        <th>Precio / KG (S/)</th>
-                                    @endif
+                                  
                                     <th>Costo (S/)</th>
                                     <th>ACCIONES</th>
                                 </tr>

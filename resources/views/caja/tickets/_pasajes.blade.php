@@ -298,7 +298,7 @@
                 @else
                     <tr>
                         <td class="bold" style="width: 35%;">Bulto:</td>
-                        <td class="right bold">Equipaje extra</td>
+                        <td class="right bold">Sobrequipaje</td>
                     </tr>
                 @endif
                 <tr>
