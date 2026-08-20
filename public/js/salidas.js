@@ -620,7 +620,7 @@ function verSalida(id) {
                 <span class="fs-8 fw-bold text-muted">${habilitadas} sucursal(es) aún venden</span>
             </div>
 
-            <div class="w-100 px-1 mb-3 custom-scrollbar" style="max-height: 120px; overflow-y: auto;">
+            <div class="w-100 px-1 mb-3 custom-scrollbar" style="max-height: 320px; overflow-y: auto;">
                 ${timelineHtml}
             </div>
 

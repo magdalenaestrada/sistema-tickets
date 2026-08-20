@@ -97,10 +97,6 @@
 
                 </li>
             </ul>
-
-            <a href="#" class="sidebar-toggler">
-                <i data-lucide="menu"></i>
-            </a>
         </div>
     @endauth
 </nav>
@@ -113,24 +109,6 @@
             if (window.innerWidth > 768 && localStorage.getItem("sidebar") === "collapsed") {
                 $(".main-wrapper").addClass("sidebar-collapsed");
             }
-
-            $(".sidebar-toggler").on("click", function(e) {
-                e.preventDefault();
-
-                if (window.innerWidth <= 768) {
-                    $(".main-wrapper").toggleClass("sidebar-open");
-                } else {
-                    $(".main-wrapper").toggleClass("sidebar-collapsed");
-
-                    if ($(".main-wrapper").hasClass("sidebar-collapsed")) {
-                        $(".sidebar .collapse.show").collapse("hide");
-                    }
-
-                    localStorage.setItem("sidebar",
-                        $(".main-wrapper").hasClass("sidebar-collapsed") ? "collapsed" : "open"
-                    );
-                }
-            });
 
             $("#sidebarOverlay").on("click", function() {
                 $(".main-wrapper").removeClass("sidebar-open");

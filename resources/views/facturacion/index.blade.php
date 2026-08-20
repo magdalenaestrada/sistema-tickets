@@ -317,11 +317,9 @@
 
         </div>
 
-        @include('facturacion.modals.crear')
         @include('facturacion.modals.anular_nota_venta')
         @include('facturacion.modals.solicitud_anulacion')
         @include('facturacion.modals.seleccionar')
-        @include('facturacion.modals.existente')
 
     @endsection
     @push('scripts')
@@ -545,57 +543,120 @@
                 }
             }
 
-
             function buscarCliente() {
-                let documento = $("#doc_cliente").val().trim();
-                $("#btnBuscarCliente").prop("disabled", true);
-                $.getJSON(route("buscar.buscar") + "?documento=" + documento)
+                const documento = $("#doc_cliente").val().trim();
+                const $btn = $("#btnBuscarCliente");
 
-                    .done(function(data) {
+                if (!documento) {
+                    Swal.fire("Atención", "Ingrese un DNI o RUC.", "warning");
+                    return;
+                }
+
+                if (documento.length !== 8 && documento.length !== 11) {
+                    Swal.fire(
+                        "Atención",
+                        "El DNI debe tener 8 dígitos y el RUC 11 dígitos.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                if (!/^\d+$/.test(documento)) {
+                    Swal.fire(
+                        "Atención",
+                        "El documento solo debe contener números.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                $btn.prop("disabled", true);
+
+                $.ajax({
+                    url: route("buscar.buscar"),
+                    type: "GET",
+                    dataType: "json",
+                    data: {
+                        documento: documento
+                    },
+
+                    success: function(data) {
+
+                        console.log("RESPUESTA DNI/RUC:", data);
 
                         if (data.error) {
-                            alert(data.error);
+                            Swal.fire(
+                                "No encontrado",
+                                data.error,
+                                "warning"
+                            );
                             return;
                         }
 
                         // RUC
-                        if (data.razon_social) {
+                        if (documento.length === 11) {
 
-                            $("#nombres").val(data.razon_social);
+                            $("#nombres").val(
+                                data.razon_social ??
+                                data.nombre_o_razon_social ??
+                                ""
+                            );
+
                             $("#apellidos").val("");
 
-                            $("#direccion").val(data.direccion || "-");
+                            $("#direccion").val(
+                                data.direccion ??
+                                data.domicilio_fiscal ??
+                                "-"
+                            );
 
                         }
+
                         // DNI
                         else {
 
-                            $("#nombres").val(data.nombres || "");
+                            $("#nombres").val(
+                                data.nombres ?? ""
+                            );
 
                             $("#apellidos").val(
-                                ((data.apellido_paterno || "") + " " +
-                                    (data.apellido_materno || "")).trim()
+                                [
+                                    data.apellido_paterno,
+                                    data.apellido_materno
+                                ]
+                                .filter(Boolean)
+                                .join(" ")
                             );
 
                             $("#direccion").val("-");
                         }
 
                         actualizarCamposCliente();
+                    },
 
-                    })
+                    error: function(xhr) {
 
-                    .fail(function() {
+                        console.error("ERROR BUSCAR DNI/RUC:", xhr);
+                        console.error("STATUS:", xhr.status);
+                        console.error("RESPUESTA:", xhr.responseText);
 
-                        alert("No se encontró el documento.");
+                        let mensaje = "No se pudo consultar el documento.";
 
-                    })
+                        if (xhr.responseJSON?.message) {
+                            mensaje = xhr.responseJSON.message;
+                        }
 
-                    .always(function() {
+                        Swal.fire(
+                            "Error",
+                            mensaje,
+                            "error"
+                        );
+                    },
 
-                        $("#btnBuscarCliente").prop("disabled", false);
-
-                    });
-
+                    complete: function() {
+                        $btn.prop("disabled", false);
+                    }
+                });
             }
 
             function obtenerIGV() {
@@ -1022,43 +1083,83 @@
                 }
             });
 
-            function agregarItem() {
-                let descripcion = $("#descripcion").val().trim();
-                const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.-]+$/;
+            window.agregarItem = function() {
 
-                if (!regex.test(descripcion)) {
-                    Swal.fire("Error", "La descripción solo puede contener letras, números y espacios.", "error");
-                    return;
-                }
+                const descripcion = $("#descripcion").val()?.trim() ?? "";
+                const precio = parseFloat($("#precio").val());
+                const cantidad = parseFloat($("#unidad").val());
+                const tipoServicioId = parseInt($("#tipo_servicio_id").val());
 
-
-                let precio = parseFloat($("#precio").val());
-                let unidad = parseFloat($("#unidad").val());
-                let tipoServicioId = parseInt($("#tipo_servicio_id").val());
-
-                if (!descripcion || isNaN(precio) || isNaN(unidad) || precio <= 0 || unidad <= 0) {
-                    Swal.fire("Error", "Completa unidades y precio correctamente.", "error");
-                    return;
-                }
-
-                const subtotal = unidad * precio;
-                const porcentajeIgv = tipoServicioId === 1 ? IGV_VIAJE / 100 : IGV_ENCOMIENDA / 100;
-
-                items.push({
-                    tipo_servicio_id: tipoServicioId,
+                console.log({
                     descripcion,
-                    cantidad: unidad,
-                    precio, // precio unitario CON IGV
-                    igv: porcentajeIgv,
-                    subtotal // unidad * precio, con IGV incluido
+                    precio,
+                    cantidad,
+                    tipoServicioId
                 });
 
+                if (!tipoServicioId || isNaN(tipoServicioId)) {
+                    Swal.fire(
+                        "Error",
+                        "Seleccione un tipo de servicio.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (!descripcion) {
+                    Swal.fire(
+                        "Error",
+                        "Ingrese una descripción.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (isNaN(cantidad) || cantidad <= 0) {
+                    Swal.fire(
+                        "Error",
+                        "Ingrese una cantidad válida.",
+                        "error"
+                    );
+                    return;
+                }
+
+                if (isNaN(precio) || precio <= 0) {
+                    Swal.fire(
+                        "Error",
+                        "Ingrese un precio válido.",
+                        "error"
+                    );
+                    return;
+                }
+
+                const porcentajeIgv =
+                    tipoServicioId === 1 ?
+                    IGV_VIAJE / 100 :
+                    IGV_ENCOMIENDA / 100;
+
+                const subtotal = cantidad * precio;
+
+                const item = {
+                    tipo_servicio_id: tipoServicioId,
+                    descripcion: descripcion,
+                    cantidad: cantidad,
+                    precio: precio,
+                    igv: porcentajeIgv,
+                    subtotal: subtotal
+                };
+
+                items.push(item);
+
+                console.log("ITEM AGREGADO:", item);
+                console.log("ITEMS:", items);
+
                 $("#descripcion").val("");
-                $("#precio").val("");
                 $("#unidad").val("");
+                $("#precio").val("");
 
                 render();
-            }
+            };
 
             function eliminarItem(i) {
                 items.splice(i, 1);

@@ -111,16 +111,10 @@ class PasajeController extends Controller
                         $origenPermitido = true;
                     } elseif (!$sucursalUsuario?->venta_otras) {
 
-                        // Sucursal que NO puede vender de otros lugares:
-                        // solamente sus propios pueblitos.
                         $origenPermitido =
                             $p->pueblito?->sucursal_id === $sucursalUsuario->id;
                     } else {
 
-                        // Sucursal que SÍ puede vender de otros lugares:
-                        // - sus propios pueblitos
-                        // - pueblitos sin sucursal
-                        // - pueblitos de sucursales que permiten venta_otras
                         $origenPermitido =
                             $p->pueblito?->sucursal_id === $sucursalUsuario->id
                             || $p->pueblito?->sucursal_id === null
@@ -148,17 +142,18 @@ class PasajeController extends Controller
                 $salida->tiene_origen_permitido = collect($puntosConHora)
                     ->contains(fn($p) => $p['origen_permitido'] === true);
 
-                $origen = $puntos->first();
+                $primerOrigenDisponible = collect($puntosConHora)
+                    ->first(fn($p) => $p['origen_permitido'] === true);
+
                 $destino = $puntos->last();
 
-                $salida->origen_nombre = trim(
-                    ($origen?->pueblito?->descripcion ?? '') .
-                        ($origen?->sucursal ? ' - ' . $origen->sucursal->nombre_comercial : '')
-                );
+                $salida->origen_nombre = $primerOrigenDisponible['nombre'] ?? '-';
 
                 $salida->destino_nombre = trim(
                     ($destino?->pueblito?->descripcion ?? '') .
-                        ($destino?->sucursal ? ' - ' . $destino->sucursal->nombre_comercial : '')
+                        ($destino?->sucursal
+                            ? ' - ' . $destino->sucursal->nombre_comercial
+                            : '')
                 );
 
                 $puntosOrdenados = $ruta->puntos->sortBy('orden')->values();
@@ -181,36 +176,43 @@ class PasajeController extends Controller
             ->orderBy('nombre_comercial')
             ->get();
 
-        if ($esAdmin) {
+        $pueblitosOrigenIds = $salidas
+            ->flatMap(function ($salida) {
 
-            $pueblitosOrigen = Pueblito::with('sucursal')
-                ->orderBy('descripcion')
-                ->get();
-        } elseif (!$sucursalUsuario?->venta_otras) {
+                $puntos = json_decode($salida->puntos_json, true) ?? [];
 
-            $pueblitosOrigen = Pueblito::where(
-                'sucursal_id',
-                $sucursalUsuario->id
-            )
-                ->with('sucursal')
-                ->orderBy('descripcion')
-                ->get();
-        } else {
-
-            $pueblitosOrigen = Pueblito::where(function ($query) use ($sucursalUsuario) {
-
-                $query->where('sucursal_id', $sucursalUsuario->id)
-                    ->orWhereNull('sucursal_id')
-                    ->orWhereHas('sucursal', function ($q) {
-                        $q->where('venta_otras', 1);
-                    });
+                return collect($puntos)
+                    ->filter(function ($punto) {
+                        return ($punto['origen_permitido'] ?? false) === true;
+                    })
+                    ->pluck('pueblito_id');
             })
-                ->with('sucursal')
-                ->orderBy('descripcion')
-                ->get();
-        }
+            ->filter()
+            ->unique()
+            ->values();
 
-        return view('pasajes.index', compact('hoy', 'pueblitoSucursalId', 'salidas', 'sucursales', 'ayer', 'pueblitosOrigen', 'pueblitos', 'esAdmin', 'cajaAbierta', 'ruta'));
+        $pueblitosOrigen = Pueblito::with('sucursal')
+            ->whereIn('id', $pueblitosOrigenIds)
+            ->orderBy('descripcion')
+            ->get();
+
+
+        $sucursales = Sucursal::where('estado', 'A')
+            ->orderBy('nombre_comercial')
+            ->get();
+
+        return view('pasajes.index', compact(
+            'hoy',
+            'pueblitoSucursalId',
+            'salidas',
+            'sucursales',
+            'ayer',
+            'pueblitosOrigen',
+            'pueblitos',
+            'esAdmin',
+            'cajaAbierta',
+            'ruta'
+        ));
     }
 
     public function listarPasajes(Request $request)
@@ -947,7 +949,7 @@ class PasajeController extends Controller
 
         $descuentosConfig = [];
         if ($pasaje->descuento_id && $pasaje->descuento) {
-            $tipo  = $pasaje->descuento->tipo;           
+            $tipo  = $pasaje->descuento->tipo;
             $valor = (float) $pasaje->descuento->valor;
 
             $monto = $tipo === 'porcentaje'
