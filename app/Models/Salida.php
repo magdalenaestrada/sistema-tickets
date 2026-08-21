@@ -293,7 +293,6 @@ class Salida extends Model
 
     public function encomiendasEnTramo($sucursalId)
     {
-
         $ruta = $this->horario?->ruta;
 
         if (!$ruta) {
@@ -307,8 +306,6 @@ class Salida extends Model
             ])
             ->orderBy('orden')
             ->get();
-
-
 
         $actual = $puntos->first(function ($punto) use ($sucursalId) {
 
@@ -324,78 +321,57 @@ class Salida extends Model
 
         $ordenActual = (int) $actual->orden;
 
-        dd([
-            'sucursal_actual' => [
-                'id' => $sucursalId,
-                'orden' => $ordenActual,
-                'pueblito' => $actual->pueblito?->descripcion,
-            ],
-
-            'ruta_puntos' => $puntos->map(function ($p) {
-                return [
-                    'orden' => $p->orden,
-                    'pueblito_id' => $p->pueblito_id,
-                    'pueblito' => $p->pueblito?->descripcion,
-                    'sucursal_id' => $p->sucursal_id,
-                ];
-            })->values(),
-
-            'encomiendas' => $this->encomiendas->map(function ($e) use ($puntos, $ordenActual) {
-
-                $origen = $puntos->first(function ($p) use ($e) {
-                    return (int) $p->pueblito_id ===
-                        (int) $e->origen_pueblito_id;
-                });
-
-                $destino = $puntos->first(function ($p) use ($e) {
-                    return (int) $p->pueblito_id ===
-                        (int) $e->destino_pueblito_id;
-                });
-
-                return [
-                    'id' => $e->id,
-                    'codigo' => $e->codigo,
-
-                    'origen_encomienda_id' => $e->origen_pueblito_id,
-                    'origen_en_ruta' => $origen?->pueblito?->descripcion,
-                    'orden_origen' => $origen?->orden,
-
-                    'destino_encomienda_id' => $e->destino_pueblito_id,
-                    'destino_en_ruta' => $destino?->pueblito?->descripcion,
-                    'orden_destino' => $destino?->orden,
-
-                    'orden_actual' => $ordenActual,
-
-                    'cumple_origen' => $origen
-                        ? ((int) $origen->orden <= (int) $ordenActual)
-                        : false,
-
-                    'cumple_destino' => $destino
-                        ? ((int) $destino->orden > (int) $ordenActual)
-                        : false,
-                ];
-            }),
-        ]);
-
         return $this->encomiendas
             ->filter(function ($encomienda) use ($puntos, $ordenActual) {
 
-                $origen = $puntos->firstWhere(
-                    'pueblito_id',
-                    $encomienda->origen_pueblito_id
-                );
+                // ORIGEN: primero por pueblito exacto
+                $origen = $puntos->first(function ($punto) use ($encomienda) {
+                    return (int) $punto->pueblito_id ===
+                        (int) $encomienda->origen_pueblito_id;
+                });
 
-                $destino = $puntos->firstWhere(
-                    'pueblito_id',
-                    $encomienda->destino_pueblito_id
-                );
+                if (!$origen && $encomienda->origenPueblito?->sucursal_id) {
+
+                    $sucursalOrigenId =
+                        (int) $encomienda->origenPueblito->sucursal_id;
+
+                    $origen = $puntos->first(function ($punto) use ($sucursalOrigenId) {
+
+                        $sucursalPunto = $punto->sucursal_id
+                            ?? $punto->pueblito?->sucursal_id;
+
+                        return (int) $sucursalPunto === $sucursalOrigenId;
+                    });
+                }
+
+                $destino = $puntos->first(function ($punto) use ($encomienda) {
+                    return (int) $punto->pueblito_id ===
+                        (int) $encomienda->destino_pueblito_id;
+                });
+
+                if (!$destino && $encomienda->destinoPueblito?->sucursal_id) {
+
+                    $sucursalDestinoId =
+                        (int) $encomienda->destinoPueblito->sucursal_id;
+
+                    $destino = $puntos->first(function ($punto) use ($sucursalDestinoId) {
+
+                        $sucursalPunto = $punto->sucursal_id
+                            ?? $punto->pueblito?->sucursal_id;
+
+                        return (int) $sucursalPunto === $sucursalDestinoId;
+                    });
+                }
 
                 if (!$origen || !$destino) {
                     return false;
                 }
 
-                return (int) $origen->orden <= $ordenActual
-                    && (int) $destino->orden > $ordenActual;
+                $ordenOrigen = (int) $origen->orden;
+                $ordenDestino = (int) $destino->orden;
+
+                return $ordenOrigen <= $ordenActual
+                    && $ordenActual < $ordenDestino;
             })
             ->sortBy('asiento_numero')
             ->values();
