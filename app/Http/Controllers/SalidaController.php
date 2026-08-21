@@ -490,7 +490,7 @@ class SalidaController extends Controller
 
         return response()->json(['message' => 'Eliminadas correctamente']);
     }
-    
+
     public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService, Request $request)
     {
         $salida->load([
@@ -611,8 +611,7 @@ class SalidaController extends Controller
     public function show($id)
     {
         $salida = Salida::with([
-            'horario.ruta.puntos.pueblito',
-            'horario.ruta.puntos.sucursal',
+            'horario.ruta.puntos.pueblito.sucursal',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
             'checks',
@@ -622,7 +621,9 @@ class SalidaController extends Controller
 
         $bloqueados = $salida->puntosBloqueadosIds();
 
-        $indiceActual = $puntos->search(fn($p) => !$bloqueados->contains($p->id));
+        $indiceActual = $puntos->search(
+            fn($p) => !$bloqueados->contains($p->id)
+        );
 
         $asientosVendidos = \DB::table('pasajes')
             ->where('salida_id', $salida->id)
@@ -630,15 +631,18 @@ class SalidaController extends Controller
             ->distinct()
             ->count('asiento_numero');
 
-        // 👇 NUEVO: ¿el usuario actual puede editar vehículo/conductor de emergencia?
         $isAdmin = auth()->user()->hasRole('Administrador');
         $sucursalId = auth()->user()->empleado->sucursal_id ?? null;
 
         $origenPunto = $puntos->first();
-        $origenSucursalId = $origenPunto?->sucursal_id;
-        $esOrigen = $origenSucursalId && (int) $origenSucursalId === (int) $sucursalId;
 
-        // origen ya dio su check ⇒ ya no se puede editar
+        // IMPORTANTE:
+        // La sucursal sale del PUEBLITO.
+        $origenSucursalId = $origenPunto?->pueblito?->sucursal_id;
+
+        $esOrigen = $origenSucursalId
+            && (int) $origenSucursalId === (int) $sucursalId;
+
         $origenYaConfirmado = $origenPunto
             ? $bloqueados->contains($origenPunto->id)
             : false;
@@ -671,21 +675,41 @@ class SalidaController extends Controller
             'asientos_vendidos' => $asientosVendidos,
             'parada_actual_index' => $bloqueados->count(),
 
-            'puede_editar_asignacion' => $puedeEditarAsignacion, // 👈 NUEVO
+            'puede_editar_asignacion' => $puedeEditarAsignacion,
 
             'ruta' => [
                 'nombre' => $salida->horario?->ruta?->nombre,
-                'puntos' => $puntos->map(function ($p, $i) use ($salida, $bloqueados, $indiceActual) {
-                    return [
-                        'id' => $p->id,
-                        'sucursal_id' => $p->sucursal_id,
-                        'orden' => $p->orden,
-                        'nombre' => $p->pueblito?->descripcion,
-                        'hora' => $salida->horario->horaEnPunto($p->id),
-                        'check_registrado' => $bloqueados->contains($p->id),
-                        'es_actual' => $i === $indiceActual,
-                    ];
-                })->values(),
+
+                'puntos' => $puntos->map(
+                    function ($p, $i) use ($salida, $bloqueados, $indiceActual) {
+
+                        $sucursal = $p->pueblito?->sucursal;
+
+                        return [
+                            'id' => $p->id,
+
+                            'pueblito_id' => $p->pueblito_id,
+
+                            // SIEMPRE desde el pueblito
+                            'sucursal_id' => $p->pueblito?->sucursal_id,
+
+                            'orden' => $p->orden,
+
+                            'nombre' => $p->pueblito?->descripcion,
+
+                            'sucursal' => $sucursal ? [
+                                'id' => $sucursal->id,
+                                'nombre_comercial' => $sucursal->nombre_comercial,
+                            ] : null,
+
+                            'hora' => $salida->horario->horaEnPunto($p->id),
+
+                            'check_registrado' => $bloqueados->contains($p->id),
+
+                            'es_actual' => $i === $indiceActual,
+                        ];
+                    }
+                )->values(),
             ],
         ]);
     }

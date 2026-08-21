@@ -552,7 +552,9 @@ function verSalida(id) {
                 <div class="flex-grow-1 border-bottom pb-1 min-w-0"> 
                     <div class="d-flex justify-content-between align-items-center gap-2"> 
                         <span class="fw-bold fs-8 text-truncate ${esActual ? "text-primary" : esCompletado ? "text-muted text-decoration-line-through" : "text-dark"}" title="${punto.nombre}">
-                            ${String.fromCharCode(65 + index)}. ${punto.nombre}
+                            ${String.fromCharCode(65 + index)}. ${punto.nombre}${punto.sucursal?.nombre_comercial
+    ? ` - ${punto.sucursal.nombre_comercial}`
+    : ""}
                         </span> 
                         <div class="d-flex align-items-center gap-1 flex-shrink-0">
                             <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span> 
