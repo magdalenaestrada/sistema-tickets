@@ -300,80 +300,40 @@ class Salida extends Model
         }
 
         $puntos = $ruta->puntos()
-            ->with([
-                'pueblito',
-                'sucursal',
-            ])
+            ->with('pueblito')
             ->orderBy('orden')
             ->get();
 
         $actual = $puntos->first(function ($punto) use ($sucursalId) {
-
-            $sucursalPunto = $punto->sucursal_id
-                ?? $punto->pueblito?->sucursal_id;
-
-            return (int) $sucursalPunto === (int) $sucursalId;
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
         });
 
         if (!$actual) {
             return collect();
         }
 
-        $ordenActual = (int) $actual->orden;
+        $ordenActual = $actual->orden;
 
         return $this->encomiendas
             ->filter(function ($encomienda) use ($puntos, $ordenActual) {
 
-                // ORIGEN: primero por pueblito exacto
-                $origen = $puntos->first(function ($punto) use ($encomienda) {
-                    return (int) $punto->pueblito_id ===
-                        (int) $encomienda->origen_pueblito_id;
-                });
+                $origen = $puntos->firstWhere(
+                    'pueblito_id',
+                    $encomienda->origen_pueblito_id
+                );
 
-                if (!$origen && $encomienda->origenPueblito?->sucursal_id) {
-
-                    $sucursalOrigenId =
-                        (int) $encomienda->origenPueblito->sucursal_id;
-
-                    $origen = $puntos->first(function ($punto) use ($sucursalOrigenId) {
-
-                        $sucursalPunto = $punto->sucursal_id
-                            ?? $punto->pueblito?->sucursal_id;
-
-                        return (int) $sucursalPunto === $sucursalOrigenId;
-                    });
-                }
-
-                $destino = $puntos->first(function ($punto) use ($encomienda) {
-                    return (int) $punto->pueblito_id ===
-                        (int) $encomienda->destino_pueblito_id;
-                });
-
-                if (!$destino && $encomienda->destinoPueblito?->sucursal_id) {
-
-                    $sucursalDestinoId =
-                        (int) $encomienda->destinoPueblito->sucursal_id;
-
-                    $destino = $puntos->first(function ($punto) use ($sucursalDestinoId) {
-
-                        $sucursalPunto = $punto->sucursal_id
-                            ?? $punto->pueblito?->sucursal_id;
-
-                        return (int) $sucursalPunto === $sucursalDestinoId;
-                    });
-                }
+                $destino = $puntos->firstWhere(
+                    'pueblito_id',
+                    $encomienda->destino_pueblito_id
+                );
 
                 if (!$origen || !$destino) {
                     return false;
                 }
 
-                $ordenOrigen = (int) $origen->orden;
-                $ordenDestino = (int) $destino->orden;
-
-                return $ordenOrigen <= $ordenActual
-                    && $ordenActual < $ordenDestino;
+                return $origen->orden <= $ordenActual
+                    && $destino->orden > $ordenActual;
             })
-            ->sortBy('asiento_numero')
             ->values();
     }
 
