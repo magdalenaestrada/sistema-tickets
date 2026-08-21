@@ -301,21 +301,56 @@ class Salida extends Model
         }
 
         $puntos = $ruta->puntos()
-            ->with('pueblito')
+            ->with([
+                'pueblito',
+                'sucursal',
+            ])
             ->orderBy('orden')
             ->get();
 
 
+
         $actual = $puntos->first(function ($punto) use ($sucursalId) {
-            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+
+            $sucursalPunto = $punto->sucursal_id
+                ?? $punto->pueblito?->sucursal_id;
+
+            return (int) $sucursalPunto === (int) $sucursalId;
         });
 
         if (!$actual) {
             return collect();
         }
 
-        $ordenActual = $actual->orden;
+        $ordenActual = (int) $actual->orden;
+        dd([
+            'sucursal_solicitada' => $sucursalId,
 
+            'puntos' => $puntos->map(function ($p) {
+                return [
+                    'orden' => $p->orden,
+                    'pueblito_id' => $p->pueblito_id,
+                    'pueblito' => $p->pueblito?->descripcion,
+                    'punto_sucursal_id' => $p->sucursal_id,
+                    'pueblito_sucursal_id' => $p->pueblito?->sucursal_id,
+                ];
+            }),
+
+            'actual' => $actual ? [
+                'orden' => $actual->orden,
+                'pueblito' => $actual->pueblito?->descripcion,
+            ] : null,
+
+            'encomiendas' => $this->encomiendas->map(function ($e) {
+                return [
+                    'id' => $e->id,
+                    'codigo' => $e->codigo ?? null,
+                    'origen_pueblito_id' => $e->origen_pueblito_id,
+                    'destino_pueblito_id' => $e->destino_pueblito_id,
+                    'pivot_estado' => $e->pivot?->estado,
+                ];
+            }),
+        ]);
         return $this->encomiendas
             ->filter(function ($encomienda) use ($puntos, $ordenActual) {
 
@@ -333,8 +368,8 @@ class Salida extends Model
                     return false;
                 }
 
-                return $origen->orden <= $ordenActual
-                    && $destino->orden > $ordenActual;
+                return (int) $origen->orden <= $ordenActual
+                    && (int) $destino->orden > $ordenActual;
             })
             ->sortBy('asiento_numero')
             ->values();

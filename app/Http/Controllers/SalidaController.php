@@ -490,6 +490,7 @@ class SalidaController extends Controller
 
         return response()->json(['message' => 'Eliminadas correctamente']);
     }
+    
     public function manifiestoEncomiendas(Salida $salida, PdfService $pdfService, Request $request)
     {
         $salida->load([
