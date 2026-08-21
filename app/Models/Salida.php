@@ -300,7 +300,7 @@ class Salida extends Model
         }
 
         $puntos = $ruta->puntos()
-            ->with('pueblito')
+            ->with('pueblito.sucursal')
             ->orderBy('orden')
             ->get();
 
@@ -346,12 +346,12 @@ class Salida extends Model
         }
 
         $puntos = $ruta->puntos()
-            ->with('pueblito')
+            ->with('pueblito.sucursal')
             ->orderBy('orden')
             ->get();
 
         $actual = $puntos->first(function ($punto) use ($sucursalId) {
-            return (int) $punto->sucursal_id === (int) $sucursalId;
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
         });
 
         if (!$actual) {
@@ -374,10 +374,13 @@ class Salida extends Model
 
     public function sucursalesRuta()
     {
-        return $this->horario->ruta->puntos
-            ->whereNotNull('sucursal_id')
-            ->sortBy('orden')
-            ->pluck('sucursal')
+        return $this->horario->ruta->puntos()
+            ->with('pueblito.sucursal')
+            ->orderBy('orden')
+            ->get()
+            ->map(function ($punto) {
+                return $punto->pueblito?->sucursal;
+            })
             ->filter()
             ->unique('id')
             ->values();
