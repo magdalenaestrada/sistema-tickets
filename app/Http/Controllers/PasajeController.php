@@ -82,8 +82,10 @@ class PasajeController extends Controller
             ->map(function ($salida) use ($esAdmin, $sucursalUsuario) {
                 $ruta = $salida->horario->ruta;
                 $puntos = $ruta->puntos->sortBy('orden')->values();
-                $hora = Carbon::parse($salida->fecha_salida);
-                $hora->setTimeFromTimeString($salida->horario->hora_salida);
+                $hora = Carbon::parse(
+                    $salida->fecha_salida->format('Y-m-d') . ' ' . $salida->horario->hora_salida,
+                    'America/Lima'
+                );
                 $puntosConHora = [];
                 $ultimoIndex = $puntos->count() - 1;
                 $bloqueados = $salida->puntosBloqueadosIds();
@@ -176,26 +178,9 @@ class PasajeController extends Controller
             ->orderBy('nombre_comercial')
             ->get();
 
-        $pueblitosOrigenIds = $salidas
-            ->flatMap(function ($salida) {
-
-                $puntos = json_decode($salida->puntos_json, true) ?? [];
-
-                return collect($puntos)
-                    ->filter(function ($punto) {
-                        return ($punto['origen_permitido'] ?? false) === true;
-                    })
-                    ->pluck('pueblito_id');
-            })
-            ->filter()
-            ->unique()
-            ->values();
-
         $pueblitosOrigen = Pueblito::with('sucursal')
-            ->whereIn('id', $pueblitosOrigenIds)
             ->orderBy('descripcion')
             ->get();
-
 
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')

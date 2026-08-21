@@ -361,13 +361,18 @@
                                         </span>
 
                                         <span class="hr-route-badge badge bg-dark">
-                                            {{ $salida->ruta_completa }} {{ $salida->hora_salida ?? '-' }}
+                                            {{ $salida->ruta_completa }}
+                                            ·
+                                            {{ optional($salida->fecha_salida)->format('d/m') }}
+                                            ·
+                                            {{ $salida->horario->hora_formateada ?? '-' }}
                                         </span>
                                     </div>
 
                                 </div>
                                 <div class="hr-date">
-                                    <span class="hr-date-day">
+                                    <span class="hr-date-day"
+                                        data-fecha-original="{{ optional($salida->fecha_salida)->format('d/m') }}">
                                         {{ optional($salida->fecha_salida)->format('d/m') }}
                                     </span>
 

@@ -565,15 +565,20 @@ document.addEventListener("DOMContentLoaded", function () {
             svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
         }
     }
-
     function actualizarFechaHoraSalida(row, puntoOrigen) {
-        if (!puntoOrigen) return;
+        if (!row || !puntoOrigen) return;
+        console.log("PUNTO ORIGEN SELECCIONADO:", puntoOrigen);
 
         const fechaEl = row.querySelector(".hr-date-day");
         const horaEl = row.querySelector(".hr-date-time");
 
-        if (fechaEl && puntoOrigen.fecha_formateada) {
-            fechaEl.textContent = puntoOrigen.fecha_formateada;
+        if (fechaEl && puntoOrigen.fecha) {
+            // 2026-08-17 → 17/08
+            const partes = puntoOrigen.fecha.split("-");
+
+            if (partes.length === 3) {
+                fechaEl.textContent = `${partes[2]}/${partes[1]}`;
+            }
         }
 
         if (horaEl && puntoOrigen.hora) {

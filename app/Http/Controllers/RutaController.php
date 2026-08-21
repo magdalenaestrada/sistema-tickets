@@ -94,11 +94,12 @@ class RutaController extends Controller
             $puntosData = [];
 
             foreach ($request->puntos as $index => $punto) {
+                $pueblito = Pueblito::findOrFail($punto['pueblito_id']);
                 $puntosData[] = [
                     'ruta_id' => $ruta->id,
                     'distrito_id' => $punto['distrito_id'],
                     'pueblito_id' => $punto['pueblito_id'],
-                    'sucursal_id' => $punto['sucursal_id'] ?? null,
+                    'sucursal_id' => $pueblito->sucursal_id ?? null,
                     'orden' => $index + 1
                 ];
             }

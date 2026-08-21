@@ -318,24 +318,24 @@ function validarPuntos() {
     let valido = true;
 
     $("#contenedorPuntos .punto").each(function () {
-        let select = $(this).find(".pueblito")[0];
-        let valor = $(select).val();
-        let item = pueblitos.find((p) => String(p.id) === String(valor));
+        const select = $(this).find(".pueblito");
+        const pueblito_id = select.val();
 
-        puntos.push({
-            pueblito_id: valor,
-            distrito_id: item?.distrito_id || null,
-            sucursal_id: item?.sucursal_id || null,
-        });
-        console.log(puntos);
+        if (!pueblito_id) {
+            select.addClass("is-invalid");
+            valido = false;
+        } else {
+            select.removeClass("is-invalid");
+        }
     });
 
-    if (puntos.some((p) => !p.pueblito_id)) {
+    if (!valido) {
         Swal.fire("Error", "Todos los puntos deben tener parada", "error");
-        return;
+
+        return false;
     }
 
-    return valido;
+    return true;
 }
 
 function actualizarOpcionesPueblitos() {
@@ -382,7 +382,7 @@ function verRuta(id) {
                     <li class="list-group-item d-flex justify-content-between">
 
                         <span>
-                            ${i + 1}. ${p.pueblito || "Sin parada" } - ${p.sucursal || "Sin sucursal"}
+                            ${i + 1}. ${p.pueblito || "Sin parada"} - ${p.sucursal || "Sin sucursal"}
                         </span>
 
                     </li>
@@ -545,46 +545,47 @@ $(document).on("click", ".activar", function () {
 
 function guardarEdicion(id) {
     if (!validarPuntos()) {
-        Swal.fire("Error", "Todos los puntos deben tener parada", "error");
-        $("#contenedorPuntos .pueblito").addClass("is-invalid");
-
         return;
     }
+
     let nombre = $("#nombreRuta").val();
     let puntos = [];
     let duracion = [];
     let costo = [];
 
     $("#contenedorPuntos .punto").each(function () {
-        let pueblito_id = $(this).find(".pueblito").val();
-        let sucursal_id = $(this).find(".sucursal").val();
+        const pueblito_id = $(this).find(".pueblito").val();
 
-        let pueblito = pueblitos.find((p) => p.id == pueblito_id);
-
-        if (pueblito_id) {
-            puntos.push({
-                distrito_id: pueblito?.distrito_id || null,
-                pueblito_id: pueblito_id,
-                sucursal_id: sucursal_id || null,
-            });
+        if (!pueblito_id) {
+            return;
         }
+
+        const pueblito = pueblitos.find(
+            (p) => String(p.id) === String(pueblito_id),
+        );
+
+        puntos.push({
+            pueblito_id: pueblito_id,
+            distrito_id: pueblito?.distrito_id || null,
+
+            // LA SUCURSAL SALE DEL PUEBLITO
+            sucursal_id: pueblito?.sucursal_id || null,
+        });
     });
 
     $("input[name='horas[]']").each(function (index) {
-        let horas = parseInt($(this).val()) || "";
-        let minutos =
-            parseInt($("input[name='minutos[]']").eq(index).val()) || "";
+        const horas = parseInt($(this).val()) || 0;
+        const minutos =
+            parseInt($("input[name='minutos[]']").eq(index).val()) || 0;
 
-        let total = horas * 60 + minutos;
-
-        duracion.push(total);
+        duracion.push(horas * 60 + minutos);
     });
 
     $("input[name='costo[]']").each(function () {
         costo.push($(this).val() || null);
     });
 
-    if (nombre.trim() === "") {
+    if (!nombre || nombre.trim() === "") {
         Swal.fire("Error", "El nombre es obligatorio", "error");
         return;
     }
@@ -614,7 +615,7 @@ function guardarEdicion(id) {
         success: function () {
             Swal.fire(
                 "Actualizado",
-                "Todas la rutas asociadas será modificadas",
+                "La ruta fue actualizada correctamente",
                 "success",
             );
 
@@ -625,11 +626,9 @@ function guardarEdicion(id) {
             );
         },
         error: function (err) {
-            let mensaje = "Error al actualizar";
+            console.error(err.responseJSON);
 
-            if (err.responseJSON?.message) {
-                mensaje = err.responseJSON.message;
-            }
+            const mensaje = err.responseJSON?.message || "Error al actualizar";
 
             Swal.fire("Error", mensaje, "error");
         },
