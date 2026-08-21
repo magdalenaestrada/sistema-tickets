@@ -323,34 +323,60 @@ class Salida extends Model
         }
 
         $ordenActual = (int) $actual->orden;
-        dd([
-            'sucursal_solicitada' => $sucursalId,
 
-            'puntos' => $puntos->map(function ($p) {
+        dd([
+            'sucursal_actual' => [
+                'id' => $sucursalId,
+                'orden' => $ordenActual,
+                'pueblito' => $actual->pueblito?->descripcion,
+            ],
+
+            'ruta_puntos' => $puntos->map(function ($p) {
                 return [
                     'orden' => $p->orden,
                     'pueblito_id' => $p->pueblito_id,
                     'pueblito' => $p->pueblito?->descripcion,
-                    'punto_sucursal_id' => $p->sucursal_id,
-                    'pueblito_sucursal_id' => $p->pueblito?->sucursal_id,
+                    'sucursal_id' => $p->sucursal_id,
                 ];
-            }),
+            })->values(),
 
-            'actual' => $actual ? [
-                'orden' => $actual->orden,
-                'pueblito' => $actual->pueblito?->descripcion,
-            ] : null,
+            'encomiendas' => $this->encomiendas->map(function ($e) use ($puntos) {
 
-            'encomiendas' => $this->encomiendas->map(function ($e) {
+                $origen = $puntos->first(function ($p) use ($e) {
+                    return (int) $p->pueblito_id ===
+                        (int) $e->origen_pueblito_id;
+                });
+
+                $destino = $puntos->first(function ($p) use ($e) {
+                    return (int) $p->pueblito_id ===
+                        (int) $e->destino_pueblito_id;
+                });
+
                 return [
                     'id' => $e->id,
-                    'codigo' => $e->codigo ?? null,
-                    'origen_pueblito_id' => $e->origen_pueblito_id,
-                    'destino_pueblito_id' => $e->destino_pueblito_id,
-                    'pivot_estado' => $e->pivot?->estado,
+                    'codigo' => $e->codigo,
+
+                    'origen_encomienda_id' => $e->origen_pueblito_id,
+                    'origen_en_ruta' => $origen?->pueblito?->descripcion,
+                    'orden_origen' => $origen?->orden,
+
+                    'destino_encomienda_id' => $e->destino_pueblito_id,
+                    'destino_en_ruta' => $destino?->pueblito?->descripcion,
+                    'orden_destino' => $destino?->orden,
+
+                    'orden_actual' => $ordenActual,
+
+                    'cumple_origen' => $origen
+                        ? ((int) $origen->orden <= (int) $ordenActual)
+                        : false,
+
+                    'cumple_destino' => $destino
+                        ? ((int) $destino->orden > (int) $ordenActual)
+                        : false,
                 ];
             }),
         ]);
+
         return $this->encomiendas
             ->filter(function ($encomienda) use ($puntos, $ordenActual) {
 
