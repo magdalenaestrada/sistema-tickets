@@ -340,7 +340,7 @@ class Salida extends Model
                 ];
             })->values(),
 
-            'encomiendas' => $this->encomiendas->map(function ($e) use ($puntos) {
+            'encomiendas' => $this->encomiendas->map(function ($e) use ($puntos, $ordenActual) {
 
                 $origen = $puntos->first(function ($p) use ($e) {
                     return (int) $p->pueblito_id ===
