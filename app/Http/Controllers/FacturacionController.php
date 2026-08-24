@@ -108,7 +108,7 @@ class FacturacionController extends Controller
         if ($user->hasRole('Administrador')) {
             $tiposDocumento = TipoDocumentoFactura::all();
         } else {
-            $tiposDocumento = TipoDocumentoFactura::whereIn('id', [1, 2, 3])->get();
+            $tiposDocumento = TipoDocumentoFactura::whereIn('id', [1, 2])->get();
         }
 
         $personas = Persona::all();
@@ -170,7 +170,7 @@ class FacturacionController extends Controller
     ) {
         $request->validate([
             'venta_referencia_id'       => 'required|exists:ventas,id',
-            'tipo_documento_factura_id' => 'required|exists:tipo_documento_facturas,id',
+            'tipo_documento_factura_id' => 'required|exists:tipo_documentos_factura,id',
             'fecha_emision'             => 'required|date',
         ]);
 
@@ -470,7 +470,7 @@ class FacturacionController extends Controller
             ->whereHas('tipoDocumentoFactura', function ($q) {
                 // Solo documentos NO electrónicos pueden servir de referencia.
                 // Ajusta el nombre de columna según confirmes (codigo / codigo_sunat)
-                $q->whereNotIn('codigo', ['01', '03', '07']);
+                $q->where('codigo', '!=', '07');
             })
             ->whereNotIn('estado', [EstadoVenta::ANULADO, EstadoVenta::RECHAZADO]);
 

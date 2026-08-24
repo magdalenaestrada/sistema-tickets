@@ -333,6 +333,9 @@
 
             let comprobanteSeleccionado = null;
 
+            let procesandoComprobante = false;
+            let procesandoConversion = false;
+
             window.buscarComprobanteReferencia = async function() {
                 const q = document.getElementById('buscar_comprobante_input').value.trim();
                 const cont = document.getElementById('resultado_busqueda_comprobante');
@@ -469,28 +472,54 @@
             }
 
             async function consultarImpactoConversion() {
+
                 const aviso = document.getElementById('aviso_anulacion_origen');
                 const tipoDestino = document.getElementById('tipo_comprobante_destino').value;
 
                 if (!comprobanteSeleccionado) return;
 
                 try {
-                    const res = await fetch(
-                        `/facturacion/preview-conversion?venta_id=${comprobanteSeleccionado.id}&tipo_destino=${tipoDestino}`
-                    );
+
+                    const url = route('facturacion.preview-conversion', {
+                        venta_id: comprobanteSeleccionado.id,
+                        tipo_destino: tipoDestino
+                    });
+
+                    const res = await fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
+
                     const json = await res.json();
 
                     if (json.requiere_nc) {
-                        aviso.className = 'rounded-3 p-2 px-3 mb-2 bg-warning bg-opacity-25 text-dark';
+
+                        aviso.className =
+                            'rounded-3 p-2 px-3 mb-2 bg-warning bg-opacity-25 text-dark';
+
                         aviso.innerHTML =
-                            '<i class="bi bi-exclamation-triangle me-1"></i> Este comprobante ya está fuera del plazo de anulación directa. Se generará automáticamente una <strong>Nota de Crédito</strong> antes de emitir el nuevo comprobante.';
+                            '<i class="bi bi-exclamation-triangle me-1"></i> ' +
+                            'Este comprobante ya está fuera del plazo de anulación directa. ' +
+                            'Se generará automáticamente una <strong>Nota de Crédito</strong> ' +
+                            'antes de emitir el nuevo comprobante.';
+
                     } else {
-                        aviso.className = 'rounded-3 p-2 px-3 mb-2 bg-info bg-opacity-25 text-dark';
+
+                        aviso.className =
+                            'rounded-3 p-2 px-3 mb-2 bg-info bg-opacity-25 text-dark';
+
                         aviso.innerHTML =
-                            '<i class="bi bi-info-circle me-1"></i> El comprobante de origen será anulado directamente (dentro del plazo permitido).';
+                            '<i class="bi bi-info-circle me-1"></i> ' +
+                            'El comprobante de origen será anulado directamente ' +
+                            '(dentro del plazo permitido).';
                     }
+
                     aviso.style.display = 'flex';
+
                 } catch (e) {
+
                     aviso.style.display = 'none';
                     console.error(e);
                 }
@@ -503,45 +532,430 @@
                 if (comprobanteSeleccionado) consultarImpactoConversion();
             }
 
-            async function continuarConversion() {
-                if (!comprobanteSeleccionado) {
-                    alert('Seleccione un comprobante de referencia.');
+            function cambiarTipoComprobanteConversion() {
+
+                actualizarSerieDestino();
+
+                const select = document.getElementById("tipo_comprobante_destino");
+                const texto = select.options[select.selectedIndex]?.text
+                    ?.trim()
+                    ?.toUpperCase() ?? "";
+
+                const $documento = $("#doc_cliente_conversion");
+
+                // Limpiamos cliente al cambiar de tipo
+                $documento.val("");
+                $("#nombre_cliente_conversion").val("");
+                $("#direccion_cliente_conversion").val("");
+
+                if (texto.includes("FACTURA")) {
+
+                    $("#lblDocumentoConversion").text("RUC");
+                    $("#lblNombreConversion").html(
+                        'Razón Social <span class="text-danger">*</span>'
+                    );
+
+                    $("#ayudaDocumentoConversion").text(
+                        "La factura requiere un RUC de 11 dígitos."
+                    );
+
+                    $documento
+                        .attr("maxlength", 11)
+                        .attr("placeholder", "Ingrese RUC");
+
+                } else if (texto.includes("BOLETA")) {
+
+                    $("#lblDocumentoConversion").text("DNI");
+                    $("#lblNombreConversion").html(
+                        'Cliente <span class="text-danger">*</span>'
+                    );
+
+                    $("#ayudaDocumentoConversion").text(
+                        "Ingrese el DNI de 8 dígitos."
+                    );
+
+                    $documento
+                        .attr("maxlength", 8)
+                        .attr("placeholder", "Ingrese DNI");
+
+                } else {
+
+                    $("#lblDocumentoConversion").text("DNI / RUC");
+
+                    $("#ayudaDocumentoConversion").text(
+                        "Ingrese el documento del cliente."
+                    );
+
+                    $documento
+                        .attr("maxlength", 11)
+                        .attr("placeholder", "Ingrese DNI o RUC");
+                }
+            }
+
+            async function buscarClienteConversion() {
+
+                const documento = $("#doc_cliente_conversion").val().trim();
+
+                const select = document.getElementById("tipo_comprobante_destino");
+
+                const tipoTexto = select.options[select.selectedIndex]?.text
+                    ?.trim()
+                    ?.toUpperCase() ?? "";
+
+                if (!documento) {
+                    Swal.fire(
+                        "Atención",
+                        "Ingrese el documento del cliente.",
+                        "warning"
+                    );
                     return;
                 }
 
-                const payload = {
-                    venta_referencia_id: comprobanteSeleccionado.id,
-                    tipo_documento_factura_id: document.getElementById('tipo_comprobante_destino').value,
-                    fecha_emision: document.getElementById('fecha_emision_destino').value,
-                };
+                if (!/^\d+$/.test(documento)) {
+                    Swal.fire(
+                        "Atención",
+                        "El documento solo debe contener números.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                // FACTURA
+                if (tipoTexto.includes("FACTURA") && documento.length !== 11) {
+                    Swal.fire(
+                        "Atención",
+                        "Para emitir una factura debe ingresar un RUC de 11 dígitos.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                // BOLETA
+                if (tipoTexto.includes("BOLETA") && documento.length !== 8) {
+                    Swal.fire(
+                        "Atención",
+                        "Para emitir una boleta debe ingresar un DNI de 8 dígitos.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                const $btn = $("#btnBuscarClienteConversion");
+
+                $btn.prop("disabled", true);
 
                 try {
-                    const res = await fetch('/facturacion/convertir-comprobante', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        },
-                        body: JSON.stringify(payload),
-                    });
-                    const json = await res.json();
 
-                    if (!json.success) {
-                        alert(json.message ?? 'No se pudo generar el comprobante.');
+                    const data = await $.ajax({
+                        url: route("buscar.buscar"),
+                        type: "GET",
+                        dataType: "json",
+                        data: {
+                            documento: documento
+                        }
+                    });
+
+                    if (data.error) {
+
+                        Swal.fire(
+                            "No encontrado",
+                            data.error,
+                            "warning"
+                        );
+
                         return;
                     }
 
-                    let mensaje = 'Comprobante generado correctamente.';
-                    if (json.data?.nota_credito) {
-                        mensaje += ` Se emitió la Nota de Crédito ${json.data.nota_credito} para anular el origen.`;
+                    if (documento.length === 11) {
+
+                        const razonSocial =
+                            data.razon_social ??
+                            data.nombre_o_razon_social ??
+                            "";
+
+                        const direccion =
+                            data.direccion ??
+                            data.domicilio_fiscal ??
+                            "-";
+
+                        $("#nombre_cliente_conversion").val(razonSocial);
+                        $("#direccion_cliente_conversion").val(direccion);
+
+                    } else {
+
+                        const nombre = [
+                                data.nombres,
+                                data.apellido_paterno,
+                                data.apellido_materno
+                            ]
+                            .filter(Boolean)
+                            .join(" ");
+
+                        $("#nombre_cliente_conversion").val(nombre);
+                        $("#direccion_cliente_conversion").val("-");
                     }
-                    alert(mensaje);
-                    location.reload();
-                } catch (e) {
-                    alert('Ocurrió un error al generar el comprobante.');
-                    console.error(e);
+
+                } catch (xhr) {
+
+                    console.error("ERROR BUSCAR CLIENTE:", xhr);
+
+                    Swal.fire(
+                        "Error",
+                        xhr.responseJSON?.message ??
+                        "No se pudo consultar el documento.",
+                        "error"
+                    );
+
+                } finally {
+
+                    $btn.prop("disabled", false);
                 }
             }
+
+            async function continuarConversion() {
+                if (procesandoConversion) {
+                    return;
+                }
+
+                if (!comprobanteSeleccionado) {
+                    Swal.fire(
+                        "Atención",
+                        "Seleccione un comprobante de referencia.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                const tipoSelect =
+                    document.getElementById('tipo_comprobante_destino');
+
+                const tipoDestino = tipoSelect.value;
+
+                const tipoTexto =
+                    tipoSelect.options[tipoSelect.selectedIndex]?.text
+                    ?.trim()
+                    ?.toUpperCase() ?? "";
+
+                const documento =
+                    $("#doc_cliente_conversion").val().trim();
+
+                const nombre =
+                    $("#nombre_cliente_conversion").val().trim();
+
+                const direccion =
+                    $("#direccion_cliente_conversion").val().trim();
+
+
+                // ==========================================
+                // VALIDAR DOCUMENTO
+                // ==========================================
+
+                if (!documento) {
+
+                    Swal.fire(
+                        "Atención",
+                        "Debe ingresar el documento del cliente.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                if (!/^\d+$/.test(documento)) {
+
+                    Swal.fire(
+                        "Atención",
+                        "El documento solo debe contener números.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                // FACTURA → RUC
+                if (
+                    tipoTexto.includes("FACTURA") &&
+                    documento.length !== 11
+                ) {
+
+                    Swal.fire(
+                        "Atención",
+                        "Para emitir una factura debe ingresar un RUC de 11 dígitos.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                // BOLETA → DNI
+                if (
+                    tipoTexto.includes("BOLETA") &&
+                    documento.length !== 8
+                ) {
+
+                    Swal.fire(
+                        "Atención",
+                        "Para emitir una boleta debe ingresar un DNI de 8 dígitos.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                if (!nombre) {
+
+                    Swal.fire(
+                        "Atención",
+                        "Debe buscar y validar primero el documento del cliente.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+
+                // ==========================================
+                // PAYLOAD
+                // ==========================================
+
+                const payload = {
+
+                    venta_referencia_id: comprobanteSeleccionado.id,
+
+                    tipo_documento_factura_id: tipoDestino,
+
+                    fecha_emision: document.getElementById(
+                        'fecha_emision_destino'
+                    ).value,
+
+                    documento_cliente: documento,
+
+                    nombre_cliente: nombre,
+
+                    direccion_cliente: direccion
+                };
+
+                procesandoConversion = true;
+                $("#btnVolverModal").prop("disabled", true);
+                $("#btnBuscarClienteConversion").prop("disabled", true);
+                $("#buscar_comprobante_input").prop("disabled", true);
+                $("#tipo_comprobante_destino").prop("disabled", true);
+                const $btn = $("#btnContinuarComprobanteExistente");
+
+                const textoOriginal = $btn.html();
+
+                $btn.prop("disabled", true).html(`
+    <span class="spinner-border spinner-border-sm me-2"></span>
+    Generando comprobante...
+`);
+
+                try {
+
+                    const res = await fetch(
+                        route('facturacion.convertir-comprobante'), {
+                            method: 'POST',
+
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]'
+                                ).content,
+                            },
+
+                            body: JSON.stringify(payload),
+                        }
+                    );
+
+
+                    const json = await res.json();
+
+
+                    if (!json.success) {
+
+                        procesandoConversion = false;
+
+                        $btn
+                            .prop("disabled", false)
+                            .html(textoOriginal);
+
+                        Swal.fire(
+                            "Error",
+                            json.message ?? "No se pudo generar el comprobante.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    let mensaje =
+                        "Comprobante generado correctamente.";
+
+
+                    if (json.data?.nota_credito) {
+
+                        mensaje +=
+                            ` Se emitió la Nota de Crédito ${json.data.nota_credito} para anular el comprobante original.`;
+                    }
+
+
+                    Swal.fire(
+                        "Correcto",
+                        mensaje,
+                        "success"
+                    ).then(() => location.reload());
+
+                } catch (e) {
+
+                    procesandoConversion = false;
+
+                    $btn
+                        .prop("disabled", false)
+                        .html(textoOriginal);
+
+                    console.error(e);
+
+                    Swal.fire(
+                        "Error",
+                        "Ocurrió un error al generar el comprobante.",
+                        "error"
+                    );
+
+                    $("#btnVolverModal").prop("disabled", false);
+                    $("#btnBuscarClienteConversion").prop("disabled", false);
+                    $("#buscar_comprobante_input").prop("disabled", false);
+                    $("#tipo_comprobante_destino").prop("disabled", false);
+                }
+            }
+
+
+            $("#formVentaRapida").on("submit", function(e) {
+
+                if (procesandoComprobante) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                procesandoComprobante = true;
+
+                $("#btnGenerarEmitir")
+                    .prop("disabled", true)
+                    .html(`
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Generando comprobante...
+        `);
+
+                $(this)
+                    .find("button[type='button']")
+                    .prop("disabled", true);
+
+                return true;
+            });
 
             function buscarCliente() {
                 const documento = $("#doc_cliente").val().trim();

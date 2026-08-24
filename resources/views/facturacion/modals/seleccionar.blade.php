@@ -205,7 +205,7 @@
 
                                     <li>
                                         <i class="bi bi-check-circle-fill text-primary me-1"></i>
-                                        Mantiene cliente y detalle
+                                        Mantiene el detalle del comprobante
                                     </li>
 
                                 </ul>
@@ -374,8 +374,6 @@
 
                         </div>
 
-
-
                         {{-- DATOS CLIENTE --}}
                         <div class="card border-0 border-start border-primary border-3 shadow-sm rounded-3 p-3 mb-3">
 
@@ -469,9 +467,6 @@
 
                         </div>
 
-
-
-                        {{-- DETALLE --}}
                         <div class="card border-0 shadow-sm rounded-3 p-3">
 
                             <h6 class="fw-bold text-dark mb-3 small">
@@ -675,14 +670,15 @@
                             </button>
 
 
-                            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+                            <button type="submit" id="btnGenerarEmitir"
+                                class="btn btn-primary btn-sm px-4 fw-semibold">
 
-                                <i class="bi bi-check-circle me-1"></i>
-
-                                Generar y Emitir
+                                <span id="textoBtnGenerarEmitir">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Generar y Emitir
+                                </span>
 
                             </button>
-
                         </div>
 
                     </form>
@@ -843,7 +839,7 @@
 
 
                                 <select id="tipo_comprobante_destino" name="tipo_comprobante_destino"
-                                    class="form-select form-select-sm" onchange="actualizarSerieDestino()">
+                                    class="form-select form-select-sm" onchange="cambiarTipoComprobanteConversion()">
 
                                     @foreach ($tiposDocumento as $tipo)
                                         <option value="{{ $tipo->id }}">
@@ -916,12 +912,89 @@
 
 
                                 <input type="date" id="fecha_emision_destino" name="fecha_emision"
-                                    class="form-control form-control-sm" value="{{ now()->format('Y-m-d') }}">
+                                    class="form-control form-control-sm bg-light" value="{{ now()->format('Y-m-d') }}"
+                                    readonly>
 
                             </div>
 
                         </div>
 
+                        {{-- CLIENTE DEL NUEVO COMPROBANTE --}}
+                        <div class="card border-0 border-start border-primary border-3 shadow-sm rounded-3 p-3 mb-3">
+
+                            <h6 class="fw-bold text-dark mb-3 small">
+                                <i class="bi bi-person me-1"></i>
+                                Datos del Cliente del Nuevo Comprobante
+                            </h6>
+
+                            <div class="row g-3">
+
+                                <div class="col-md-4">
+
+                                    <label class="form-label small fw-semibold text-secondary">
+
+                                        <span id="lblDocumentoConversion">
+                                            DNI / RUC
+                                        </span>
+
+                                        <span class="text-danger">*</span>
+
+                                    </label>
+
+                                    <div class="input-group input-group-sm">
+
+                                        <input type="text" id="doc_cliente_conversion" class="form-control"
+                                            placeholder="Ingrese DNI o RUC" maxlength="11" autocomplete="off">
+
+                                        <button type="button" id="btnBuscarClienteConversion"
+                                            class="btn btn-primary" onclick="buscarClienteConversion()">
+
+                                            <i class="bi bi-search me-1"></i>
+                                            Buscar
+
+                                        </button>
+
+                                    </div>
+
+                                    <small id="ayudaDocumentoConversion" class="text-muted">
+
+                                        Ingrese el documento del cliente.
+
+                                    </small>
+
+                                </div>
+
+
+                                <div class="col-md-4">
+
+                                    <label class="form-label small fw-semibold text-secondary"
+                                        id="lblNombreConversion">
+
+                                        Cliente
+                                        <span class="text-danger">*</span>
+
+                                    </label>
+
+                                    <input type="text" id="nombre_cliente_conversion"
+                                        class="form-control form-control-sm" readonly>
+
+                                </div>
+
+
+                                <div class="col-md-4">
+
+                                    <label class="form-label small fw-semibold text-secondary">
+                                        Dirección
+                                    </label>
+
+                                    <input type="text" id="direccion_cliente_conversion"
+                                        class="form-control form-control-sm" readonly>
+
+                                </div>
+
+                            </div>
+
+                        </div>
 
                         <div class="bg-light bg-opacity-10 rounded-3 p-2 px-3 mb-3 d-flex align-items-center gap-2"
                             style="font-size: 0.75rem;">
@@ -938,10 +1011,8 @@
                                 </span>
 
                                 <span class="text-secondary fw-semibold">
-
-                                    No se modificarán manualmente los datos del comprobante
-                                    seleccionado.
-
+                                    Se mantendrá el detalle del comprobante original y
+                                    podrás indicar el cliente del nuevo comprobante.
                                 </span>
 
                             </div>

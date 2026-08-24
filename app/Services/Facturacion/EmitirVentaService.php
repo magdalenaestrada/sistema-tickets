@@ -91,13 +91,13 @@ class EmitirVentaService
         Storage::disk('public')->put($xmlPath, $xml);
 
         $venta->ruta_xml = $xmlPath;
-        $venta->estado = 'PENDIENTE_RESUMEN';
-        $venta->observacion = 'Documento generado. Falta enviarlo en resumen diario.';
+        $venta->estado = 'GENERADO';
+        $venta->observacion = 'Documento generado.';
         $venta->save();
 
         return [
             'ok' => true,
-            'estado' => 'PENDIENTE_RESUMEN',
+            'estado' => 'GENERADO',
             'xml' => $venta->ruta_xml,
         ];
     }
