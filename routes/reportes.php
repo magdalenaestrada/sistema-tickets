@@ -27,7 +27,7 @@ Route::middleware(['auth', 'can:gestionar reportes'])->prefix('reportes')->name(
     Route::get(
         '/ventas-general/pdf',
         [ReportesController::class, 'ventasGeneralPdf']
-    )->name('ventas.general.pdf');
+    )->name('ventas-general.pdf');
 
     Route::get(
         '/ventas-agencia/excel',
