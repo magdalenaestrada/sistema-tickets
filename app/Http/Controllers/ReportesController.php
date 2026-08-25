@@ -296,12 +296,6 @@ class ReportesController extends Controller
                 : $venta->estado === 'ANULADO';
         });
 
-        /*
-    |--------------------------------------------------------------------------
-    | TOTALES GENERALES
-    |--------------------------------------------------------------------------
-    */
-
         $totalVendido = $ventasEmitidas->sum(function ($venta) {
             return (float) $venta->total;
         });
@@ -312,33 +306,6 @@ class ReportesController extends Controller
             ? $totalVendido / $cantidadVentas
             : 0;
 
-        dd([
-            'ventas_total' => $ventas->count(),
-
-            'ventas_emitidas' => $ventasEmitidas->count(),
-
-            'ventas_ids' => $ventasEmitidas->pluck('id')->take(20),
-
-            'pagos_por_venta' => $ventasEmitidas
-                ->take(10)
-                ->map(function ($venta) {
-                    return [
-                        'venta_id' => $venta->id,
-                        'serie_numero' => $venta->serie . '-' . $venta->numero,
-                        'total_venta' => $venta->total,
-                        'cantidad_pagos' => $venta->pagos->count(),
-                        'pagos' => $venta->pagos->map(function ($pago) {
-                            return [
-                                'id' => $pago->id,
-                                'metodo_pago_id' => $pago->metodo_pago_id,
-                                'billetera_id' => $pago->billetera_id,
-                                'total' => $pago->total,
-                                'estado' => $pago->estado,
-                            ];
-                        }),
-                    ];
-                }),
-        ]);
 
         $cantidadPasajes = $ventasEmitidas->sum(function ($venta) {
             return $venta->pasajes->count();

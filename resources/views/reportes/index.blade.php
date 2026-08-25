@@ -4,14 +4,12 @@
     <div class="container-fluid py-4 px-md-4 min-vh-100">
         <!-- Header Principal -->
         <div
-            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-1">
             <div>
                 <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
                     <i class="bi bi-bar-chart-line-fill me-1"></i> Módulo de Reportes
                 </span>
-                <h2 class="h3 fw-bold mb-1 text-dark">Centro de Reportes Gerenciales y Contables</h2>
-                <p class="text-secondary small mb-0">Selecciona el rango de fechas global o aplica filtros específicos para
-                    consultar y exportar la información.</p>
+            
             </div>
         </div>
 
