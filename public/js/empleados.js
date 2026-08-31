@@ -22,7 +22,8 @@ $(document).ready(async function () {
         }
 
         container.innerHTML = data
-            .map((emp) => {
+            .map((emp, index) => {
+                const contador = data.length - index;
                 const activo = emp.estado;
                 const badgeClass = activo ? "badge-activo" : "badge-inactivo";
                 const badgeText = activo ? "Activo" : "Inactivo";
@@ -40,6 +41,9 @@ $(document).ready(async function () {
 
                 return `
         <div class="emp-item" data-id="${emp.id}">
+         <div class="emp-contador">
+        ${contador}
+    </div>
             <div class="emp-info">
                 <div class="emp-nombre">${emp.nombre ?? ""}</div>
                 <div class="emp-cargo">${emp.cargo ?? ""}</div>
@@ -65,6 +69,8 @@ $(document).ready(async function () {
             .join("");
 
         lucide.createIcons();
+
+        
     }
 
     await Promise.all([

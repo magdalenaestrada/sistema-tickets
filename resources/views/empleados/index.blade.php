@@ -174,6 +174,55 @@
             transition: background .15s;
         }
 
+        .empleados-resumen {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .emp-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 10px;
+            border: 1px solid var(--borde, #e5e7eb);
+            border-radius: 20px;
+            background: #fff;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .emp-chip svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .emp-chip strong {
+            min-width: 22px;
+            padding: 2px 7px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            color: #334155;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .chip-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .emp-chip-activo .chip-dot {
+            background: #22c55e;
+        }
+
+        .emp-chip-inactivo .chip-dot {
+            background: #ef4444;
+        }
+
         .btn-nuevo:hover {
             background: #1d4ed8;
         }
@@ -480,6 +529,23 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+        }
+
+        .emp-contador {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #64748b;
+
+            font-size: 11px;
+            font-weight: 700;
         }
 
         .proximo-item {

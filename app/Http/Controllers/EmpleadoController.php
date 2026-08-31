@@ -28,6 +28,9 @@ class EmpleadoController extends Controller
         $provincias = Provincia::select('id', 'nombre')->get();
         $distritos = Distrito::select('id', 'nombre')->get();
         $empleados = Empleado::all();
+        $totalEmpleados = $empleados->count();
+        $totalActivos = $empleados->where('estado', 'A')->count();
+        $totalInactivos = $empleados->where('estado', '!=', 'A')->count();
         $cargos = Cargo::all();
         $sucursales = Sucursal::where("estado", "A")->get();
         $roles = Role::all();
@@ -66,7 +69,19 @@ class EmpleadoController extends Controller
             ];
         }
 
-        return view('empleados.index', compact('distritos', 'cargos', 'roles', 'departamentos', 'datos_eventos', 'provincias', 'sucursales', 'empleados'));
+        return view('empleados.index', compact(
+            'distritos',
+            'cargos',
+            'roles',
+            'departamentos',
+            'datos_eventos',
+            'provincias',
+            'sucursales',
+            'empleados',
+            'totalEmpleados',
+            'totalActivos',
+            'totalInactivos'
+        ));
     }
 
     public function datatable()

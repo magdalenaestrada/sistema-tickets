@@ -23,11 +23,40 @@ class SalidaController extends Controller
     {
         $rutas = Ruta::all();
 
-        $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
-        $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
+        $vehiculos = Vehiculo::with('tipo_vehiculo')
+            ->where('estado', 'A')
+            ->get();
+
+        $conductores = Empleado::with('persona')
+            ->where('cargo_id', 3)
+            ->get();
+
         $tiposVehiculo = TipoVehiculo::all();
+
         $hoy = now()->toDateString();
         $horaActual = now()->format('H:i:s');
+
+        $querySalidasHoy = Salida::whereDate('fecha_salida', $hoy);
+
+        $contadorSalidas = [
+            'todas' => (clone $querySalidasHoy)->count(),
+
+            'programadas' => (clone $querySalidasHoy)
+                ->where('estado', 'programado')
+                ->count(),
+
+            'en_ruta' => (clone $querySalidasHoy)
+                ->where('estado', 'en_ruta')
+                ->count(),
+
+            'finalizadas' => (clone $querySalidasHoy)
+                ->where('estado', 'finalizado')
+                ->count(),
+
+            'canceladas' => (clone $querySalidasHoy)
+                ->where('estado', 'cancelado')
+                ->count(),
+        ];
 
         $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
             ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
@@ -36,8 +65,8 @@ class SalidaController extends Controller
                     ->where('salidas.fecha_salida', '=', $hoy);
             })
             ->where(function ($q) use ($horaActual) {
-                $q->whereNull('salidas.id') // no existe salida para hoy
-                    ->orWhere('horarios.hora_salida', '>=', $horaActual); // aún no ha pasado la hora
+                $q->whereNull('salidas.id')
+                    ->orWhere('horarios.hora_salida', '>=', $horaActual);
             })
             ->orderBy('horarios.hora_salida')
             ->select('horarios.*')
@@ -47,6 +76,7 @@ class SalidaController extends Controller
                 return [
                     'id' => $h->id,
                     'tipo_vehiculo_id' => $h->tipo_vehiculo_id,
+
                     'nombre' => ($h->ruta?->nombre ?? 'Sin ruta')
                         . ' - '
                         . ($h->hora_formateada ?? '')
@@ -54,18 +84,45 @@ class SalidaController extends Controller
                         . ($h->tipo_vehiculo?->descripcion ?? ''),
                 ];
             });
-        return view('salidas.index', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
+
+
+        return view('salidas.index', compact(
+            'vehiculos',
+            'tiposVehiculo',
+            'conductores',
+            'horariosSalida',
+            'rutas',
+            'contadorSalidas'
+        ));
     }
 
     public function index_vendedor()
     {
-        // Sucursal del vendedor autenticado (ajusta según tu relación real)
         $sucursalId = auth()->user()->empleado->sucursal_id;
-
+        $hoy = now()->toDateString();
+        $horaActual = now()->format('H:i:s');
         $rutas = Ruta::all();
-
+        $querySalidasHoy = Salida::whereDate('fecha_salida', $hoy);
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
+        $contadorSalidas = [
+            'todas' => (clone $querySalidasHoy)->count(),
 
+            'programadas' => (clone $querySalidasHoy)
+                ->where('estado', 'programado')
+                ->count(),
+
+            'en_ruta' => (clone $querySalidasHoy)
+                ->where('estado', 'en_ruta')
+                ->count(),
+
+            'finalizadas' => (clone $querySalidasHoy)
+                ->where('estado', 'finalizado')
+                ->count(),
+
+            'canceladas' => (clone $querySalidasHoy)
+                ->where('estado', 'cancelado')
+                ->count(),
+        ];
 
         $conductores = Empleado::with('persona')
             ->where('cargo_id', 3)
@@ -101,7 +158,7 @@ class SalidaController extends Controller
                 ];
             });
 
-        return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
+        return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas', 'contadorSalidas'));
     }
 
     public function datatable(Request $request)

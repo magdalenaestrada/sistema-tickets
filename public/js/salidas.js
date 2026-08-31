@@ -1,4 +1,5 @@
 let tablaSalidas;
+let estadoActual = "";
 let horariosSalida = window.HORARIOS_SALIDA || [];
 let rutasSalida = window.RUTAS_SALIDA || [];
 console.log(window.IS_ADMIN);
@@ -16,41 +17,89 @@ $(document).on("change", "#fecha_salida, #horario_id", function () {
 });
 
 $(document).ready(function () {
+
     tablaSalidas = $("#tablaSalidas").DataTable({
+
         ajax: {
             url: route("salidas.datatable"),
+
             data: function (d) {
-                d.estado = $("#filtroEstado").val();
+                d.estado = estadoActual;
                 d.ruta_id = $("#filtroRuta").val();
             },
         },
+
         columns: [
-            { data: "DT_RowIndex" },
-            { data: "ruta" },
-            { data: "fecha_formateada" },
-            { data: "hora_salida" },
-            { data: "hora_llegada" },
+            {
+                data: "hora_salida",
+                render: function (data) {
+                    return `
+                        <div class="hora-salida">
+                            ${data ?? "-"}
+                        </div>
+                    `;
+                },
+            },
+
+            {
+                data: "ruta",
+                render: function (data) {
+                    return `
+                        <div class="ruta-principal">
+                            ${data ?? "-"}
+                        </div>
+                    `;
+                },
+            },
+
+            {
+                data: "hora_llegada",
+            },
+
             {
                 data: "estado",
                 render: function (data, type, row) {
-                    if (type === "display") return row.estado_badge;
+
+                    if (type === "display") {
+                        return row.estado_badge;
+                    }
+
                     return data;
                 },
             },
-            { data: "acciones" },
+
+            {
+                data: "acciones",
+                className: "text-center",
+                orderable: false,
+                searchable: false,
+            },
         ],
 
         responsive: true,
         info: false,
         dom: "rtip",
+
         drawCallback: function () {
             lucide.createIcons();
         },
     });
 
-    $("#filtroEstado, #filtroRuta").on("change", function () {
+    $(".salida-estado-tab").on("click", function () {
+
+        $(".salida-estado-tab").removeClass("active");
+
+        $(this).addClass("active");
+
+        estadoActual = $(this).data("estado") ?? "";
+
         tablaSalidas.ajax.reload();
     });
+
+    $("#filtroRuta").on("change", function () {
+        tablaSalidas.ajax.reload();
+    });
+
 });
 
 new TomSelect("#filtroRuta", {
@@ -552,9 +601,11 @@ function verSalida(id) {
                 <div class="flex-grow-1 border-bottom pb-1 min-w-0"> 
                     <div class="d-flex justify-content-between align-items-center gap-2"> 
                         <span class="fw-bold fs-8 text-truncate ${esActual ? "text-primary" : esCompletado ? "text-muted text-decoration-line-through" : "text-dark"}" title="${punto.nombre}">
-                            ${String.fromCharCode(65 + index)}. ${punto.nombre}${punto.sucursal?.nombre_comercial
-    ? ` - ${punto.sucursal.nombre_comercial}`
-    : ""}
+                            ${String.fromCharCode(65 + index)}. ${punto.nombre}${
+                                punto.sucursal?.nombre_comercial
+                                    ? ` - ${punto.sucursal.nombre_comercial}`
+                                    : ""
+                            }
                         </span> 
                         <div class="d-flex align-items-center gap-1 flex-shrink-0">
                             <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span> 
