@@ -241,7 +241,7 @@ class SalidaController extends Controller
                         ->copy()
                         ->setTimeFromTimeString($salida->horario->hora_formateada);
 
-                    if (now()->gte($fechaHoraSalida->copy()->addMinutes(20))) {
+                    if (now()->gte($fechaHoraSalida->copy()->AddHours(4))) {
                         return '<span class="badge bg-secondary">VENCIDO</span>';
                     }
                 }

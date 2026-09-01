@@ -102,6 +102,28 @@ class AppServiceProvider extends ServiceProvider
                 }
             });
 
+            $salidasPorVencer = $salidasHoy->filter(function ($salida) use ($ahora) {
+                if (!$salida->horario?->hora_salida && !$salida->horario?->hora_formateada) {
+                    return false;
+                }
+
+                $hora = $salida->horario->hora_salida ?? $salida->horario->hora_formateada;
+
+                try {
+                    $fechaHoraSalida = Carbon::parse(
+                        $salida->fecha_salida->format('Y-m-d') . ' ' . $hora,
+                        'America/Lima'
+                    );
+
+                    $minutos = $ahora->diffInMinutes($fechaHoraSalida, false);
+
+                    return $minutos > 20;
+                } catch (\Exception $e) {
+                    return false;
+                }
+            });
+
+
             $notificaciones = collect();
 
             foreach ($notificacionesCumpleaños as $evento) {
@@ -200,6 +222,29 @@ class AppServiceProvider extends ServiceProvider
                     'key' => 'salida_proxima_' . $salida->id,
                     'icono' => 'bus',
                     'texto' => 'Salida próxima: ' . ($salida->horario?->ruta?->nombre ?? 'Sin ruta'),
+                    'fecha' => $textoTiempo,
+                    'url' => route('salidas.index')
+                ]);
+            }
+
+            foreach ($salidasPorVencer as $salida) {
+                $hora = $salida->horario->hora_salida ?? $salida->horario->hora_formateada;
+
+                $fechaHoraSalida = Carbon::parse(
+                    $salida->fecha_salida->format('Y-m-d') . ' ' . $hora,
+                    'America/Lima'
+                );
+
+                $minutos = (int) $ahora->diffInMinutes($fechaHoraSalida, false);
+
+                $textoTiempo = match (true) {
+                    default => "La salida lleva {$minutos} minutos vencidos",
+                };
+
+                $notificaciones->push([
+                    'key' => 'salida_vencida_' . $salida->id,
+                    'icono' => 'bus',
+                    'texto' => 'Salida vencida: ' . ($salida->horario?->ruta?->nombre ?? 'Sin ruta'),
                     'fecha' => $textoTiempo,
                     'url' => route('salidas.index')
                 ]);

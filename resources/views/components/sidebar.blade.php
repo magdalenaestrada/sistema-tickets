@@ -157,6 +157,10 @@
                                         Mi empresa
                                     </a>
                                 </li>
+
+                                <li class="nav-item"><a href="{{ route('paradas.index') }}"
+                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Paradas</a>
+                                </li>
                                 <li class="nav-item">
                                     <a href="{{ route('series-sucursal.index') }}"
                                         class="nav-link {{ request()->routeIs('series-sucursal.*') ? 'active' : '' }}">
@@ -166,10 +170,6 @@
 
                                 <li class="nav-item"><a href="{{ route('empleados.index') }}"
                                         class="nav-link {{ request()->routeIs('empleados.*') ? 'active' : '' }}">Empleados</a>
-                                </li>
-                                <li class="nav-item"><a href="{{ route('paradas.index') }}"
-                                        class="nav-link {{ request()->routeIs('paradas.*') ? 'active' : '' }}">Ubi.
-                                        Sucursales</a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="{{ route('usuarios.index') }}"
