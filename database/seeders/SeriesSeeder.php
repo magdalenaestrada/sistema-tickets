@@ -2,58 +2,59 @@
 
 namespace Database\Seeders;
 
-use App\Models\SerieSucursal;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\SerieSucursal;
 
 class SeriesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        SerieSucursal::insert([
-            [
-                "descripcion" => "BBB1 / FFF1 / NNN1",
-                "codigo" => "001"
-            ],
-            [
-                "descripcion" => "BBB2 / FFF2 / NNN2",
-                "codigo" => "002"
-            ],
-            [
-                "descripcion" => "BBB3 / FFF3 / NNN3",
-                "codigo" => "003"
-            ],
-            [
-                "descripcion" => "BBB4 / FFF4 / NNN4",
-                "codigo" => "004"
-            ],
-            [
-                "descripcion" => "BBB5 / FFF5 / NNN5",
-                "codigo" => "005"
-            ],
-            [
-                "descripcion" => "BBB6 / FFF6 / NNN6",
-                "codigo" => "006"
-            ],
-            [
-                "descripcion" => "BBB7 / FFF7 / NNN7",
-                "codigo" => "007"
-            ],
-            [
-                "descripcion" => "BBB8 / FFF8 / NNN8",
-                "codigo" => "008"
-            ],
-            [
-                "descripcion" => "BBB9 / FFF9 / NNN9",
-                "codigo" => "009"
-            ],
-            [
-                "descripcion" => "BB10 / FF10 / NN10",
-                "codigo" => "010"
-            ],
-        ]);
+        /*
+        |--------------------------------------------------------------------------
+        | Tipos de documento
+        |--------------------------------------------------------------------------
+        | 1 = Factura
+        | 2 = Boleta de venta
+        | 3 = Nota de venta
+        | 4 = NC BOLETA
+        | 5 = NC FACTURA
+        */
+
+        $sucursales = [
+            // sucursal_id => código de agencia
+            1 => '01', // Chala
+            2 => '02', // Coracora I
+            3 => '04', // Coracora II
+            4 => '06', // Pausa
+            5 => '09', // Chaparra
+            6 => '07', // Camaná
+            7 => '08', // Atico
+            8 => '05', // Arequipa
+            9 => '10', // Incuyo
+        ];
+
+        foreach ($sucursales as $sucursalId => $codigo) {
+
+            $series = [
+                1 => "FF{$codigo}", // Factura
+                2 => "BB{$codigo}", // Boleta
+                3 => "NN{$codigo}", // Nota de venta
+                4 => "BC{$codigo}", // NC Boleta
+                5 => "FC{$codigo}", // NC Factura
+            ];
+
+            foreach ($series as $tipoDocumentoId => $serie) {
+
+                SerieSucursal::updateOrCreate(
+                    [
+                        'sucursal_id' => $sucursalId,
+                        'tipo_documento_factura_id' => $tipoDocumentoId,
+                    ],
+                    [
+                        'serie' => $serie,
+                    ]
+                );
+            }
+        }
     }
 }
