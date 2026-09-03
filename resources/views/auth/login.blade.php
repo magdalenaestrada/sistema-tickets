@@ -1,8 +1,17 @@
 @extends('layouts.guest')
 
 @section('content')
-    <div class="min-vh-100 d-flex align-items-center justify-content-center">
-        <div class="card shadow-lg p-4 bg-white rounded-lg" style="max-width:420px; width:100%">
+   <div class="min-vh-100 d-flex align-items-center justify-content-center"
+    style="
+        background-image: url('{{ asset('storage/fondos/fondo.jpeg') }}');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    ">
+        {{-- Capa oscura --}}
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(0,0,0,0.35);">
+        </div>
+        <div class="card shadow-lg p-4 bg-white rounded-lg position-relative" style="max-width:420px; width:100%; z-index:1;">
 
             {{-- LOGO --}}
             <div class="text-center mb-4">

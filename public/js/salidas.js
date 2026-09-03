@@ -17,89 +17,39 @@ $(document).on("change", "#fecha_salida, #horario_id", function () {
 });
 
 $(document).ready(function () {
-
     tablaSalidas = $("#tablaSalidas").DataTable({
-
         ajax: {
             url: route("salidas.datatable"),
-
             data: function (d) {
-                d.estado = estadoActual;
+                d.estado = $("#filtroEstado").val();
                 d.ruta_id = $("#filtroRuta").val();
             },
         },
-
         columns: [
-            {
-                data: "hora_salida",
-                render: function (data) {
-                    return `
-                        <div class="hora-salida">
-                            ${data ?? "-"}
-                        </div>
-                    `;
-                },
-            },
-
-            {
-                data: "ruta",
-                render: function (data) {
-                    return `
-                        <div class="ruta-principal">
-                            ${data ?? "-"}
-                        </div>
-                    `;
-                },
-            },
-
-            {
-                data: "hora_llegada",
-            },
-
+            { data: "DT_RowIndex" },
+            { data: "ruta" },
+            { data: "fecha_formateada" },
+            { data: "hora_salida" },
+            { data: "hora_llegada" },
             {
                 data: "estado",
                 render: function (data, type, row) {
-
-                    if (type === "display") {
-                        return row.estado_badge;
-                    }
-
+                    if (type === "display") return row.estado_badge;
                     return data;
                 },
             },
-
-            {
-                data: "acciones",
-                className: "text-center",
-                orderable: false,
-                searchable: false,
-            },
+            { data: "acciones" },
         ],
-
         responsive: true,
         info: false,
         dom: "rtip",
-
         drawCallback: function () {
             lucide.createIcons();
         },
     });
-
-    $(".salida-estado-tab").on("click", function () {
-
-        $(".salida-estado-tab").removeClass("active");
-
-        $(this).addClass("active");
-
-        estadoActual = $(this).data("estado") ?? "";
-
+    $("#filtroEstado, #filtroRuta").on("change", function () {
         tablaSalidas.ajax.reload();
     });
-
-    $("#filtroRuta").on("change", function () {
-        tablaSalidas.ajax.reload();
-    });
-
 });
 
 new TomSelect("#filtroRuta", {

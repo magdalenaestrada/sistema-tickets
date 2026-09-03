@@ -19,146 +19,44 @@ use Yajra\DataTables\Facades\DataTables;
 
 class SalidaController extends Controller
 {
+
     public function index()
     {
         $rutas = Ruta::all();
-
-        $vehiculos = Vehiculo::with('tipo_vehiculo')
-            ->where('estado', 'A')
-            ->get();
-
-        $conductores = Empleado::with('persona')
-            ->where('cargo_id', 3)
-            ->get();
-
+        $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
+        $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
         $tiposVehiculo = TipoVehiculo::all();
-
         $hoy = now()->toDateString();
         $horaActual = now()->format('H:i:s');
-
-        $querySalidasHoy = Salida::whereDate('fecha_salida', $hoy);
-
-        $contadorSalidas = [
-            'todas' => (clone $querySalidasHoy)->count(),
-
-            'programadas' => (clone $querySalidasHoy)
-                ->where('estado', 'programado')
-                ->count(),
-
-            'en_ruta' => (clone $querySalidasHoy)
-                ->where('estado', 'en_ruta')
-                ->count(),
-
-            'finalizadas' => (clone $querySalidasHoy)
-                ->where('estado', 'finalizado')
-                ->count(),
-
-            'canceladas' => (clone $querySalidasHoy)
-                ->where('estado', 'cancelado')
-                ->count(),
-        ];
-
-        $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
-            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
-            ->leftJoin('salidas', function ($join) use ($hoy) {
-                $join->on('horarios.id', '=', 'salidas.horario_id')
-                    ->where('salidas.fecha_salida', '=', $hoy);
-            })
-            ->where(function ($q) use ($horaActual) {
-                $q->whereNull('salidas.id')
-                    ->orWhere('horarios.hora_salida', '>=', $horaActual);
-            })
-            ->orderBy('horarios.hora_salida')
-            ->select('horarios.*')
-            ->distinct()
-            ->get()
-            ->map(function ($h) {
-                return [
-                    'id' => $h->id,
-                    'tipo_vehiculo_id' => $h->tipo_vehiculo_id,
-
-                    'nombre' => ($h->ruta?->nombre ?? 'Sin ruta')
-                        . ' - '
-                        . ($h->hora_formateada ?? '')
-                        . ' - '
-                        . ($h->tipo_vehiculo?->descripcion ?? ''),
-                ];
+        $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')->leftJoin('salidas', function ($join) use ($hoy) {
+            $join->on('horarios.id', '=', 'salidas.horario_id')->where('salidas.fecha_salida', '=', $hoy);
+        })->where(function ($q) use ($horaActual) {
+            $q->whereNull('salidas.id')
+                ->orWhere('horarios.hora_salida', '>=', $horaActual);
+        })
+            ->orderBy('horarios.hora_salida')->select('horarios.*')->distinct()->get()->map(function ($h) {
+                return ['id' => $h->id, 'tipo_vehiculo_id' => $h->tipo_vehiculo_id, 'nombre' => ($h->ruta?->nombre ?? 'Sin ruta') . ' - ' . ($h->hora_formateada ?? '') . ' - ' . ($h->tipo_vehiculo?->descripcion ?? ''),];
             });
-
-
-        return view('salidas.index', compact(
-            'vehiculos',
-            'tiposVehiculo',
-            'conductores',
-            'horariosSalida',
-            'rutas',
-            'contadorSalidas'
-        ));
+        return view('salidas.index', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
     }
-
     public function index_vendedor()
     {
+        // Sucursal del vendedor autenticado (ajusta según tu relación real) 
         $sucursalId = auth()->user()->empleado->sucursal_id;
-        $hoy = now()->toDateString();
-        $horaActual = now()->format('H:i:s');
         $rutas = Ruta::all();
-        $querySalidasHoy = Salida::whereDate('fecha_salida', $hoy);
         $vehiculos = Vehiculo::with('tipo_vehiculo')->where('estado', 'A')->get();
-        $contadorSalidas = [
-            'todas' => (clone $querySalidasHoy)->count(),
-
-            'programadas' => (clone $querySalidasHoy)
-                ->where('estado', 'programado')
-                ->count(),
-
-            'en_ruta' => (clone $querySalidasHoy)
-                ->where('estado', 'en_ruta')
-                ->count(),
-
-            'finalizadas' => (clone $querySalidasHoy)
-                ->where('estado', 'finalizado')
-                ->count(),
-
-            'canceladas' => (clone $querySalidasHoy)
-                ->where('estado', 'cancelado')
-                ->count(),
-        ];
-
-        $conductores = Empleado::with('persona')
-            ->where('cargo_id', 3)
-            ->get();
-
+        $conductores = Empleado::with('persona')->where('cargo_id', 3)->get();
         $tiposVehiculo = TipoVehiculo::all();
         $hoy = now()->toDateString();
         $horaActual = now()->format('H:i:s');
-
-        $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])
-            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
-            ->leftJoin('salidas', function ($join) use ($hoy) {
-                $join->on('horarios.id', '=', 'salidas.horario_id')
-                    ->where('salidas.fecha_salida', '=', $hoy);
-            })
-            ->where(function ($q) use ($horaActual) {
-                $q->whereNull('salidas.id') // no existe salida para hoy
-                    ->orWhere('horarios.hora_salida', '>=', $horaActual); // aún no ha pasado la hora
-            })
-            ->orderBy('horarios.hora_salida')
-            ->select('horarios.*')
-            ->distinct()
-            ->get()
-            ->map(function ($h) {
-                return [
-                    'id' => $h->id,
-                    'tipo_vehiculo_id' => $h->tipo_vehiculo_id,
-                    'nombre' => ($h->ruta?->nombre ?? 'Sin ruta')
-                        . ' - '
-                        . ($h->hora_formateada ?? '')
-                        . ' - '
-                        . ($h->tipo_vehiculo?->descripcion ?? ''),
-                ];
-            });
-
-        return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas', 'contadorSalidas'));
+        $horariosSalida = Horario::with(['ruta', 'tipo_vehiculo'])->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')->leftJoin('salidas', function ($join) use ($hoy) {
+            $join->on('horarios.id', '=', 'salidas.horario_id')->where('salidas.fecha_salida', '=', $hoy);
+        })->where(function ($q) use ($horaActual) {
+            $q->whereNull('salidas.id')->orWhere('horarios.hora_salida', '>=', $horaActual);
+        })->orderBy('horarios.hora_salida')->select('horarios.*')->distinct()->get()->map(function ($h) {
+            return ['id' => $h->id, 'tipo_vehiculo_id' => $h->tipo_vehiculo_id, 'nombre' => ($h->ruta?->nombre ?? 'Sin ruta') . ' - ' . ($h->hora_formateada ?? '') . ' - ' . ($h->tipo_vehiculo?->descripcion ?? ''),];
+        });
+        return view('salidas.index-vendedor', compact('vehiculos', 'tiposVehiculo', 'conductores', 'horariosSalida', 'rutas'));
     }
 
     public function datatable(Request $request)
