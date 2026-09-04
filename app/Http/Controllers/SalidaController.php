@@ -139,9 +139,20 @@ class SalidaController extends Controller
                         ->copy()
                         ->setTimeFromTimeString($salida->horario->hora_formateada);
 
-                    if (now()->gte($fechaHoraSalida->copy()->addHours(4))) {
+                    $fechaVencimiento = $fechaHoraSalida->copy()->addHours(4);
+
+                    // Ya pasaron las 4 horas
+                    if (now()->gte($fechaVencimiento)) {
                         return '<span class="badge bg-secondary">VENCIDO</span>';
                     }
+
+                    // Ya pasó su hora de salida, pero todavía no pasan 4 horas
+                    if (now()->gte($fechaHoraSalida)) {
+                        return '<span class="badge bg-warning text-dark">RETRASADO</span>';
+                    }
+
+                    // Todavía no llega su hora de salida
+                    return '<span class="badge bg-primary">PROGRAMADO</span>';
                 }
 
                 return match ($salida->estado) {
