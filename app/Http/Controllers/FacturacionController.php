@@ -468,8 +468,6 @@ class FacturacionController extends Controller
 
         $query = Venta::with(['persona', 'tipoDocumentoFactura'])
             ->whereHas('tipoDocumentoFactura', function ($q) {
-                // Solo documentos NO electrónicos pueden servir de referencia.
-                // Ajusta el nombre de columna según confirmes (codigo / codigo_sunat)
                 $q->where('codigo', '!=', '07');
             })
             ->whereNotIn('estado', [EstadoVenta::ANULADO, EstadoVenta::RECHAZADO]);
