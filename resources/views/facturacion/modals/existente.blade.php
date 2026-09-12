@@ -111,7 +111,7 @@
                             <label class="form-label extra-small text-secondary fw-semibold"
                                 style="font-size: 0.75rem;">Fecha de emisión <span class="text-danger">*</span></label>
                             <input type="date" id="fecha_emision_destino" name="fecha_emision"
-                                class="form-control form-control-sm" value="{{ now()->format('Y-m-d') }}">
+                                class="form-control form-control-sm" value="{{ now()->format('Y-m-d') }}" readonly>
                         </div>
                     </div>
 

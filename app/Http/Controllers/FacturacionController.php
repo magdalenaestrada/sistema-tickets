@@ -169,9 +169,23 @@ class FacturacionController extends Controller
         EmitirVentaService $emitirVentaService
     ) {
         $request->validate([
-            'venta_referencia_id'       => 'required|exists:ventas,id',
-            'tipo_documento_factura_id' => 'required|exists:tipo_documentos_factura,id',
-            'fecha_emision'             => 'required|date',
+            'venta_referencia_id' =>
+            'required|exists:ventas,id',
+
+            'tipo_documento_factura_id' =>
+            'required|exists:tipo_documentos_factura,id',
+
+            'accion' =>
+            'required|in:CONVERTIR,NOTA_CREDITO',
+
+            'documento_cliente' =>
+            'nullable|string|max:11',
+
+            'nombre_cliente' =>
+            'nullable|string|max:255',
+
+            'direccion_cliente' =>
+            'nullable|string|max:255',
         ]);
 
         return DB::transaction(function () use ($request, $ventaService, $emitirVentaService) {
@@ -216,7 +230,7 @@ class FacturacionController extends Controller
             $nueva = new Venta();
             $nueva->tipo_documento_factura_id = $tipoDestino->id;
             $nueva->sucursal_id              = $ventaOrigen->sucursal_id;
-            $nueva->persona_id               = $ventaOrigen->persona_id;
+            $nueva->persona_id = $persona->id;
             $nueva->tipo_servicio_id         = $ventaOrigen->tipo_servicio_id;
             $nueva->venta_referencia_id      = $ventaOrigen->id;
             $nueva->serie                    = $comprobante['serie'];
@@ -227,7 +241,7 @@ class FacturacionController extends Controller
             $nueva->impuesto                 = $ventaOrigen->impuesto;
             $nueva->total                    = $ventaOrigen->total;
             $nueva->estado                   = EstadoVenta::EMITIDO;
-            $nueva->fecha_emision            = $request->fecha_emision;
+            $nueva->fecha_emision = now();
             $nueva->save();
 
             foreach ($ventaOrigen->detalles as $d) {
@@ -497,15 +511,89 @@ class FacturacionController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $comprobantes->map(fn($v) => [
-                'id'            => $v->id,
-                'tipo'          => $v->tipoDocumentoFactura->nombre ?? 'Nota de venta',
-                'serie_numero'  => $v->serie . '-' . $v->numero,
-                'cliente'       => $v->persona->razon_social ?? 'CLIENTE VARIOS',
-                'documento'     => $v->persona->documento ?? '-',
-                'fecha_emision' => optional($v->fecha_emision)->format('d/m/Y'),
-                'total'         => number_format($v->total, 2),
-            ]),
+
+            'data' => $comprobantes->map(function ($v) {
+
+                $codigo = $v->tipoDocumentoFactura?->codigo;
+
+                /*
+         * 01 = Factura
+         * 03 = Boleta
+         * La Nota de Venta depende de tu código/ID interno.
+         */
+                if ($codigo === '01') {
+
+                    $conversiones = [
+                        [
+                            'accion' => 'NOTA_CREDITO',
+                            'tipo_documento_factura_id' => 7,
+                            'nombre' => 'Nota de crédito de Factura',
+                        ],
+                    ];
+                } elseif ($codigo === '03') {
+
+                    $conversiones = [
+                        [
+                            'accion' => 'CONVERTIR',
+                            'tipo_documento_factura_id' => 1,
+                            'nombre' => 'Factura',
+                        ],
+                        [
+                            'accion' => 'NOTA_CREDITO',
+                            'tipo_documento_factura_id' => 4,
+                            'nombre' => 'Nota de crédito de Boleta',
+                        ],
+                    ];
+                } else {
+
+                    // NOTA DE VENTA
+                    $conversiones = [
+                        [
+                            'accion' => 'CONVERTIR',
+                            'tipo_documento_factura_id' => 2,
+                            'nombre' => 'Boleta',
+                        ],
+                        [
+                            'accion' => 'CONVERTIR',
+                            'tipo_documento_factura_id' => 1,
+                            'nombre' => 'Factura',
+                        ],
+                    ];
+                }
+
+                return [
+                    'id' => $v->id,
+
+                    'tipo_documento_factura_id' =>
+                    $v->tipo_documento_factura_id,
+
+                    'codigo' => $codigo,
+
+                    'tipo' =>
+                    $v->tipoDocumentoFactura?->nombre
+                        ?? 'Nota de venta',
+
+                    'serie_numero' =>
+                    $v->serie . '-' . $v->numero,
+
+                    'cliente' =>
+                    $v->persona?->razon_social
+                        ?? 'CLIENTE VARIOS',
+
+                    'documento' =>
+                    $v->persona?->numero_documento
+                        ?? '-',
+
+                    'fecha_emision' =>
+                    optional($v->fecha_emision)
+                        ->format('d/m/Y'),
+
+                    'total' =>
+                    number_format($v->total, 2),
+
+                    'conversiones' => $conversiones,
+                ];
+            }),
         ]);
     }
 
