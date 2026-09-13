@@ -71,19 +71,35 @@ class VentaDocumentBuilder
             ->setFormaPago(new FormaPagoContado())
             ->setTipoMoneda('PEN')
             ->setCompany($company)
-            ->setClient($client)
+            ->setClient($client);
 
+        $total = abs((float) ($venta->total ?? 0));
 
-            ->setMtoOperExoneradas(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
+        if ((int) $venta->tipo_servicio_id === 1) {
 
+            $invoice
+                ->setMtoOperExoneradas($total)
+                ->setMtoOperGravadas(0)
+                ->setMtoIGV(0)
+                ->setTotalImpuestos(0)
+                ->setValorVenta($total)
+                ->setSubTotal($total)
+                ->setMtoImpVenta($total);
+        } else {
 
-            
-            ->setMtoOperGravadas(0)
-            ->setMtoIGV(abs((float) ($venta->impuesto ?? 0)))
-            ->setTotalImpuestos(abs((float) ($venta->impuesto ?? 0)))
-            ->setValorVenta(abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0)))
-            ->setSubTotal(abs((float) ($venta->subtotal ?? $venta->total ?? 0)))
-            ->setMtoImpVenta(abs((float) ($venta->total ?? 0)));
+            $subtotal = abs((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0));
+            $igv = abs((float) ($venta->impuesto ?? 0));
+
+            $invoice
+                ->setMtoOperExoneradas(0)
+                ->setMtoOperGravadas($subtotal)
+                ->setMtoIGV($igv)
+                ->setTotalImpuestos($igv)
+                ->setValorVenta($subtotal)
+                ->setSubTotal(abs((float) ($venta->subtotal ?? $venta->total ?? 0)))
+                ->setMtoImpVenta($total);
+        }
+
 
 
         $invoice->setDetails($this->buildDetallesVenta($venta))
@@ -95,13 +111,13 @@ class VentaDocumentBuilder
     protected function buildNotaCredito(Venta $venta, $empresa, $persona): Note
     {
         $venta->loadMissing([
-            'sucursal.distrito.provincia.departamento'
+            'sucursal.distrito.provincia.departamento',
+            'detalles'
         ]);
 
         $distrito = $venta->sucursal->distrito;
         $provincia = $distrito->provincia;
         $departamento = $provincia->departamento;
-
 
         $client = (new Client())
             ->setTipoDoc($this->resolverTipoDocCliente($persona))
@@ -127,57 +143,186 @@ class VentaDocumentBuilder
             ->setTipoDoc('07')
             ->setSerie($venta->serie)
             ->setCorrelativo((string) $venta->numero)
-            ->setFechaEmision($venta->fecha_emision instanceof \DateTimeInterface
-                ? $venta->fecha_emision
-                : new DateTime($venta->fecha_emision))
+            ->setFechaEmision(
+                $venta->fecha_emision instanceof \DateTimeInterface
+                    ? $venta->fecha_emision
+                    : new DateTime($venta->fecha_emision)
+            )
             ->setTipDocAfectado($venta->tipo_documento_referencia)
             ->setNumDocfectado($venta->documento_referencia)
             ->setCodMotivo('01')
-            ->setDesMotivo($venta->observacion ?: 'ANULACION DE LA OPERACION')
+            ->setDesMotivo(
+                $venta->observacion ?: 'ANULACION DE LA OPERACION'
+            )
             ->setTipoMoneda('PEN')
             ->setCompany($company)
-            ->setClient($client)
+            ->setClient($client);
 
-            ->setMtoOperGravadas((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0))
-            ->setMtoIGV((float) ($venta->impuesto ?? 0))
-            ->setTotalImpuestos((float) ($venta->impuesto ?? 0))
-            ->setValorVenta((float) ($venta->subtotal_sin_igv ?? $venta->subtotal ?? 0))
-            ->setSubTotal((float) ($venta->subtotal ?? $venta->total ?? 0))
-            ->setMtoImpVenta((float) ($venta->total ?? 0));
 
-        $detallesVenta = $venta->detalles ?? [];
+        $esPasaje = (int) $venta->tipo_servicio_id === 1;
 
-        if (count($detallesVenta) === 0) {
-            throw new \Exception("No hay detalles en la venta para SUNAT");
+        $total = abs((float) ($venta->total ?? 0));
+
+        if ($esPasaje) {
+
+            // PASAJE = EXONERADO
+            $note
+                ->setMtoOperExoneradas($total)
+                ->setMtoOperGravadas(0)
+                ->setMtoIGV(0)
+                ->setTotalImpuestos(0)
+                ->setValorVenta($total)
+                ->setSubTotal($total)
+                ->setMtoImpVenta($total);
+        } else {
+
+            // OPERACIÓN GRAVADA
+            $subtotal = abs((float) (
+                $venta->subtotal_sin_igv
+                ?? $venta->subtotal
+                ?? 0
+            ));
+
+            $igv = abs((float) ($venta->impuesto ?? 0));
+
+            $note
+                ->setMtoOperExoneradas(0)
+                ->setMtoOperGravadas($subtotal)
+                ->setMtoIGV($igv)
+                ->setTotalImpuestos($igv)
+                ->setValorVenta($subtotal)
+                ->setSubTotal(
+                    abs((float) ($venta->subtotal ?? $venta->total ?? 0))
+                )
+                ->setMtoImpVenta($total);
+        }
+
+
+        if ($venta->detalles->isEmpty()) {
+            throw new \Exception(
+                'No hay detalles en la venta para generar la nota de crédito SUNAT'
+            );
         }
 
         $details = [];
 
-        foreach ($detallesVenta as $d) {
+        foreach ($venta->detalles as $d) {
+
+            $cantidad = abs((float) ($d->cantidad ?? 1));
+
+            if ($esPasaje) {
+
+                $precio = abs((float) (
+                    $d->precio_unitario
+                    ?? $d->valor_unitario
+                    ?? 0
+                ));
+
+                $valorVenta = round($precio * $cantidad, 2);
+
+                $details[] = (new SaleDetail())
+                    ->setCodProducto($d->codigo ?? 'ITEM')
+                    ->setUnidad($d->unidad ?? 'NIU')
+                    ->setCantidad($cantidad)
+                    ->setDescripcion($d->descripcion ?? 'PASAJE')
+
+                    ->setMtoValorUnitario($precio)
+                    ->setMtoValorVenta($valorVenta)
+
+                    ->setMtoBaseIgv($valorVenta)
+                    ->setPorcentajeIgv(0)
+                    ->setIgv(0)
+
+                    // 20 = EXONERADO
+                    ->setTipAfeIgv('20')
+
+                    ->setTotalImpuestos(0)
+                    ->setMtoPrecioUnitario($precio);
+
+                continue;
+            }
+
             $details[] = (new SaleDetail())
                 ->setCodProducto($d->codigo ?? 'ITEM')
                 ->setUnidad($d->unidad ?? 'NIU')
-                ->setCantidad((float) ($d->cantidad ?? 0))
+                ->setCantidad($cantidad)
                 ->setDescripcion($d->descripcion ?? 'ITEM')
-                ->setMtoValorUnitario((float) $d->valor_unitario ?? 0)
-                ->setMtoBaseIgv((float) $d->base_igv ?? 0)
-                ->setPorcentajeIgv($d->porcentaje_igv !== null ? (float) $d->porcentaje_igv : 18)
-                ->setIgv((float) $d->igv ?? 0)
-                ->setTipAfeIgv($d->tipo_afectacion_igv ?? '10')
-                ->setMtoPrecioUnitario((float) $d->precio_unitario ?? 0);
+
+                ->setMtoValorUnitario(
+                    abs((float) ($d->valor_unitario ?? 0))
+                )
+
+                ->setMtoBaseIgv(
+                    abs((float) ($d->base_igv ?? 0))
+                )
+
+                ->setPorcentajeIgv(
+                    (float) ($d->porcentaje_igv ?? 18)
+                )
+
+                ->setIgv(
+                    abs((float) ($d->igv ?? 0))
+                )
+
+                ->setTipAfeIgv(
+                    $d->tipo_afectacion_igv ?? '10'
+                )
+
+                ->setTotalImpuestos(
+                    abs((float) ($d->igv ?? 0))
+                )
+
+                ->setMtoValorVenta(
+                    abs((float) ($d->valor_venta ?? 0))
+                )
+
+                ->setMtoPrecioUnitario(
+                    abs((float) ($d->precio_unitario ?? 0))
+                );
         }
 
-        $note->setDetails($details)
-            ->setLegends([$this->buildLeyenda($venta)]);
+        $note
+            ->setDetails($details)
+            ->setLegends([
+                $this->buildLeyenda($venta)
+            ]);
 
         return $note;
     }
-
     protected function buildDetallesVenta(Venta $venta): array
     {
         $detalles = [];
 
+        $esPasaje = (int) $venta->tipo_servicio_id === 1;
+
         foreach ($venta->detalles as $d) {
+
+            if ($esPasaje) {
+
+                $precio = abs((float) ($d->precio_unitario ?? $d->valor_unitario ?? 0));
+                $cantidad = abs((float) ($d->cantidad ?? 1));
+
+                $valorVenta = round($precio * $cantidad, 2);
+
+                $detalles[] = (new SaleDetail())
+                    ->setCodProducto($d->codigo ?? 'ITEM')
+                    ->setUnidad($d->unidad ?? 'NIU')
+                    ->setCantidad($cantidad)
+                    ->setDescripcion($d->descripcion ?? 'PASAJE')
+
+                    ->setMtoValorUnitario($precio)
+                    ->setMtoValorVenta($valorVenta)
+                    ->setMtoBaseIgv($valorVenta)
+                    ->setPorcentajeIgv(0)
+                    ->setIgv(0)
+                    ->setTipAfeIgv('20')
+                    ->setTotalImpuestos(0)
+
+                    ->setMtoPrecioUnitario($precio);
+
+                continue;
+            }
+
             $detalles[] = (new SaleDetail())
                 ->setCodProducto($d->codigo ?? 'ITEM')
                 ->setUnidad($d->unidad ?? 'NIU')

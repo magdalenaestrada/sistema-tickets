@@ -515,12 +515,6 @@ class FacturacionController extends Controller
             'data' => $comprobantes->map(function ($v) {
 
                 $codigo = $v->tipoDocumentoFactura?->codigo;
-
-                /*
-         * 01 = Factura
-         * 03 = Boleta
-         * La Nota de Venta depende de tu código/ID interno.
-         */
                 if ($codigo === '01') {
 
                     $conversiones = [

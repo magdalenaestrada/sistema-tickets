@@ -327,12 +327,20 @@
             let pasoComprobanteActual = 1;
 
             let flujoComprobante = {
-                modo: null, // nuevo | existente
+                modo: null,
                 origen: null,
                 tipoDestino: null,
+                tipoDocumentoFacturaId: null,
+                accion: null,
                 cliente: null,
-                items: [],
+                motivoNotaCredito: null,
+                items: []
             };
+
+            let comprobanteSeleccionado = null;
+
+            let procesandoComprobante = false;
+            let procesandoConversion = false;
 
             let xd = 2;
             let items = [];
@@ -340,11 +348,6 @@
             const urlAnularNotaVenta = "{{ route('facturacion.anular.nota', ':id') }}";
             const IGV_VIAJE = {{ $empresa->igv ?? 0 }};
             const IGV_ENCOMIENDA = {{ $empresa->igv_encomienda ?? 0 }};
-
-            let comprobanteSeleccionado = null;
-
-            let procesandoComprobante = false;
-            let procesandoConversion = false;
 
             window.buscarComprobanteReferencia = async function() {
                 const q = document.getElementById('buscar_comprobante_input').value.trim();
@@ -487,46 +490,48 @@
 
             function cargarOpcionesConversion(comprobante) {
 
-                const tipo = (comprobante.tipo || "")
-                    .trim()
-                    .toUpperCase();
+                const tipoId = parseInt(
+                    comprobante.tipo_documento_factura_id
+                );
 
                 let opciones = [];
 
-                if (tipo.includes("NOTA DE VENTA")) {
+                if (tipoId === 3) {
 
                     opciones = [{
                             value: "BOLETA",
+                            tipoId: 2,
+                            accion: "CONVERTIR",
                             label: "Convertir a Boleta"
                         },
                         {
                             value: "FACTURA",
+                            tipoId: 1,
+                            accion: "CONVERTIR",
                             label: "Convertir a Factura"
                         }
                     ];
-
-                } else if (
-                    tipo.includes("BOLETA") &&
-                    !tipo.includes("NOTA")
-                ) {
+                } else if (tipoId === 2) {
 
                     opciones = [{
                             value: "FACTURA",
+                            tipoId: 1,
+                            accion: "CONVERTIR",
                             label: "Convertir a Factura"
                         },
                         {
                             value: "NC_BOLETA",
+                            tipoId: 4,
+                            accion: "NOTA_CREDITO",
                             label: "Nota de crédito de Boleta"
                         }
                     ];
-
-                } else if (
-                    tipo.includes("FACTURA") &&
-                    !tipo.includes("NOTA")
-                ) {
+                } else if (tipoId === 1) {
 
                     opciones = [{
                         value: "NC_FACTURA",
+                        tipoId: 7,
+                        accion: "NOTA_CREDITO",
                         label: "Nota de crédito de Factura"
                     }];
                 }
@@ -536,17 +541,39 @@
 
                 contenedor.empty();
 
+                if (!opciones.length) {
+
+                    contenedor.html(`
+            <div class="col-12">
+                <div class="alert alert-warning mb-0">
+                    Este documento no puede convertirse.
+                </div>
+            </div>
+        `);
+
+                    $("#opcionesConversion").removeClass("d-none");
+
+                    return;
+                }
+
                 opciones.forEach(opcion => {
 
                     contenedor.append(`
             <div class="col-md-6">
+
                 <button
                     type="button"
                     class="btn btn-outline-primary w-100 py-3"
-                    onclick="seleccionarTipoConversion('${opcion.value}')"
-                >
+                    onclick="seleccionarTipoConversion(
+                        '${opcion.value}',
+                        ${opcion.tipoId},
+                        '${opcion.accion}'
+                    )">
+
                     ${opcion.label}
+
                 </button>
+
             </div>
         `);
                 });
@@ -565,31 +592,57 @@
 
             function prepararPaso3(tipo) {
 
+                $(".campo-cliente").addClass("d-none");
                 $(".campo-factura").addClass("d-none");
                 $(".campo-boleta").addClass("d-none");
                 $(".campo-nota-credito").addClass("d-none");
 
+                $("#doc_cliente_conversion").val("");
+                $("#nombre_cliente_conversion").val("");
+                $("#direccion_cliente_conversion").val("");
+
                 if (tipo === "FACTURA") {
 
+                    $(".campo-cliente").removeClass("d-none");
                     $(".campo-factura").removeClass("d-none");
 
                     $("#lblDocumentoConversion").text("RUC");
+
+                    $("#lblNombreConversion").html(
+                        'Razón Social <span class="text-danger">*</span>'
+                    );
+
+                    $("#ayudaDocumentoConversion").text(
+                        "La factura requiere un RUC de 11 dígitos."
+                    );
 
                     $("#doc_cliente_conversion")
                         .attr("maxlength", 11)
                         .attr("placeholder", "Ingrese RUC");
 
+                    return;
                 }
 
                 if (tipo === "BOLETA") {
 
+                    $(".campo-cliente").removeClass("d-none");
                     $(".campo-boleta").removeClass("d-none");
 
                     $("#lblDocumentoConversion").text("DNI");
 
+                    $("#lblNombreConversion").html(
+                        'Cliente <span class="text-danger">*</span>'
+                    );
+
+                    $("#ayudaDocumentoConversion").text(
+                        "Ingrese el DNI de 8 dígitos."
+                    );
+
                     $("#doc_cliente_conversion")
                         .attr("maxlength", 8)
                         .attr("placeholder", "Ingrese DNI");
+
+                    return;
                 }
 
                 if (
@@ -604,73 +657,255 @@
                 }
             }
 
-            function seleccionarTipoConversion(tipo) {
+            function seleccionarTipoConversion(
+                tipo,
+                tipoDocumentoId,
+                accion
+            ) {
 
                 flujoComprobante.tipoDestino = tipo;
+
+                flujoComprobante.tipoDocumentoFacturaId =
+                    parseInt(tipoDocumentoId);
+
+                flujoComprobante.accion = accion;
+
+                $("#formularioComprobanteNuevo")
+                    .addClass("d-none");
+
+                $("#formularioConversionExistente")
+                    .removeClass("d-none");
 
                 prepararPaso3(tipo);
 
                 mostrarPasoComprobante(3);
             }
 
-            async function consultarImpactoConversion() {
+            function continuarNuevoComprobante() {
 
-                const aviso = document.getElementById('aviso_anulacion_origen');
-                const tipoDestino = document.getElementById('tipo_comprobante_destino').value;
+                const tipoDocumentoId =
+                    $("#tipo_documento_modal").val();
 
-                if (!comprobanteSeleccionado) return;
+                const documento =
+                    $("#doc_cliente").val().trim();
 
-                try {
+                const nombres =
+                    $("#nombres").val().trim();
 
-                    const url = route('facturacion.preview-conversion', {
-                        venta_id: comprobanteSeleccionado.id,
-                        tipo_destino: tipoDestino
-                    });
+                if (!tipoDocumentoId) {
 
-                    const res = await fetch(url, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    });
+                    Swal.fire(
+                        "Atención",
+                        "Seleccione el tipo de comprobante.",
+                        "warning"
+                    );
 
-                    const json = await res.json();
+                    return;
+                }
 
-                    if (json.requiere_nc) {
+                if (!documento) {
 
-                        aviso.className =
-                            'rounded-3 p-2 px-3 mb-2 bg-warning bg-opacity-25 text-dark';
+                    Swal.fire(
+                        "Atención",
+                        "Ingrese el documento del cliente.",
+                        "warning"
+                    );
 
-                        aviso.innerHTML =
-                            '<i class="bi bi-exclamation-triangle me-1"></i> ' +
-                            'Este comprobante ya está fuera del plazo de anulación directa. ' +
-                            'Se generará automáticamente una <strong>Nota de Crédito</strong> ' +
-                            'antes de emitir el nuevo comprobante.';
+                    return;
+                }
 
-                    } else {
+                if (!nombres) {
 
-                        aviso.className =
-                            'rounded-3 p-2 px-3 mb-2 bg-info bg-opacity-25 text-dark';
+                    Swal.fire(
+                        "Atención",
+                        "Ingrese los datos del cliente.",
+                        "warning"
+                    );
 
-                        aviso.innerHTML =
-                            '<i class="bi bi-info-circle me-1"></i> ' +
-                            'El comprobante de origen será anulado directamente ' +
-                            '(dentro del plazo permitido).';
+                    return;
+                }
+
+                if (!items.length) {
+
+                    Swal.fire(
+                        "Atención",
+                        "Debe agregar al menos un servicio.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+                flujoComprobante.tipoDocumentoFacturaId =
+                    parseInt(tipoDocumentoId);
+
+                flujoComprobante.cliente = {
+
+                    documento: documento,
+
+                    nombre: [
+                            $("#nombres").val().trim(),
+                            $("#apellidos").val().trim()
+                        ]
+                        .filter(Boolean)
+                        .join(" "),
+
+                    direccion: $("#direccion").val().trim()
+                };
+
+                flujoComprobante.items = [...items];
+
+                const textoTipo =
+                    $("#tipo_documento_modal option:selected")
+                    .text()
+                    .trim()
+                    .toUpperCase();
+
+                flujoComprobante.tipoDestino =
+                    textoTipo.includes("FACTURA") ?
+                    "FACTURA" :
+                    textoTipo.includes("BOLETA") ?
+                    "BOLETA" :
+                    textoTipo;
+
+                construirPreviewComprobanteNuevo();
+
+                mostrarPasoComprobante(4);
+            }
+
+            function construirPreviewComprobanteNuevo() {
+
+                const nombresTipo = {
+                    FACTURA: "Factura",
+                    BOLETA: "Boleta"
+                };
+
+                $("#preview_tipo").text(
+                    nombresTipo[flujoComprobante.tipoDestino] ??
+                    flujoComprobante.tipoDestino ??
+                    "-"
+                );
+
+                $("#preview_fecha").text(
+                    "{{ now()->format('d/m/Y') }}"
+                );
+
+                $("#preview_origen").text(
+                    "Nuevo comprobante"
+                );
+
+                $("#preview_cliente").text(
+                    flujoComprobante.cliente?.nombre ?? "-"
+                );
+
+                $("#preview_documento").text(
+                    flujoComprobante.cliente?.documento ?? "-"
+                );
+
+                const total = items.reduce(
+                    (acumulado, item) =>
+                    acumulado + Number(item.subtotal || 0),
+                    0
+                );
+
+                $("#preview_total").text(
+                    `S/ ${total.toFixed(2)}`
+                );
+
+                $("#preview_motivo_container")
+                    .addClass("d-none");
+            }
+
+            function validarPaso3() {
+
+                const tipo = flujoComprobante.tipoDestino;
+
+                if (tipo === "FACTURA") {
+
+                    const documento =
+                        $("#doc_cliente_conversion").val().trim();
+
+                    const nombre =
+                        $("#nombre_cliente_conversion").val().trim();
+
+                    if (!/^\d{11}$/.test(documento)) {
+
+                        Swal.fire(
+                            "Atención",
+                            "Ingrese un RUC válido de 11 dígitos.",
+                            "warning"
+                        );
+
+                        return false;
                     }
 
-                    aviso.style.display = 'flex';
+                    if (!nombre) {
 
-                } catch (e) {
+                        Swal.fire(
+                            "Atención",
+                            "Debe buscar y validar el RUC.",
+                            "warning"
+                        );
 
-                    aviso.style.display = 'none';
-                    console.error(e);
+                        return false;
+                    }
                 }
+
+                if (tipo === "BOLETA") {
+
+                    const documento =
+                        $("#doc_cliente_conversion").val().trim();
+
+                    const nombre =
+                        $("#nombre_cliente_conversion").val().trim();
+
+                    if (!/^\d{8}$/.test(documento)) {
+
+                        Swal.fire(
+                            "Atención",
+                            "Ingrese un DNI válido de 8 dígitos.",
+                            "warning"
+                        );
+
+                        return false;
+                    }
+
+                    if (!nombre) {
+
+                        Swal.fire(
+                            "Atención",
+                            "Debe buscar y validar el DNI.",
+                            "warning"
+                        );
+
+                        return false;
+                    }
+                }
+
+                if (
+                    tipo === "NC_BOLETA" ||
+                    tipo === "NC_FACTURA"
+                ) {
+
+                    const motivo =
+                        $("#motivo_nota_credito").val()?.trim();
+
+                    if (!motivo) {
+
+                        Swal.fire(
+                            "Atención",
+                            "Ingrese el motivo de la nota de crédito.",
+                            "warning"
+                        );
+
+                        return false;
+                    }
+                }
+
+                return true;
             }
 
             function actualizarSerieDestino() {
-                // Opcional: si tienes un endpoint que devuelva la próxima serie/número disponible
-                // por sucursal + tipo, actualiza serie_destino/numero_destino aquí.
-                // Si no, deja "—" y que el backend asigne la serie real al confirmar.
                 if (comprobanteSeleccionado) consultarImpactoConversion();
             }
 
@@ -731,6 +966,118 @@
                     $documento
                         .attr("maxlength", 11)
                         .attr("placeholder", "Ingrese DNI o RUC");
+                }
+            }
+
+            function guardarDatosPaso3() {
+
+                const tipo = flujoComprobante.tipoDestino;
+
+                if (
+                    tipo === "FACTURA" ||
+                    tipo === "BOLETA"
+                ) {
+
+                    flujoComprobante.cliente = {
+
+                        documento: $("#doc_cliente_conversion")
+                            .val()
+                            .trim(),
+
+                        nombre: $("#nombre_cliente_conversion")
+                            .val()
+                            .trim(),
+
+                        direccion: $("#direccion_cliente_conversion")
+                            .val()
+                            .trim()
+                    };
+                }
+
+                if (
+                    tipo === "NC_BOLETA" ||
+                    tipo === "NC_FACTURA"
+                ) {
+
+                    flujoComprobante.cliente = null;
+
+                    flujoComprobante.motivoNotaCredito =
+                        $("#motivo_nota_credito")
+                        .val()
+                        .trim();
+                }
+            }
+
+            function construirPreviewComprobante() {
+
+                const origen = flujoComprobante.origen;
+
+                const nombresTipo = {
+                    BOLETA: "Boleta",
+                    FACTURA: "Factura",
+                    NC_BOLETA: "Nota de crédito de Boleta",
+                    NC_FACTURA: "Nota de crédito de Factura"
+                };
+
+                $("#preview_tipo").text(
+                    nombresTipo[flujoComprobante.tipoDestino] ?? "-"
+                );
+
+                $("#preview_fecha").text(
+                    "{{ now()->format('d/m/Y') }}"
+                );
+
+                if (origen) {
+
+                    $("#preview_origen").text(
+                        `${origen.tipo} ${origen.serie_numero}`
+                    );
+
+                    $("#preview_total").text(
+                        `S/ ${origen.total}`
+                    );
+
+                } else {
+
+                    $("#preview_origen").text(
+                        "Nuevo comprobante"
+                    );
+                }
+
+                if (flujoComprobante.cliente) {
+
+                    $("#preview_cliente").text(
+                        flujoComprobante.cliente.nombre
+                    );
+
+                    $("#preview_documento").text(
+                        flujoComprobante.cliente.documento
+                    );
+
+                } else if (origen) {
+
+                    $("#preview_cliente").text(
+                        origen.cliente
+                    );
+
+                    $("#preview_documento").text(
+                        origen.documento
+                    );
+                }
+
+                if (flujoComprobante.motivoNotaCredito) {
+
+                    $("#preview_motivo_container")
+                        .removeClass("d-none");
+
+                    $("#preview_motivo").text(
+                        flujoComprobante.motivoNotaCredito
+                    );
+
+                } else {
+
+                    $("#preview_motivo_container")
+                        .addClass("d-none");
                 }
             }
 
@@ -1054,6 +1401,22 @@
                 return series[tipoDocumentoId] || "";
             }
 
+            function prepararFormularioNuevo() {
+
+                flujoComprobante.tipoDestino = null;
+                flujoComprobante.tipoDocumentoFacturaId = null;
+                flujoComprobante.cliente = null;
+                flujoComprobante.motivoNotaCredito = null;
+
+                $("#formVentaRapida")[0]?.reset();
+
+                items = [];
+
+                render();
+
+                actualizarSerie();
+            }
+
             async function emitirComprobanteFinal() {
 
                 if (procesandoConversion) {
@@ -1087,15 +1450,20 @@
                             },
 
                             body: JSON.stringify({
+
                                 venta_referencia_id: flujoComprobante.origen?.id ?? null,
 
-                                tipo_destino: flujoComprobante.tipoDestino,
+                                tipo_documento_factura_id: flujoComprobante.tipoDocumentoFacturaId,
 
-                                documento_cliente: flujoComprobante.cliente?.documento,
+                                accion: flujoComprobante.accion,
 
-                                nombre_cliente: flujoComprobante.cliente?.nombre,
+                                documento_cliente: flujoComprobante.cliente?.documento ?? null,
 
-                                direccion_cliente: flujoComprobante.cliente?.direccion
+                                nombre_cliente: flujoComprobante.cliente?.nombre ?? null,
+
+                                direccion_cliente: flujoComprobante.cliente?.direccion ?? null,
+
+                                motivo_nota_credito: flujoComprobante.motivoNotaCredito ?? null
                             })
                         }
                     );
@@ -1691,55 +2059,62 @@
             function iniciarComprobanteNuevo() {
 
                 flujoComprobante.modo = "nuevo";
+                flujoComprobante.accion = "NUEVO";
+                flujoComprobante.origen = null;
 
-                mostrarPasoComprobante(3);
+                $("#formularioComprobanteNuevo")
+                    .removeClass("d-none");
+
+                $("#formularioConversionExistente")
+                    .addClass("d-none");
 
                 prepararFormularioNuevo();
+
+                mostrarPasoComprobante(3);
             }
 
             function iniciarDesdeExistente() {
 
                 flujoComprobante.modo = "existente";
+                flujoComprobante.accion = null;
+                flujoComprobante.origen = null;
 
                 mostrarPasoComprobante(2);
             }
 
-            function mostrarNuevoComprobante() {
-                ocultarPasosComprobante();
+            function volverPasoComprobante() {
 
-                $("#pasoNuevo").removeClass("d-none");
-                $("#btnVolverModal").removeClass("d-none");
+                if (pasoComprobanteActual === 1) {
+                    return;
+                }
 
-                $("#modalComprobanteLabel").text("Generar comprobante");
-                $("#subtituloModalComprobante").text(
-                    "Completa los datos del cliente y del servicio."
-                );
+                // Existente:
+                // 4 → 3 → 2 → 1
+                if (flujoComprobante.modo === "existente") {
 
-                actualizarSerie();
-            }
+                    if (pasoComprobanteActual === 4) {
+                        mostrarPasoComprobante(3);
+                        return;
+                    }
 
-            function mostrarComprobanteExistente() {
-                ocultarPasosComprobante();
+                    if (pasoComprobanteActual === 3) {
+                        mostrarPasoComprobante(2);
+                        return;
+                    }
 
-                $("#pasoExistente").removeClass("d-none");
-                $("#btnVolverModal").removeClass("d-none");
+                    mostrarPasoComprobante(1);
+                    return;
+                }
 
-                $("#modalComprobanteLabel").text("Generar desde comprobante existente");
-                $("#subtituloModalComprobante").text(
-                    "Selecciona un comprobante de referencia."
-                );
-            }
+                if (flujoComprobante.modo === "nuevo") {
 
-            function volverOpciones() {
-                ocultarPasosComprobante();
+                    if (pasoComprobanteActual === 4) {
+                        mostrarPasoComprobante(3);
+                        return;
+                    }
 
-                $("#pasoOpciones").removeClass("d-none");
-                $("#btnVolverModal").addClass("d-none");
-
-                $("#modalComprobanteLabel").text("Nuevo comprobante");
-                $("#subtituloModalComprobante").text(
-                    "Selecciona cómo deseas generar el comprobante."
-                );
+                    mostrarPasoComprobante(1);
+                }
             }
 
             document.addEventListener("DOMContentLoaded", function() {
@@ -1753,21 +2128,54 @@
             });
 
             function resetModalComprobante() {
-                ocultarPasosComprobante();
 
-                $("#pasoOpciones").removeClass("d-none");
+                pasoComprobanteActual = 1;
+
+                flujoComprobante = {
+                    modo: null,
+                    origen: null,
+                    tipoDestino: null,
+                    tipoDocumentoFacturaId: null,
+                    accion: null,
+                    cliente: null,
+                    motivoNotaCredito: null,
+                    items: []
+                };
+
+                comprobanteSeleccionado = null;
+
+                procesandoComprobante = false;
+                procesandoConversion = false;
+
+                $("#paso1Comprobante").removeClass("d-none");
+                $("#paso2Comprobante").addClass("d-none");
+                $("#paso3Comprobante").addClass("d-none");
+                $("#paso4Comprobante").addClass("d-none");
+
                 $("#btnVolverModal").addClass("d-none");
 
-                $("#modalComprobanteLabel").text("Nuevo comprobante");
-                $("#subtituloModalComprobante").text(
-                    "Selecciona cómo deseas generar el comprobante."
-                );
+                $("#buscar_comprobante_input").val("");
+                $("#resultado_busqueda_comprobante").empty();
 
-                const formVenta = document.getElementById("formVentaRapida");
+                $("#opcionesConversion")
+                    .addClass("d-none");
 
-                if (formVenta) {
-                    formVenta.reset();
-                }
+                $("#contenedorOpcionesConversion")
+                    .empty();
+
+                $("#referencia_venta_id").val("");
+
+                $("#texto_documento_referencia")
+                    .text("Ninguno seleccionado");
+
+                $("#total_a_emitir")
+                    .text("S/ 0.00");
+
+                $("#doc_cliente_conversion").val("");
+                $("#nombre_cliente_conversion").val("");
+                $("#direccion_cliente_conversion").val("");
+
+                $("#motivo_nota_credito").val("");
 
                 items = [];
 
@@ -1775,40 +2183,7 @@
                     render();
                 }
 
-                $("#doc_cliente").val("");
-                $("#nombres").val("");
-                $("#apellidos").val("");
-                $("#direccion").val("");
-
-                $("#descripcion").val("");
-                $("#unidad").val("");
-                $("#precio").val("");
-
-                $("#serie").val("");
-
-                actualizarCamposCliente();
-
-                $("#buscar_comprobante_input").val("");
-                $("#resultado_busqueda_comprobante").empty();
-
-                $("#referencia_venta_id").val("");
-
-                $("#texto_documento_referencia").text(
-                    "Ninguno seleccionado"
-                );
-
-                $("#total_a_emitir").text("S/ 0.00");
-
-                $("#aviso_anulacion_origen")
-                    .hide()
-                    .empty();
-
-                $("#btnContinuarComprobanteExistente").prop(
-                    "disabled",
-                    true
-                );
-
-                comprobanteSeleccionado = null;
+                actualizarTituloPaso();
             }
         </script>
     @endpush
