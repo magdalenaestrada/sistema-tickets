@@ -4,9 +4,14 @@
         @if ($venta->estado === \App\Enums\EstadoVenta::ANULADO || $venta->fecha_anulacion)
             <div class="anulado">*** ANULADO ***</div>
         @endif
+
+
+
         @php
             $salida = $pasaje?->salida;
             $descuento = $pasaje?->descuento;
+            $empresa = $venta->sucursal?->empresa;
+            $cliente = $venta->persona ?? ($pasaje->persona ?? null);
 
             $montoDescuento = 0;
             if ($descuento) {
@@ -45,10 +50,15 @@
         {{-- 1. ENCABEZADO + DATOS EMISIÓN Y CLIENTE --}}
         <div class="center">
             @if ($empresa && $empresa->logo)
-                <div class="logo-container">
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($empresa->logo) ? asset('storage/' . $empresa->logo) : asset($empresa->logo) }}"
-                        alt="Logo">
-                </div>
+                @php
+                    $logoPath = public_path('storage/' . $empresa->logo);
+                @endphp
+
+                @if (file_exists($logoPath))
+                    <div class="logo-container">
+                        <img src="{{ $logoPath }}" alt="Logo">
+                    </div>
+                @endif
             @endif
 
             <div class="bold" style="font-size: 12px;">

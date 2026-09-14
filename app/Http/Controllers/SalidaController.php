@@ -95,36 +95,42 @@ class SalidaController extends Controller
 
             if ($request->estado === 'retrasado') {
 
-                // RETRASADO:
-                // Ya pasó la hora de salida, pero todavía no han pasado 4 horas.
                 $salidas->where('salidas.estado', 'programado')
                     ->whereRaw("
-                NOW() >= TIMESTAMP(salidas.fecha_salida, horarios.hora_salida)
+                NOW() >= CONCAT(
+                    salidas.fecha_salida,
+                    ' ',
+                    horarios.hora_salida
+                )
             ")
                     ->whereRaw("
                 NOW() < DATE_ADD(
-                    TIMESTAMP(salidas.fecha_salida, horarios.hora_salida),
+                    CONCAT(
+                        salidas.fecha_salida,
+                        ' ',
+                        horarios.hora_salida
+                    ),
                     INTERVAL 4 HOUR
                 )
             ");
             } elseif ($request->estado === 'vencido') {
 
-                // VENCIDO:
-                // Ya pasaron 4 horas desde la hora programada.
                 $salidas->where('salidas.estado', 'programado')
                     ->whereRaw("
                 NOW() >= DATE_ADD(
-                    TIMESTAMP(salidas.fecha_salida, horarios.hora_salida),
+                    CONCAT(
+                        salidas.fecha_salida,
+                        ' ',
+                        horarios.hora_salida
+                    ),
                     INTERVAL 4 HOUR
                 )
             ");
             } else {
 
-                // Estados reales guardados en BD
                 $salidas->where('salidas.estado', $request->estado);
             }
         }
-
         if ($request->filled('ruta_id')) {
             $salidas->where('rutas.id', $request->ruta_id);
         }
