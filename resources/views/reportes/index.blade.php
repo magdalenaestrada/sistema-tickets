@@ -3,13 +3,12 @@
 @section('content')
     <div class="container-fluid py-4 px-md-4 min-vh-100">
         <!-- Header Principal -->
-        <div
-            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-1">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-1">
             <div>
                 <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
                     <i class="bi bi-bar-chart-line-fill me-1"></i> Módulo de Reportes
                 </span>
-            
+
             </div>
         </div>
 
@@ -878,67 +877,131 @@
                 alert(`Filtro global aplicado:\nDesde: ${filters.dateFrom}\nHasta: ${filters.dateTo}`);
             }
 
-            // Exportación de reportes generales usando las fechas globales
             function exportarReporte(tipoReporte, formato) {
+
                 const filters = getGlobalFilters();
-                let url =
-                    `/reportes/exportar?tipo=${tipoReporte}&formato=${formato}&periodo=${filters.period}&desde=${filters.dateFrom}&hasta=${filters.dateTo}`;
 
-                if (tipoReporte === 'ventas-diarias') {
-                    const agencia = document.getElementById('reporte_ventas_diarias_agencia')?.value;
-                    if (agencia) url += `&agencia_id=${agencia}`;
+                const rutas = {
+
+                    'ventas-usuario': {
+                        pdf: "{{ route('reportes.ventas.usuario.pdf') }}",
+                        excel: "{{ route('reportes.ventas.usuario.excel') }}"
+                    },
+
+                    'ventas-general': {
+                        pdf: "{{ route('reportes.ventas.general.pdf') }}",
+                        excel: "{{ route('reportes.ventas.general.excel') }}"
+                    },
+
+                    'ventas-agencia': {
+                        pdf: "{{ route('reportes.ventas.agencia.pdf') }}",
+                        excel: "{{ route('reportes.ventas.agencia.excel') }}"
+                    },
+
+                    'ventas-ruta': {
+                        pdf: "{{ route('reportes.ventas.ruta.pdf') }}",
+                        excel: "{{ route('reportes.ventas.ruta.excel') }}"
+                    },
+
+                    'pasajeros-ruta': {
+                        pdf: "{{ route('reportes.pasajeros.ruta.pdf') }}",
+                        excel: "{{ route('reportes.pasajeros.ruta.excel') }}"
+                    },
+
+                    'historial-pasajero': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "#"
+                    },
+
+                    'sobreequipaje': {
+                        pdf: "#",
+                        excel: "#"
+                    }
+
+                };
+
+                if (!rutas[tipoReporte]?.[formato]) {
+                    console.error(
+                        `Reporte no registrado: ${tipoReporte} (${formato})`
+                    );
+
+                    alert(
+                        `El reporte "${tipoReporte}" todavía no tiene ruta ni método implementado.`
+                    );
+
+                    return;
                 }
 
-                if (tipoReporte === 'metodos-pago') {
-                    const metodo = document.getElementById('reporte_metodo_pago')?.value;
-                    if (metodo) url += `&metodo_pago=${metodo}`;
-                }
+                const params = new URLSearchParams({
+                    periodo: filters.period,
+                    desde: filters.dateFrom,
+                    hasta: filters.dateTo
+                });
 
-                if (tipoReporte === 'encomiendas-estado') {
-                    const estado = document.getElementById('reporte_encomienda_estado')?.value;
-                    if (estado) url += `&estado=${estado}`;
-                }
-
-                window.open(url, '_blank');
+                window.open(
+                    `${rutas[tipoReporte][formato]}?${params.toString()}`,
+                    '_blank'
+                );
             }
 
-            // Exportación específica para Cajero
             function exportarVentasUsuario(formato) {
                 const usuarioId = document.getElementById('reporte_usuario_id')?.value || '';
                 const filters = getGlobalFilters();
-                window.open(
-                    `/reportes/ventas-usuario?formato=${formato}&usuario_id=${usuarioId}&periodo=${filters.period}&desde=${filters.dateFrom}&hasta=${filters.dateTo}`,
-                    '_blank');
+
+                let url = formato === 'pdf' ?
+                    "{{ route('reportes.ventas.usuario.pdf') }}" :
+                    "{{ route('reportes.ventas.usuario.excel') }}";
+
+                const params = new URLSearchParams({
+                    usuario_id: usuarioId,
+                    periodo: filters.period,
+                    desde: filters.dateFrom,
+                    hasta: filters.dateTo
+                });
+
+                window.open(`${url}?${params.toString()}`, '_blank');
             }
 
-            // Exportación específica para Ruta
             function exportarVentasRuta(formato) {
                 const rutaId = document.getElementById('reporte_ruta_especifica_id')?.value || '';
                 const filters = getGlobalFilters();
-                window.open(
-                    `/reportes/ventas-ruta?formato=${formato}&ruta_id=${rutaId}&periodo=${filters.period}&desde=${filters.dateFrom}&hasta=${filters.dateTo}`,
-                    '_blank');
+
+                let url = formato === 'pdf' ?
+                    "{{ route('reportes.ventas.ruta.pdf') }}" :
+                    "{{ route('reportes.ventas.ruta.excel') }}";
+
+                const params = new URLSearchParams({
+                    ruta_id: rutaId,
+                    periodo: filters.period,
+                    desde: filters.dateFrom,
+                    hasta: filters.dateTo
+                });
+
+                window.open(`${url}?${params.toString()}`, '_blank');
             }
 
             function exportarVentasGeneral() {
+
                 const filters = getGlobalFilters();
 
                 const agenciaId =
                     document.getElementById("reporte_general_agencia")?.value || "";
 
-                const params = {
+                const params = new URLSearchParams({
                     periodo: filters.period,
                     desde: filters.dateFrom,
-                    hasta: filters.dateTo,
-                };
+                    hasta: filters.dateTo
+                });
 
                 if (agenciaId) {
-                    params.agencia_id = agenciaId;
+                    params.append('agencia_id', agenciaId);
                 }
 
+                const url = "{{ route('reportes.ventas.general.pdf') }}";
+
                 window.open(
-                    route("reportes.ventas-general.pdf", params),
-                    "_blank"
+                    `${url}?${params.toString()}`,
+                    '_blank'
                 );
             }
         </script>

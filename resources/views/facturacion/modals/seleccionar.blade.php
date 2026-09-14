@@ -272,7 +272,15 @@
 
                     <input type="hidden" id="referencia_venta_id">
 
+                    <select id="tipo_comprobante_destino" class="d-none">
+                        <option value="">Seleccionar</option>
 
+                        @foreach ($tiposDocumento as $tipo)
+                            <option value="{{ $tipo->id }}">
+                                {{ $tipo->descripcion }}
+                            </option>
+                        @endforeach
+                    </select>
                     {{-- DOCUMENTO SELECCIONADO --}}
                     <div class="card border-0 bg-light rounded-3 p-3 mb-3">
 
