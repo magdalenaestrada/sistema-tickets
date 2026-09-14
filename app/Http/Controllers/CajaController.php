@@ -283,7 +283,7 @@ class CajaController extends Controller
                 ]);
 
                 $tabla = view('caja.partials.tabla_movimientos', compact('caja'))->render();
-                 return response()->json([
+                return response()->json([
                     'success' => true,
                     'message' => 'Ingreso registrado correctamente.',
                     'tabla'   => $tabla,
@@ -473,13 +473,16 @@ class CajaController extends Controller
             'metodoPago'
         ]);
 
+        $empresa = Empresa::first();
+
+
         $user = auth()->user();
 
         if (!$this->esAdmin($user) && $detalle->caja->usuario_id !== $user->id) {
             abort(403, 'No tienes permiso para reimprimir este ticket.');
         }
 
-        return view('caja.ticket', compact('detalle'));
+        return view('caja.ticket', compact('detalle', 'empresa'));
     }
 
     public function anular(CajaDetalle $detalle, VentaService $ventaService)

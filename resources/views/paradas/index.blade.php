@@ -6,7 +6,7 @@
         <div class="card shadow-sm">
 
             <div class="card-header">
-                <h5 class="mb-0">Pueblitos</h5>
+                <h5 class="mb-0">Paradas</h5>
             </div>
 
             <div class="card-body">

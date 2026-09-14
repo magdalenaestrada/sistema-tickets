@@ -10,14 +10,18 @@
                     <div class="row g-2 mb-3">
                         <div class="col-md-4 col-sm-6">
                             <div class="input-group"> <span class="input-group-text bg-light border-0 text-muted"> <i
-                                        data-lucide="filter" style="width: 15px;"></i> </span> <select id="filtroEstado"
-                                    class="form-select bg-light border-0 fs-7">
+                                        data-lucide="filter" style="width: 15px;"></i> </span>
+                                <select id="filtroEstado" class="form-select bg-light border-0 fs-7">
                                     <option value="">Todos los estados</option>
                                     <option value="programado">Programado</option>
+                                    <option value="retrasado">Retrasado</option>
+                                    <option value="vencido">Vencido</option>
                                     <option value="en_ruta">En ruta</option>
                                     <option value="finalizado">Finalizado</option>
                                     <option value="cancelado">Cancelado</option>
-                                </select> </div>
+                                    <option value="reprogramado">Reprogramado</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-5 col-sm-6">
                             <div class="input-group"> <span class="input-group-text bg-light border-0 text-muted"> <i
