@@ -92,18 +92,35 @@ class SalidaController extends Controller
     ", [$nowDate, $nowDate, $nowTime]);
 
         if ($request->filled('estado')) {
-            if ($request->estado === 'vencido') {
-                $salidas->where(function ($q) use ($nowDate, $nowTime) {
-                    $q->whereIn('salidas.estado', ['programado', 'reprogramado'])
-                        ->where(function ($q2) use ($nowDate, $nowTime) {
-                            $q2->where('salidas.fecha_salida', '<', $nowDate)
-                                ->orWhere(function ($q3) use ($nowDate, $nowTime) {
-                                    $q3->where('salidas.fecha_salida', '=', $nowDate)
-                                        ->where('horarios.hora_salida', '<', $nowTime);
-                                });
-                        });
-                });
+
+            if ($request->estado === 'retrasado') {
+
+                // RETRASADO:
+                // Ya pasó la hora de salida, pero todavía no han pasado 4 horas.
+                $salidas->where('salidas.estado', 'programado')
+                    ->whereRaw("
+                NOW() >= TIMESTAMP(salidas.fecha_salida, horarios.hora_salida)
+            ")
+                    ->whereRaw("
+                NOW() < DATE_ADD(
+                    TIMESTAMP(salidas.fecha_salida, horarios.hora_salida),
+                    INTERVAL 4 HOUR
+                )
+            ");
+            } elseif ($request->estado === 'vencido') {
+
+                // VENCIDO:
+                // Ya pasaron 4 horas desde la hora programada.
+                $salidas->where('salidas.estado', 'programado')
+                    ->whereRaw("
+                NOW() >= DATE_ADD(
+                    TIMESTAMP(salidas.fecha_salida, horarios.hora_salida),
+                    INTERVAL 4 HOUR
+                )
+            ");
             } else {
+
+                // Estados reales guardados en BD
                 $salidas->where('salidas.estado', $request->estado);
             }
         }
