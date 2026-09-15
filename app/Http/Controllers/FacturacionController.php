@@ -644,60 +644,125 @@ class FacturacionController extends Controller
 
     public function store(Request $request, VentaService $ventaService)
     {
-        $items = json_decode($request->items, true);
+        try {
 
-        if (!$items || count($items) === 0) {
-            return back()->with('error', 'Debe agregar items');
+            $items = json_decode($request->items, true);
+
+            if (!$items || count($items) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe agregar items'
+                ], 422);
+            }
+
+            $detalles = [];
+            $total = 0;
+
+            foreach ($items as $item) {
+
+                $tipoServicioItemId = (int) (
+                    $item['tipo_servicio_id']
+                    ?? $request->tipo_servicio_id
+                );
+
+                $precio = (float) ($item['precio'] ?? 0);
+
+                $total += $precio;
+
+                $detalles[] = [
+                    'tipo_servicio_id' => $tipoServicioItemId,
+                    'descripcion'      => $item['descripcion'],
+                    'cantidad'         => $item['cantidad'],
+                    'costo'            => $precio,
+                    'descuento'        => 0,
+                ];
+            }
+
+            $data = new \Illuminate\Http\Request([
+                'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
+                'tipo_servicio_id'          => $request->tipo_servicio_id,
+                'numero_documento_id'       => $request->documento,
+                'razon_social'              => trim(
+                    ($request->nombres ?? '') . ' ' .
+                        ($request->apellidos ?? '')
+                ),
+                'direccion' => $request->direccion,
+                'correo'    => $request->correo,
+                'telefono'  => $request->telefono,
+                'celular'   => $request->celular,
+                'caja_id'   => $request->caja_id,
+                'total'     => $total,
+                'detalles'  => $detalles,
+            ]);
+
+            // 1. CREAR VENTA
+            $resultado = $ventaService->crearVenta(
+                $data,
+                null,
+                null
+            );
+
+            if (
+                !isset($resultado['venta']) ||
+                !$resultado['venta'] ||
+                !$resultado['venta']->id
+            ) {
+                throw new \Exception(
+                    'La venta no fue creada correctamente.'
+                );
+            }
+
+            $venta = $resultado['venta'];
+
+            // Para comprobar qué se generó
+            \Log::info('VENTA NUEVA CREADA', [
+                'venta_id' => $venta->id,
+                'serie' => $venta->serie,
+                'numero' => $venta->numero,
+                'tipo_documento_factura_id' => $venta->tipo_documento_factura_id,
+                'sucursal_id' => $venta->sucursal_id,
+                'persona_id' => $venta->persona_id,
+                'caja_id' => $venta->caja_id,
+            ]);
+
+            // 2. EMITIR
+            $ventaService->emitirVenta($venta);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Venta generada y enviada a SUNAT',
+                    'venta_id' => $venta->id,
+                ]);
+            }
+
+            return redirect()
+                ->route('facturacion.index')
+                ->with(
+                    'success',
+                    'Venta generada y enviada a SUNAT'
+                );
+        } catch (\Throwable $e) {
+
+            \Log::error('ERROR CREANDO NUEVA VENTA', [
+                'mensaje' => $e->getMessage(),
+                'archivo' => $e->getFile(),
+                'linea' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
+
+            return back()->with(
+                'error',
+                $e->getMessage()
+            );
         }
-
-        $empresa = Empresa::first();
-
-        $porcentaje = $request->tipo_servicio_id == 1
-            ? ($empresa->igv / 100)
-            : ($empresa->igv_encomienda / 100);
-
-        $detalles = [];
-        $total = 0;
-
-        foreach ($items as $item) {
-
-            $tipoServicioItemId = (int) ($item['tipo_servicio_id'] ?? $request->tipo_servicio_id);
-            $precio = (float) $item['precio'];
-            $total += $precio;
-            $detalles[] = [
-                'tipo_servicio_id' => $tipoServicioItemId,
-                'descripcion' => $item['descripcion'],
-                'cantidad' => $item['cantidad'],
-                'costo' => $precio,
-                'descuento' => 0,
-            ];
-        }
-
-        $data = new \Illuminate\Http\Request([
-            'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
-            'tipo_servicio_id'          => $request->tipo_servicio_id,
-            'numero_documento_id'       => $request->documento,
-            'razon_social'              => trim($request->nombres . ' ' . $request->apellidos),
-            'direccion'                 => $request->direccion,
-            'correo'                    => $request->correo,
-            'telefono'                  => $request->telefono,
-            'celular'                   => $request->celular,
-            'caja_id'                   => $request->caja_id,
-            'total'                     => $total,
-            'detalles'                  => $detalles,
-        ]);
-
-        $resultado = $ventaService->crearVenta(
-            $data,
-            null,   // referencia_type
-            null    // referencia_id
-        );
-
-        $ventaService->emitirVenta($resultado['venta']);
-
-        return redirect()
-            ->route('facturacion.index')
-            ->with('success', 'Venta generada y enviada a SUNAT');
     }
 
     public function anularVenta(Venta $venta)
@@ -732,13 +797,10 @@ class FacturacionController extends Controller
             $result = null;
             $metodo = 'Error';
             if ($puedeAnularConResumen) {
-                // anular todo lo que sea ... boleta, factura, nota de credito ...
                 $result = app(VentaService::class)->anularVentaDirecta($venta);
                 $metodo = 'Anulación directa';
             } else if ($anularConCredito) {
-                // elegir si es nota de credito de boleta o factura
                 $ventaOGEstatus = mb_substr($venta->serie, 0, 1) === 'B' ? 4 : 7;
-                //anular la venta con nota de credito
                 $tipoNC = TipoDocumentoFactura::find($ventaOGEstatus);
 
                 $comprobanteNC = app(VentaService::class)->reservarSerieYNumero(
@@ -758,7 +820,6 @@ class FacturacionController extends Controller
                 $nc->numero = $comprobanteNC['numero'];
                 $nc->usuario_id = auth()->id();
                 $nc->documento_referencia = $venta->serie . '-' . $venta->numero;
-                // $nc->tipo_documento_referencia = $venta->tipoDocumentoFactura->codigo;
                 $nc->subtotal = $venta->subtotal;
                 $nc->impuesto = $venta->impuesto;
                 $nc->total = $venta->total;

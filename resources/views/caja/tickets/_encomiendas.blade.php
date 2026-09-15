@@ -11,15 +11,11 @@
             $emisor = $encomienda->emisor; // quien envía
             $receptor = $encomienda->receptor; // quien recibe
 
-            // Descuento (ajusta el campo según tu modelo)
             $montoDescuento = 0;
 
             $opGravada = $venta->detalles->sum('base_igv');
             $igv = $venta->detalles->sum('igv');
         @endphp
-
-        {{-- ── ENCABEZADO ── --}}
-        {{-- ───────────── ENCABEZADO ───────────── --}}
 
         <div class="center">
 

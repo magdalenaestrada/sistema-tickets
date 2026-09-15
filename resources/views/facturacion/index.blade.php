@@ -323,7 +323,6 @@
 
     @endsection
     @push('scripts')
-      
         <script>
             let pasoComprobanteActual = 1;
 
@@ -444,7 +443,17 @@
 
                     document.querySelectorAll('.comprobante-item').forEach(el => {
                         el.addEventListener('click', () => {
-                            seleccionarComprobante(el.dataset.id, json.data);
+
+                            const comprobante = json.data.find(
+                                c => String(c.id) === String(el.dataset.id)
+                            );
+
+                            if (!comprobante) {
+                                console.error('No se encontró el comprobante:', el.dataset.id);
+                                return;
+                            }
+
+                            seleccionarComprobante(comprobante);
                         });
                     });
 
@@ -503,6 +512,64 @@
                 );
             }
 
+            function agregarOpcionConversion(tipo, texto, color = 'primary') {
+
+                const contenedor = $('#contenedorOpcionesConversion');
+
+                let tipoDocumentoId = null;
+                let accion = 'CONVERTIR';
+                let tipoDestino = tipo;
+
+                switch (tipo) {
+
+                    case 'FACTURA':
+                        tipoDocumentoId = 1;
+                        tipoDestino = 'FACTURA';
+                        accion = 'CONVERTIR';
+                        break;
+
+                    case 'BOLETA':
+                        tipoDocumentoId = 2;
+                        tipoDestino = 'BOLETA';
+                        accion = 'CONVERTIR';
+                        break;
+
+                    case 'NOTA_CREDITO_BOLETA':
+                        tipoDocumentoId = 4;
+                        tipoDestino = 'NC_BOLETA';
+                        accion = 'NOTA_CREDITO';
+                        break;
+
+                    case 'NOTA_CREDITO_FACTURA':
+                        tipoDocumentoId = 7;
+                        tipoDestino = 'NC_FACTURA';
+                        accion = 'NOTA_CREDITO';
+                        break;
+
+                    default:
+                        console.error('Tipo de conversión desconocido:', tipo);
+                        return;
+                }
+
+                const boton = `
+        <div class="col-md-6 mb-2">
+            <button
+                type="button"
+                class="btn btn-outline-${color} w-100 py-3"
+                onclick="seleccionarTipoConversion(
+                    '${tipoDestino}',
+                    ${tipoDocumentoId},
+                    '${accion}'
+                )"
+            >
+                ${texto}
+            </button>
+        </div>
+    `;
+
+                contenedor.append(boton);
+            }
+
             function cargarOpcionesConversion(comprobante) {
 
                 const contenedor = $('#contenedorOpcionesConversion');
@@ -518,10 +585,6 @@
                 console.log('TIPO ORIGEN:', tipo);
                 console.log('COMPROBANTE:', comprobante);
 
-
-                // ==========================================
-                // NOTA DE VENTA
-                // ==========================================
                 if (tipo.includes('NOTA DE VENTA')) {
 
                     agregarOpcionConversion(
@@ -539,10 +602,6 @@
                     return;
                 }
 
-
-                // ==========================================
-                // BOLETA
-                // ==========================================
                 if (
                     tipo.includes('BOLETA') &&
                     !tipo.includes('NOTA')
@@ -563,10 +622,6 @@
                     return;
                 }
 
-
-                // ==========================================
-                // FACTURA
-                // ==========================================
                 if (
                     tipo.includes('FACTURA') &&
                     !tipo.includes('NOTA')
@@ -1503,88 +1558,112 @@
             }
 
             async function emitirComprobanteFinal() {
-                console.log(
-                    'FLUJO ANTES DE EMITIR:',
-                    flujoComprobante
-                );
 
-
-                if (
-                    flujoComprobante.modo === 'existente' &&
-                    !flujoComprobante.origen?.id
-                ) {
-
-                    Swal.fire(
-                        'Error',
-                        'No se encontró el comprobante de referencia.',
-                        'error'
-                    );
-
-                    return;
-                }
-
-                if (procesandoConversion) {
-                    return;
-                }
+                if (procesandoConversion) return;
 
                 procesandoConversion = true;
 
                 const $btn = $("#btnEmitirComprobante");
 
-                $btn
-                    .prop("disabled", true)
-                    .html(`
-            <span class="spinner-border spinner-border-sm me-2"></span>
-            Emitiendo...
-        `);
+                $btn.prop("disabled", true).html(`
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Emitiendo...
+    `);
 
                 try {
 
-                    const res = await fetch(
-                        route("facturacion.convertir-comprobante"), {
-                            method: "POST",
+                    let res;
 
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Accept": "application/json",
-                                "X-Requested-With": "XMLHttpRequest",
-                                "X-CSRF-TOKEN": document.querySelector(
-                                    'meta[name="csrf-token"]'
-                                ).content
-                            },
+                    if (flujoComprobante.modo === 'nuevo') {
 
-                            body: JSON.stringify({
+                        const form = document.getElementById('formVentaRapida');
 
-                                venta_referencia_id: flujoComprobante.origen?.id ?? null,
-
-                                tipo_documento_factura_id: flujoComprobante.tipoDocumentoFacturaId,
-
-                                accion: flujoComprobante.accion,
-
-                                documento_cliente: flujoComprobante.cliente?.documento ?? null,
-
-                                nombre_cliente: flujoComprobante.cliente?.nombre ?? null,
-
-                                direccion_cliente: flujoComprobante.cliente?.direccion ?? null,
-
-                                motivo_nota_credito: flujoComprobante.motivoNotaCredito ?? null
-                            })
+                        if (!form) {
+                            throw new Error('No se encontró el formulario de venta.');
                         }
-                    );
+
+                        const formData = new FormData(form);
+
+                        formData.set(
+                            'items',
+                            JSON.stringify(flujoComprobante.items)
+                        );
+
+                        formData.set(
+                            'tipo_documento_factura_id',
+                            flujoComprobante.tipoDocumentoFacturaId
+                        );
+
+                        console.log(
+                            'DATOS NUEVA VENTA:',
+                            Object.fromEntries(formData.entries())
+                        );
+
+                        res = await fetch(
+                            form.action, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: formData
+                            }
+                        );
+                    } else {
+
+                        if (!flujoComprobante.origen?.id) {
+                            throw new Error(
+                                'No se encontró el comprobante de referencia.'
+                            );
+                        }
+
+                        res = await fetch(
+                            route("facturacion.convertir-comprobante"), {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Accept": "application/json",
+                                    "X-Requested-With": "XMLHttpRequest",
+                                    "X-CSRF-TOKEN": document.querySelector(
+                                        'meta[name="csrf-token"]'
+                                    ).content
+                                },
+                                body: JSON.stringify({
+                                    venta_referencia_id: flujoComprobante.origen.id,
+
+                                    tipo_documento_factura_id: flujoComprobante.tipoDocumentoFacturaId,
+
+                                    accion: flujoComprobante.accion,
+
+                                    documento_cliente: flujoComprobante.cliente?.documento ?? null,
+
+                                    nombre_cliente: flujoComprobante.cliente?.nombre ?? null,
+
+                                    direccion_cliente: flujoComprobante.cliente?.direccion ?? null,
+
+                                    motivo_nota_credito: flujoComprobante.motivoNotaCredito ?? null
+                                })
+                            }
+                        );
+                    }
 
                     const json = await res.json();
 
-                    if (!res.ok || !json.success) {
-                        throw new Error(
+                    if (!res.ok) {
+
+                        const mensaje =
                             json.message ??
-                            "No se pudo emitir el comprobante."
-                        );
+                            Object.values(json.errors ?? {})
+                            .flat()
+                            .join("\n") ??
+                            "No se pudo emitir el comprobante.";
+
+                        throw new Error(mensaje);
                     }
 
                     await Swal.fire(
                         "Correcto",
-                        json.message ??
-                        "Comprobante emitido correctamente.",
+                        json.message ?? "Comprobante emitido correctamente.",
                         "success"
                     );
 
