@@ -91,6 +91,19 @@ class SalidaController extends Controller
         END as orden_prioridad
     ", [$nowDate, $nowDate, $nowTime]);
 
+        $hayFiltro = $request->filled('estado')
+            || $request->filled('ruta_id');
+
+        if (!$hayFiltro) {
+            $salidas->where(function ($q) use ($nowDate, $nowTime) {
+                $q->where('salidas.fecha_salida', '>', $nowDate)
+                    ->orWhere(function ($q) use ($nowDate, $nowTime) {
+                        $q->where('salidas.fecha_salida', $nowDate)
+                            ->where('horarios.hora_salida', '>=', $nowTime);
+                    });
+            });
+        }
+
         if ($request->filled('estado')) {
 
             if ($request->estado === 'retrasado') {
@@ -257,8 +270,11 @@ class SalidaController extends Controller
 
                 return $botones;
             })
-            ->rawColumns([    'checkbox',
-'acciones', 'estado_badge'])
+            ->rawColumns([
+                'checkbox',
+                'acciones',
+                'estado_badge'
+            ])
             ->addIndexColumn()
             ->make(true);
     }

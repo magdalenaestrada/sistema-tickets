@@ -29,6 +29,8 @@
 
                         <div class="col-md-4">
                             <select id="filtroEstado" class="form-select">
+                                <option value="proximas" selected>Próximas salidas</option>
+
                                 <option value="">Todos los estados</option>
                                 <option value="programado">Programado</option>
                                 <option value="en_ruta">En ruta</option>
