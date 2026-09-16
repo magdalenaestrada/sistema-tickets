@@ -578,72 +578,97 @@
 
                 $('#opcionesConversion').removeClass('d-none');
 
-                const tipo = (comprobante.tipo ?? '')
-                    .toUpperCase()
-                    .trim();
+                const conversiones = comprobante?.conversiones ?? [];
 
-                console.log('TIPO ORIGEN:', tipo);
                 console.log('COMPROBANTE:', comprobante);
+                console.log('CONVERSIONES PERMITIDAS:', conversiones);
 
-                if (tipo.includes('NOTA DE VENTA')) {
+                if (!conversiones.length) {
 
-                    agregarOpcionConversion(
-                        'BOLETA',
-                        'Convertir a Boleta',
-                        'primary'
-                    );
-
-                    agregarOpcionConversion(
-                        'FACTURA',
-                        'Convertir a Factura',
-                        'primary'
-                    );
-
-                    return;
-                }
-
-                if (
-                    tipo.includes('BOLETA') &&
-                    !tipo.includes('NOTA')
-                ) {
-
-                    agregarOpcionConversion(
-                        'FACTURA',
-                        'Convertir a Factura',
-                        'primary'
-                    );
-
-                    agregarOpcionConversion(
-                        'NOTA_CREDITO_BOLETA',
-                        'Nota de Crédito de Boleta',
-                        'warning'
-                    );
-
-                    return;
-                }
-
-                if (
-                    tipo.includes('FACTURA') &&
-                    !tipo.includes('NOTA')
-                ) {
-
-                    agregarOpcionConversion(
-                        'NOTA_CREDITO_FACTURA',
-                        'Nota de Crédito de Factura',
-                        'warning'
-                    );
-
-                    return;
-                }
-
-
-                contenedor.html(`
-        <div class="col-12">
-            <div class="alert alert-warning mb-0">
-                Este documento no tiene opciones disponibles.
+                    contenedor.html(`
+            <div class="col-12">
+                <div class="alert alert-warning mb-0">
+                    Este documento no tiene opciones disponibles.
+                </div>
             </div>
-        </div>
-    `);
+        `);
+
+                    return;
+                }
+
+                conversiones.forEach(opcion => {
+
+                    const tipoDocumentoId =
+                        parseInt(opcion.tipo_documento_factura_id);
+
+                    const accion = opcion.accion;
+
+                    let tipoDestino = null;
+
+                    // FACTURA
+                    if (
+                        accion === 'CONVERTIR' &&
+                        tipoDocumentoId === 1
+                    ) {
+                        tipoDestino = 'FACTURA';
+                    }
+
+                    // BOLETA
+                    else if (
+                        accion === 'CONVERTIR' &&
+                        tipoDocumentoId === 2
+                    ) {
+                        tipoDestino = 'BOLETA';
+                    }
+
+                    // NOTA CRÉDITO BOLETA
+                    else if (
+                        accion === 'NOTA_CREDITO' &&
+                        tipoDocumentoId === 4
+                    ) {
+                        tipoDestino = 'NC_BOLETA';
+                    }
+
+                    // NOTA CRÉDITO FACTURA
+                    else if (
+                        accion === 'NOTA_CREDITO' &&
+                        tipoDocumentoId === 7
+                    ) {
+                        tipoDestino = 'NC_FACTURA';
+                    }
+
+                    if (!tipoDestino) {
+                        console.warn(
+                            'Conversión desconocida:',
+                            opcion
+                        );
+
+                        return;
+                    }
+
+                    const color =
+                        accion === 'NOTA_CREDITO' ?
+                        'warning' :
+                        'primary';
+
+                    contenedor.append(`
+            <div class="col-md-6 mb-2">
+
+                <button
+                    type="button"
+                    class="btn btn-outline-${color} w-100 py-3"
+                    onclick="seleccionarTipoConversion(
+                        '${tipoDestino}',
+                        ${tipoDocumentoId},
+                        '${accion}'
+                    )"
+                >
+                    ${opcion.nombre}
+                </button>
+
+            </div>
+        `);
+                });
             }
 
             function resetSeleccion() {
@@ -954,10 +979,9 @@
                     }
 
                     if (!nombre) {
-
                         Swal.fire(
                             "Atención",
-                            "Debe buscar y validar el RUC.",
+                            "Ingrese la razón social del cliente.",
                             "warning"
                         );
 
@@ -988,7 +1012,7 @@
 
                         Swal.fire(
                             "Atención",
-                            "Debe buscar y validar el DNI.",
+                            "Ingrese el nombre del cliente.",
                             "warning"
                         );
 
@@ -1325,18 +1349,26 @@
 
                 } catch (error) {
 
-                    console.error(error);
+                    console.error('Error consultando documento:', error);
 
-                    Swal.fire(
-                        'Error',
-                        error.message,
-                        'error'
-                    );
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No se pudo consultar el documento',
+                        text: 'Puede ingresar los datos del cliente manualmente.',
+                        confirmButtonText: 'Continuar manualmente'
+                    }).then(() => {
+
+                        $('#nombre_cliente_conversion')
+                            .prop('readonly', false)
+                            .focus();
+
+                        $('#direccion_cliente_conversion')
+                            .prop('readonly', false);
+                    });
 
                 } finally {
 
                     btn.prop('disabled', false);
-
                     btn.html(textoOriginal);
                 }
             }

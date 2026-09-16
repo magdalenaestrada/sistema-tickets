@@ -82,6 +82,8 @@ class VentaService
                 ]
             );
 
+            dd($personaVenta);
+
             $venta = Venta::create([
                 'sucursal_id' => $sucursalId,
                 'usuario_id' => $user->id,
@@ -439,6 +441,7 @@ class VentaService
             $ventaOriginal,
             $empresa,
         );
+
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -536,7 +539,17 @@ class VentaService
             $serie,
             $numero
         );
-        // para ver su funcionamiento
+
+        Log::info('ANULACION SUNAT', [
+            'venta_id' => $venta->id,
+            'tipo_documento_factura_id' => $venta->tipo_documento_factura_id,
+            'serie' => $venta->serie,
+            'numero' => $venta->numero,
+            'fecha_emision' => $venta->fecha_emision,
+            'estado' => $venta->estado->value ?? $venta->estado,
+            'nombre_documento_sunat' => $note->getName(),
+        ]);
+        
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');

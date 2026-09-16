@@ -14,7 +14,7 @@
                     <button type="button" id="btnVolverModal" class="btn btn-sm btn-light border rounded-circle d-none"
                         onclick="volverPasoComprobante()" title="Volver">
 
-                        <i class="bi bi-chevron-left"></i>
+                        <i class="link-icon" data-lucide="chevron-left"></i>
 
                     </button>
 
@@ -155,14 +155,13 @@
                                                 bg-success bg-opacity-10 text-success rounded-circle mb-3"
                                         style="width:60px;height:60px;">
 
-                                        <i class="bi bi-file-earmark-plus fs-3"></i>
+                                        <i class="link-icon" data-lucide="file-plus-corner"></i>
 
                                     </div>
 
                                     <h5 class="fw-bold">
                                         Nuevo comprobante
                                     </h5>
-
                                     <p class="text-muted small">
                                         Crear una boleta, factura u otro documento
                                         desde cero.
@@ -172,8 +171,6 @@
                                         onclick="iniciarComprobanteNuevo()">
 
                                         Generar nuevo comprobante
-
-                                        <i class="bi bi-arrow-right ms-1"></i>
 
                                     </button>
 
@@ -192,10 +189,10 @@
                                 <div class="text-center">
 
                                     <div class="d-inline-flex align-items-center justify-content-center
-                                                bg-primary bg-opacity-10 text-primary rounded-circle mb-3"
+                                                bg-primary bg-opacity-10 text-white rounded-circle mb-3"
                                         style="width:60px;height:60px;">
 
-                                        <i class="bi bi-files fs-3"></i>
+                                        <i class="link-icon" data-lucide="combine"></i>
 
                                     </div>
 
@@ -212,8 +209,6 @@
                                         onclick="iniciarDesdeExistente()">
 
                                         Buscar comprobante
-
-                                        <i class="bi bi-arrow-right ms-1"></i>
 
                                     </button>
 
@@ -251,11 +246,13 @@
                     <div class="input-group mb-3">
 
                         <span class="input-group-text bg-white">
-                            <i class="bi bi-search"></i>
+
+                            <i class="link-icon" data-lucide="file-search-corner"></i>
+
                         </span>
 
                         <input type="text" id="buscar_comprobante_input" class="form-control"
-                            placeholder="Ej. BV01-125, DNI, RUC o cliente">
+                            placeholder="Buscar comprobante">
 
                         <button type="button" class="btn btn-primary" onclick="buscarComprobanteReferencia()">
 
@@ -568,8 +565,9 @@
 
                                         <button type="button" class="btn btn-success btn-sm w-100"
                                             onclick="agregarItem()">
+                        <i class="link-icon" data-lucide="plus"></i>
 
-                                            <i class="bi bi-plus-lg"></i>
+                                         
                                             Agregar
 
                                         </button>
@@ -739,7 +737,7 @@
                                     </label>
 
                                     <input type="text" id="nombre_cliente_conversion"
-                                        class="form-control form-control-sm" readonly>
+                                        class="form-control form-control-sm" autocomplete="off">
 
                                 </div>
 
@@ -751,7 +749,7 @@
                                     </label>
 
                                     <input type="text" id="direccion_cliente_conversion"
-                                        class="form-control form-control-sm" readonly>
+                                        class="form-control form-control-sm" autocomplete="off">
 
                                 </div>
 
@@ -860,10 +858,10 @@
                     <div class="text-center mb-4">
 
                         <div class="d-inline-flex align-items-center justify-content-center
-                                    bg-primary bg-opacity-10 text-primary rounded-circle mb-2"
+                                    bg-primary bg-opacity-10 text-white rounded-circle mb-2"
                             style="width:55px;height:55px;">
 
-                            <i class="bi bi-file-earmark-check fs-3"></i>
+                        <i class="link-icon" data-lucide="receipt-text"></i>
 
                         </div>
 

@@ -218,6 +218,103 @@ class FacturacionController extends Controller
                 ], 500);
             }
 
+            if ($request->accion === 'CONVERTIR') {
+
+                $documento = trim((string) $request->documento_cliente);
+                $nombre = trim((string) $request->nombre_cliente);
+                $direccion = trim((string) $request->direccion_cliente);
+
+                // FACTURA
+                if ($tipoDestino->codigo === '01') {
+
+                    if (!preg_match('/^\d{11}$/', $documento)) {
+                        throw new Exception(
+                            'Para generar una Factura debe ingresar un RUC válido de 11 dígitos.'
+                        );
+                    }
+
+                    if ($nombre === '') {
+                        throw new Exception(
+                            'Debe ingresar la razón social.'
+                        );
+                    }
+
+                    // Buscar por RUC
+                    $persona = Persona::where('documento', $documento)->first();
+
+                    if (!$persona) {
+                        $persona = Persona::create([
+                            'tipo_documento_id' => 2, // RUC: verifica que este sea tu ID
+                            'documento' => $documento,
+                            'razon_social' => $nombre,
+                            'nombres' => null,
+                            'apellidos' => null,
+                            'direccion' => $direccion ?: '-',
+                            'estado' => 1,
+                        ]);
+                    } else {
+                        // Si ya existe, actualizamos los datos de facturación
+                        $persona->update([
+                            'razon_social' => $nombre,
+                            'direccion' => $direccion ?: $persona->direccion,
+                        ]);
+                    }
+                }
+
+                // BOLETA
+                elseif ($tipoDestino->codigo === '03') {
+
+                    if (!preg_match('/^\d{8}$/', $documento)) {
+                        throw new Exception(
+                            'Para generar una Boleta debe ingresar un DNI válido de 8 dígitos.'
+                        );
+                    }
+
+                    if ($nombre === '') {
+                        throw new Exception(
+                            'Debe ingresar el nombre completo.'
+                        );
+                    }
+
+                    $persona = Persona::where('documento', $documento)->first();
+
+                    if (!$persona) {
+                        $persona = Persona::create([
+                            'tipo_documento_id' => 1, // DNI: verifica que este sea tu ID
+                            'documento' => $documento,
+
+                            // Como recibimos el nombre completo en un solo campo,
+                            // lo guardamos en nombres.
+                            'nombres' => $nombre,
+                            'apellidos' => null,
+                            'razon_social' => null,
+
+                            'direccion' => $direccion ?: '-',
+                            'estado' => 1,
+                        ]);
+                    } else {
+                        $persona->update([
+                            'nombres' => $nombre,
+                            'direccion' => $direccion ?: $persona->direccion,
+                        ]);
+                    }
+                } else {
+                    throw new Exception(
+                        'El tipo de comprobante destino no es válido para conversión.'
+                    );
+                }
+            } else {
+
+                // NOTA DE CRÉDITO:
+                // conserva la persona del comprobante original.
+                $persona = $ventaOrigen->persona;
+
+                if (!$persona) {
+                    throw new Exception(
+                        'El comprobante de origen no tiene un cliente asociado.'
+                    );
+                }
+            }
             $comprobante = $ventaService->reservarSerieYNumero(
                 (int) $tipoDestino->id,
                 (int) $ventaOrigen->sucursal_id
@@ -495,7 +592,9 @@ class FacturacionController extends Controller
                     ->orWhereRaw("CONCAT(serie,'-',numero) LIKE ?", ["%{$buscar}%"])
                     ->orWhereHas('persona', function ($qp) use ($buscar) {
                         $qp->where('razon_social', 'like', "%{$buscar}%")
-                            ->orWhere('numero_documento', 'like', "%{$buscar}%");
+                            ->orWhere('nombres', 'like', "%{$buscar}%")
+                            ->orWhere('apellidos', 'like', "%{$buscar}%")
+                            ->orWhere('documento', 'like', "%{$buscar}%");
                     });
             });
         }
@@ -564,18 +663,18 @@ class FacturacionController extends Controller
                     'codigo' => $codigo,
 
                     'tipo' =>
-                    $v->tipoDocumentoFactura?->nombre
+                    $v->tipoDocumentoFactura?->descripcion
                         ?? 'Nota de venta',
 
                     'serie_numero' =>
                     $v->serie . '-' . $v->numero,
 
                     'cliente' =>
-                    $v->persona?->razon_social
+                    $v->persona?->nombre_facturacion
                         ?? 'CLIENTE VARIOS',
 
                     'documento' =>
-                    $v->persona?->numero_documento
+                    $v->persona?->documento
                         ?? '-',
 
                     'fecha_emision' =>

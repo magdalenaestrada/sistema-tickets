@@ -18,6 +18,9 @@ $(document).on("change", "#fecha_salida, #horario_id", function () {
 
 $(document).ready(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
+        processing: true,
+        serverSide: true,
+        pageLength: 10,
         ajax: {
             url: route("salidas.datatable"),
             data: function (d) {
@@ -25,7 +28,19 @@ $(document).ready(function () {
                 d.ruta_id = $("#filtroRuta").val();
             },
         },
+
         columns: [
+            ...(window.IS_ADMIN
+                ? [
+                      {
+                          data: "checkbox",
+                          orderable: false,
+                          searchable: false,
+                          className: "text-center",
+                      },
+                  ]
+                : []),
+
             { data: "DT_RowIndex" },
             { data: "ruta" },
             { data: "fecha_formateada" },

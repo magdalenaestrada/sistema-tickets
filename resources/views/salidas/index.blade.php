@@ -54,6 +54,9 @@
                         <table id="tablaSalidas" class="table table-hover align-middle w-100">
                             <thead class="table-primary">
                                 <tr>
+                                    <th class="text-center">
+                                        <input type="checkbox" id="chk-todos" class="form-check-input">
+                                    </th>
                                     <th>ID</th>
                                     <th>Ruta</th>
                                     <th>Fecha</th>
@@ -90,7 +93,7 @@
         window.RUTAS_SALIDA = @json($rutas);
         window.TIPOS_VEHICULO = @json($tiposVehiculo);
         window.IS_ADMIN = {{ auth()->user()->hasRole('Administrador') ? 'true' : 'false' }};
-        
+
         window.SUCURSALES = @json(\App\Models\Sucursal::select('id', 'nombre_comercial')->get());
         window.USER_SUCURSAL = @json(auth()->user()->sucursal ? auth()->user()->sucursal->only('id', 'nombre_comercial') : null);
     </script>

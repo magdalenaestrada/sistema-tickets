@@ -142,6 +142,20 @@ class SalidaController extends Controller
                     ->orderBy('salidas.fecha_salida', 'asc')
                     ->orderBy('horarios.hora_salida', 'asc');
             })
+            ->addColumn('checkbox', function ($salida) use ($isAdmin) {
+
+                if (!$isAdmin || $salida->estado !== 'programado') {
+                    return '';
+                }
+
+                return '
+        <input
+            type="checkbox"
+            class="form-check-input chk-salida"
+            value="' . $salida->id . '"
+        >
+    ';
+            })
             ->addColumn('ruta', function ($salida) {
                 return $salida->horario?->ruta?->nombre ?? '-';
             })
@@ -243,7 +257,8 @@ class SalidaController extends Controller
 
                 return $botones;
             })
-            ->rawColumns(['acciones', 'estado_badge'])
+            ->rawColumns([    'checkbox',
+'acciones', 'estado_badge'])
             ->addIndexColumn()
             ->make(true);
     }
