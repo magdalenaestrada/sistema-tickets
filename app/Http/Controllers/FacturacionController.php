@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class FacturacionController extends Controller
@@ -169,226 +170,220 @@ class FacturacionController extends Controller
         EmitirVentaService $emitirVentaService
     ) {
         $request->validate([
-            'venta_referencia_id' =>
-            'required|exists:ventas,id',
-
-            'tipo_documento_factura_id' =>
-            'required|exists:tipo_documentos_factura,id',
-
-            'accion' =>
-            'required|in:CONVERTIR,NOTA_CREDITO',
-
-            'documento_cliente' =>
-            'nullable|string|max:11',
-
-            'nombre_cliente' =>
-            'nullable|string|max:255',
-
-            'direccion_cliente' =>
-            'nullable|string|max:255',
+            'venta_referencia_id' => 'required|exists:ventas,id',
+            'tipo_documento_factura_id' => 'required|exists:tipo_documentos_factura,id',
+            'accion' => 'required|in:CONVERTIR,NOTA_CREDITO',
+            'documento_cliente' => 'nullable|string|max:11',
+            'nombre_cliente' => 'nullable|string|max:255',
+            'direccion_cliente' => 'nullable|string|max:255',
         ]);
 
-        return DB::transaction(function () use ($request, $ventaService, $emitirVentaService) {
+        $ventaOrigen = Venta::with(['detalles', 'tipoDocumentoFactura'])
+            ->findOrFail($request->venta_referencia_id);
 
-            $ventaOrigen = Venta::with(['detalles', 'tipoDocumentoFactura'])
-                ->findOrFail($request->venta_referencia_id);
+        if (in_array($ventaOrigen->estado, [EstadoVenta::ANULADO, EstadoVenta::RECHAZADO])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este comprobante ya fue anulado o rechazado, no se puede convertir.',
+            ], 422);
+        }
 
-            if (in_array($ventaOrigen->estado, [EstadoVenta::ANULADO, EstadoVenta::RECHAZADO])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Este comprobante ya fue anulado o rechazado, no se puede convertir.',
-                ], 422);
-            }
+        $tipoDestino = TipoDocumentoFactura::findOrFail($request->tipo_documento_factura_id);
 
-            $tipoDestino = TipoDocumentoFactura::findOrFail($request->tipo_documento_factura_id);
+        if ((int) $tipoDestino->id === (int) $ventaOrigen->tipo_documento_factura_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El comprobante destino debe ser de un tipo distinto al de origen.',
+            ], 422);
+        }
 
-            if ((int) $tipoDestino->id === (int) $ventaOrigen->tipo_documento_factura_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El comprobante destino debe ser de un tipo distinto al de origen.',
-                ], 422);
-            }
+        // 👇 PASO 1: fuera de cualquier transacción abierta.
+        // anularOrigenParaConversion() maneja sus propias transacciones internas,
+        // que ahora SÍ son de verdad atómicas e independientes (no hay transacción
+        // exterior que las pueda revertir después).
+        try {
+            $anulacion = $this->anularOrigenParaConversion($ventaOrigen);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo anular el comprobante de origen: ' . $e->getMessage(),
+            ], 500);
+        }
 
-            try {
-                $anulacion = $this->anularOrigenParaConversion($ventaOrigen);
-            } catch (\Throwable $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se pudo anular el comprobante de origen: ' . $e->getMessage(),
-                ], 500);
-            }
+        // 👇 PASO 2: si llegamos aquí, el origen YA quedó anulado en SUNAT y en BD,
+        // de forma irreversible y confirmada. Ahora sí armamos el nuevo comprobante
+        // en su propia transacción.
+        try {
+            return DB::transaction(function () use ($request, $ventaOrigen, $tipoDestino, $ventaService, $emitirVentaService, $anulacion) {
 
-            if ($request->accion === 'CONVERTIR') {
-
-                $documento = trim((string) $request->documento_cliente);
-                $nombre = trim((string) $request->nombre_cliente);
-                $direccion = trim((string) $request->direccion_cliente);
-
-                // FACTURA
-                if ($tipoDestino->codigo === '01') {
-
-                    if (!preg_match('/^\d{11}$/', $documento)) {
-                        throw new Exception(
-                            'Para generar una Factura debe ingresar un RUC válido de 11 dígitos.'
-                        );
-                    }
-
-                    if ($nombre === '') {
-                        throw new Exception(
-                            'Debe ingresar la razón social.'
-                        );
-                    }
-
-                    // Buscar por RUC
-                    $persona = Persona::where('documento', $documento)->first();
-
-                    if (!$persona) {
-                        $persona = Persona::create([
-                            'tipo_documento_id' => 2, // RUC: verifica que este sea tu ID
-                            'documento' => $documento,
-                            'razon_social' => $nombre,
-                            'nombres' => null,
-                            'apellidos' => null,
-                            'direccion' => $direccion ?: '-',
-                            'estado' => 1,
-                        ]);
-                    } else {
-                        // Si ya existe, actualizamos los datos de facturación
-                        $persona->update([
-                            'razon_social' => $nombre,
-                            'direccion' => $direccion ?: $persona->direccion,
-                        ]);
-                    }
-                }
-
-                // BOLETA
-                elseif ($tipoDestino->codigo === '03') {
-
-                    if (!preg_match('/^\d{8}$/', $documento)) {
-                        throw new Exception(
-                            'Para generar una Boleta debe ingresar un DNI válido de 8 dígitos.'
-                        );
-                    }
-
-                    if ($nombre === '') {
-                        throw new Exception(
-                            'Debe ingresar el nombre completo.'
-                        );
-                    }
-
-                    $persona = Persona::where('documento', $documento)->first();
-
-                    if (!$persona) {
-                        $persona = Persona::create([
-                            'tipo_documento_id' => 1, // DNI: verifica que este sea tu ID
-                            'documento' => $documento,
-
-                            // Como recibimos el nombre completo en un solo campo,
-                            // lo guardamos en nombres.
-                            'nombres' => $nombre,
-                            'apellidos' => null,
-                            'razon_social' => null,
-
-                            'direccion' => $direccion ?: '-',
-                            'estado' => 1,
-                        ]);
-                    } else {
-                        $persona->update([
-                            'nombres' => $nombre,
-                            'direccion' => $direccion ?: $persona->direccion,
-                        ]);
-                    }
+                if ($request->accion === 'CONVERTIR') {
+                    $persona = $this->resolverPersonaConversion($request, $tipoDestino);
                 } else {
-                    throw new Exception(
-                        'El tipo de comprobante destino no es válido para conversión.'
-                    );
+                    $persona = $ventaOrigen->persona;
+                    if (!$persona) {
+                        throw new Exception('El comprobante de origen no tiene un cliente asociado.');
+                    }
                 }
+
+                $comprobante = $ventaService->reservarSerieYNumero(
+                    (int) $tipoDestino->id,
+                    (int) $ventaOrigen->sucursal_id
+                );
+
+                if (!$comprobante['serie'] || !$comprobante['numero']) {
+                    throw new Exception('No se pudo obtener la serie/número para el nuevo comprobante.');
+                }
+
+                $nueva = new Venta();
+                $nueva->tipo_documento_factura_id = $tipoDestino->id;
+                $nueva->sucursal_id              = $ventaOrigen->sucursal_id;
+                $nueva->persona_id               = $persona->id;
+                $nueva->tipo_servicio_id         = $ventaOrigen->tipo_servicio_id;
+                $nueva->venta_referencia_id      = $ventaOrigen->id;
+                $nueva->serie                    = $comprobante['serie'];
+                $nueva->numero                   = $comprobante['numero'];
+                $nueva->usuario_id               = auth()->id();
+                $nueva->documento_referencia     = $ventaOrigen->serie . '-' . $ventaOrigen->numero;
+                $nueva->subtotal                 = $ventaOrigen->subtotal;
+                $nueva->impuesto                 = $ventaOrigen->impuesto;
+                $nueva->total                    = $ventaOrigen->total;
+                $nueva->estado                   = EstadoVenta::EMITIDO;
+                $nueva->fecha_emision            = now();
+                $nueva->save();
+
+                foreach ($ventaOrigen->detalles as $d) {
+                    $nueva->detalles()->create([
+                        'descripcion'         => $d->descripcion,
+                        'tipo_servicio_id'    => $d->tipo_servicio_id,
+                        'descuento'           => $d->descuento,
+                        'cantidad'            => $d->cantidad,
+                        'precio_venta'        => $d->precio_venta,
+                        'total'               => $d->total,
+                        'codigo'              => $d->codigo,
+                        'unidad'              => $d->unidad,
+                        'valor_unitario'      => $d->valor_unitario,
+                        'precio_unitario'     => $d->precio_unitario,
+                        'base_igv'            => $d->base_igv,
+                        'porcentaje_igv'      => $d->porcentaje_igv,
+                        'igv'                 => $d->igv,
+                        'valor_venta'         => $d->valor_venta,
+                        'tipo_afectacion_igv' => $d->tipo_afectacion_igv,
+                        'referencia_id'       => $d->referencia_id,
+                    ]);
+                }
+
+                $nueva->load(['detalles', 'persona', 'sucursal.empresa', 'tipoDocumentoFactura']);
+
+                $resultadoEmision = $emitirVentaService->emitir($nueva);
+
+                return response()->json([
+                    'success' => $resultadoEmision['ok'] ?? false,
+                    'message' => ($resultadoEmision['ok'] ?? false)
+                        ? 'Comprobante convertido y emitido correctamente.'
+                        : 'El comprobante se generó pero SUNAT lo rechazó: ' . ($resultadoEmision['mensaje'] ?? ''),
+                    'data' => [
+                        'venta_id'     => $nueva->id,
+                        'serie'        => $nueva->serie,
+                        'numero'       => $nueva->numero,
+                        'estado'       => $nueva->estado,
+                        'nota_credito' => $anulacion['nota_credito'] ?? null,
+                        'metodo_anulacion_origen' => $anulacion['metodo'],
+                    ],
+                ]);
+            });
+        } catch (\Throwable $e) {
+            // 👇 IMPORTANTE: si algo falla aquí, el ORIGEN ya quedó anulado
+            // (irreversible). Hay que dejarlo visible para el usuario/soporte,
+            // no solo un error genérico — porque no se puede "reintentar" desde cero.
+            Log::error('Error al crear el nuevo comprobante tras anular el origen', [
+                'venta_origen_id' => $ventaOrigen->id,
+                'metodo_anulacion' => $anulacion['metodo'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El comprobante de origen ya fue anulado (' . ($anulacion['metodo'] ?? 'anulación aplicada')
+                    . '), pero ocurrió un error al generar el nuevo comprobante: ' . $e->getMessage()
+                    . '. Contacte a soporte para completar la emisión manualmente.',
+            ], 500);
+        }
+    }
+
+    private function resolverPersonaConversion(Request $request, TipoDocumentoFactura $tipoDestino): Persona
+    {
+        $documento = trim((string) $request->documento_cliente);
+        $nombre = trim((string) $request->nombre_cliente);
+        $direccion = trim((string) $request->direccion_cliente);
+
+        if ($tipoDestino->codigo === '01') {
+
+            if (!preg_match('/^\d{11}$/', $documento)) {
+                throw new Exception('Para generar una Factura debe ingresar un RUC válido de 11 dígitos.');
+            }
+
+            if ($nombre === '') {
+                throw new Exception('Debe ingresar la razón social.');
+            }
+
+            $persona = Persona::where('documento', $documento)->first();
+
+            if (!$persona) {
+                $persona = Persona::create([
+                    'tipo_documento_id' => 2,
+                    'documento' => $documento,
+                    'razon_social' => $nombre,
+                    'nombres' => null,
+                    'apellidos' => null,
+                    'fecha_creacion' => now(),
+                    'direccion' => $direccion ?: '-',
+                    'estado' => 1,
+                ]);
             } else {
-
-                // NOTA DE CRÉDITO:
-                // conserva la persona del comprobante original.
-                $persona = $ventaOrigen->persona;
-
-                if (!$persona) {
-                    throw new Exception(
-                        'El comprobante de origen no tiene un cliente asociado.'
-                    );
-                }
-            }
-            $comprobante = $ventaService->reservarSerieYNumero(
-                (int) $tipoDestino->id,
-                (int) $ventaOrigen->sucursal_id
-            );
-
-            if (!$comprobante['serie'] || !$comprobante['numero']) {
-                throw new Exception('No se pudo obtener la serie/número para el nuevo comprobante.');
-            }
-
-            $nueva = new Venta();
-            $nueva->tipo_documento_factura_id = $tipoDestino->id;
-            $nueva->sucursal_id              = $ventaOrigen->sucursal_id;
-            $nueva->persona_id = $persona->id;
-            $nueva->tipo_servicio_id         = $ventaOrigen->tipo_servicio_id;
-            $nueva->venta_referencia_id      = $ventaOrigen->id;
-            $nueva->serie                    = $comprobante['serie'];
-            $nueva->numero                   = $comprobante['numero'];
-            $nueva->usuario_id               = auth()->id();
-            $nueva->documento_referencia     = $ventaOrigen->serie . '-' . $ventaOrigen->numero;
-            $nueva->subtotal                 = $ventaOrigen->subtotal;
-            $nueva->impuesto                 = $ventaOrigen->impuesto;
-            $nueva->total                    = $ventaOrigen->total;
-            $nueva->estado                   = EstadoVenta::EMITIDO;
-            $nueva->fecha_emision = now();
-            $nueva->save();
-
-            foreach ($ventaOrigen->detalles as $d) {
-                $nueva->detalles()->create([
-                    'descripcion'         => $d->descripcion,
-                    'tipo_servicio_id'    => $d->tipo_servicio_id,
-                    'descuento'           => $d->descuento,
-                    'cantidad'            => $d->cantidad,
-                    'precio_venta'        => $d->precio_venta,
-                    'total'               => $d->total,
-                    'codigo'              => $d->codigo,
-                    'unidad'              => $d->unidad,
-                    'valor_unitario'      => $d->valor_unitario,
-                    'precio_unitario'     => $d->precio_unitario,
-                    'base_igv'            => $d->base_igv,
-                    'porcentaje_igv'      => $d->porcentaje_igv,
-                    'igv'                 => $d->igv,
-                    'valor_venta'         => $d->valor_venta,
-                    'tipo_afectacion_igv' => $d->tipo_afectacion_igv,
-                    'referencia_id'       => $d->referencia_id,
+                $persona->update([
+                    'razon_social' => $nombre,
+                    'direccion' => $direccion ?: $persona->direccion,
                 ]);
             }
 
-            $nueva->load(['detalles', 'persona', 'sucursal.empresa', 'tipoDocumentoFactura']);
+            return $persona;
+        }
 
-            $resultadoEmision = $emitirVentaService->emitir($nueva);
+        if ($tipoDestino->codigo === '03') {
 
-            return response()->json([
-                'success' => $resultadoEmision['ok'] ?? false,
-                'message' => ($resultadoEmision['ok'] ?? false)
-                    ? 'Comprobante convertido y emitido correctamente.'
-                    : 'El comprobante se generó pero SUNAT lo rechazó: ' . ($resultadoEmision['mensaje'] ?? ''),
-                'data' => [
-                    'venta_id'     => $nueva->id,
-                    'serie'        => $nueva->serie,
-                    'numero'       => $nueva->numero,
-                    'estado'       => $nueva->estado,
-                    'nota_credito' => $anulacion['nota_credito'] ?? null,
-                    'metodo_anulacion_origen' => $anulacion['metodo'],
-                ],
-            ]);
-        });
+            if (!preg_match('/^\d{8}$/', $documento)) {
+                throw new Exception('Para generar una Boleta debe ingresar un DNI válido de 8 dígitos.');
+            }
+
+            if ($nombre === '') {
+                throw new Exception('Debe ingresar el nombre completo.');
+            }
+
+            $persona = Persona::where('documento', $documento)->first();
+
+            if (!$persona) {
+                $persona = Persona::create([
+                    'tipo_documento_id' => 1,
+                    'documento' => $documento,
+                    'nombres' => $nombre,
+                    'apellidos' => null,
+                    'razon_social' => null,
+                    'direccion' => $direccion ?: '-',
+                    'estado' => 1,
+                ]);
+            } else {
+                $persona->update([
+                    'nombres' => $nombre,
+                    'direccion' => $direccion ?: $persona->direccion,
+                ]);
+            }
+
+            return $persona;
+        }
+
+        throw new Exception('El tipo de comprobante destino no es válido para conversión.');
     }
 
-    /**
-     * Anula el comprobante de origen para permitir su conversión.
-     * - Si el origen nunca fue enviado a SUNAT (Nota de venta interna), solo se marca localmente.
-     * - Si el origen ya fue EMITIDO (Boleta/Factura), sigue el mismo criterio de plazos
-     *   que anularVenta(): anulación directa por resumen, o Nota de Crédito.
-     */
     protected function anularOrigenParaConversion(Venta $ventaOrigen): array
     {
         $codigoOrigen = $ventaOrigen->tipoDocumentoFactura->codigo; // ajusta si tu columna es codigo_sunat
@@ -540,6 +535,9 @@ class FacturacionController extends Controller
             'detalles',
             'sucursal',
             'tipoDocumentoFactura',
+            'usuario',
+            'caja',
+            'ventaReferencia.tipoDocumentoFactura',
         ]);
 
         return view('facturacion.show', compact('venta'));
@@ -577,11 +575,12 @@ class FacturacionController extends Controller
             ], 422);
         }
 
-        $query = Venta::with(['persona', 'tipoDocumentoFactura'])
+        $query = Venta::with(['persona', 'tipoDocumentoFactura', 'detalles']) // 👈 agregar detalles
             ->whereHas('tipoDocumentoFactura', function ($q) {
                 $q->where('codigo', '!=', '07');
             })
             ->whereNotIn('estado', [EstadoVenta::ANULADO, EstadoVenta::RECHAZADO]);
+
 
         if (str_contains($buscar, '-')) {
             [$serie, $numero] = explode('-', $buscar, 2);
@@ -614,6 +613,7 @@ class FacturacionController extends Controller
             'data' => $comprobantes->map(function ($v) {
 
                 $codigo = $v->tipoDocumentoFactura?->codigo;
+
                 if ($codigo === '01') {
 
                     $conversiones = [
@@ -639,7 +639,6 @@ class FacturacionController extends Controller
                     ];
                 } else {
 
-                    // NOTA DE VENTA
                     $conversiones = [
                         [
                             'accion' => 'CONVERTIR',
@@ -656,34 +655,28 @@ class FacturacionController extends Controller
 
                 return [
                     'id' => $v->id,
-
-                    'tipo_documento_factura_id' =>
-                    $v->tipo_documento_factura_id,
-
+                    'tipo_documento_factura_id' => $v->tipo_documento_factura_id,
                     'codigo' => $codigo,
-
-                    'tipo' =>
-                    $v->tipoDocumentoFactura?->descripcion
-                        ?? 'Nota de venta',
-
-                    'serie_numero' =>
-                    $v->serie . '-' . $v->numero,
-
-                    'cliente' =>
-                    $v->persona?->nombre_facturacion
-                        ?? 'CLIENTE VARIOS',
-
-                    'documento' =>
-                    $v->persona?->documento
-                        ?? '-',
-
-                    'fecha_emision' =>
-                    optional($v->fecha_emision)
-                        ->format('d/m/Y'),
-
-                    'total' =>
-                    number_format($v->total, 2),
-
+                    'tipo' => $v->tipoDocumentoFactura?->descripcion ?? 'Nota de venta',
+                    'serie_numero' => $v->serie . '-' . $v->numero,
+                    'cliente' => $v->persona?->nombre_facturacion ?? 'CLIENTE VARIOS',
+                    'documento' => $v->persona?->documento ?? '-',
+                    'direccion' => $v->persona?->direccion ?? '-',
+                    'fecha_emision' => optional($v->fecha_emision)->format('d/m/Y'),
+                    'hora_emision' => optional($v->fecha_emision)->format('H:i'),
+                    'total' => number_format($v->total, 2),
+                    'cantidad_items' => $v->detalles_count,
+                    'estado' => $v->estado->value,
+                    'detalles' => $v->detalles->map(function ($d) {
+                        return [
+                            'descripcion'    => $d->descripcion,
+                            'cantidad'       => $d->cantidad,
+                            'precio_unitario' => number_format($d->precio_unitario, 2),
+                            'valor_venta'    => number_format($d->valor_venta, 2),
+                            'igv'            => number_format($d->igv, 2),
+                            'total'          => number_format($d->total, 2),
+                        ];
+                    }),
                     'conversiones' => $conversiones,
                 ];
             }),
@@ -759,20 +752,19 @@ class FacturacionController extends Controller
 
             foreach ($items as $item) {
 
-                $tipoServicioItemId = (int) (
-                    $item['tipo_servicio_id']
-                    ?? $request->tipo_servicio_id
-                );
+                $tipoServicioItemId = (int) ($item['tipo_servicio_id'] ?? $request->tipo_servicio_id);
 
-                $precio = (float) ($item['precio'] ?? 0);
+                $precio   = (float) ($item['precio'] ?? 0);
+                $cantidad = (float) ($item['cantidad'] ?? 1);
 
-                $total += $precio;
+                $importeItem = $precio * $cantidad; // total de esta línea (10 * 3 = 30)
+                $total += $importeItem;
 
                 $detalles[] = [
                     'tipo_servicio_id' => $tipoServicioItemId,
                     'descripcion'      => $item['descripcion'],
-                    'cantidad'         => $item['cantidad'],
-                    'costo'            => $precio,
+                    'cantidad'         => $cantidad,
+                    'costo'            => $importeItem,  // 👈 el TOTAL, porque crearVenta() lo divide entre cantidad
                     'descuento'        => 0,
                 ];
             }
@@ -1084,13 +1076,9 @@ class FacturacionController extends Controller
                         'precio_unitario'  => $detalle->precio_unitario,
                         'subtotal'         => $detalle->total,
                     ]);
-
-                    if ($detalle->referencia) {
-                        $detalle->referencia->update([
-                            'estado' => 'X',
-                        ]);
-                    }
                 }
+
+                app(VentaService::class)->liberarRecursosVenta($venta);
 
                 $venta->update([
                     'estado' => EstadoVenta::ANULADO,

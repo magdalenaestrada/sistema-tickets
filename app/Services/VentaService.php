@@ -11,6 +11,7 @@ use App\Models\Empresa;
 use App\Models\Encomienda;
 use App\Models\EncomiendaDetalle;
 use App\Models\Pasaje;
+use App\Models\PasajeSobreEquipaje;
 use App\Models\Persona;
 use App\Models\SubtipoMovimientoCaja;
 use App\Models\TipoDocumentoFactura;
@@ -82,7 +83,6 @@ class VentaService
                 ]
             );
 
-            dd($personaVenta);
 
             $venta = Venta::create([
                 'sucursal_id' => $sucursalId,
@@ -488,6 +488,8 @@ class VentaService
                 'fecha_anulacion' => now(),
                 'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
             ]);
+            
+            $this->liberarRecursosVenta($venta);
 
             $ventaOriginal->update([
                 'estado' => EstadoVenta::ANULADO_CON_NOTA_CREDITO,
@@ -530,9 +532,9 @@ class VentaService
         //     (int) $venta->sucursal_id
         // );
 
-        $see = $this->crearSee();
         $serie = str_starts_with($venta->serie, "F") ? 'RA' : 'RC';
-        $numero = ComunicacionBaja::where("serie", $serie)->count() + 1;
+        $numero = $this->reservarCorrelativoBaja($serie);
+        $see = $this->crearSee();
 
         $note = $this->buildResumenAnulacion(
             $venta,
@@ -549,7 +551,7 @@ class VentaService
             'estado' => $venta->estado->value ?? $venta->estado,
             'nombre_documento_sunat' => $note->getName(),
         ]);
-        
+
         $result = $see->send($note);
 
         $folder = 'xml/' . now()->format('d-m-Y');
@@ -579,6 +581,8 @@ class VentaService
         $ticket = null;
         $filename = null;
         DB::transaction(function () use ($venta, $serie, $numero, $ticket, $filename) {
+            $this->liberarRecursosVenta($venta);
+
             $venta->update([
                 'estado' => EstadoVenta::ANULADO,
                 'fecha_anulacion' => now(),
@@ -697,7 +701,7 @@ class VentaService
 
         $estadoSunat = match (true) {
             $code === 0 => 'ACEPTADA',
-            $code >= 2000 && $code <= 3999 => 'RECHAZADA',
+            $code >= 2000 && $code <= 3999 => 'RECHAZADO',
             default => 'OBSERVADA',
         };
 
@@ -736,6 +740,114 @@ class VentaService
         ];
     }
 
+
+    private function reservarCorrelativoBaja(string $serie): int
+    {
+        return DB::transaction(function () use ($serie) {
+            $correlativo = \App\Models\CorrelativoBaja::where('serie', $serie)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$correlativo) {
+                $correlativo = \App\Models\CorrelativoBaja::create([
+                    'serie' => $serie,
+                    'ultimo_numero' => 0,
+                ]);
+
+                $correlativo = \App\Models\CorrelativoBaja::whereKey($correlativo->id)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            $nuevo = (int) $correlativo->ultimo_numero + 1;
+            $correlativo->update(['ultimo_numero' => $nuevo]);
+
+            return $nuevo;
+        });
+    }
+
+    public function liberarRecursosVenta(Venta $venta): void
+    {
+        $venta->load([
+            'detalles.referencia',
+        ]);
+
+        foreach ($venta->detalles as $detalle) {
+
+            $referencia = $detalle->referencia;
+
+            if (!$referencia) {
+                continue;
+            }
+
+            /*
+         * PASAJE
+         */
+            if ($referencia instanceof Pasaje) {
+
+                // Cargar sobrequipajes antes de modificar/eliminar nada
+                $referencia->load([
+                    'sobreEquipajes.encomienda.detalles',
+                    'sobreEquipajes.encomienda.asignacionesSalida',
+                ]);
+
+                foreach ($referencia->sobreEquipajes as $sobreEquipaje) {
+
+                    $encomienda = $sobreEquipaje->encomienda;
+
+                    if ($encomienda) {
+
+                        // Eliminar asignaciones a salidas
+                        $encomienda->asignacionesSalida()->delete();
+
+                        // Eliminar detalles
+                        $encomienda->detalles()->delete();
+
+                        // Eliminar la encomienda de sobrequipaje
+                        $encomienda->delete();
+                    }
+
+                    $sobreEquipaje->delete();
+                }
+
+                $referencia->update([
+                    'estado' => 'X',
+                    'fecha_inactivacion' => now(),
+                ]);
+
+                continue;
+            }
+
+            if ($referencia instanceof EncomiendaDetalle) {
+
+                $encomienda = $referencia->encomienda;
+
+                if (!$encomienda) {
+                    continue;
+                }
+
+                if ($encomienda->sobre_equipaje) {
+
+                    $encomienda->asignacionesSalida()->delete();
+
+                    $encomienda->detalles()->delete();
+
+                    PasajeSobreEquipaje::where(
+                        'encomienda_id',
+                        $encomienda->id
+                    )->delete();
+
+                    $encomienda->delete();
+
+                    continue;
+                }
+
+                $encomienda->update([
+                    'estado' => 'X',
+                ]);
+            }
+        }
+    }
     private function crearSee(?string $tipoDocumento = null): See
     {
         $see = new See();
@@ -795,7 +907,6 @@ class VentaService
             ->setUrbanizacion($empresa->urbanizacion ?? '-')
             ->setDireccion($venta->sucursal->direccion)
             ->setCodLocal($venta->sucursal->codigo_sucursal ?? '0000');
-        // venta->sucursal->codigo_sucursal te falta llenar
 
         $company = (new Company())
             ->setRuc($empresa->documento)
@@ -811,20 +922,14 @@ class VentaService
                 (new Address())->setDireccion($cliente->direccion ?? '-')
             );
 
-        /**
-         * MODIFICADO PARA AMBAS OPERACIONES
-         */
         $mtoOperGravadas = 0.0;
         $mtoOperExoneradas = 0.0;
-        $mtoOperInafectas = 0.0; // por si acaso también manejas inafectas o si german dice que las boletas son inafectas jsjs
+        $mtoOperInafectas = 0.0;
         $mtoIGV = 0.0;
         $valorVenta = 0.0;
         $subTotal = 0.0;
         $totalVenta = 0.0;
         $detalles = [];
-
-        // 18, 10.5, etc. — tasa vigente para líneas gravadas
-        $porcentajeIgv = $this->obtenerPorcentajeIgv($venta);
 
         foreach ($venta->detalles as $detalle) {
             $cantidad = (float) ($detalle->cantidad ?? 1);
@@ -834,22 +939,19 @@ class VentaService
                 throw new Exception("La cantidad del detalle {$detalle->id} no puede ser menor o igual a cero.");
             }
 
-            // Determina el tipo de afectación de ESTA línea.
-            // hay que ponerlo en algun lado el ->exonerado, de momento true
-            $esExonerado = $porcentajeIgv == 0;
-            // $esExonerado = (bool) ($detalle->exonerado ?? false);
+            // 👇 usa lo que YA se calculó y guardó correctamente por ítem en crearVenta()
+            $esExonerado = (int) $detalle->tipo_afectacion_igv === 30;
 
             if ($esExonerado) {
-                // Exonerado (tipAfeIgv 20): el total de línea ES el valor de venta, IGV = 0
                 $valorVentaLinea = $totalLinea;
                 $igvLinea = 0.0;
                 $porcentajeLinea = 0.0;
                 $tipAfeIgv = '20';
             } else {
-                // Gravado (tipAfeIgv 10): se extrae el IGV del total
-                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgv), 2);
+                $porcentajeIgvLinea = ((float) $detalle->porcentaje_igv) / 100;
+                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgvLinea), 2);
                 $igvLinea = round($totalLinea - $valorVentaLinea, 2);
-                $porcentajeLinea = $porcentajeIgv * 100;
+                $porcentajeLinea = (float) $detalle->porcentaje_igv;
                 $tipAfeIgv = '10';
             }
 
@@ -911,7 +1013,6 @@ class VentaService
 
         return $invoice;
     }
-
     private function resolverTipoDocumentoCliente(?string $numeroDocumento, ?int $tipoDocumentoFacturaId): int
     {
         $numeroDocumento = trim((string) $numeroDocumento);
@@ -1006,7 +1107,7 @@ class VentaService
 
             // Debe coincidir con el mismo criterio usado en buildInvoice
             // para el comprobante original que se está anulando.
-            $esExonerado = $porcentajeIgv == 0;
+            $esExonerado = (int) $detalle->tipo_afectacion_igv === 30;
             // $esExonerado = (bool) ($detalle->exonerado ?? false);
 
             if ($esExonerado) {
@@ -1015,9 +1116,10 @@ class VentaService
                 $porcentajeLinea = 0.0;
                 $tipAfeIgv = '20';
             } else {
-                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgv), 2);
+                $porcentajeIgvLinea = ((float) $detalle->porcentaje_igv) / 100; // ej. 18 → 0.18
+                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgvLinea), 2);
                 $igvLinea = round($totalLinea - $valorVentaLinea, 2);
-                $porcentajeLinea = $porcentajeIgv * 100;
+                $porcentajeLinea = (float) $detalle->porcentaje_igv;
                 $tipAfeIgv = '10';
             }
 
@@ -1175,15 +1277,20 @@ class VentaService
         foreach ($venta->detalles as $detalle) {
             $totalLinea = round((float) ($detalle->total ?? 0), 2);
 
-            $esExonerado = $porcentajeIgv == 0;
+            $esExonerado = (int) $detalle->tipo_afectacion_igv === 30;
             // $esExonerado = (bool) ($detalle->exonerado ?? false);
 
             if ($esExonerado) {
                 $valorVentaLinea = $totalLinea;
                 $igvLinea = 0.0;
+                $porcentajeLinea = 0.0;
+                $tipAfeIgv = '20';
             } else {
-                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgv), 2);
+                $porcentajeIgvLinea = ((float) $detalle->porcentaje_igv) / 100; // ej. 18 → 0.18
+                $valorVentaLinea = round($totalLinea / (1 + $porcentajeIgvLinea), 2);
                 $igvLinea = round($totalLinea - $valorVentaLinea, 2);
+                $porcentajeLinea = (float) $detalle->porcentaje_igv;
+                $tipAfeIgv = '10';
             }
 
             if ($esExonerado) {
