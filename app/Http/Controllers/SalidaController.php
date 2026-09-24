@@ -91,19 +91,6 @@ class SalidaController extends Controller
         END as orden_prioridad
     ", [$nowDate, $nowDate, $nowTime]);
 
-        $hayFiltro = $request->filled('estado')
-            || $request->filled('ruta_id');
-
-        if (!$hayFiltro) {
-            $salidas->where(function ($q) use ($nowDate, $nowTime) {
-                $q->where('salidas.fecha_salida', '>', $nowDate)
-                    ->orWhere(function ($q) use ($nowDate, $nowTime) {
-                        $q->where('salidas.fecha_salida', $nowDate)
-                            ->where('horarios.hora_salida', '>=', $nowTime);
-                    });
-            });
-        }
-
         if ($request->filled('estado')) {
 
             if ($request->estado === 'retrasado') {
@@ -630,6 +617,8 @@ class SalidaController extends Controller
         $salida = Salida::with([
             'horario.ruta.puntos.pueblito.sucursal',
             'horario.tipo_viaje',
+            'horario.ruta.tramos.origen',
+            'horario.ruta.tramos.destino',
             'horario.tipo_vehiculo',
             'checks',
         ])->findOrFail($id);

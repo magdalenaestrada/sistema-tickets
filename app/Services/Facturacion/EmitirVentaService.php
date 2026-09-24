@@ -50,7 +50,7 @@ class EmitirVentaService
         $venta->ruta_xml = $xmlPath;
 
         if (!$result->isSuccess()) {
-            $venta->estado = 'ERROR';
+            $venta->estado = 'RECHAZADO';
             $venta->observacion = $result->getError()->getMessage();
             $venta->save();
 
@@ -67,7 +67,7 @@ class EmitirVentaService
 
         $venta->ruta_cdr = $cdrPath;
         $venta->hash = method_exists($documento, 'getHash') ? $documento->getHash() : null;
-        $venta->estado = ((int) $cdr->getCode() === 0) ? 'EMITIDO' : 'RECHAZADA';
+        $venta->estado = ((int) $cdr->getCode() === 0) ? 'EMITIDO' : 'RECHAZADO';
         $venta->observacion = $cdr->getDescription();
         $venta->save();
 

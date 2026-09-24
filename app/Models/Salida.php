@@ -64,9 +64,9 @@ class Salida extends Model
             return collect();
         }
 
-        $puntos = $ruta->puntos()
-            ->orderBy('orden')
-            ->get();
+        $puntos = $ruta->puntos
+            ->sortBy('orden')
+            ->values(); //collect
 
         $puntoOrigen = $puntos->firstWhere(
             'pueblito_id',
@@ -86,9 +86,9 @@ class Salida extends Model
             return collect();
         }
 
-        return $ruta->tramos()
-            ->with(['origen', 'destino'])
-            ->get()
+        return $ruta->tramos
+            //->with(['origen', 'destino'])
+            //->get()
             ->filter(function ($tramo) use ($puntoOrigen, $puntoDestino) {
 
                 if (!$tramo->origen || !$tramo->destino) {
@@ -104,7 +104,7 @@ class Salida extends Model
             ->values();
     }
 
-    public function asientosDisponibles($origenPueblitoId, $destinoPueblitoId)
+    public function asientosDisponibles($origenPueblitoId, $destinoPueblitoId, $pasajesPreloaded = null)
     {
         $tramos = $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId);
         if ($tramos->isEmpty()) {
@@ -112,16 +112,22 @@ class Salida extends Model
         }
 
         $tramoIds = $tramos->pluck('id')->toArray();
+        if ($pasajesPreloaded !== null) {
+            $pasajes = $pasajesPreloaded
+                ->whereIn('tramo_id', $tramoIds)
+                ->groupBy('asiento_numero');
+        } else {
+            $pasajes = DB::table('pasajes')
+                ->join('pasaje_tramos', 'pasajes.id', '=', 'pasaje_tramos.pasaje_id')
+                ->where('pasajes.salida_id', $this->id)
+                ->whereIn('pasaje_tramos.tramo_id', $tramoIds)
+                ->whereIn('pasajes.estado', ['R', 'V'])
+                ->select('pasajes.asiento_numero', 'pasajes.estado')
+                ->distinct()
+                ->get()
+                ->groupBy('asiento_numero');
+        }
 
-        $pasajes = DB::table('pasajes')
-            ->join('pasaje_tramos', 'pasajes.id', '=', 'pasaje_tramos.pasaje_id')
-            ->where('pasajes.salida_id', $this->id)
-            ->whereIn('pasaje_tramos.tramo_id', $tramoIds)
-            ->whereIn('pasajes.estado', ['R', 'V'])
-            ->select('pasajes.asiento_numero', 'pasajes.estado')
-            ->distinct()
-            ->get()
-            ->groupBy('asiento_numero');
 
         $totalAsientos = $this->horario?->tipo_vehiculo?->capacidad
             ?? $this->horario?->tipo_vehiculo?->asientos
@@ -394,9 +400,9 @@ class Salida extends Model
     // IDs de puntos ya bloqueados para ESTA salida
     public function puntosBloqueadosIds()
     {
-        $puntos = $this->horario->ruta->puntos()->orderBy('orden')->get();
+        $puntos = $this->horario->ruta->puntos->sortBy('orden')->values(); //mod
 
-        $idsConCheckPropio = $this->checks()->pluck('punto_id');
+        $idsConCheckPropio = $this->checks->pluck('punto_id'); //mod
 
         if ($idsConCheckPropio->isEmpty()) {
             return collect();
@@ -414,7 +420,7 @@ class Salida extends Model
     // Arma el array de puntos con check_registrado y es_actual, listo para el frontend
     public function puntosConEstado()
     {
-        $puntos = $this->horario->ruta->puntos()->orderBy('orden')->get();
+        $puntos = $this->horario->ruta->puntos->orderBy('orden')->get();
         $bloqueados = $this->puntosBloqueadosIds();
 
         // La "próxima parada" es el primer punto sin check

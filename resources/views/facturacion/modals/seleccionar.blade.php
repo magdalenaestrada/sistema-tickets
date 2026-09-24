@@ -48,73 +48,38 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-4 px-md-4">
 
-                    {{-- PASO 1 --}}
-                    <div class="d-flex align-items-center gap-2">
-
+                    <div id="stepContainer1" class="d-flex align-items-center gap-2">
                         <span id="stepBadge1"
                             class="badge rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                            style="width:30px;height:30px;">
-                            1
-                        </span>
-
-                        <span id="stepText1" class="fw-semibold text-primary small">
-                            Inicio
-                        </span>
-
+                            style="width:30px;height:30px;">1</span>
+                        <span id="stepText1" class="fw-semibold text-primary small">Inicio</span>
                     </div>
 
-                    <div class="flex-grow-1 mx-3 border-top border-2 border-light-subtle"></div>
+                    <div id="stepConnector1" class="flex-grow-1 mx-3 border-top border-2 border-light-subtle"></div>
 
-
-                    {{-- PASO 2 --}}
-                    <div class="d-flex align-items-center gap-2">
-
+                    <div id="stepContainer2" class="d-flex align-items-center gap-2">
                         <span id="stepBadge2"
                             class="badge rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center"
-                            style="width:30px;height:30px;">
-                            2
-                        </span>
-
-                        <span id="stepText2" class="text-muted small">
-                            Documento
-                        </span>
-
+                            style="width:30px;height:30px;">2</span>
+                        <span id="stepText2" class="text-muted small">Documento</span>
                     </div>
 
-                    <div class="flex-grow-1 mx-3 border-top border-2 border-light-subtle"></div>
+                    <div id="stepConnector2" class="flex-grow-1 mx-3 border-top border-2 border-light-subtle"></div>
 
-
-                    {{-- PASO 3 --}}
-                    <div class="d-flex align-items-center gap-2">
-
+                    <div id="stepContainer3" class="d-flex align-items-center gap-2">
                         <span id="stepBadge3"
                             class="badge rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center"
-                            style="width:30px;height:30px;">
-                            3
-                        </span>
-
-                        <span id="stepText3" class="text-muted small">
-                            Información
-                        </span>
-
+                            style="width:30px;height:30px;">3</span>
+                        <span id="stepText3" class="text-muted small">Información</span>
                     </div>
 
-                    <div class="flex-grow-1 mx-3 border-top border-2 border-light-subtle"></div>
+                    <div id="stepConnector3" class="flex-grow-1 mx-3 border-top border-2 border-light-subtle"></div>
 
-
-                    {{-- PASO 4 --}}
-                    <div class="d-flex align-items-center gap-2">
-
+                    <div id="stepContainer4" class="d-flex align-items-center gap-2">
                         <span id="stepBadge4"
                             class="badge rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center"
-                            style="width:30px;height:30px;">
-                            4
-                        </span>
-
-                        <span id="stepText4" class="text-muted small">
-                            Revisar
-                        </span>
-
+                            style="width:30px;height:30px;">4</span>
+                        <span id="stepText4" class="text-muted small">Revisar</span>
                     </div>
 
                 </div>
@@ -278,32 +243,87 @@
                             </option>
                         @endforeach
                     </select>
-                    {{-- DOCUMENTO SELECCIONADO --}}
-                    <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                    <div id="cardDocumentoSeleccionado" class="card border shadow-sm rounded-3 p-3 mb-3 d-none">
 
-                        <div class="row align-items-center">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
 
-                            <div class="col-md-8">
-
-                                <small class="text-muted d-block">
-                                    Documento seleccionado
-                                </small>
-
-                                <strong id="texto_documento_referencia">
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="badge_tipo_documento" class="badge bg-primary">
+                                    -
+                                </span>
+                                <strong id="texto_documento_referencia" class="fs-5">
                                     Ninguno seleccionado
                                 </strong>
-
                             </div>
 
-                            <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                            <span id="badge_estado_documento" class="badge bg-success">
+                                EMITIDO
+                            </span>
 
-                                <small class="text-muted d-block">
-                                    Total
-                                </small>
+                        </div>
 
-                                <strong id="total_a_emitir" class="text-primary fs-5">
+                        <div class="row g-3">
+
+                            <div class="col-md-4">
+                                <small class="text-muted d-block">Cliente</small>
+                                <strong id="doc_cliente_texto">-</strong>
+                            </div>
+
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Documento</small>
+                                <strong id="doc_documento_texto">-</strong>
+                            </div>
+
+                            <div class="col-md-5">
+                                <small class="text-muted d-block">Dirección</small>
+                                <strong id="doc_direccion_texto">-</strong>
+                            </div>
+
+                            <div class="col-md-4">
+                                <small class="text-muted d-block">Fecha de emisión</small>
+                                <strong id="doc_fecha_texto">-</strong>
+                            </div>
+
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Ítems</small>
+                                <strong id="doc_items_texto">0</strong>
+                            </div>
+
+                            <div class="col-md-5 text-md-end">
+                                <small class="text-muted d-block">Total</small>
+                                <strong id="total_a_emitir" class="text-primary fs-4">
                                     S/ 0.00
                                 </strong>
+                            </div>
+                        </div>
+
+                        {{-- DETALLE DE ÍTEMS DEL COMPROBANTE --}}
+                        <div class="mt-3 pt-3 border-top">
+
+                            <small class="text-muted d-block mb-2">
+                                Detalle del comprobante
+                            </small>
+
+                            <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+
+                                <table class="table table-sm table-bordered align-middle mb-0">
+
+                                    <thead class="table-light" style="position: sticky; top: 0;">
+                                        <tr>
+                                            <th>Descripción</th>
+                                            <th class="text-center">Cant.</th>
+                                            <th class="text-end">P. Unit.</th>
+                                            <th class="text-end">Valor s/IGV</th>
+                                            <th class="text-end">IGV</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody id="tablaDetalleDocumentoSeleccionado">
+                                        {{-- se llena por JS --}}
+                                    </tbody>
+
+                                </table>
 
                             </div>
 
@@ -311,6 +331,12 @@
 
                     </div>
 
+                    {{-- Placeholder cuando no hay nada seleccionado --}}
+                    <div id="cardSinSeleccion"
+                        class="card border-dashed border shadow-sm rounded-3 p-4 mb-3 text-center text-muted">
+                        <i data-lucide="file-search" class="mx-auto mb-2"></i>
+                        Selecciona un comprobante de la lista de resultados
+                    </div>
 
                     {{-- OPCIONES SEGÚN DOCUMENTO --}}
                     <div id="opcionesConversion" class="d-none mt-4">
@@ -565,9 +591,9 @@
 
                                         <button type="button" class="btn btn-success btn-sm w-100"
                                             onclick="agregarItem()">
-                        <i class="link-icon" data-lucide="plus"></i>
+                                            <i class="link-icon" data-lucide="plus"></i>
 
-                                         
+
                                             Agregar
 
                                         </button>
@@ -861,7 +887,7 @@
                                     bg-primary bg-opacity-10 text-white rounded-circle mb-2"
                             style="width:55px;height:55px;">
 
-                        <i class="link-icon" data-lucide="receipt-text"></i>
+                            <i class="link-icon" data-lucide="receipt-text"></i>
 
                         </div>
 

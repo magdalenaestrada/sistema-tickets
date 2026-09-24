@@ -468,48 +468,81 @@
 
             function seleccionarComprobante(comprobante) {
 
-                console.log(
-                    'COMPROBANTE SELECCIONADO:',
-                    comprobante
-                );
-
+                console.log('COMPROBANTE SELECCIONADO:', comprobante);
 
                 comprobanteSeleccionado = comprobante;
-
-
                 flujoComprobante.origen = comprobante;
 
+                $('#referencia_venta_id').val(comprobante.id);
 
-                $('#referencia_venta_id')
-                    .val(comprobante.id);
+                // 👇 ESTO es lo que probablemente falta: el toggle entre las dos tarjetas
+                $('#cardSinSeleccion').addClass('d-none');
+                $('#cardDocumentoSeleccionado').removeClass('d-none');
 
+                $('#texto_documento_referencia').text(comprobante.serie_numero ?? '-');
+                $('#badge_tipo_documento').text(comprobante.tipo ?? '-');
 
-                $('#texto_documento_referencia')
-                    .text(
-                        comprobante.serie_numero ?? '-'
-                    );
+                $('#doc_cliente_texto').text(comprobante.cliente ?? '-');
+                $('#doc_documento_texto').text(comprobante.documento ?? '-');
+                $('#doc_direccion_texto').text(comprobante.direccion ?? '-');
 
+                const fechaCompleta = [comprobante.fecha_emision, comprobante.hora_emision]
+                    .filter(Boolean)
+                    .join(' ');
+                $('#doc_fecha_texto').text(fechaCompleta || '-');
 
-                $('#total_a_emitir')
-                    .text(
-                        `S/ ${Number(comprobante.total ?? 0).toFixed(2)}`
-                    );
+                $('#doc_items_texto').text(comprobante.cantidad_items ?? (comprobante.detalles?.length ?? 0));
 
+                $('#total_a_emitir').text(`S/ ${Number(comprobante.total ?? 0).toFixed(2)}`);
 
-                $('#resultado_busqueda_comprobante .card')
+                const estadoBadge = $('#badge_estado_documento');
+                estadoBadge.text(comprobante.estado ?? '-');
+                estadoBadge
+                    .removeClass('bg-success bg-danger bg-secondary')
+                    .addClass(comprobante.estado === 'EMITIDO' ? 'bg-success' : 'bg-secondary');
+
+                $('#resultado_busqueda_comprobante .comprobante-item')
                     .removeClass('border-primary bg-primary-subtle');
 
+                $(`.comprobante-item[data-id="${comprobante.id}"]`)
+                    .addClass('border-primary bg-primary-subtle');
 
-                $(
-                    `#comprobante-${comprobante.id}`
-                ).addClass(
-                    'border-primary bg-primary-subtle'
-                );
+                // 👇 Pintar la tabla de ítems
+                renderDetalleDocumentoSeleccionado(comprobante.detalles ?? []);
 
+                if (typeof lucide !== 'undefined') lucide.createIcons();
 
-                cargarOpcionesConversion(
-                    comprobante
-                );
+                cargarOpcionesConversion(comprobante);
+            }
+
+            function renderDetalleDocumentoSeleccionado(detalles) {
+
+                const tbody = $('#tablaDetalleDocumentoSeleccionado');
+                tbody.empty();
+
+                if (!detalles.length) {
+                    tbody.html(`
+            <tr>
+                <td colspan="6" class="text-center text-muted py-2">
+                    Sin ítems registrados
+                </td>
+            </tr>
+        `);
+                    return;
+                }
+
+                detalles.forEach(item => {
+                    tbody.append(`
+            <tr>
+                <td>${item.descripcion}</td>
+                <td class="text-center">${item.cantidad}</td>
+                <td class="text-end">S/ ${item.precio_unitario}</td>
+                <td class="text-end">S/ ${item.valor_venta}</td>
+                <td class="text-end">S/ ${item.igv}</td>
+                <td class="text-end fw-semibold">S/ ${item.total}</td>
+            </tr>
+        `);
+                });
             }
 
             function agregarOpcionConversion(tipo, texto, color = 'primary') {
@@ -674,10 +707,14 @@
             function resetSeleccion() {
                 comprobanteSeleccionado = null;
                 document.getElementById('referencia_venta_id').value = '';
-                document.getElementById('texto_documento_referencia').textContent = 'Ninguno seleccionado';
-                document.getElementById('total_a_emitir').textContent = 'S/ 0.00';
+
+                $('#cardDocumentoSeleccionado').addClass('d-none');
+                $('#cardSinSeleccion').removeClass('d-none');
+
+                $('#tablaDetalleDocumentoSeleccionado').empty();
+
                 document.getElementById('aviso_anulacion_origen').style.display = 'none';
-                document.getElementById('btnContinuarComprobanteExistente').disabled = true;
+                document.getElementById('btnContinuarComprobanteExistente')?.setAttribute('disabled', true);
             }
 
             function prepararPaso3(tipo) {
@@ -1291,10 +1328,9 @@
 
                     const data = await response.json();
 
-
                     if (!response.ok) {
-
                         throw new Error(
+                            data.error ||
                             data.message ||
                             'No se pudo consultar el documento.'
                         );
@@ -1748,6 +1784,67 @@
                     $("#divApellidos").show();
 
                 }
+            }
+
+
+            const STEPPER_SECUENCIAS = {
+                existente: [1, 2, 3, 4],
+                nuevo: [1, 3, 4],
+            };
+
+            const STEPPER_CONECTORES = {
+                existente: ["stepConnector1", "stepConnector2", "stepConnector3"],
+                nuevo: ["stepConnector2", "stepConnector3"],
+            };
+
+            function configurarStepperSegunModo(modo) {
+                const esNuevo = modo === "nuevo";
+
+                // El paso "Documento" solo aplica al flujo "desde existente"
+                $("#stepContainer2").toggleClass("d-none", esNuevo);
+                $("#stepConnector1").toggleClass("d-none", esNuevo);
+
+                // Renumerar visualmente (1,2,3 en vez de 1,3,4)
+                const secuencia = STEPPER_SECUENCIAS[esNuevo ? "nuevo" : "existente"];
+
+                secuencia.forEach((paso, index) => {
+                    $(`#stepBadge${paso}`).text(index + 1);
+                });
+            }
+
+            function actualizarStepperVisual(pasoActual) {
+                const modo = flujoComprobante.modo === "nuevo" ? "nuevo" : "existente";
+                const secuencia = STEPPER_SECUENCIAS[modo];
+                const conectores = STEPPER_CONECTORES[modo];
+
+                const indiceActual = secuencia.indexOf(pasoActual);
+
+                secuencia.forEach((paso, index) => {
+                    const $badge = $(`#stepBadge${paso}`);
+                    const $texto = $(`#stepText${paso}`);
+
+                    $badge.removeClass(
+                        "bg-primary bg-success bg-light text-white text-secondary",
+                    );
+                    $texto.removeClass("text-primary text-muted fw-semibold");
+
+                    if (index < indiceActual) {
+                        $badge.addClass("bg-success text-white"); // completado
+                        $texto.addClass("text-muted");
+                    } else if (index === indiceActual) {
+                        $badge.addClass("bg-primary text-white"); // activo
+                        $texto.addClass("text-primary fw-semibold");
+                    } else {
+                        $badge.addClass("bg-light text-secondary"); // pendiente
+                        $texto.addClass("text-muted");
+                    }
+                });
+
+                conectores.forEach((id, i) => {
+                    $(`#${id}`)
+                        .toggleClass("border-primary", i < indiceActual)
+                        .toggleClass("border-light-subtle", i >= indiceActual);
+                });
             }
 
             $("#doc_cliente").on("keyup change", actualizarCamposCliente);
@@ -2247,6 +2344,7 @@
                 $("#btnVolverModal").toggleClass("d-none", paso === 1);
 
                 actualizarTituloPaso();
+                actualizarStepperVisual(paso);
             }
 
             function actualizarTituloPaso() {
@@ -2284,7 +2382,7 @@
                     .addClass("d-none");
 
                 prepararFormularioNuevo();
-
+                configurarStepperSegunModo('nuevo');
                 mostrarPasoComprobante(3);
             }
 
@@ -2293,6 +2391,7 @@
                 flujoComprobante.modo = "existente";
                 flujoComprobante.accion = null;
                 flujoComprobante.origen = null;
+                configurarStepperSegunModo('existente');
 
                 mostrarPasoComprobante(2);
             }
@@ -2391,13 +2490,14 @@
                 $("#direccion_cliente_conversion").val("");
 
                 $("#motivo_nota_credito").val("");
-
+                $('#tablaDetalleDocumentoSeleccionado').empty();
                 items = [];
 
                 if (typeof render === "function") {
                     render();
                 }
-
+                configurarStepperSegunModo('existente');
+                actualizarStepperVisual(1);
                 actualizarTituloPaso();
             }
         </script>

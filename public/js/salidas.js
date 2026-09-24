@@ -21,6 +21,7 @@ $(document).ready(function () {
         processing: true,
         serverSide: true,
         pageLength: 10,
+
         ajax: {
             url: route("salidas.datatable"),
             data: function (d) {
@@ -41,27 +42,110 @@ $(document).ready(function () {
                   ]
                 : []),
 
-            { data: "DT_RowIndex" },
-            { data: "ruta" },
-            { data: "fecha_formateada" },
-            { data: "hora_salida" },
-            { data: "hora_llegada" },
+         
+
+            {
+                data: "ruta",
+                name: "rutas.nombre",
+                render: function (data) {
+                    return `
+            <div class="ruta-cell">
+                <div>
+                    <div class="ruta-nombre">
+                        ${data ?? "-"}
+                    </div>
+                    <div class="ruta-label">
+                        Servicio programado
+                    </div>
+                </div>
+            </div>
+        `;
+                },
+            },
+            {
+                data: "fecha_formateada",
+                name: "salidas.fecha_salida",
+                className: "text-nowrap",
+                render: function (data) {
+                    return `
+                    <div class="fecha-cell">
+                        <i data-lucide="calendar-days"></i>
+                        <span>${data ?? "-"}</span>
+                    </div>
+                `;
+                },
+            },
+
+            {
+                data: "hora_salida",
+                name: "horarios.hora_salida",
+                className: "text-center",
+                render: function (data) {
+                    return `
+                    <span class="hora-badge salida">
+                        <i data-lucide="clock-3"></i>
+                        ${data ?? "-"}
+                    </span>
+                `;
+                },
+            },
+
+            {
+                data: "hora_llegada",
+                name: "horarios.hora_llegada",
+                className: "text-center",
+                render: function (data) {
+                    return `
+                    <span class="hora-badge llegada">
+                        <i data-lucide="flag"></i>
+                        ${data ?? "-"}
+                    </span>
+                `;
+                },
+            },
+
             {
                 data: "estado",
+                name: "salidas.estado",
+                className: "text-center",
                 render: function (data, type, row) {
-                    if (type === "display") return row.estado_badge;
+                    if (type === "display") {
+                        return row.estado_badge;
+                    }
+
                     return data;
                 },
             },
-            { data: "acciones" },
+
+            {
+                data: "acciones",
+                orderable: false,
+                searchable: false,
+                className: "text-center text-nowrap",
+            },
         ],
+
         responsive: true,
+        autoWidth: false,
         info: false,
+
         dom: "rtip",
+
+        language: {
+            emptyTable: "No hay salidas disponibles",
+            zeroRecords: "No se encontraron salidas",
+            processing: "Cargando...",
+            paginate: {
+                previous: "‹",
+                next: "›",
+            },
+        },
+
         drawCallback: function () {
             lucide.createIcons();
         },
     });
+
     $("#filtroEstado, #filtroRuta").on("change", function () {
         tablaSalidas.ajax.reload();
     });
@@ -78,6 +162,14 @@ new TomSelect("#filtroRuta", {
             .then((json) => callback(json))
             .catch(() => callback());
     },
+});
+
+$("#pills-tab-estados .btn-pill-tab").on("click", function () {
+    $("#pills-tab-estados .btn-pill-tab").removeClass("active");
+    $(this).addClass("active");
+
+    let valorEstado = $(this).data("estado");
+    $("#filtroEstado").val(valorEstado).trigger("change");
 });
 
 new TomSelect("#filtroEstado", {
@@ -1251,11 +1343,11 @@ function editarSalida(id) {
                 Vehículo <span class="text-danger">*</span>
             </label>
 
-            <select id="vehiculo_id" class="form-select">
-                <option value="">Seleccione vehículo</option>
+         <select id="vehiculo_id" class="form-select">
+    <option value="">Seleccione vehículo</option>
 
-               ${cargarRecursosDisponibles(salida)}
-            </select>
+   ${cargarRecursosDisponibles(salida)}
+</select>
         </div>
 
         <div class="mb-2">
@@ -1264,11 +1356,11 @@ function editarSalida(id) {
                 <span class="text-danger">*</span>
             </label>
 
-            <select id="conductor_principal_id" class="form-select">
-                <option value="">Seleccione</option>
+          <select id="vehiculo_id" class="form-select">
+    <option value="">Seleccione vehículo</option>
 
-               ${cargarRecursosDisponibles(salida)}
-            </select>
+   ${cargarRecursosDisponibles(salida)}
+</select>
         </div>
 
         <div class="mb-2">

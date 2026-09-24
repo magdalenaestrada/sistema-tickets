@@ -1,11 +1,7 @@
 @extends('layouts.app') @section('content')
     <div class="row g-3"> {{-- Columna Izquierda: Tabla y Gestión Principal --}} <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white py-3 border-0">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <h5 class="fw-bold mb-0 text-dark">GESTIÓN DE SALIDAS Y MANIFIESTOS</h5>
-                    </div>
-                </div>
+               
                 <div class="card-body">
                     <div class="row g-2 mb-3">
                         <div class="col-md-4 col-sm-6">
