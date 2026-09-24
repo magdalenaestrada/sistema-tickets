@@ -2,107 +2,193 @@
 
 @section('content')
     <div class="container-fluid py-4 px-md-4 min-vh-100">
-        <!-- Header Principal -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-1">
+
+        {{-- =========================================================
+            HEADER
+        ========================================================== --}}
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3">
             <div>
                 <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
-                    <i class="bi bi-bar-chart-line-fill me-1"></i> Módulo de Reportes
+                    <i class="bi bi-bar-chart-line-fill me-1"></i>
+                    Módulo de Reportes
                 </span>
 
+                <h4 class="fw-bold text-dark mb-1">
+                    Reportes y Consultas
+                </h4>
+
+                <p class="text-muted mb-0">
+                    Consulta y exporta información de ventas, operaciones, caja y comprobantes.
+                </p>
             </div>
         </div>
 
-        <!-- BARRA DE FILTROS UNIFICADA GLOBAL -->
+
+        {{-- =========================================================
+            FILTRO GLOBAL
+        ========================================================== --}}
         <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+
             <div class="card-body p-4">
+
                 <form id="filterForm" class="row g-3 align-items-end">
-                    <!-- Accesos Rápidos de Período -->
+
+                    {{-- PERÍODO --}}
                     <div class="col-12 col-xl-5">
+
                         <label class="form-label micro-text fw-bold text-uppercase text-muted tracking-wide mb-2">
-                            <i class="bi bi-calendar3 me-1"></i> Período
+                            <i class="bi bi-calendar3 me-1"></i>
+                            Período
                         </label>
-                        <div class="btn-group w-100 p-1 bg-light rounded-3" role="group" id="periodGroup">
+
+                        <div class="btn-group w-100 p-1 bg-light rounded-3" role="group">
+
                             <input type="radio" class="btn-check" name="period" id="period_today" value="today"
                                 onchange="updateDateRange()">
-                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium"
-                                for="period_today">Hoy</label>
+
+                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium" for="period_today">
+                                Hoy
+                            </label>
+
 
                             <input type="radio" class="btn-check" name="period" id="period_week" value="week"
                                 onchange="updateDateRange()">
-                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium" for="period_week">Esta
-                                Semana</label>
+
+                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium" for="period_week">
+                                Esta Semana
+                            </label>
+
 
                             <input type="radio" class="btn-check" name="period" id="period_month" value="month" checked
                                 onchange="updateDateRange()">
-                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium"
-                                for="period_month">Este Mes</label>
+
+                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium" for="period_month">
+                                Este Mes
+                            </label>
+
 
                             <input type="radio" class="btn-check" name="period" id="period_year" value="year"
                                 onchange="updateDateRange()">
-                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium"
-                                for="period_year">Año</label>
+
+                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium" for="period_year">
+                                Año
+                            </label>
+
 
                             <input type="radio" class="btn-check" name="period" id="period_custom" value="custom"
                                 onchange="updateDateRange()">
-                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium"
-                                for="period_custom">Personalizado</label>
+
+                            <label class="btn btn-sm btn-outline-custom rounded-2 border-0 fw-medium" for="period_custom">
+                                Personalizado
+                            </label>
+
                         </div>
+
                     </div>
 
-                    <!-- Fechas Desde / Hasta -->
-                    <div class="col-12 col-md-7 col-xl-4 custom-date-container" id="customDateInputs">
+
+                    {{-- FECHAS --}}
+                    <div class="col-12 col-md-7 col-xl-4" id="customDateInputs">
+
                         <label class="form-label micro-text fw-bold text-uppercase text-muted tracking-wide mb-2">
-                            <i class="bi bi-calendar-range me-1"></i> Rango de Fechas
+                            <i class="bi bi-calendar-range me-1"></i>
+                            Rango de Fechas
                         </label>
+
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light border-end-0"><i
-                                    class="bi bi-calendar-event text-muted"></i></span>
-                            <input type="date" class="form-control border-start-0" name="date_from" id="date_from"
-                                placeholder="Desde">
-                            <span class="input-group-text bg-light text-muted fw-bold">a</span>
-                            <input type="date" class="form-control border-start-0" name="date_to" id="date_to"
-                                placeholder="Hasta">
+
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-calendar-event text-muted"></i>
+                            </span>
+
+                            <input type="date" class="form-control border-start-0" name="date_from" id="date_from">
+
+                            <span class="input-group-text bg-light text-muted fw-bold">
+                                a
+                            </span>
+
+                            <input type="date" class="form-control border-start-0" name="date_to" id="date_to">
+
                         </div>
+
                     </div>
 
-                    <!-- Botón Aplicar Filtro Global -->
+
+                    {{-- BOTÓN --}}
                     <div class="col-12 col-md-5 col-xl-3 ms-auto">
+
                         <button type="button" class="btn btn-primary btn-sm w-100 fw-semibold py-2 rounded-3 shadow-sm"
                             onclick="applyGlobalFilters()">
-                            <i class="bi bi-funnel-fill me-1"></i> Aplicar Filtro Global
+
+                            <i class="bi bi-funnel-fill me-1"></i>
+                            Aplicar Filtro Global
+
                         </button>
+
                     </div>
+
                 </form>
+
             </div>
         </div>
 
-        <!-- GRID DE SECCIONES DE REPORTES -->
+
+        {{-- =========================================================
+            GRID
+        ========================================================== --}}
         <div class="row g-4">
 
-            <!-- 1. REPORTES DE VENTAS E INGRESOS -->
+
+            {{-- =====================================================
+                1. VENTAS
+            ====================================================== --}}
             <div class="col-12">
+
                 <div class="card border-0 shadow-sm rounded-4">
-                    <div
-                        class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="icon-box bg-primary-subtle text-primary rounded-3 p-2 d-flex align-items-center justify-content-center"
-                                style="width: 38px; height: 38px;">
-                                <i class="bi bi-cash-stack fs-5"></i>
+
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <div class="icon-box bg-primary-subtle text-primary rounded-3 p-2 d-flex align-items-center justify-content-center"
+                                    style="width:38px;height:38px">
+
+                                    <i class="bi bi-cash-stack fs-5"></i>
+
+                                </div>
+
+                                <div>
+                                    <h5 class="card-title fw-bold mb-0">
+                                        1. Reportes de Ventas
+                                    </h5>
+
+                                    <small class="text-muted">
+                                        Ventas, servicios y desempeño comercial
+                                    </small>
+                                </div>
+
                             </div>
-                            <h5 class="card-title fw-bold mb-0 text-dark">1. Reportes de Ventas e Ingresos</h5>
+
+                            <span class="badge bg-light text-muted fw-normal border">
+                                Ventas
+                            </span>
+
                         </div>
-                        <span class="badge bg-light text-muted fw-normal border">Finanzas & Ventas</span>
+
                     </div>
+
+
                     <div class="card-body p-4">
+
                         <div class="row g-3">
 
-                            {{-- =====================================================
-            REPORTE GENERAL DE VENTAS
-        ====================================================== --}}
+
+                            {{-- GENERAL --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
+                                <div class="report-card">
 
                                     <div>
 
@@ -111,16 +197,15 @@
                                             Reporte General de Ventas
                                         </h6>
 
-                                        <p class="text-muted micro-text mb-2">
-                                            Consolidado general de pasajes, encomiendas,
-                                            sobreequipaje, métodos de pago, agencias y vendedores.
+                                        <p class="text-muted micro-text mb-3">
+                                            Consolidado general de pasajes, encomiendas y sobreequipajes.
                                         </p>
 
-                                        <select id="reporte_general_agencia"
-                                            class="form-select form-select-sm border-0 shadow-sm mb-2">
+                                        <select id="reporte_general_sucursal"
+                                            class="form-select form-select-sm border-0 shadow-sm">
 
                                             <option value="">
-                                                Todas las Agencias
+                                                Todas las Sucursales
                                             </option>
 
                                             @foreach ($sucursales as $sucursal)
@@ -133,14 +218,21 @@
 
                                     </div>
 
-                                    <div class="d-flex gap-2 pt-2">
+                                    <div class="d-flex gap-2 pt-3">
 
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarVentasGeneral()">
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100 rounded-2"
+                                            onclick="exportarVentasGeneral('pdf')">
 
                                             <i class="bi bi-file-earmark-pdf me-1"></i>
                                             PDF
+
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100 rounded-2"
+                                            onclick="exportarVentasGeneral('excel')">
+
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
 
                                         </button>
 
@@ -150,859 +242,1387 @@
 
                             </div>
 
+
+                            {{-- PASAJES --}}
                             <div class="col-12 col-md-6 col-lg-4">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
+
+                                <div class="report-card">
+
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-receipt me-2 text-primary"></i>
-                                            Ventas Diarias (Cierre)</h6>
-                                        <p class="text-muted micro-text mb-2">Cuadre diario por boletería, ruta o turno.
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-ticket-perforated me-2 text-primary"></i>
+                                            Venta de Pasajes
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Detalle de boletos, pasajeros, rutas, asientos y viajes.
                                         </p>
-                                        <select id="reporte_ventas_diarias_agencia"
-                                            class="form-select form-select-sm border-0 shadow-sm mb-2">
-                                            <option value="">Todas las Agencias</option>
-                                            @foreach ($sucursales as $sucursal)
-                                                <option value="{{ $sucursal->id }}">{{ $sucursal->nombre_comercial }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+
                                     </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('ventas-diarias', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('ventas-diarias', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('venta-pasajes','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('venta-pasajes','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Ventas por Método de Pago -->
+
+                            {{-- ENCOMIENDAS --}}
                             <div class="col-12 col-md-6 col-lg-4">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
+
+                                <div class="report-card">
+
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i
-                                                class="bi bi-credit-card me-2 text-primary"></i> Métodos de Pago</h6>
-                                        <p class="text-muted micro-text mb-2">Efectivo, tarjetas, transferencias y
-                                            billeteras digitales.</p>
-                                        <select id="reporte_metodo_pago"
-                                            class="form-select form-select-sm border-0 shadow-sm mb-2">
-                                            <option value="">Todos los Métodos</option>
-                                            <option value="efectivo">Efectivo</option>
-                                            <option value="tarjeta">Tarjeta (POS)</option>
-                                            <option value="transferencia">Transferencia Bancaria</option>
-                                            <option value="billetera">Billeteras Digitales (Yape/Plin)</option>
-                                        </select>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-box-seam me-2 text-primary"></i>
+                                            Venta de Encomiendas
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Remitentes, destinatarios, bultos, peso, rutas e importes.
+                                        </p>
+
                                     </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('metodos-pago', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('metodos-pago', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('venta-encomiendas','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('venta-encomiendas','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Pasajes vs. Encomiendas -->
+
+                            {{-- SOBREEQUIPAJE --}}
                             <div class="col-12 col-md-6 col-lg-4">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
+
+                                <div class="report-card">
+
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i
-                                                class="bi bi-pie-chart me-2 text-primary"></i> Pasajes vs. Encomiendas</h6>
-                                        <p class="text-muted micro-text mb-2">Comparativo desagregado para tratamiento
-                                            contable.</p>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-luggage me-2 text-primary"></i>
+                                            Venta de Sobreequipaje
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Sobreequipaje relacionado al boleto, pasajero y viaje.
+                                        </p>
+
                                     </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('pasajes-vs-encomiendas', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('pasajes-vs-encomiendas', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('venta-sobreequipaje','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('venta-sobreequipaje','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Comisiones de Agencias / Intermediarios -->
-                            <div class="col-12 col-md-6 col-lg-4">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i
-                                                class="bi bi-diagram-3 me-2 text-primary"></i> Comisiones de Agencias</h6>
-                                        <p class="text-muted micro-text mb-2">Comisiones por ventas mediante
-                                            intermediarios/terminales.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('comisiones-agencias', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('comisiones-agencias', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Ventas por Usuario / Cajero -->
+                            {{-- RUTA --}}
                             <div class="col-12 col-md-6 col-lg-4">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i
-                                                class="bi bi-person-badge me-2 text-primary"></i> Ventas por Cajero</h6>
-                                        <select id="reporte_usuario_id"
-                                            class="form-select form-select-sm border-0 shadow-sm mb-2">
-                                            <option value="">Todos los Usuarios</option>
-                                            @foreach ($usuarios as $usuario)
-                                                <option value="{{ $usuario->id }}">
-                                                    {{ $usuario->persona->nombre_completo ?? $usuario->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarVentasUsuario('pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarVentasUsuario('excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Ventas por Ruta -->
-                            <div class="col-12 col-md-6 col-lg-4">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
+                                <div class="report-card">
+
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i
-                                                class="bi bi-signpost-2 me-2 text-primary"></i> Ventas por Ruta</h6>
-                                        <select id="reporte_ruta_especifica_id"
-                                            class="form-select form-select-sm border-0 shadow-sm mb-2">
-                                            <option value="">Todas las Rutas</option>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-signpost-2 me-2 text-primary"></i>
+                                            Ventas por Ruta
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Resumen de operaciones e ingresos por origen y destino.
+                                        </p>
+
+                                        <select id="reporte_ruta_id"
+                                            class="form-select form-select-sm border-0 shadow-sm">
+
+                                            <option value="">
+                                                Todas las Rutas
+                                            </option>
+
                                             @foreach ($rutas as $ruta)
                                                 <option value="{{ $ruta->id }}">
-                                                    {{ $ruta->nombre ?? $ruta->descripcion }}</option>
+                                                    {{ $ruta->nombre ?? $ruta->descripcion }}
+                                                </option>
                                             @endforeach
+
                                         </select>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarVentasRuta('pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarVentasRuta('excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- 2. REPORTES TRIBUTARIOS / FISCALES -->
-            <div class="col-12 col-xl-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div
-                        class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="icon-box bg-info-subtle text-info rounded-3 p-2 d-flex align-items-center justify-content-center"
-                                style="width: 38px; height: 38px;">
-                                <i class="bi bi-file-earmark-text fs-5"></i>
-                            </div>
-                            <h5 class="card-title fw-bold mb-0 text-dark">2. Reportes Tributarios / Fiscales</h5>
-                        </div>
-                        <span class="badge bg-light text-muted fw-normal border">Contabilidad</span>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <!-- Comprobantes Emitidos -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-journal-check me-2 text-info"></i> Comprobantes Emitidos</h6>
-                                        <p class="text-muted micro-text mb-2">Facturas, boletas, tickets y detalle de
-                                            IGV/IVA.</p>
                                     </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('comprobantes-emitidos', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('comprobantes-emitidos', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarVentasRuta('pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarVentasRuta('excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Anulaciones y Notas de Crédito -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-file-earmark-x me-2 text-info"></i> Anulaciones y N/C</h6>
-                                        <p class="text-muted micro-text mb-2">Notas de crédito, débito y documentos
-                                            anulados.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('anulaciones-nc', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('anulaciones-nc', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Libro de Ventas SUNAT/SAT -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-book me-2 text-info"></i> Libro
-                                            de Ventas</h6>
-                                        <p class="text-muted micro-text mb-2">Formato oficial exigido por entes fiscales
-                                            (PLE/SIRE/SUNAT).</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('libro-ventas', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('libro-ventas', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
+                            {{-- VENDEDOR --}}
+                            <div class="col-12 col-md-6 col-lg-4">
 
-                            <!-- Control de Correlativos -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-list-ol me-2 text-info"></i>
-                                            Control Correlativos</h6>
-                                        <p class="text-muted micro-text mb-2">Auditoría de saltos y comprobantes no
-                                            utilizados.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('control-correlativos', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('control-correlativos', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                <div class="report-card">
 
-            <!-- 3. REPORTES DE CAJA Y CONCILIACIÓN -->
-            <div class="col-12 col-xl-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div
-                        class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="icon-box bg-success-subtle text-success rounded-3 p-2 d-flex align-items-center justify-content-center"
-                                style="width: 38px; height: 38px;">
-                                <i class="bi bi-wallet2 fs-5"></i>
-                            </div>
-                            <h5 class="card-title fw-bold mb-0 text-dark">3. Reportes de Caja y Conciliación</h5>
-                        </div>
-                        <span class="badge bg-light text-muted fw-normal border">Auditoría de Caja</span>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <!-- Arqueo de Cierre de Caja -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-calculator me-2 text-success"></i> Cierre de Caja</h6>
-                                        <p class="text-muted micro-text mb-2">Comparativo de Ingresos esperados vs.
-                                            Efectivo real.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('cierre-caja', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('cierre-caja', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Faltantes y Sobrantes -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-exclamation-triangle me-2 text-success"></i> Faltantes y
-                                            Sobrantes</h6>
-                                        <p class="text-muted micro-text mb-2">Descalces detectados en los arqueos de turno.
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-person-badge me-2 text-primary"></i>
+                                            Ventas por Vendedor
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Ventas, operaciones, anulaciones y total neto por vendedor.
                                         </p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('faltantes-sobrantes', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('faltantes-sobrantes', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Depósitos a Bancos -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-bank me-2 text-success"></i>
-                                            Depósitos y Bancos</h6>
-                                        <p class="text-muted micro-text mb-2">Registro de remesas y vouchers depositados a
-                                            cuentas.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('depositos-bancos', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('depositos-bancos', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
+                                        <select id="reporte_vendedor_id"
+                                            class="form-select form-select-sm border-0 shadow-sm">
 
-                            <!-- Flujo de Caja -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-arrow-down-up me-2 text-success"></i> Flujo de Caja</h6>
-                                        <p class="text-muted micro-text mb-2">Entradas y salidas de efectivo por período.
-                                        </p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('flujo-caja', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('flujo-caja', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                            <option value="">
+                                                Todos los Vendedores
+                                            </option>
 
-            <!-- 4. REPORTES ESPECÍFICOS DE ENCOMIENDAS -->
-            <div class="col-12 col-xl-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div
-                        class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="icon-box bg-warning-subtle text-warning-emphasis rounded-3 p-2 d-flex align-items-center justify-content-center"
-                                style="width: 38px; height: 38px;">
-                                <i class="bi bi-box-seam fs-5"></i>
-                            </div>
-                            <h5 class="card-title fw-bold mb-0 text-dark">4. Reportes de Encomiendas</h5>
-                        </div>
-                        <span class="badge bg-light text-muted fw-normal border">Carga y Envíos</span>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <!-- Encomiendas por Estado -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-truck me-2 text-warning"></i>
-                                            Encomiendas por Estado</h6>
-                                        <select id="reporte_encomienda_estado"
-                                            class="form-select form-select-sm border-0 shadow-sm mb-2">
-                                            <option value="">Todos los Estados</option>
-                                            <option value="pendiente">Pendiente</option>
-                                            <option value="transito">En Tránsito</option>
-                                            <option value="entregada">Entregada</option>
-                                            <option value="devuelta">Devuelta</option>
+                                            @foreach ($usuarios as $usuario)
+                                                <option value="{{ $usuario->id }}">
+                                                    {{ $usuario->persona->nombre_completo ?? $usuario->name }}
+                                                </option>
+                                            @endforeach
+
                                         </select>
+
                                     </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('encomiendas-estado', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('encomiendas-estado', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarVentasUsuario('pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarVentasUsuario('excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Cobros Contra-Entrega -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
+
+                            {{-- SUCURSAL --}}
+                            <div class="col-12 col-md-6 col-lg-4">
+
+                                <div class="report-card">
+
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-cash-coin me-2 text-warning"></i> Cobros Contra-Entrega</h6>
-                                        <p class="text-muted micro-text mb-2">Reporte de pagos recaudados al entregar el
-                                            paquete.</p>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-building me-2 text-primary"></i>
+                                            Ventas por Sucursal
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Resumen de ventas y operaciones por agencia.
+                                        </p>
+
                                     </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('cobros-contraentrega', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('cobros-contraentrega', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('ventas-sucursal','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('ventas-sucursal','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
 
-                            <!-- Encomiendas Pendientes de Pago -->
-                            <div class="col-12">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-clock-history me-2 text-warning"></i> Encomiendas Por Cobrar /
-                                            Pendientes</h6>
-                                        <p class="text-muted micro-text mb-0">Listado de carga entregada o almacenada sin
-                                            liquidar pago.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 w-100 w-md-auto" style="min-width: 200px;">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('encomiendas-pendientes-pago', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('encomiendas-pendientes-pago', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
+
                     </div>
+
                 </div>
+
             </div>
 
-            <!-- 5. REPORTES OPERATIVOS CON IMPACTO CONTABLE -->
+
+            {{-- =====================================================
+                2. OPERACIONES Y VIAJES
+            ====================================================== --}}
             <div class="col-12 col-xl-6">
+
                 <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div
-                        class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2 d-flex align-items-center justify-content-center"
-                                style="width: 38px; height: 38px;">
-                                <i class="bi bi-bus-front fs-5"></i>
+
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2"
+                                    style="width:38px;height:38px">
+
+                                    <i class="bi bi-bus-front fs-5"></i>
+
+                                </div>
+
+                                <h5 class="fw-bold mb-0">
+                                    2. Operaciones y Viajes
+                                </h5>
+
                             </div>
-                            <h5 class="card-title fw-bold mb-0 text-dark">5. Operativa y Rentabilidad</h5>
+
+                            <span class="badge bg-light text-muted border">
+                                Operaciones
+                            </span>
+
                         </div>
-                        <span class="badge bg-light text-muted fw-normal border">Operaciones</span>
+
                     </div>
+
+
                     <div class="card-body p-4">
+
                         <div class="row g-3">
-                            <!-- Ocupación por Bus/Ruta -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-pie-chart-fill me-2 text-danger"></i> Ocupación de Buses</h6>
-                                        <p class="text-muted micro-text mb-2">% de asientos ocupados para análisis de
-                                            rentabilidad.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('ocupacion-bus', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('ocupacion-bus', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Descuentos y Promociones -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-tags me-2 text-danger"></i>
-                                            Descuentos Aplicados</h6>
-                                        <p class="text-muted micro-text mb-2">Promociones y cortesías que impactan el
-                                            ingreso neto.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('descuentos-promociones', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('descuentos-promociones', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Reembolsos y Devoluciones -->
                             <div class="col-12">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+
+                                <div class="report-card">
+
                                     <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-arrow-counterclockwise me-2 text-danger"></i> Reembolsos y
-                                            Devoluciones de Pasajes</h6>
-                                        <p class="text-muted micro-text mb-0">Control de dinero reintegrado por boletos
-                                            cancelados.</p>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-bus-front-fill me-2 text-danger"></i>
+                                            Salidas y Liquidación por Viaje
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Relaciona cada salida con sus pasajes,
+                                            sobreequipajes, encomiendas y ventas totales.
+                                        </p>
+
+                                        <div class="row g-2">
+
+                                            <div class="col-md-6">
+
+                                                <select id="reporte_salida_estado" class="form-select form-select-sm">
+
+                                                    <option value="">
+                                                        Todos los Estados
+                                                    </option>
+
+                                                    <option value="programado">
+                                                        Programado
+                                                    </option>
+
+                                                    <option value="en_ruta">
+                                                        En Ruta
+                                                    </option>
+
+                                                    <option value="finalizado">
+                                                        Finalizado
+                                                    </option>
+
+                                                    <option value="cancelado">
+                                                        Cancelado
+                                                    </option>
+
+                                                </select>
+
+                                            </div>
+
+                                            <div class="col-md-6">
+
+                                                <select id="reporte_salida_ruta" class="form-select form-select-sm">
+
+                                                    <option value="">
+                                                        Todas las Rutas
+                                                    </option>
+
+                                                    @foreach ($rutas as $ruta)
+                                                        <option value="{{ $ruta->id }}">
+                                                            {{ $ruta->nombre ?? $ruta->descripcion }}
+                                                        </option>
+                                                    @endforeach
+
+                                                </select>
+
+                                            </div>
+
+                                        </div>
+
                                     </div>
-                                    <div class="d-flex gap-2 w-100 w-md-auto" style="min-width: 200px;">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('reembolsos-devoluciones', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('reembolsos-devoluciones', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('salidas-liquidacion','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('salidas-liquidacion','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
                                     </div>
+
                                 </div>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+
             </div>
 
-            <!-- 6. REPORTES DE CUENTAS POR COBRAR Y PAGAR -->
-            <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div
-                        class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="icon-box bg-dark-subtle text-dark rounded-3 p-2 d-flex align-items-center justify-content-center"
-                                style="width: 38px; height: 38px;">
-                                <i class="bi bi-person-lines-fill fs-5"></i>
-                            </div>
-                            <h5 class="card-title fw-bold mb-0 text-dark">6. Cuentas por Cobrar / Pagar y Terceros</h5>
-                        </div>
-                        <span class="badge bg-light text-muted fw-normal border">Créditos & Terceros</span>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-3">
-                            <!-- Cuentas por Cobrar Corporativas -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-building-add me-2 text-dark"></i> Cuentas por Cobrar (Clientes
-                                            Corporativos)</h6>
-                                        <p class="text-muted micro-text mb-2">Créditos pendientes de cobro para empresas e
-                                            instituciones.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('cuentas-por-cobrar', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('cuentas-por-cobrar', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
+
+            {{-- =====================================================
+                3. CAJA Y RECAUDACIÓN
+            ====================================================== --}}
+            <div class="col-12 col-xl-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <div class="icon-box bg-success-subtle text-success rounded-3 p-2"
+                                    style="width:38px;height:38px">
+
+                                    <i class="bi bi-wallet2 fs-5"></i>
+
                                 </div>
+
+                                <h5 class="fw-bold mb-0">
+                                    3. Caja y Recaudación
+                                </h5>
+
                             </div>
 
-                            <!-- Pagos a Conductores / Alquiler de Unidades -->
-                            <div class="col-12 col-md-6">
-                                <div
-                                    class="p-3 rounded-3 bg-light-subtle border h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1"><i
-                                                class="bi bi-person-workspace me-2 text-dark"></i> Pagos a Conductores y
-                                            Terceros</h6>
-                                        <p class="text-muted micro-text mb-2">Liquidación de comisiones, viáticos o
-                                            alquiler de buses.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 pt-2">
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('pagos-terceros', 'pdf')"><i
-                                                class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
-                                        <button type="button"
-                                            class="btn btn-outline-success btn-sm w-100 rounded-2 fw-medium"
-                                            onclick="exportarReporte('pagos-terceros', 'excel')"><i
-                                                class="bi bi-file-earmark-excel me-1"></i> Excel</button>
-                                    </div>
-                                </div>
-                            </div>
+                            <span class="badge bg-light text-muted border">
+                                Caja
+                            </span>
+
                         </div>
+
                     </div>
+
+
+                    <div class="card-body p-4">
+
+                        <div class="row g-3">
+
+
+                            {{-- CAJA VENDEDOR --}}
+                            <div class="col-12 col-md-6">
+
+                                <div class="report-card">
+
+                                    <div>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-person-check me-2 text-success"></i>
+                                            Cuadre de Caja por Vendedor
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Ventas, anulaciones, devoluciones,
+                                            declarado, esperado y diferencias.
+                                        </p>
+
+                                    </div>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('cuadre-caja-vendedor','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('cuadre-caja-vendedor','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            {{-- CAJA SUCURSAL --}}
+                            <div class="col-12 col-md-6">
+
+                                <div class="report-card">
+
+                                    <div>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-building-check me-2 text-success"></i>
+                                            Cuadre de Caja por Sucursal
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Consolidado de caja de todos los vendedores
+                                            de cada sucursal.
+                                        </p>
+
+                                    </div>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('cuadre-caja-sucursal','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('cuadre-caja-sucursal','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            {{-- MEDIO DE PAGO --}}
+                            <div class="col-12">
+
+                                <div class="report-card">
+
+                                    <div>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-credit-card me-2 text-success"></i>
+                                            Recaudación por Medio de Pago
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Efectivo, tarjeta, transferencia,
+                                            Yape, Plin y otros medios registrados.
+                                        </p>
+
+                                        <select id="reporte_medio_pago" class="form-select form-select-sm">
+
+                                            <option value="">
+                                                Todos los Medios de Pago
+                                            </option>
+
+                                            <option value="efectivo">
+                                                Efectivo
+                                            </option>
+
+                                            <option value="tarjeta">
+                                                Tarjeta / POS
+                                            </option>
+
+                                            <option value="transferencia">
+                                                Transferencia
+                                            </option>
+
+                                            <option value="billetera">
+                                                Yape / Plin
+                                            </option>
+
+                                        </select>
+
+                                    </div>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('recaudacion-medio-pago','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('recaudacion-medio-pago','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
+
+            </div>
+
+
+            {{-- =====================================================
+                4. CONTROL DE OPERACIONES
+            ====================================================== --}}
+            <div class="col-12 col-xl-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <div class="icon-box bg-warning-subtle text-warning-emphasis rounded-3 p-2"
+                                    style="width:38px;height:38px">
+
+                                    <i class="bi bi-arrow-counterclockwise fs-5"></i>
+
+                                </div>
+
+                                <h5 class="fw-bold mb-0">
+                                    4. Control de Operaciones
+                                </h5>
+
+                            </div>
+
+                            <span class="badge bg-light text-muted border">
+                                Auditoría
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card-body p-4">
+
+                        <div class="row g-3">
+
+                            <div class="col-12">
+
+                                <div class="report-card">
+
+                                    <div>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-file-earmark-x me-2 text-warning"></i>
+                                            Anulaciones y Devoluciones
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Control de operaciones anuladas,
+                                            importes devueltos, motivos y usuarios responsables.
+                                        </p>
+
+                                        <select id="reporte_anulacion_servicio" class="form-select form-select-sm">
+
+                                            <option value="">
+                                                Todos los Servicios
+                                            </option>
+
+                                            <option value="pasaje">
+                                                Pasajes
+                                            </option>
+
+                                            <option value="encomienda">
+                                                Encomiendas
+                                            </option>
+
+                                            <option value="sobreequipaje">
+                                                Sobreequipaje
+                                            </option>
+
+                                        </select>
+
+                                    </div>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('anulaciones-devoluciones','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('anulaciones-devoluciones','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- =====================================================
+                5. COMPROBANTES
+            ====================================================== --}}
+            <div class="col-12 col-xl-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <div class="d-flex align-items-center gap-2">
+
+                                <div class="icon-box bg-info-subtle text-info rounded-3 p-2"
+                                    style="width:38px;height:38px">
+
+                                    <i class="bi bi-receipt fs-5"></i>
+
+                                </div>
+
+                                <h5 class="fw-bold mb-0">
+                                    5. Comprobantes de Venta
+                                </h5>
+
+                            </div>
+
+                            <span class="badge bg-light text-muted border">
+                                Tributario
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card-body p-4">
+
+                        <div class="row g-3">
+
+                            <div class="col-12">
+
+                                <div class="report-card">
+
+                                    <div>
+
+                                        <h6 class="fw-bold text-dark mb-2">
+                                            <i class="bi bi-journal-check me-2 text-info"></i>
+                                            Reporte de Comprobantes de Venta
+                                        </h6>
+
+                                        <p class="text-muted micro-text mb-3">
+                                            Facturas, boletas y demás comprobantes
+                                            emitidos durante el período seleccionado.
+                                        </p>
+
+                                        <select id="reporte_tipo_comprobante" class="form-select form-select-sm">
+
+                                            <option value="">
+                                                Todos los Comprobantes
+                                            </option>
+
+                                            <option value="01">
+                                                Factura
+                                            </option>
+
+                                            <option value="03">
+                                                Boleta
+                                            </option>
+
+                                        </select>
+
+                                    </div>
+
+                                    <div class="d-flex gap-2 pt-3">
+
+                                        <button type="button" class="btn btn-outline-danger btn-sm w-100"
+                                            onclick="exportarReporte('comprobantes-venta','pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>
+                                            PDF
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-success btn-sm w-100"
+                                            onclick="exportarReporte('comprobantes-venta','excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>
+                                            Excel
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
+
     </div>
 
-    <!-- SCRIPT JS PARA MANEJO DINÁMICO DE FECHAS Y EXPORTACIÓN -->
+
+    {{-- =============================================================
+        ESTILOS
+    ============================================================== --}}
+    @push('styles')
+        <style>
+            .report-card {
+                padding: 1rem;
+                border-radius: .75rem;
+                background: var(--bs-light-bg-subtle, #f8f9fa);
+                border: 1px solid var(--bs-border-color);
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            .report-card h6 {
+                line-height: 1.4;
+            }
+
+            .report-card .form-select {
+                background-color: #fff;
+            }
+
+            .report-card button {
+                font-weight: 500;
+            }
+        </style>
+    @endpush
+
+
+    {{-- =============================================================
+        JAVASCRIPT
+    ============================================================== --}}
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                updateDateRange(); // Inicializa las fechas por defecto al cargar (Este Mes)
+                updateDateRange();
             });
 
-            // Formatea fecha a YYYY-MM-DD para asignarla a inputs date
+
+            /*
+            |--------------------------------------------------------------------------
+            | FECHAS
+            |--------------------------------------------------------------------------
+            */
+
             function formatDate(date) {
+
                 const d = new Date(date);
+
                 let month = '' + (d.getMonth() + 1);
                 let day = '' + d.getDate();
+
                 const year = d.getFullYear();
 
-                if (month.length < 2) month = '0' + month;
-                if (day.length < 2) day = '0' + day;
+                if (month.length < 2) {
+                    month = '0' + month;
+                }
+
+                if (day.length < 2) {
+                    day = '0' + day;
+                }
 
                 return [year, month, day].join('-');
             }
 
-            // Calcula dinámicamente las fechas desde y hasta según la opción seleccionada
+
             function updateDateRange() {
-                const selectedPeriod = document.querySelector('input[name="period"]:checked')?.value || 'month';
-                const dateFromInput = document.getElementById('date_from');
-                const dateToInput = document.getElementById('date_to');
-                const customContainer = document.getElementById('customDateInputs');
+
+                const selectedPeriod =
+                    document.querySelector('input[name="period"]:checked')?.value || 'month';
+
+                const dateFromInput =
+                    document.getElementById('date_from');
+
+                const dateToInput =
+                    document.getElementById('date_to');
+
+                const customContainer =
+                    document.getElementById('customDateInputs');
+
 
                 const now = new Date();
-                let fromDate, toDate;
+
+                let fromDate;
+                let toDate;
+
 
                 if (selectedPeriod === 'today') {
+
                     fromDate = new Date(now);
                     toDate = new Date(now);
+
                 } else if (selectedPeriod === 'week') {
+
                     const dayOfWeek = now.getDay();
-                    const distanceToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Lunes como inicio
+
+                    const distanceToMonday =
+                        dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
                     fromDate = new Date(now);
-                    fromDate.setDate(now.getDate() - distanceToMonday);
+
+                    fromDate.setDate(
+                        now.getDate() - distanceToMonday
+                    );
+
                     toDate = new Date(now);
+
                 } else if (selectedPeriod === 'month') {
-                    fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                    toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Último día del mes
+
+                    fromDate =
+                        new Date(
+                            now.getFullYear(),
+                            now.getMonth(),
+                            1
+                        );
+
+                    toDate =
+                        new Date(
+                            now.getFullYear(),
+                            now.getMonth() + 1,
+                            0
+                        );
+
                 } else if (selectedPeriod === 'year') {
-                    fromDate = new Date(now.getFullYear(), 0, 1);
-                    toDate = new Date(now.getFullYear(), 11, 31);
+
+                    fromDate =
+                        new Date(
+                            now.getFullYear(),
+                            0,
+                            1
+                        );
+
+                    toDate =
+                        new Date(
+                            now.getFullYear(),
+                            11,
+                            31
+                        );
+
                 }
+
 
                 if (selectedPeriod === 'custom') {
+
                     dateFromInput.removeAttribute('readonly');
                     dateToInput.removeAttribute('readonly');
+
                     customContainer.style.opacity = '1';
+
                 } else {
-                    dateFromInput.value = formatDate(fromDate);
-                    dateToInput.value = formatDate(toDate);
-                    dateFromInput.setAttribute('readonly', 'true');
-                    dateToInput.setAttribute('readonly', 'true');
+
+                    dateFromInput.value =
+                        formatDate(fromDate);
+
+                    dateToInput.value =
+                        formatDate(toDate);
+
+                    dateFromInput.setAttribute(
+                        'readonly',
+                        'true'
+                    );
+
+                    dateToInput.setAttribute(
+                        'readonly',
+                        'true'
+                    );
+
                     customContainer.style.opacity = '0.85';
+
                 }
+
             }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | FILTROS
+            |--------------------------------------------------------------------------
+            */
 
             function getGlobalFilters() {
-                const period = document.querySelector('input[name="period"]:checked')?.value || 'month';
-                const dateFrom = document.getElementById('date_from')?.value || '';
-                const dateTo = document.getElementById('date_to')?.value || '';
+
+                const period =
+                    document.querySelector(
+                        'input[name="period"]:checked'
+                    )?.value || 'month';
+
+                const dateFrom =
+                    document.getElementById('date_from')?.value || '';
+
+                const dateTo =
+                    document.getElementById('date_to')?.value || '';
+
+
                 return {
-                    period,
-                    dateFrom,
-                    dateTo
+                    period: period,
+                    dateFrom: dateFrom,
+                    dateTo: dateTo
                 };
+
             }
 
+
             function applyGlobalFilters() {
-                const filters = getGlobalFilters();
-                alert(`Filtro global aplicado:\nDesde: ${filters.dateFrom}\nHasta: ${filters.dateTo}`);
+
+                const filters =
+                    getGlobalFilters();
+
+                console.log(
+                    'Filtros globales:',
+                    filters
+                );
+
+                alert(
+                    `Filtro global aplicado:\n\n` +
+                    `Desde: ${filters.dateFrom}\n` +
+                    `Hasta: ${filters.dateTo}`
+                );
+
             }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | EXPORTACIÓN GENERAL
+            |--------------------------------------------------------------------------
+            */
 
             function exportarReporte(tipoReporte, formato) {
 
-                const filters = getGlobalFilters();
+                const filters =
+                    getGlobalFilters();
+
 
                 const rutas = {
 
-                    'ventas-usuario': {
-                        pdf: "{{ route('reportes.ventas.usuario.pdf') }}",
-                        excel: "{{ route('reportes.ventas.usuario.excel') }}"
-                    },
-
-                    'ventas-general': {
-                        pdf: "{{ route('reportes.ventas.general.pdf') }}",
-                        excel: "{{ route('reportes.ventas.general.excel') }}"
-                    },
-
-                    'ventas-agencia': {
-                        pdf: "{{ route('reportes.ventas.agencia.pdf') }}",
-                        excel: "{{ route('reportes.ventas.agencia.excel') }}"
-                    },
-
-                    'ventas-ruta': {
-                        pdf: "{{ route('reportes.ventas.ruta.pdf') }}",
-                        excel: "{{ route('reportes.ventas.ruta.excel') }}"
-                    },
-
-                    'pasajeros-ruta': {
-                        pdf: "{{ route('reportes.pasajeros.ruta.pdf') }}",
-                        excel: "{{ route('reportes.pasajeros.ruta.excel') }}"
-                    },
-
-                    'historial-pasajero': {
+                    'venta-pasajes': {
                         pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "#"
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
                     },
 
-                    'sobreequipaje': {
-                        pdf: "#",
-                        excel: "#"
+                    'venta-encomiendas': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'venta-sobreequipaje': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'ventas-sucursal': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'salidas-liquidacion': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'cuadre-caja-vendedor': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'cuadre-caja-sucursal': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'recaudacion-medio-pago': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'anulaciones-devoluciones': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                    },
+
+                    'comprobantes-venta': {
+                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
+                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
                     }
 
                 };
 
-                if (!rutas[tipoReporte]?.[formato]) {
-                    console.error(
-                        `Reporte no registrado: ${tipoReporte} (${formato})`
-                    );
+
+                if (
+                    !rutas[tipoReporte] ||
+                    !rutas[tipoReporte][formato]
+                ) {
 
                     alert(
-                        `El reporte "${tipoReporte}" todavía no tiene ruta ni método implementado.`
+                        `El reporte "${tipoReporte}" todavía no tiene una ruta configurada.`
                     );
 
                     return;
+
                 }
 
-                const params = new URLSearchParams({
-                    periodo: filters.period,
-                    desde: filters.dateFrom,
-                    hasta: filters.dateTo
-                });
+
+                const params =
+                    new URLSearchParams({
+
+                        periodo: filters.period,
+
+                        desde: filters.dateFrom,
+
+                        hasta: filters.dateTo
+
+                    });
+
+
+                /*
+                 * Filtros específicos
+                 */
+
+                if (tipoReporte === 'venta-sobreequipaje') {
+
+                    const servicio =
+                        document.getElementById(
+                            'reporte_sobreequipaje_servicio'
+                        )?.value || '';
+
+                    if (servicio) {
+                        params.append(
+                            'servicio',
+                            servicio
+                        );
+                    }
+
+                }
+
+
+                if (tipoReporte === 'salidas-liquidacion') {
+
+                    const estado =
+                        document.getElementById(
+                            'reporte_salida_estado'
+                        )?.value || '';
+
+                    const ruta =
+                        document.getElementById(
+                            'reporte_salida_ruta'
+                        )?.value || '';
+
+                    if (estado) {
+                        params.append(
+                            'estado',
+                            estado
+                        );
+                    }
+
+                    if (ruta) {
+                        params.append(
+                            'ruta_id',
+                            ruta
+                        );
+                    }
+
+                }
+
+
+                if (tipoReporte === 'recaudacion-medio-pago') {
+
+                    const medio =
+                        document.getElementById(
+                            'reporte_medio_pago'
+                        )?.value || '';
+
+                    if (medio) {
+                        params.append(
+                            'medio_pago',
+                            medio
+                        );
+                    }
+
+                }
+
+
+                if (tipoReporte === 'anulaciones-devoluciones') {
+
+                    const servicio =
+                        document.getElementById(
+                            'reporte_anulacion_servicio'
+                        )?.value || '';
+
+                    if (servicio) {
+                        params.append(
+                            'tipo_servicio',
+                            servicio
+                        );
+                    }
+
+                }
+
+
+                if (tipoReporte === 'comprobantes-venta') {
+
+                    const tipo =
+                        document.getElementById(
+                            'reporte_tipo_comprobante'
+                        )?.value || '';
+
+                    if (tipo) {
+                        params.append(
+                            'tipo_comprobante',
+                            tipo
+                        );
+                    }
+
+                }
+
 
                 window.open(
                     `${rutas[tipoReporte][formato]}?${params.toString()}`,
                     '_blank'
                 );
+
             }
 
-            function exportarVentasUsuario(formato) {
-                const usuarioId = document.getElementById('reporte_usuario_id')?.value || '';
-                const filters = getGlobalFilters();
 
-                let url = formato === 'pdf' ?
-                    "{{ route('reportes.ventas.usuario.pdf') }}" :
-                    "{{ route('reportes.ventas.usuario.excel') }}";
+            /*
+            |--------------------------------------------------------------------------
+            | VENTAS GENERAL
+            |--------------------------------------------------------------------------
+            */
 
-                const params = new URLSearchParams({
-                    usuario_id: usuarioId,
-                    periodo: filters.period,
-                    desde: filters.dateFrom,
-                    hasta: filters.dateTo
-                });
+            function exportarVentasGeneral(formato) {
 
-                window.open(`${url}?${params.toString()}`, '_blank');
-            }
+                const filters =
+                    getGlobalFilters();
 
-            function exportarVentasRuta(formato) {
-                const rutaId = document.getElementById('reporte_ruta_especifica_id')?.value || '';
-                const filters = getGlobalFilters();
+                const sucursalId =
+                    document.getElementById(
+                        'reporte_general_sucursal'
+                    )?.value || '';
 
-                let url = formato === 'pdf' ?
-                    "{{ route('reportes.ventas.ruta.pdf') }}" :
-                    "{{ route('reportes.ventas.ruta.excel') }}";
 
-                const params = new URLSearchParams({
-                    ruta_id: rutaId,
-                    periodo: filters.period,
-                    desde: filters.dateFrom,
-                    hasta: filters.dateTo
-                });
+                const url =
+                    formato === 'pdf' ?
+                    "{{ route('reportes.ventas.general.pdf') }}" :
+                    "{{ route('reportes.ventas.general.excel') }}";
 
-                window.open(`${url}?${params.toString()}`, '_blank');
-            }
 
-            function exportarVentasGeneral() {
+                const params =
+                    new URLSearchParams({
 
-                const filters = getGlobalFilters();
+                        periodo: filters.period,
 
-                const agenciaId =
-                    document.getElementById("reporte_general_agencia")?.value || "";
+                        desde: filters.dateFrom,
 
-                const params = new URLSearchParams({
-                    periodo: filters.period,
-                    desde: filters.dateFrom,
-                    hasta: filters.dateTo
-                });
+                        hasta: filters.dateTo
 
-                if (agenciaId) {
-                    params.append('agencia_id', agenciaId);
+                    });
+
+
+                if (sucursalId) {
+
+                    params.append(
+                        'sucursal_id',
+                        sucursalId
+                    );
+
                 }
 
-                const url = "{{ route('reportes.ventas.general.pdf') }}";
 
                 window.open(
                     `${url}?${params.toString()}`,
                     '_blank'
                 );
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | VENTAS POR VENDEDOR
+            |--------------------------------------------------------------------------
+            */
+
+            function exportarVentasUsuario(formato) {
+
+                const usuarioId =
+                    document.getElementById(
+                        'reporte_vendedor_id'
+                    )?.value || '';
+
+
+                const filters =
+                    getGlobalFilters();
+
+
+                const url =
+                    formato === 'pdf' ?
+                    "{{ route('reportes.ventas.usuario.pdf') }}" :
+                    "{{ route('reportes.ventas.usuario.excel') }}";
+
+
+                const params =
+                    new URLSearchParams({
+
+                        usuario_id: usuarioId,
+
+                        periodo: filters.period,
+
+                        desde: filters.dateFrom,
+
+                        hasta: filters.dateTo
+
+                    });
+
+
+                window.open(
+                    `${url}?${params.toString()}`,
+                    '_blank'
+                );
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | VENTAS POR RUTA
+            |--------------------------------------------------------------------------
+            */
+
+            function exportarVentasRuta(formato) {
+
+                const rutaId =
+                    document.getElementById(
+                        'reporte_ruta_id'
+                    )?.value || '';
+
+
+                const filters =
+                    getGlobalFilters();
+
+
+                const url =
+                    formato === 'pdf' ?
+                    "{{ route('reportes.ventas.ruta.pdf') }}" :
+                    "{{ route('reportes.ventas.ruta.excel') }}";
+
+
+                const params =
+                    new URLSearchParams({
+
+                        ruta_id: rutaId,
+
+                        periodo: filters.period,
+
+                        desde: filters.dateFrom,
+
+                        hasta: filters.dateTo
+
+                    });
+
+
+                window.open(
+                    `${url}?${params.toString()}`,
+                    '_blank'
+                );
+
             }
         </script>
     @endpush
