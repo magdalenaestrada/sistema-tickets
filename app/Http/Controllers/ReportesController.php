@@ -11,6 +11,7 @@ use App\Models\Horario;
 use App\Models\Descuento;
 use App\Models\Encomienda;
 use App\Models\MetodoPago;
+use App\Models\NotaVentaAnulada;
 use App\Models\Pueblito;
 use App\Models\Ruta;
 use App\Models\RutaPunto;
@@ -466,6 +467,45 @@ class ReportesController extends Controller
         ];
     }
 
+    public function ventasPorSucursalPdf(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Venta::query()
+            ->with(['sucursal', 'pagos.metodoPago', 'pagos.billetera'])
+            ->whereBetween('fecha_emision', [$desde, $hasta])
+            ->where('estado', 'EMITIDO');
+
+        if ($request->filled('sucursal_id')) {
+            $query->where('sucursal_id', $request->sucursal_id);
+        }
+
+        $ventas = $query->get();
+
+        $sucursales = $ventas
+            ->groupBy(fn($v) => $v->sucursal_id ?: 'sin_sucursal')
+            ->map(function ($grupo) {
+                $sucursal = $grupo->first()->sucursal;
+
+                return [
+                    'sucursal'   => $sucursal?->nombre_comercial ?? 'SIN SUCURSAL',
+                    'operaciones' => $grupo->count(),
+                    'total'      => $grupo->sum(fn($v) => (float) $v->total),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        $totalGeneral = $sucursales->sum('total');
+
+        $pdf = FacadePdf::loadView('reportes.ventas.sucursal', compact('sucursales', 'desde', 'hasta', 'totalGeneral'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download(
+            'ventas_por_sucursal_' . $desde->format('Ymd') . '_' . $hasta->format('Ymd') . '.pdf'
+        );
+    }
+
     public function ventasGeneralExcel(Request $request)
     {
         $pasajes = $this->queryVentasGeneral($request)
@@ -495,6 +535,40 @@ class ReportesController extends Controller
                 '_' .
                 $data['hasta']->format('Ymd') .
                 '.pdf'
+        );
+    }
+
+    public function anulacionesPdf(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = NotaVentaAnulada::query()
+            ->with(['venta.sucursal', 'venta.persona', 'usuario.persona', 'venta.pasajes', 'venta.encomiendas'])
+            ->whereBetween('fecha', [$desde, $hasta]);
+
+        if ($request->filled('tipo_servicio')) {
+            $tipo = $request->tipo_servicio;
+
+            $query->whereHas('venta', function ($q) use ($tipo) {
+                if ($tipo === 'pasaje') {
+                    $q->whereHas('pasajes');
+                } elseif ($tipo === 'encomienda') {
+                    $q->whereHas('encomiendas', fn($eq) => $eq->where('sobre_equipaje', false));
+                } elseif ($tipo === 'sobreequipaje') {
+                    $q->whereHas('encomiendas', fn($eq) => $eq->where('sobre_equipaje', true));
+                }
+            });
+        }
+
+        $anulaciones = $query->orderBy('fecha')->get();
+
+        $totalDevuelto = $anulaciones->sum(fn($n) => (float) $n->total);
+
+        $pdf = FacadePdf::loadView('reportes.anulaciones.index', compact('anulaciones', 'desde', 'hasta', 'totalDevuelto'));
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'anulaciones_devoluciones_' . $desde->format('Ymd') . '_' . $hasta->format('Ymd') . '.pdf'
         );
     }
 

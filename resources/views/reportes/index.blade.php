@@ -1309,8 +1309,8 @@
                     },
 
                     'ventas-sucursal': {
-                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        pdf: "{{ route('reportes.ventas.sucursal.pdf') }}",
+                        excel: "{{ route('reportes.ventas.sucursal.pdf') }}" 
                     },
 
                     'salidas-liquidacion': {

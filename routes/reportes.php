@@ -99,4 +99,10 @@ Route::middleware(['auth', 'can:gestionar reportes'])
             '/historial-pasajero/pdf',
             [ReportesController::class, 'historialPasajeroPdf']
         )->name('historial.pasajero.pdf');
+
+        Route::get('/ventas/sucursal/pdf', [ReportesController::class, 'ventasPorSucursalPdf'])
+            ->name('ventas.sucursal.pdf');
+
+        Route::get('/anulaciones/pdf', [ReportesController::class, 'anulacionesPdf'])
+            ->name('anulaciones.pdf');
     });
