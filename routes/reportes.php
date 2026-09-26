@@ -29,11 +29,6 @@ Route::middleware(['auth', 'can:gestionar reportes'])
             [ReportesController::class, 'ventasPorUsuarioPdf']
         )->name('ventas.usuario.pdf');
 
-
-        // =====================================================
-        // VENTAS GENERAL
-        // =====================================================
-
         Route::get(
             '/ventas-general/excel',
             [ReportesController::class, 'ventasGeneralExcel']
@@ -44,11 +39,6 @@ Route::middleware(['auth', 'can:gestionar reportes'])
             [ReportesController::class, 'ventasGeneralPdf']
         )->name('ventas.general.pdf');
 
-
-        // =====================================================
-        // VENTAS POR AGENCIA
-        // =====================================================
-
         Route::get(
             '/ventas-agencia/excel',
             [ReportesController::class, 'ventasPorAgenciaExcel']
@@ -58,11 +48,6 @@ Route::middleware(['auth', 'can:gestionar reportes'])
             '/ventas-agencia/pdf',
             [ReportesController::class, 'ventasPorAgenciaPdf']
         )->name('ventas.agencia.pdf');
-
-
-        // =====================================================
-        // VENTAS POR RUTA
-        // =====================================================
 
         Route::get(
             '/ventas-ruta/excel',
@@ -75,10 +60,6 @@ Route::middleware(['auth', 'can:gestionar reportes'])
         )->name('ventas.ruta.pdf');
 
 
-        // =====================================================
-        // PASAJEROS POR RUTA
-        // =====================================================
-
         Route::get(
             '/pasajeros-ruta/excel',
             [ReportesController::class, 'pasajerosPorRutaExcel']
@@ -88,12 +69,6 @@ Route::middleware(['auth', 'can:gestionar reportes'])
             '/pasajeros-ruta/pdf',
             [ReportesController::class, 'pasajerosPorRutaPdf']
         )->name('pasajeros.ruta.pdf');
-
-
-        // =====================================================
-        // HISTORIAL PASAJERO
-        // Por ahora solamente PDF porque es el método que existe
-        // =====================================================
 
         Route::get(
             '/historial-pasajero/pdf',
@@ -105,4 +80,13 @@ Route::middleware(['auth', 'can:gestionar reportes'])
 
         Route::get('/anulaciones/pdf', [ReportesController::class, 'anulacionesPdf'])
             ->name('anulaciones.pdf');
+
+        Route::get('/caja/vendedor/pdf', [ReportesController::class, 'cuadreCajaVendedorPdf'])
+            ->name('caja.vendedor.pdf');
+
+        Route::get('/caja/sucursal/pdf', [ReportesController::class, 'cuadreCajaSucursalPdf'])
+            ->name('caja.sucursal.pdf');
+
+        Route::get('/caja/medio-pago/pdf', [ReportesController::class, 'recaudacionMedioPagoPdf'])
+            ->name('caja.medio_pago.pdf');
     });

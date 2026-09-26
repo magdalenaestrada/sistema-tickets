@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caja;
 use Illuminate\Http\Request;
 use App\Models\Venta;
 use App\Models\VentaPago;
@@ -572,6 +573,112 @@ class ReportesController extends Controller
         );
     }
 
+    public function cuadreCajaVendedorPdf(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Caja::query()
+            ->with(['usuario.persona', 'sucursal'])
+            ->whereNotNull('fecha_cierre')
+            ->whereBetween('fecha_cierre', [$desde, $hasta]);
+
+        if ($request->filled('usuario_id')) {
+            $query->where('usuario_id', $request->usuario_id);
+        }
+
+        $cajas = $query->orderBy('fecha_cierre')->get();
+
+        $filas = $cajas->map(function ($caja) {
+
+            $esperado = $caja->monto_actual;          // accessor: apertura + ingresos - salidas
+            $declarado = (float) ($caja->monto_cierre ?? 0);
+            $diferencia = $declarado - $esperado;
+
+            return [
+                'vendedor'    => $caja->usuario?->persona?->nombre_completo ?? $caja->usuario?->name ?? 'SIN USUARIO',
+                'sucursal'    => $caja->sucursal?->nombre_comercial ?? 'SIN SUCURSAL',
+                'apertura'    => (float) $caja->monto_apertura,
+                'ingresos'    => $caja->total_ingresos,
+                'salidas'     => $caja->total_salidas,
+                'esperado'    => $esperado,
+                'declarado'   => $declarado,
+                'diferencia'  => $diferencia,
+                'estado_caja' => $caja->estado,
+                'fecha_apertura' => $caja->fecha_creacion,
+                'fecha_cierre'   => $caja->fecha_cierre,
+            ];
+        });
+
+        $totales = [
+            'apertura'   => $filas->sum('apertura'),
+            'ingresos'   => $filas->sum('ingresos'),
+            'salidas'    => $filas->sum('salidas'),
+            'esperado'   => $filas->sum('esperado'),
+            'declarado'  => $filas->sum('declarado'),
+            'diferencia' => $filas->sum('diferencia'),
+        ];
+
+        $pdf = FacadePdf::loadView('reportes.caja.vendedor', compact('filas', 'totales', 'desde', 'hasta'));
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'cuadre_caja_vendedor_' . $desde->format('Ymd') . '_' . $hasta->format('Ymd') . '.pdf'
+        );
+    }
+
+    public function cuadreCajaSucursalPdf(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = Caja::query()
+            ->with(['usuario.persona', 'sucursal'])
+            ->whereNotNull('fecha_cierre')
+            ->whereBetween('fecha_cierre', [$desde, $hasta]);
+
+        if ($request->filled('sucursal_id')) {
+            $query->where('sucursal_id', $request->sucursal_id);
+        }
+
+        $cajas = $query->get();
+
+        $sucursales = $cajas
+            ->groupBy(fn($c) => $c->sucursal_id ?: 'sin_sucursal')
+            ->map(function ($grupo) {
+                $sucursal = $grupo->first()->sucursal;
+
+                $esperado = $grupo->sum(fn($c) => $c->monto_actual);
+                $declarado = $grupo->sum(fn($c) => (float) ($c->monto_cierre ?? 0));
+
+                return [
+                    'sucursal'      => $sucursal?->nombre_comercial ?? 'SIN SUCURSAL',
+                    'num_cajas'     => $grupo->count(),
+                    'apertura'      => $grupo->sum(fn($c) => (float) $c->monto_apertura),
+                    'ingresos'      => $grupo->sum(fn($c) => $c->total_ingresos),
+                    'salidas'       => $grupo->sum(fn($c) => $c->total_salidas),
+                    'esperado'      => $esperado,
+                    'declarado'     => $declarado,
+                    'diferencia'    => $declarado - $esperado,
+                ];
+            })
+            ->sortByDesc('declarado')
+            ->values();
+
+        $totales = [
+            'apertura'   => $sucursales->sum('apertura'),
+            'ingresos'   => $sucursales->sum('ingresos'),
+            'salidas'    => $sucursales->sum('salidas'),
+            'esperado'   => $sucursales->sum('esperado'),
+            'declarado'  => $sucursales->sum('declarado'),
+            'diferencia' => $sucursales->sum('diferencia'),
+        ];
+
+        $pdf = FacadePdf::loadView('reportes.caja.sucursal', compact('sucursales', 'totales', 'desde', 'hasta'));
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download(
+            'cuadre_caja_sucursal_' . $desde->format('Ymd') . '_' . $hasta->format('Ymd') . '.pdf'
+        );
+    }
 
     private function queryVentasAgencia(Request $request)
     {
@@ -635,6 +742,68 @@ class ReportesController extends Controller
         );
     }
 
+    public function recaudacionMedioPagoPdf(Request $request)
+    {
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        $query = CajaDetalle::query()
+            ->with(['metodoPago', 'billetera_digital', 'caja.sucursal'])
+            ->where('amount', '>', 0) // solo ingresos, no salidas de caja
+            ->where(function ($q) {
+                $q->whereNull('anulado')->orWhere('anulado', false);
+            })
+            ->whereHas('caja', function ($q) use ($desde, $hasta) {
+                $q->whereNotNull('fecha_cierre')
+                    ->whereBetween('fecha_cierre', [$desde, $hasta]);
+            });
+
+        if ($request->filled('sucursal_id')) {
+            $query->whereHas('caja', fn($q) => $q->where('sucursal_id', $request->sucursal_id));
+        }
+
+        // Filtro de medio de pago del select del index
+        if ($request->filled('medio_pago')) {
+            $medio = $request->medio_pago;
+
+            $query->where(function ($q) use ($medio) {
+                match ($medio) {
+                    'efectivo' => $q->whereHas('metodoPago', fn($mp) => $mp->whereRaw('LOWER(descripcion) = ?', ['efectivo'])),
+                    'tarjeta' => $q->whereHas('billetera_digital', fn($b) => $b->whereRaw('LOWER(descripcion) LIKE ?', ['%tarjeta%'])),
+                    'transferencia' => $q->whereHas('billetera_digital', fn($b) => $b->whereRaw('LOWER(descripcion) LIKE ?', ['%transferencia%'])),
+                    'billetera' => $q->whereHas('billetera_digital', fn($b) => $b->where(fn($w) => $w->whereRaw('LOWER(descripcion) LIKE ?', ['%yape%'])->orWhereRaw('LOWER(descripcion) LIKE ?', ['%plin%']))),
+                    default => null,
+                };
+            });
+        }
+
+        $detalles = $query->get();
+
+        $porMetodo = $detalles
+            ->groupBy(function ($d) {
+                $billetera = $d->billetera_digital?->descripcion;
+                $metodo = $d->metodoPago?->descripcion ?? 'SIN MÉTODO';
+
+                return $billetera ? "BILLETERA DIGITAL - {$billetera}" : $metodo;
+            })
+            ->map(function ($grupo, $nombre) {
+                return [
+                    'metodo' => mb_strtoupper($nombre),
+                    'operaciones' => $grupo->count(),
+                    'total' => $grupo->sum(fn($d) => (float) $d->amount),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        $totalGeneral = $porMetodo->sum('total');
+
+        $pdf = FacadePdf::loadView('reportes.caja.medio_pago', compact('porMetodo', 'totalGeneral', 'desde', 'hasta'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download(
+            'recaudacion_medio_pago_' . $desde->format('Ymd') . '_' . $hasta->format('Ymd') . '.pdf'
+        );
+    }
 
     private function queryVentasRuta(Request $request)
     {

@@ -16,7 +16,6 @@ class CajaDetalle extends Model
         'subtipo_movimiento_caja_id',
         'metodo_pago_id',
         'billetera_digital_id',
-      
         'amount',
         'description',
         'numero_ticket',

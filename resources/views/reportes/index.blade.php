@@ -1310,7 +1310,7 @@
 
                     'ventas-sucursal': {
                         pdf: "{{ route('reportes.ventas.sucursal.pdf') }}",
-                        excel: "{{ route('reportes.ventas.sucursal.pdf') }}" 
+                        excel: "{{ route('reportes.ventas.sucursal.pdf') }}"
                     },
 
                     'salidas-liquidacion': {
@@ -1319,18 +1319,18 @@
                     },
 
                     'cuadre-caja-vendedor': {
-                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        pdf: "{{ route('reportes.caja.vendedor.pdf') }}",
+                        excel: "{{ route('reportes.caja.vendedor.pdf') }}"
                     },
 
                     'cuadre-caja-sucursal': {
-                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        pdf: "{{ route('reportes.caja.sucursal.pdf') }}",
+                        excel: "{{ route('reportes.caja.sucursal.pdf') }}"
                     },
 
                     'recaudacion-medio-pago': {
-                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        pdf: "{{ route('reportes.caja.medio_pago.pdf') }}",
+                        excel: "{{ route('reportes.caja.medio_pago.pdf') }}"
                     },
 
                     'anulaciones-devoluciones': {
