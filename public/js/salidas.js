@@ -1,218 +1,264 @@
+/* =========================================================
+   SALIDAS - salidas.js
+   Requiere: jQuery, DataTables, TomSelect, SweetAlert2, lucide, Ziggy (route)
+   Window vars esperadas (Blade): IS_ADMIN, USER_SUCURSAL,
+   HORARIOS_SALIDA, RUTAS_SALIDA, TIPOS_VEHICULO
+   (VEHICULOS y CONDUCTORES ya NO se usan: salen de recursos_disponibles)
+   ========================================================= */
+
 let tablaSalidas;
-let estadoActual = "";
-let horariosSalida = window.HORARIOS_SALIDA || [];
-let rutasSalida = window.RUTAS_SALIDA || [];
-console.log(window.IS_ADMIN);
-function cargarHorasDisponibles() {
-    let horario_id = $("#horario_id").val();
-    let fecha = $("#fecha_salida").val();
+let estadoActual = "proximas";
+let xhrDetalle = null;
 
-    if (!horario_id || !fecha) return;
+const horariosSalida = window.HORARIOS_SALIDA || [];
+const rutasSalida = window.RUTAS_SALIDA || [];
+const tiposVehiculo = window.TIPOS_VEHICULO || [];
 
-    console.log("Cargando horas disponibles...");
-}
-
-$(document).on("change", "#fecha_salida, #horario_id", function () {
-    cargarHorasDisponibles();
+/* ---------- Configuración global ---------- */
+$.ajaxSetup({
+    headers: {
+        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+    },
 });
 
-$(document).ready(function () {
+/* ---------- Helpers generales ---------- */
+const csrf = () => $("meta[name=csrf-token]").attr("content");
+
+function hoy() {
+    return new Date().toISOString().split("T")[0];
+}
+
+function ahora() {
+    return new Date().toTimeString().split(" ")[0].substring(0, 5);
+}
+
+function recargarTabla(resetPagina = false) {
+    tablaSalidas.ajax.reload(null, resetPagina);
+}
+
+function setPanel(titulo, html) {
+    $("#tituloPanelSalida").text(titulo);
+    $("#panelSalidaContenido").html(html);
+    lucide.createIcons();
+}
+
+function panelVacio() {
+    setPanel(
+        "Detalle de salida",
+        `<div class="text-center py-5">
+            <div class="mb-3 text-secondary opacity-25">
+                <i data-lucide="mouse-pointer-click" style="width: 42px; height: 42px;"></i>
+            </div>
+            <h6 class="fw-bold text-dark mb-1 fs-7">Ninguna salida seleccionada</h6>
+            <p class="text-muted fs-8 mb-0">Haz clic en alguna fila o acción de la tabla para ver el recorrido completo.</p>
+        </div>`,
+    );
+}
+
+function panelCargando(texto = "Cargando...") {
+    return `
+        <div class="text-center py-5 text-muted">
+            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+            <div>${texto}</div>
+        </div>`;
+}
+
+function errorAjax(titulo = "Error", porDefecto = "Ocurrió un error") {
+    return (xhr) => {
+        if (xhr.statusText === "abort") return;
+        Swal.fire(titulo, xhr.responseJSON?.message || porDefecto, "error");
+    };
+}
+
+function opcionesDesde(lista, { placeholder, selected = "", label }) {
+    let html = `<option value="">${placeholder}</option>`;
+    lista.forEach((item) => {
+        html += `<option value="${item.id}" ${String(selected) === String(item.id) ? "selected" : ""}>${label(item)}</option>`;
+    });
+    return html;
+}
+
+const opcionesHorarios = (selected = "") =>
+    opcionesDesde(horariosSalida, {
+        placeholder: "Seleccione horario",
+        selected,
+        label: (h) => h.nombre,
+    });
+
+const opcionesRutas = (selected = "") =>
+    opcionesDesde(rutasSalida, {
+        placeholder: "Seleccione ruta",
+        selected,
+        label: (r) => r.nombre,
+    });
+
+const opcionesTiposVehiculo = (selected = "") =>
+    opcionesDesde(tiposVehiculo, {
+        placeholder: "Seleccione tipo de vehículo",
+        selected,
+        label: (t) => t.descripcion,
+    });
+
+function opcionesEstados(selected = "programado") {
+    const estados = [
+        { id: "programado", nombre: "Programado" },
+        { id: "reprogramado", nombre: "Reprogramado" },
+        { id: "en_ruta", nombre: "En ruta" },
+        { id: "finalizado", nombre: "Finalizado" },
+        { id: "cancelado", nombre: "Cancelado" },
+    ];
+    return opcionesDesde(estados, {
+        placeholder: "Seleccione estado",
+        selected,
+        label: (e) => e.nombre,
+    });
+}
+
+/* =========================================================
+   TABLA
+   ========================================================= */
+const columnas = [
+    ...(window.IS_ADMIN
+        ? [
+              {
+                  data: "checkbox",
+                  orderable: false,
+                  searchable: false,
+                  className: "text-center",
+              },
+          ]
+        : []),
+    {
+        data: "ruta",
+        name: "rutas.nombre",
+        render: (data) => `
+            <div class="ruta-cell">
+                <div>
+                    <div class="ruta-nombre">${data ?? "-"}</div>
+                    <div class="ruta-label">Servicio programado</div>
+                </div>
+            </div>`,
+    },
+    {
+        data: "fecha_formateada",
+        name: "salidas.fecha_salida",
+        className: "text-nowrap",
+        render: (data) => `
+            <div class="fecha-cell">
+                <i data-lucide="calendar-days"></i>
+                <span>${data ?? "-"}</span>
+            </div>`,
+    },
+    {
+        data: "hora_salida",
+        name: "horarios.hora_salida",
+        className: "text-center",
+        render: (data) => `
+            <span class="hora-badge salida">
+                <i data-lucide="clock-3"></i> ${data ?? "-"}
+            </span>`,
+    },
+    {
+        data: "hora_llegada",
+        name: "horarios.hora_llegada",
+        className: "text-center",
+        render: (data) => `
+            <span class="hora-badge llegada">
+                <i data-lucide="flag"></i> ${data ?? "-"}
+            </span>`,
+    },
+    {
+        data: "estado",
+        name: "salidas.estado",
+        className: "text-center",
+        render: (data, type, row) =>
+            type === "display" ? row.estado_badge : data,
+    },
+    {
+        data: "acciones",
+        orderable: false,
+        searchable: false,
+        className: "text-center text-nowrap",
+    },
+];
+
+$(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
         processing: true,
         serverSide: true,
+        deferRender: true,
+        searchDelay: 400,
         pageLength: 10,
-
+        autoWidth: false,
+        info: false,
+        dom: "rtip",
         ajax: {
             url: route("salidas.datatable"),
-            data: function (d) {
-                d.estado = $("#filtroEstado").val();
+            data: (d) => {
+                d.estado = estadoActual;
                 d.ruta_id = $("#filtroRuta").val();
             },
         },
-
-        columns: [
-            ...(window.IS_ADMIN
-                ? [
-                      {
-                          data: "checkbox",
-                          orderable: false,
-                          searchable: false,
-                          className: "text-center",
-                      },
-                  ]
-                : []),
-
-         
-
-            {
-                data: "ruta",
-                name: "rutas.nombre",
-                render: function (data) {
-                    return `
-            <div class="ruta-cell">
-                <div>
-                    <div class="ruta-nombre">
-                        ${data ?? "-"}
-                    </div>
-                    <div class="ruta-label">
-                        Servicio programado
-                    </div>
-                </div>
-            </div>
-        `;
-                },
-            },
-            {
-                data: "fecha_formateada",
-                name: "salidas.fecha_salida",
-                className: "text-nowrap",
-                render: function (data) {
-                    return `
-                    <div class="fecha-cell">
-                        <i data-lucide="calendar-days"></i>
-                        <span>${data ?? "-"}</span>
-                    </div>
-                `;
-                },
-            },
-
-            {
-                data: "hora_salida",
-                name: "horarios.hora_salida",
-                className: "text-center",
-                render: function (data) {
-                    return `
-                    <span class="hora-badge salida">
-                        <i data-lucide="clock-3"></i>
-                        ${data ?? "-"}
-                    </span>
-                `;
-                },
-            },
-
-            {
-                data: "hora_llegada",
-                name: "horarios.hora_llegada",
-                className: "text-center",
-                render: function (data) {
-                    return `
-                    <span class="hora-badge llegada">
-                        <i data-lucide="flag"></i>
-                        ${data ?? "-"}
-                    </span>
-                `;
-                },
-            },
-
-            {
-                data: "estado",
-                name: "salidas.estado",
-                className: "text-center",
-                render: function (data, type, row) {
-                    if (type === "display") {
-                        return row.estado_badge;
-                    }
-
-                    return data;
-                },
-            },
-
-            {
-                data: "acciones",
-                orderable: false,
-                searchable: false,
-                className: "text-center text-nowrap",
-            },
-        ],
-
-        responsive: true,
-        autoWidth: false,
-        info: false,
-
-        dom: "rtip",
-
+        columns: columnas,
         language: {
             emptyTable: "No hay salidas disponibles",
             zeroRecords: "No se encontraron salidas",
             processing: "Cargando...",
-            paginate: {
-                previous: "‹",
-                next: "›",
-            },
+            paginate: { previous: "‹", next: "›" },
         },
-
-        drawCallback: function () {
-            lucide.createIcons();
-        },
+        drawCallback: () => lucide.createIcons(),
     });
 
-    $("#filtroEstado, #filtroRuta").on("change", function () {
-        tablaSalidas.ajax.reload();
+    // Filtro de ruta (opciones renderizadas por Blade)
+    new TomSelect("#filtroRuta", {
+        allowEmptyOption: true,
+        maxOptions: 50,
+        placeholder: "Todas las rutas",
+    });
+
+    $("#filtroRuta").on("change", () => recargarTabla(true));
+
+    // Pestañas de estado
+    $("#pills-tab-estados").on("click", ".btn-pill-tab", function () {
+        $("#pills-tab-estados .btn-pill-tab").removeClass("active");
+        $(this).addClass("active");
+        estadoActual = $(this).data("estado");
+        recargarTabla(true);
     });
 });
 
-new TomSelect("#filtroRuta", {
-    valueField: "id",
-    labelField: "nombre",
-    searchField: "nombre",
-
-    load: function (query, callback) {
-        fetch(route("rutas.buscar") + "?q=" + query)
-            .then((response) => response.json())
-            .then((json) => callback(json))
-            .catch(() => callback());
-    },
+/* ---------- Acciones de la tabla ---------- */
+$(document).on("click", ".ver", function () {
+    verSalida($(this).data("id"));
+});
+$(document).on("click", ".editar", function () {
+    editarSalida($(this).data("id"));
+});
+$(document).on("click", ".eliminar", function () {
+    eliminarSalida($(this).data("id"));
+});
+$(document).on("click", ".iniciar-ruta", function () {
+    iniciarRuta($(this).data("id"));
+});
+$(document).on("click", ".finalizar-ruta", function () {
+    finalizarRuta($(this).data("id"));
 });
 
-$("#pills-tab-estados .btn-pill-tab").on("click", function () {
-    $("#pills-tab-estados .btn-pill-tab").removeClass("active");
-    $(this).addClass("active");
-
-    let valorEstado = $(this).data("estado");
-    $("#filtroEstado").val(valorEstado).trigger("change");
+/* ---------- Selección múltiple / eliminar ---------- */
+$(document).on("change", "#chk-todos", function () {
+    $(".chk-salida").prop("checked", $(this).is(":checked"));
 });
-
-new TomSelect("#filtroEstado", {
-    create: false,
-    allowEmptyOption: false,
-    placeholder: "Todos los estados",
-});
-
-function hoy() {
-    let fecha = new Date();
-    return fecha.toISOString().split("T")[0];
-}
 
 function getSeleccionados() {
-    let ids = [];
-
-    $(".chk-salida:checked").each(function () {
-        ids.push($(this).val());
-    });
-
-    return ids;
-}
-
-function validarHoraDuplicada(horario_id, fecha_salida, hora_salida) {
-    let existe = false;
-
-    tablaSalidas.rows().every(function () {
-        let data = this.data();
-
-        if (
-            String(data.horario_id) === String(horario_id) &&
-            data.fecha_salida === fecha_salida &&
-            data.hora_salida === hora_salida
-        ) {
-            existe = true;
-        }
-    });
-
-    return existe;
+    return $(".chk-salida:checked")
+        .map(function () {
+            return $(this).val();
+        })
+        .get();
 }
 
 $("#btnEliminarSeleccionados").on("click", function () {
-    let ids = getSeleccionados();
+    const ids = getSeleccionados();
 
     if (ids.length === 0) {
         Swal.fire("Atención", "Selecciona al menos una salida", "warning");
@@ -230,155 +276,73 @@ $("#btnEliminarSeleccionados").on("click", function () {
         $.ajax({
             url: route("salidas.destroy.bulk"),
             method: "POST",
-            data: {
-                _token: $("meta[name=csrf-token]").attr("content"),
-                _method: "DELETE",
-                ids: ids,
-            },
-            success: function () {
+            data: { _token: csrf(), _method: "DELETE", ids },
+            success: () => {
                 Swal.fire("Eliminadas", "", "success");
-                tablaSalidas.ajax.reload();
+                $("#chk-todos").prop("checked", false);
+                recargarTabla();
             },
-            error: function (err) {
-                Swal.fire(
-                    "Error",
-                    err.responseJSON?.message || "No se pudo eliminar",
-                    "error",
-                );
-            },
+            error: errorAjax("Error", "No se pudo eliminar"),
         });
     });
 });
 
-$(document).on("change", "#chk-todos", function () {
-    $(".chk-salida").prop("checked", $(this).is(":checked"));
-});
+function eliminarSalida(id) {
+    Swal.fire({
+        title: "¿Eliminar salida?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+    }).then((result) => {
+        if (!result.isConfirmed) return;
 
-function ahora() {
-    let fecha = new Date();
-    return fecha.toTimeString().split(" ")[0].substring(0, 5);
-}
-
-function opcionesHorarios(selected = "") {
-    let html = `<option value="">Seleccione horario</option>`;
-
-    horariosSalida.forEach((h) => {
-        html += `<option value="${h.id}" ${String(selected) === String(h.id) ? "selected" : ""}>${h.nombre}</option>`;
+        $.ajax({
+            url: route("salidas.destroy", { id }),
+            method: "POST",
+            data: { _token: csrf(), _method: "DELETE" },
+            success: () => {
+                Swal.fire("Eliminado", "", "success");
+                recargarTabla();
+                panelVacio();
+            },
+            error: errorAjax("Error", "No se pudo eliminar"),
+        });
     });
-
-    return html;
 }
 
-function opcionesRutas(selected = "") {
-    let html = `<option value="">Seleccione horario</option>`;
-
-    rutasSalida.forEach((r) => {
-        html += `<option value="${r.id}" ${String(selected) === String(r.id) ? "selected" : ""}>${r.nombre}</option>`;
-    });
-
-    return html;
-}
-
-function opcionesEstados(selected = "programado") {
-    let estados = [
-        { value: "programado", label: "Programado" },
-        { value: "reprogramado", label: "Reprogramado" },
-        { value: "en_ruta", label: "En ruta" },
-        { value: "finalizado", label: "Finalizado" },
-        { value: "cancelado", label: "Cancelado" },
-    ];
-
-    let html = `<option value="">Seleccione estado</option>`;
-
-    estados.forEach((e) => {
-        html += `<option value="${e.value}" ${String(selected) === String(e.value) ? "selected" : ""}>${e.label}</option>`;
-    });
-
-    return html;
-}
-
-function opcionesTiposVehiculo(selected = "") {
-    let html = `<option value="">Seleccione tipo de vehículo</option>`;
-
-    window.TIPOS_VEHICULO.forEach((t) => {
-        html += `
-            <option value="${t.id}"
-                ${String(selected) === String(t.id) ? "selected" : ""}>
-                ${t.descripcion}
-            </option>
-        `;
-    });
-
-    return html;
-}
-
+/* =========================================================
+   CREAR SALIDA ÚNICA
+   ========================================================= */
 window.modoCrearSalida = function () {
-    let html = `
-        <div id="contenedorRuta">
-            <div class="mb-3">
-                <label class="form-label">
-                    Seleccionar ruta programada <span style="color:red">*</span>
-                </label>
-
-                <select id="ruta_id" name="ruta_id" required>
-                    ${opcionesRutas()}
-                </select>
-            </div>
-        </div>
-<div class="mb-3">
-    <label class="form-label">
-        Tipo de vehículo <span class="text-danger">*</span>
-    </label>
-
-    <select id="tipo_vehiculo_id" class="form-select">
-        ${opcionesTiposVehiculo()}
-    </select>
-</div>
+    setPanel(
+        "Crear salida",
+        `
         <div class="mb-3">
-            <label class="form-label">
-                Fecha <span style="color:red">*</span>
-            </label>
-
-            <input type="date"
-                   id="fecha_salida"
-                   class="form-control" name="fecha_salida" required>
+            <label class="form-label">Seleccionar ruta programada <span class="text-danger">*</span></label>
+            <select id="ruta_id" name="ruta_id">${opcionesRutas()}</select>
         </div>
 
         <div class="mb-3">
-            <label class="form-label">
-                Hora <span style="color:red">*</span>
-            </label>
-
-            <input type="time"
-                   id="hora_salida"
-                   class="form-control" name="hora_salida">
+            <label class="form-label">Tipo de vehículo <span class="text-danger">*</span></label>
+            <select id="tipo_vehiculo_id" class="form-select">${opcionesTiposVehiculo()}</select>
         </div>
 
-        <button
-            class="btn btn-primary w-100"
-            onclick="guardarSalidaDirecta()">
+        <div class="mb-3">
+            <label class="form-label">Fecha <span class="text-danger">*</span></label>
+            <input type="date" id="fecha_salida" class="form-control" min="${hoy()}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Hora <span class="text-danger">*</span></label>
+            <input type="time" id="hora_salida" class="form-control">
+        </div>
+
+        <button class="btn btn-primary w-100" onclick="guardarSalidaDirecta()">
             Guardar salida
-        </button>
-    `;
+        </button>`,
+    );
 
-    $("#tituloPanelSalida").text("Crear salida");
-    $("#panelSalidaContenido").html(html);
-
-    new TomSelect("#ruta_id");
-    new TomSelect("#origen_id");
-    new TomSelect("#destino_id");
-
-    $("#tipo_salida").on("change", function () {
-        const tipo = $(this).val();
-
-        if (tipo === "ruta") {
-            $("#contenedorRuta").show();
-            $("#contenedorDirecto").hide();
-        } else {
-            $("#contenedorRuta").hide();
-            $("#contenedorDirecto").show();
-        }
-    });
+    new TomSelect("#ruta_id", { placeholder: "Seleccione ruta..." });
 };
 
 window.guardarSalidaDirecta = function () {
@@ -387,126 +351,89 @@ window.guardarSalidaDirecta = function () {
         tipo_vehiculo_id: $("#tipo_vehiculo_id").val(),
         fecha_salida: $("#fecha_salida").val(),
         hora_salida: $("#hora_salida").val(),
-        _token: $('meta[name="csrf-token"]').attr("content"),
     };
 
+    if (
+        !data.ruta_id ||
+        !data.tipo_vehiculo_id ||
+        !data.fecha_salida ||
+        !data.hora_salida
+    ) {
+        Swal.fire("Error", "Completa todos los campos", "error");
+        return;
+    }
+
     $.post(route("salidas.store.directa"), data)
-        .done(function () {
+        .done(() => {
             Swal.fire("Correcto", "Salida creada", "success");
-            tablaSalidas.ajax.reload();
+            recargarTabla();
+            panelVacio();
         })
-        .fail(function (xhr) {
-            Swal.fire(
-                "Error",
-                xhr.responseJSON?.message ?? "Error al guardar",
-                "error",
-            );
-        });
+        .fail(errorAjax("Error", "Error al guardar"));
 };
 
+/* =========================================================
+   PROGRAMAR VARIAS SALIDAS
+   ========================================================= */
 window.modoGenerarSalidas = function () {
-    let html = `
+    const dias = [
+        [1, "Lunes"],
+        [2, "Martes"],
+        [3, "Miércoles"],
+        [4, "Jueves"],
+        [5, "Viernes"],
+        [6, "Sábado"],
+        [7, "Domingo"],
+    ]
+        .map(
+            ([v, n]) =>
+                `<label><input type="checkbox" class="dia" value="${v}"> ${n}</label>`,
+        )
+        .join("");
+
+    setPanel(
+        "Generar salidas",
+        `
         <div class="mb-2">
-            <label class="form-label">Horario <span
-                                style="color: red">*</span></label>
-            <select id="horario_id_generar">
-                ${opcionesHorarios()}
-            </select>
+            <label class="form-label">Horario <span class="text-danger">*</span></label>
+            <select id="horario_id_generar">${opcionesHorarios()}</select>
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Fecha inicio <span
-                                style="color: red">*</span></label>
-            <input type="date" id="fecha_inicio" class="form-control">
+            <label class="form-label">Fecha inicio <span class="text-danger">*</span></label>
+            <input type="date" id="fecha_inicio" class="form-control" min="${hoy()}">
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Fecha fin <span
-                                style="color: red">*</span></label>
-            <input type="date" id="fecha_fin" class="form-control">
+            <label class="form-label">Fecha fin <span class="text-danger">*</span></label>
+            <input type="date" id="fecha_fin" class="form-control" min="${hoy()}">
         </div>
 
         <div class="mb-2">
-            <label class="form-label">Días <span
-                                style="color: red">*</span></label>
-
-            <div class="d-flex flex-column gap-1">
-                <label><input type="checkbox" class="dia" value="1"> Lunes</label>
-                <label><input type="checkbox" class="dia" value="2"> Martes</label>
-                <label><input type="checkbox" class="dia" value="3"> Miércoles</label>
-                <label><input type="checkbox" class="dia" value="4"> Jueves</label>
-                <label><input type="checkbox" class="dia" value="5"> Viernes</label>
-                <label><input type="checkbox" class="dia" value="6"> Sábado</label>
-                <label><input type="checkbox" class="dia" value="7"> Domingo</label>
-            </div>
+            <label class="form-label">Días <span class="text-danger">*</span></label>
+            <div class="d-flex flex-column gap-1">${dias}</div>
         </div>
 
         <button class="btn btn-success w-100 mt-2" onclick="generarSalidas()">
             Generar salidas
-        </button>
-    `;
+        </button>`,
+    );
 
-    $("#tituloPanelSalida").text("Generar salidas");
-    $("#panelSalidaContenido").html(html);
     new TomSelect("#horario_id_generar", {
         create: false,
         placeholder: "Seleccione horario...",
     });
-    lucide.createIcons();
-};
-
-window.guardarSalida = function () {
-    let horario_id = $("#horario_id").val();
-    let fecha_salida = $("#fecha_salida").val();
-    let hora_salida = $("#hora_salida").val(); // 👈 NUEVO
-    let estado = $("#estado").val();
-
-    if (validarHoraDuplicada(horario_id, fecha_salida, hora_salida)) {
-        Swal.fire(
-            "Error",
-            "Ya existe una salida con esta fecha y hora",
-            "error",
-        );
-        return;
-    }
-
-    if (!horario_id || !fecha_salida || !hora_salida || !estado) {
-        Swal.fire("Error", "Todos los campos son obligatorios", "error");
-        return;
-    }
-
-    $.post(route("salidas.store"), {
-        _token: $("meta[name=csrf-token]").attr("content"),
-        horario_id,
-        fecha_salida,
-        hora_salida, // 👈 NUEVO
-        estado,
-    })
-        .done(function () {
-            Swal.fire("Guardado", "", "success");
-            tablaSalidas.ajax.reload();
-            $("#panelSalidaContenido").html(
-                '<p class="text-muted">Selecciona una salida</p>',
-            );
-        })
-        .fail(function (err) {
-            Swal.fire(
-                "Error",
-                err.responseJSON?.message || "No se pudo guardar",
-                "error",
-            );
-        });
 };
 
 window.generarSalidas = function () {
-    let horario_id = $("#horario_id_generar").val();
-    let fecha_inicio = $("#fecha_inicio").val();
-    let fecha_fin = $("#fecha_fin").val();
-
-    let dias = [];
-    $(".dia:checked").each(function () {
-        dias.push($(this).val());
-    });
+    const horario_id = $("#horario_id_generar").val();
+    const fecha_inicio = $("#fecha_inicio").val();
+    const fecha_fin = $("#fecha_fin").val();
+    const dias = $(".dia:checked")
+        .map(function () {
+            return $(this).val();
+        })
+        .get();
 
     if (!horario_id || !fecha_inicio || !fecha_fin || dias.length === 0) {
         Swal.fire("Error", "Completa todos los campos", "error");
@@ -520,42 +447,296 @@ window.generarSalidas = function () {
     });
 
     $.post(route("salidas.generar"), {
-        _token: $("meta[name=csrf-token]").attr("content"),
-        horario_id: horario_id,
-        fecha_inicio: fecha_inicio,
-        fecha_fin: fecha_fin,
-        dias: dias,
+        horario_id,
+        fecha_inicio,
+        fecha_fin,
+        dias,
     })
-        .done(function (res) {
+        .done((res) => {
             Swal.fire(
                 "Correcto",
                 res.mensaje || "Salidas generadas",
                 "success",
             );
-            tablaSalidas.ajax.reload();
-            $("#panelSalidaContenido").html(
-                '<p class="text-muted">Selecciona una salida</p>',
-            );
+            recargarTabla();
+            panelVacio();
         })
-        .fail(function (err) {
-            Swal.fire(
-                "Error",
-                err.responseJSON?.message || "No se pudieron generar",
-                "error",
-            );
-        });
+        .fail(errorAjax("Error", "No se pudieron generar"));
 };
 
-// Configura jQuery para mandar el token CSRF en cada petición AJAX
-// (evita el error "CSRF token mismatch" en los POST como registrarCheck)
-$.ajaxSetup({
-    headers: {
-        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-    },
-});
+/* =========================================================
+   DETALLE DE SALIDA
+   ========================================================= */
+function verSalida(id) {
+    xhrDetalle?.abort(); // evita respuestas desordenadas al hacer clic rápido
 
+    setPanel("Detalle de salida", panelCargando("Cargando detalle..."));
+
+    xhrDetalle = $.get(route("salidas.show", { id }));
+    xhrDetalle
+        .done((salida) => renderDetalle(salida))
+        .fail(errorAjax("Error", "No se pudo cargar la salida"));
+}
+
+function renderTimeline(puntos) {
+    if (!puntos.length) {
+        return `<p class="text-muted fs-7">No hay puntos de ruta registrados.</p>`;
+    }
+
+    return puntos
+        .map((punto, index) => {
+            const esCompletado = punto.check_registrado;
+            const esActual = punto.es_actual;
+
+            let iconClass = "border-secondary bg-white text-secondary";
+            let icono = "circle";
+            let badge = `<span class="badge bg-light text-muted border fs-9 fw-semibold py-0 px-1">
+                <i data-lucide="circle" style="width:8px;"></i> Habilitado
+            </span>`;
+
+            if (esCompletado) {
+                iconClass = "bg-success text-white border-success";
+                icono = "check";
+                badge = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-9 fw-semibold py-0 px-1">
+                    <i data-lucide="lock" style="width:8px;"></i> Bloqueado
+                </span>`;
+            } else if (esActual) {
+                iconClass = "bg-primary text-white border-primary";
+                icono = "play";
+                badge = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-9 fw-semibold py-0 px-1">
+                    <i data-lucide="navigation" style="width:8px;"></i> Próxima
+                </span>`;
+            }
+
+            const claseNombre = esActual
+                ? "text-primary"
+                : esCompletado
+                  ? "text-muted text-decoration-line-through"
+                  : "text-dark";
+
+            const sucursal = punto.sucursal?.nombre_comercial
+                ? ` - ${punto.sucursal.nombre_comercial}`
+                : "";
+
+            return `
+            <div class="d-flex align-items-center mb-1 py-1 position-relative">
+                <div class="me-2 flex-shrink-0" style="z-index: 1;">
+                    <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 22px; height: 22px;">
+                        <i data-lucide="${icono}" style="width: 10px;"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1 border-bottom pb-1 min-w-0">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <span class="fw-bold fs-8 text-truncate ${claseNombre}" title="${punto.nombre}">
+                            ${String.fromCharCode(65 + index)}. ${punto.nombre}${sucursal}
+                        </span>
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span>
+                            ${badge}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        })
+        .join("");
+}
+
+// Saca las sucursales únicas de la ruta a partir de los puntos que ya manda show()
+function sucursalesDeRuta(puntos) {
+    const mapa = new Map();
+    puntos.forEach((p) => {
+        if (p.sucursal && !mapa.has(p.sucursal.id)) {
+            mapa.set(p.sucursal.id, {
+                id: p.sucursal.id,
+                nombre: p.sucursal.nombre_comercial,
+                check_registrado: p.check_registrado,
+            });
+        }
+    });
+    return [...mapa.values()];
+}
+
+function renderTarjetaCheck(salida, sucursalesRuta) {
+    if (window.IS_ADMIN) {
+        const primeraHabilitada = sucursalesRuta.find(
+            (s) => !s.check_registrado,
+        );
+        const opciones = sucursalesRuta
+            .map(
+                (s) => `<option value="${s.id}"
+                    ${s.check_registrado ? "disabled" : ""}
+                    ${primeraHabilitada?.id === s.id ? "selected" : ""}>
+                    ${s.nombre}${s.check_registrado ? " — Ventas bloqueadas" : ""}
+                </option>`,
+            )
+            .join("");
+
+        return `
+        <div class="card bg-light border-0 mb-3">
+            <div class="card-body p-3">
+                <label class="form-label fs-8 fw-bold text-muted mb-1">Sucursal actual (Modo Admin)</label>
+                <select id="sucursal_manifiesto" class="form-select form-select-sm mb-2">
+                    ${opciones}
+                </select>
+                <button class="btn btn-dark btn-sm w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-1" onclick="registrarCheck(${salida.id})">
+                    <i data-lucide="shield-check" style="width:16px;"></i> Dar check y bloquear ventas
+                </button>
+            </div>
+        </div>`;
+    }
+
+    const mia = sucursalesRuta.find(
+        (s) => String(s.id) === String(window.USER_SUCURSAL?.id),
+    );
+
+    if (!mia) {
+        return `<div class="alert alert-warning fs-7 mt-3">Tu sucursal no forma parte de esta ruta.</div>`;
+    }
+
+    const yaDioCheck = mia.check_registrado;
+
+    return `
+    <div class="card bg-light border-0 mb-3">
+        <div class="card-body p-3 d-flex align-items-center justify-content-between">
+            <div>
+                <small class="text-muted d-block fs-8">Sucursal actual</small>
+                <strong class="d-block text-dark">${mia.nombre}</strong>
+                ${
+                    yaDioCheck
+                        ? `<small class="text-danger fs-8 fw-semibold">
+                            <i data-lucide="lock" style="width:12px;"></i> El bus ya pasó por esta sucursal
+                           </small>`
+                        : `<small class="text-primary fs-8 fw-semibold">Próxima ${salida.hora_salida ?? ""}</small>`
+                }
+                <input type="hidden" id="sucursal_manifiesto" value="${mia.id}">
+            </div>
+            <div>
+                ${
+                    yaDioCheck
+                        ? `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-2 fs-8">
+                            <i data-lucide="lock" style="width:14px;"></i> Ventas bloqueadas
+                           </span>`
+                        : `<button class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-1" onclick="registrarCheck(${salida.id}, ${mia.id})">
+                            <i data-lucide="shield-check" style="width:16px;"></i> Dar check
+                           </button>`
+                }
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderManifiestos(salida, sucursalesRuta) {
+    const pertenece = sucursalesRuta.some(
+        (s) => String(s.id) === String(window.USER_SUCURSAL?.id),
+    );
+
+    if (!window.IS_ADMIN && !pertenece) return "";
+
+    const boton = (tipo, clase, icono, texto, col = "col-6") => `
+        <div class="${col}">
+            <button class="btn ${clase} btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, '${tipo}')">
+                <i data-lucide="${icono}" style="width:14px;"></i> ${texto}
+            </button>
+        </div>`;
+
+    let html = `
+    <div class="mt-3">
+        <small class="fw-bold text-muted d-block mb-2 fs-8">Manifiestos de la sucursal</small>
+        <div class="row g-2">
+            ${boton("pasajeros", "btn-primary", "user", "Pasajeros")}
+            ${boton("encomiendas", "btn-info text-white", "package", "Encomiendas")}
+            ${boton("bodega", "btn-warning text-white", "archive", "Bodega")}
+            ${boton("conductores", "btn-success", "truck", "Conductores")}
+            ${boton("pasajeros_real", "btn-secondary", "file-text", "Pasajeros detallado", "col-12")}
+        </div>
+    </div>`;
+
+    if (salida.estado === "finalizado" && window.IS_ADMIN) {
+        html += `
+        <div class="mt-2">
+            <button class="btn btn-dark btn-sm w-100 py-2" onclick="imprimirTodosManifiestos(${salida.id})">
+                Imprimir todos los manifiestos (todas las sucursales)
+            </button>
+        </div>`;
+    }
+
+    return html;
+}
+
+function renderDetalle(salida) {
+    const puntos = salida.ruta?.puntos ?? [];
+    const totalPuntos = puntos.length;
+    const bloqueadas = puntos.filter((p) => p.check_registrado).length;
+    const habilitadas = totalPuntos - bloqueadas;
+
+    const botonEditarAsignacion = salida.puede_editar_asignacion
+        ? `<button class="btn btn-outline-warning btn-sm w-100 mb-3 d-flex align-items-center justify-content-center gap-1"
+                onclick="editarAsignacion(${salida.id})">
+                <i data-lucide="user-cog" style="width:14px;"></i>
+                Cambiar vehículo / conductor
+           </button>`
+        : "";
+
+    let extra = "";
+    if (salida.estado === "en_ruta" || salida.estado === "finalizado") {
+        const sucursalesRuta = sucursalesDeRuta(puntos);
+        extra =
+            renderTarjetaCheck(salida, sucursalesRuta) +
+            renderManifiestos(salida, sucursalesRuta);
+    } else {
+        extra = `<div class="alert alert-info fs-7 mb-0">
+            Inicia el viaje para habilitar el registro de check y bloquear ventas.
+        </div>`;
+    }
+
+    const html = `
+        <div class="row g-2 mb-3">
+            <div class="col-4">
+                <div class="p-2 border rounded bg-light text-center">
+                    <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ruta</span>
+                    <strong class="fs-6 text-dark d-block text-truncate" title="${salida.ruta?.nombre ?? "Sin ruta"}">
+                        ${salida.ruta?.nombre ?? "Sin ruta"}
+                    </strong>
+                    <span class="d-block text-muted fs-8">${salida.fecha_formateada ?? "-"} • ${salida.hora_salida ?? "-"}</span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 border rounded bg-light text-center">
+                    <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Progreso</span>
+                    <strong class="fs-5 text-dark">${salida.parada_actual_index ?? 0}/${totalPuntos}</strong>
+                    <span class="d-block text-muted fs-8">paradas</span>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-2 border rounded bg-light text-center">
+                    <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ventas</span>
+                    <strong class="fs-5 text-dark">${salida.asientos_vendidos ?? 0}</strong>
+                    <span class="d-block text-muted fs-8">asientos</span>
+                </div>
+            </div>
+        </div>
+
+        ${botonEditarAsignacion}
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fs-8 fw-bold text-muted">Estado de la ruta</span>
+            <span class="fs-8 fw-bold text-muted">${habilitadas} sucursal(es) aún venden</span>
+        </div>
+
+        <div class="w-100 px-1 mb-3 custom-scrollbar" style="max-height: 320px; overflow-y: auto;">
+            ${renderTimeline(puntos)}
+        </div>
+
+        ${extra}`;
+
+    setPanel("Detalle de salida", html);
+}
+
+/* =========================================================
+   CHECK DE SUCURSAL Y MANIFIESTOS
+   ========================================================= */
 function registrarCheck(salidaId, sucursalId = null) {
-    let idSucursal = sucursalId || $("#sucursal_manifiesto").val();
+    const idSucursal = sucursalId || $("#sucursal_manifiesto").val();
 
     if (!idSucursal) {
         Swal.fire("Error", "Selecciona una sucursal válida", "error");
@@ -572,418 +753,63 @@ function registrarCheck(salidaId, sucursalId = null) {
         confirmButtonText: "Sí, dar check",
         cancelButtonText: "Cancelar",
     }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                url: route("salidas.registrar_check", {
-                    salida: salidaId,
-                }),
-                method: "POST",
-                // 👇 se manda explícito aquí, sin depender del ajaxSetup
-                // global de arriba, por si otro script lo pisa o se
-                // ejecuta después (típico con módulos @vite con defer).
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
-                        "content",
-                    ),
-                },
-                data: {
-                    sucursal_id: idSucursal,
-                },
-                success: function (response) {
-                    Swal.fire(
-                        "¡Registrado!",
-                        "El check fue guardado y las ventas de esta sucursal se congelaron.",
-                        "success",
-                    );
+        if (!result.isConfirmed) return;
 
-                    verSalida(salidaId);
-                },
-                error: function (xhr) {
-                    Swal.fire(
-                        "Error",
-                        xhr.responseJSON?.message ||
-                            "No se pudo registrar el check",
-                        "error",
-                    );
-                },
-            });
-        }
-    });
-}
-
-function verSalida(id) {
-    $("#tituloPanelSalida").text("Detalle de salida");
-    $("#panelSalidaContenido").html(`
-        <div class="text-center py-5 text-muted">
-            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
-            <div>Cargando detalle de la salida...</div>
-        </div>
-    `);
-
-    $.get(route("salidas.show", { id: id }), function (salida) {
-        let timelineHtml = "";
-        if (salida.ruta?.puntos?.length) {
-            timelineHtml = salida.ruta.puntos
-                .map((punto, index) => {
-                    const esCompletado = punto.check_registrado;
-                    const esActual = punto.es_actual;
-
-                    let iconClass = "border-secondary bg-white text-secondary";
-                    let badgeEstado = `<span class="badge bg-light text-muted border fs-9 fw-semibold py-0 px-1"> 
-                <i data-lucide="circle" style="width:8px;"></i> Habilitado 
-            </span>`;
-                    let icono = "circle";
-
-                    if (esCompletado) {
-                        iconClass = "bg-success text-white border-success";
-                        icono = "check";
-                        badgeEstado = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-9 fw-semibold py-0 px-1"> 
-                    <i data-lucide="lock" style="width:8px;"></i> Bloqueado 
-                </span>`;
-                    } else if (esActual) {
-                        iconClass = "bg-primary text-white border-primary";
-                        icono = "play";
-                        badgeEstado = `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-9 fw-semibold py-0 px-1"> 
-                    <i data-lucide="navigation" style="width:8px;"></i> Próxima 
-                </span>`;
-                    }
-
-                    return ` 
-            <div class="d-flex align-items-center mb-1 py-1 position-relative"> 
-                <div class="me-2 flex-shrink-0" style="z-index: 1;"> 
-                    <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 22px; height: 22px;"> 
-                        <i data-lucide="${icono}" style="width: 10px;"></i> 
-                    </div> 
-                </div> 
-                <div class="flex-grow-1 border-bottom pb-1 min-w-0"> 
-                    <div class="d-flex justify-content-between align-items-center gap-2"> 
-                        <span class="fw-bold fs-8 text-truncate ${esActual ? "text-primary" : esCompletado ? "text-muted text-decoration-line-through" : "text-dark"}" title="${punto.nombre}">
-                            ${String.fromCharCode(65 + index)}. ${punto.nombre}${
-                                punto.sucursal?.nombre_comercial
-                                    ? ` - ${punto.sucursal.nombre_comercial}`
-                                    : ""
-                            }
-                        </span> 
-                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                            <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span> 
-                            ${badgeEstado}
-                        </div>
-                    </div> 
-                </div> 
-            </div> 
-        `;
-                })
-                .join("");
-        } else {
-            timelineHtml = `<p class="text-muted fs-7">No hay puntos de ruta registrados.</p>`;
-        }
-
-        const totalPuntos = salida.ruta?.puntos?.length ?? 0;
-        const bloqueadas =
-            salida.ruta?.puntos?.filter((p) => p.check_registrado).length ?? 0;
-        const habilitadas = totalPuntos - bloqueadas;
-
-        let botonEditarAsignacion = "";
-        if (salida.puede_editar_asignacion) {
-            botonEditarAsignacion = `
-        <button class="btn btn-outline-warning btn-sm w-100 mb-3 d-flex align-items-center justify-content-center gap-1"
-            onclick="editarAsignacion(${salida.id})">
-            <i data-lucide="user-cog" style="width:14px;"></i>
-            Cambiar vehículo / conductor
-        </button>
-    `;
-        }
-
-        let html = `
-            <!-- KPIs Superiores: Tarjeta de Ruta + Progreso y Ventas -->
-            <div class="row g-2 mb-3">
-                <div class="col-4">
-                    <div class="p-2 border rounded bg-light text-center">
-                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ruta</span>
-                        <strong class="fs-6 text-dark d-block text-truncate" title="${salida.ruta?.nombre ?? "Sin ruta"}">
-                            ${salida.ruta?.nombre ?? "Sin ruta"}
-                        </strong>
-                        <span class="d-block text-muted fs-8">${salida.fecha_formateada ?? "-"} • ${salida.hora_salida ?? "-"}</span>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="p-2 border rounded bg-light text-center">
-                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Progreso</span>
-                        <strong class="fs-5 text-dark">${salida.parada_actual_index ?? 0}/${totalPuntos}</strong>
-                        <span class="d-block text-muted fs-8">paradas</span>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="p-2 border rounded bg-light text-center">
-                        <span class="d-block text-muted fs-8 fw-semibold text-uppercase">Ventas</span>
-                        <strong class="fs-5 text-dark">${salida.asientos_vendidos ?? 0}</strong>
-                        <span class="d-block text-muted fs-8">asientos</span>
-                    </div>
-                </div>
-            </div>
-
-            ${botonEditarAsignacion}
-
-            <!-- Timeline Vertical -->
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fs-8 fw-bold text-muted">Estado de la ruta</span>
-                <span class="fs-8 fw-bold text-muted">${habilitadas} sucursal(es) aún venden</span>
-            </div>
-
-            <div class="w-100 px-1 mb-3 custom-scrollbar" style="max-height: 320px; overflow-y: auto;">
-                ${timelineHtml}
-            </div>
-
-            <!-- AJAX Container de Sucursal, Dar Check y Manifiestos -->
-            <div id="loadingSucursales" class="text-center text-muted py-3">
-                <div class="spinner-border spinner-border-sm" role="status"></div>
-                <span class="fs-7 d-block mt-1">Cargando datos de sucursal...</span>
-            </div>
-        `;
-
-        $("#tituloPanelSalida").text("Detalle de salida");
-        $("#panelSalidaContenido").html(html);
-        lucide.createIcons();
-
-        if (salida.estado !== "en_ruta" && salida.estado !== "finalizado") {
-            $("#loadingSucursales").replaceWith(`
-                <div class="alert alert-info fs-7 mb-0">
-                    Inicia el viaje para habilitar el registro de check y bloquear ventas.
-                </div>
-            `);
-            return;
-        }
-
-        $.get(
-            route("salidas.sucursales_ruta", { salida: id }),
-            function (sucursalesRuta) {
-                let tarjetaCheckHtml = "";
-
-                if (window.IS_ADMIN) {
-                    const opciones = sucursalesRuta
-                        .map((s) => {
-                            const bloqueada = s.check_registrado;
-                            return `<option value="${s.id}" ${bloqueada ? "disabled" : ""}>
-                                ${s.nombre}${bloqueada ? " — Ventas bloqueadas" : ""}
-                            </option>`;
-                        })
-                        .join("");
-
-                    tarjetaCheckHtml = `
-                    <div class="card bg-light border-0 mb-3">
-                        <div class="card-body p-3">
-                            <label class="form-label fs-8 fw-bold text-muted mb-1">Sucursal actual (Modo Admin)</label>
-                            <select id="sucursal_manifiesto" class="form-select form-select-sm mb-2">
-                                ${opciones}
-                            </select>
-                            <button class="btn btn-dark btn-sm w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-1" onclick="registrarCheck(${salida.id})">
-                                <i data-lucide="shield-check" style="width:16px;"></i> Dar check y bloquear ventas
-                            </button>
-                        </div>
-                    </div>
-                `;
-                } else {
-                    let mia = sucursalesRuta.find(
-                        (s) =>
-                            String(s.id) === String(window.USER_SUCURSAL?.id),
-                    );
-
-                    if (!mia) {
-                        tarjetaCheckHtml = `
-                        <div class="alert alert-warning fs-7 mt-3">
-                            Tu sucursal no forma parte de esta ruta.
-                        </div>
-                    `;
-                    } else {
-                        const yaDioCheck = mia.check_registrado;
-
-                        tarjetaCheckHtml = `
-                        <div class="card bg-light border-0 mb-3">
-                            <div class="card-body p-3 d-flex align-items-center justify-content-between">
-                                <div>
-                                    <small class="text-muted d-block fs-8">Sucursal actual</small>
-                                    <strong class="d-block text-dark">${mia.nombre}</strong>
-                                    ${
-                                        yaDioCheck
-                                            ? `<small class="text-danger fs-8 fw-semibold">
-                                                <i data-lucide="lock" style="width:12px;"></i> El bus ya pasó por esta sucursal
-                                               </small>`
-                                            : `<small class="text-primary fs-8 fw-semibold">Próxima ${salida.hora_salida ?? ""}</small>`
-                                    }
-                                    <input type="hidden" id="sucursal_manifiesto" value="${mia.id}">
-                                </div>
-                                <div>
-                                    ${
-                                        yaDioCheck
-                                            ? `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-2 fs-8">
-                                                <i data-lucide="lock" style="width:14px;"></i> Ventas bloqueadas
-                                           </span>`
-                                            : `<button class="btn btn-dark btn-sm px-3 py-2 fw-semibold d-flex align-items-center gap-1" onclick="registrarCheck(${salida.id}, ${mia.id})">
-                                                <i data-lucide="shield-check" style="width:16px;"></i> Dar check
-                                           </button>`
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    }
-                }
-
-                let botonesManifiestos = "";
-                if (
-                    window.IS_ADMIN ||
-                    sucursalesRuta.some(
-                        (s) =>
-                            String(s.id) === String(window.USER_SUCURSAL?.id),
-                    )
-                ) {
-                    botonesManifiestos = `
-                    <div class="mt-3">
-                        <small class="fw-bold text-muted d-block mb-2 fs-8">Manifiestos de la sucursal</small>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <button class="btn btn-primary btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'pasajeros')">
-                                    <i data-lucide="user" style="width:14px;"></i> Pasajeros
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button class="btn btn-info btn-sm text-white w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'encomiendas')">
-                                    <i data-lucide="package" style="width:14px;"></i> Encomiendas
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button class="btn btn-warning btn-sm text-white w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'bodega')">
-                                    <i data-lucide="archive" style="width:14px;"></i> Bodega
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button class="btn btn-success btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'conductores')">
-                                    <i data-lucide="truck" style="width:14px;"></i> Conductores
-                                </button>
-                            </div>
-                            <div class="col-12">
-                                <button class="btn btn-secondary btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-1" onclick="abrirManifiesto(${salida.id}, 'pasajeros_real')">
-                                    <i data-lucide="file-text" style="width:14px;"></i> Pasajeros detallado
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                    if (salida.estado === "finalizado" && window.IS_ADMIN) {
-                        botonesManifiestos += `
-                        <div class="mt-2">
-                            <button class="btn btn-dark btn-sm w-100 py-2" onclick="imprimirTodosManifiestos(${salida.id})">
-                                Imprimir todos los manifiestos (todas las sucursales)
-                            </button>
-                        </div>
-                    `;
-                    }
-                }
-
-                $("#loadingSucursales").replaceWith(
-                    tarjetaCheckHtml + botonesManifiestos,
+        $.ajax({
+            url: route("salidas.registrar_check", { salida: salidaId }),
+            method: "POST",
+            headers: { "X-CSRF-TOKEN": csrf() },
+            data: { sucursal_id: idSucursal },
+            success: () => {
+                Swal.fire(
+                    "¡Registrado!",
+                    "El check fue guardado y las ventas de esta sucursal se congelaron.",
+                    "success",
                 );
-                lucide.createIcons();
+                verSalida(salidaId);
             },
-        );
+            error: errorAjax("Error", "No se pudo registrar el check"),
+        });
     });
 }
 
-function editarAsignacion(id) {
-    $.get(route("salidas.show", { id: id }), function (salida) {
-        let html = `
-    <div class="alert alert-warning fs-7 mb-3">
-        Estás cambiando el vehículo/conductor de una salida ya iniciada.
-        Usa esto solo en caso de imprevistos (ej. conductor no puede salir).
-    </div>
+function abrirManifiesto(salidaId, tipo) {
+    const sucursalId = $("#sucursal_manifiesto").val();
 
-    <div class="mb-2">
-        <label class="form-label">Vehículo <span class="text-danger">*</span></label>
-        <select id="vehiculo_id" class="form-select">
-            <option value="">Seleccione vehículo</option>
-        </select>
-    </div>
-
-    <div class="mb-2">
-        <label class="form-label">Conductor principal <span class="text-danger">*</span></label>
-        <select id="conductor_principal_id" class="form-select">
-            <option value="">Seleccione</option>
-        </select>
-    </div>
-
-    <div class="mb-2">
-        <label class="form-label">Conductor secundario</label>
-        <select id="conductor_secundario_id" class="form-select">
-            <option value="">Opcional</option>
-            ${window.CONDUCTORES.map(
-                (c) => `
-                    <option value="${c.id}" ${c.id == salida.conductor_secundario_id ? "selected" : ""}>
-                        ${c.persona.nombres} ${c.persona.apellidos}
-                    </option>
-                `,
-            ).join("")}
-        </select>
-    </div>
-
-    <button class="btn btn-warning w-100 mt-2" onclick="guardarEdicionAsignacion(${salida.id}, '${salida.horario_id}', '${salida.fecha_salida}')">
-        Guardar cambio
-    </button>
-
-    <button class="btn btn-link w-100 mt-1" onclick="verSalida(${salida.id})">
-        Cancelar
-    </button>
-`;
-
-        $("#tituloPanelSalida").text("Editar asignación (emergencia)");
-        $("#panelSalidaContenido").html(html);
-
-        cargarRecursosDisponibles(salida);
-        lucide.createIcons();
-    });
-}
-
-window.guardarEdicionAsignacion = function (id, horario_id, fecha_salida) {
-    let vehiculo_id = $("#vehiculo_id").val();
-    let conductor_principal_id = $("#conductor_principal_id").val();
-    let conductor_secundario_id = $("#conductor_secundario_id").val();
-
-    if (!vehiculo_id || !conductor_principal_id) {
-        Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
+    if (!sucursalId) {
+        Swal.fire("Atención", "Selecciona una sucursal", "warning");
         return;
     }
 
-    $.ajax({
-        url: route("salidas.update", { id: id }),
-        method: "POST",
-        data: {
-            _token: $("meta[name=csrf-token]").attr("content"),
-            _method: "PUT",
-            horario_id,
-            fecha_salida,
-            estado: "en_ruta", // no cambia el estado, solo la asignación
-            vehiculo_id,
-            conductor_principal_id,
-            conductor_secundario_id,
-        },
-        success: function () {
-            Swal.fire("Actualizado", "Vehículo/conductor cambiado", "success");
-            tablaSalidas.ajax.reload();
-            verSalida(id); // vuelve al detalle
-        },
-        error: function (err) {
-            Swal.fire(
-                "Error",
-                err.responseJSON?.message || "No se pudo actualizar",
-                "error",
-            );
-        },
-    });
-};
+    const rutasPorTipo = {
+        pasajeros: "salidas.manifiesto_pasajeros",
+        encomiendas: "salidas.manifiesto_encomiendas",
+        bodega: "salidas.manifiesto_bodega",
+        conductores: "salidas.manifiesto_conductores",
+        pasajeros_real: "salidas.manifiesto_pasajeros_real",
+    };
 
+    const url =
+        route(rutasPorTipo[tipo], { salida: salidaId }) +
+        "?sucursal_id=" +
+        sucursalId;
+
+    window.open(url, "_blank");
+}
+
+function imprimirTodosManifiestos(salidaId) {
+    window.open(
+        route("salidas.manifiesto_pasajeros.todos", { salida: salidaId }),
+        "_blank",
+    );
+}
+
+/* =========================================================
+   RECURSOS (vehículos / conductores) bajo demanda
+   ========================================================= */
 function actualizarOpcionesConductores() {
-    let principal = $("#conductor_principal_id").val();
-    let secundario = $("#conductor_secundario_id").val();
+    const principal = $("#conductor_principal_id").val();
+    const secundario = $("#conductor_secundario_id").val();
 
     $("#conductor_principal_id option").each(function () {
         $(this).prop("disabled", !!secundario && $(this).val() === secundario);
@@ -994,206 +820,190 @@ function actualizarOpcionesConductores() {
     });
 }
 
-function cargarRecursosDisponibles(salida) {
-    $.get(
-        route("salidas.recursos_disponibles", { salida: salida.id }),
-        function (res) {
-            let vehiculosHtml = `<option value="">Seleccione vehículo</option>`;
-            res.vehiculos.forEach((v) => {
-                vehiculosHtml += `
-                <option value="${v.id}" ${v.id == salida.vehiculo_id ? "selected" : ""}>
-                    ${v.tipo_vehiculo.descripcion} - ${v.numero_placa}
-                </option>
-            `;
-            });
-            $("#vehiculo_id").html(vehiculosHtml);
-
-            let conductoresHtml = `<option value="">Seleccione</option>`;
-            res.conductores.forEach((c) => {
-                conductoresHtml += `<option value="${c.id}">${c.persona.nombres} ${c.persona.apellidos}</option>`;
-            });
-
-            $("#conductor_principal_id").html(conductoresHtml);
-            $("#conductor_secundario_id").html(
-                `<option value="">Opcional</option>` +
-                    conductoresHtml.replace(
-                        '<option value="">Seleccione</option>',
-                        "",
-                    ),
-            );
-
-            $("#conductor_principal_id").val(
-                salida.conductor_principal_id ?? "",
-            );
-            $("#conductor_secundario_id").val(
-                salida.conductor_secundario_id ?? "",
-            );
-
-            actualizarOpcionesConductores();
-        },
-    );
-}
-
 $(document).on(
     "change",
     "#conductor_principal_id, #conductor_secundario_id",
     actualizarOpcionesConductores,
 );
 
-function abrirManifiesto(salidaId, tipo) {
-    let sucursalId = $("#sucursal_manifiesto").val();
+// Llena #vehiculo_id, #conductor_principal_id y #conductor_secundario_id
+function cargarRecursosDisponibles(salida) {
+    [
+        "#vehiculo_id",
+        "#conductor_principal_id",
+        "#conductor_secundario_id",
+    ].forEach((s) => $(s).prop("disabled", true));
 
-    if (!sucursalId) {
-        Swal.fire("Atención", "Selecciona una sucursal", "warning");
+    $.get(route("salidas.recursos_disponibles", { salida: salida.id }))
+        .done((res) => {
+            $("#vehiculo_id").html(
+                opcionesDesde(res.vehiculos, {
+                    placeholder: "Seleccione vehículo",
+                    selected: salida.vehiculo_id ?? "",
+                    label: (v) =>
+                        `${v.tipo_vehiculo?.descripcion ?? ""} - ${v.numero_placa}`,
+                }),
+            );
+
+            const labelConductor = (c) =>
+                `${c.persona.nombres} ${c.persona.apellidos}`;
+
+            $("#conductor_principal_id").html(
+                opcionesDesde(res.conductores, {
+                    placeholder: "Seleccione",
+                    selected: salida.conductor_principal_id ?? "",
+                    label: labelConductor,
+                }),
+            );
+
+            $("#conductor_secundario_id").html(
+                opcionesDesde(res.conductores, {
+                    placeholder: "Opcional",
+                    selected: salida.conductor_secundario_id ?? "",
+                    label: labelConductor,
+                }),
+            );
+
+            actualizarOpcionesConductores();
+        })
+        .fail(
+            errorAjax("Error", "No se pudieron cargar vehículos y conductores"),
+        )
+        .always(() => {
+            [
+                "#vehiculo_id",
+                "#conductor_principal_id",
+                "#conductor_secundario_id",
+            ].forEach((s) => $(s).prop("disabled", false));
+        });
+}
+
+// HTML común de los 3 selects (vacíos; se llenan con cargarRecursosDisponibles)
+function bloqueAsignacionHtml() {
+    return `
+    <div class="mb-2">
+        <label class="form-label">Vehículo <span class="text-danger">*</span></label>
+        <select id="vehiculo_id" class="form-select">
+            <option value="">Cargando...</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Conductor principal <span class="text-danger">*</span></label>
+        <select id="conductor_principal_id" class="form-select">
+            <option value="">Cargando...</option>
+        </select>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Conductor secundario</label>
+        <select id="conductor_secundario_id" class="form-select">
+            <option value="">Cargando...</option>
+        </select>
+    </div>`;
+}
+
+/* =========================================================
+   EDITAR ASIGNACIÓN (emergencia, salida ya en ruta)
+   ========================================================= */
+function editarAsignacion(id) {
+    setPanel("Editar asignación (emergencia)", panelCargando());
+
+    $.get(route("salidas.show", { id }))
+        .done((salida) => {
+            setPanel(
+                "Editar asignación (emergencia)",
+                `
+                <div class="alert alert-warning fs-7 mb-3">
+                    Estás cambiando el vehículo/conductor de una salida ya iniciada.
+                    Usa esto solo en caso de imprevistos (ej. conductor no puede salir).
+                </div>
+
+                ${bloqueAsignacionHtml()}
+
+                <button class="btn btn-warning w-100 mt-2"
+                    onclick="guardarEdicionAsignacion(${salida.id}, '${salida.horario_id}', '${salida.fecha_salida}')">
+                    Guardar cambio
+                </button>
+
+                <button class="btn btn-link w-100 mt-1" onclick="verSalida(${salida.id})">
+                    Cancelar
+                </button>`,
+            );
+
+            cargarRecursosDisponibles(salida);
+        })
+        .fail(errorAjax("Error", "No se pudo cargar la salida"));
+}
+
+window.guardarEdicionAsignacion = function (id, horario_id, fecha_salida) {
+    const vehiculo_id = $("#vehiculo_id").val();
+    const conductor_principal_id = $("#conductor_principal_id").val();
+    const conductor_secundario_id = $("#conductor_secundario_id").val();
+
+    if (!vehiculo_id || !conductor_principal_id) {
+        Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
         return;
     }
 
-    let rutasPorTipo = {
-        pasajeros: "salidas.manifiesto_pasajeros",
-        encomiendas: "salidas.manifiesto_encomiendas",
-        bodega: "salidas.manifiesto_bodega",
-        conductores: "salidas.manifiesto_conductores",
-        pasajeros_real: "salidas.manifiesto_pasajeros_real",
-    };
-
-    let url =
-        route(rutasPorTipo[tipo], { salida: salidaId }) +
-        "?sucursal_id=" +
-        sucursalId;
-
-    window.open(url, "_blank");
-}
-
-function imprimirTodosManifiestos(salidaId) {
-    let url = route("salidas.manifiesto_pasajeros.todos", { salida: salidaId });
-    window.open(url, "_blank");
-}
-
-function bloqueCambioEstado(salida = {}) {
-    let visible = ["reprogramado", "cancelado"].includes(salida.estado)
-        ? ""
-        : "display:none;";
-
-    return `
-    <div id="bloqueCambioEstado" style="${visible}">
-        <hr>
-
-        <div class="alert alert-warning">
-            <strong>Salida original:</strong><br>
-            Fecha: ${salida.fecha_formateada ?? "-"}<br>
-            Hora: ${salida.hora_salida ?? "-"}
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">Nueva fecha <span class="text-danger">*</span></label>
-
-            <input 
-                type="date" 
-                id="fecha_cambio_estado" 
-                class="form-control" 
-                min="${hoy()}"
-                value="${salida.fecha_cambio_estado ?? hoy()}">
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">Nueva hora <span class="text-danger">*</span></label>
-
-            <input 
-                type="time" 
-                id="hora_cambio_estado" 
-                class="form-control" 
-                value="${salida.hora_cambio_estado ?? ahora()}">
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">Motivo <span class="text-danger">*</span></label>
-
-            <textarea 
-                id="motivo_cambio_estado" 
-                class="form-control" 
-                rows="3">${salida.motivo_cambio_estado ?? ""}
-            </textarea>
-        </div>
-    </div>
-`;
-}
-
-$(document).on("click", ".iniciar-ruta", function () {
-    let id = $(this).data("id");
-    iniciarRuta(id);
-});
-
-function iniciarRuta(id) {
-    $.get(route("salidas.show", { id: id }), function (salida) {
-        let html = `
-    <div class="alert alert-info fs-7 mb-3">
-        Vas a iniciar la ruta <strong>${salida.ruta?.nombre ?? ""}</strong>,
-        programada para el ${salida.fecha_formateada ?? "-"} a las ${salida.hora_salida ?? "-"}.
-    </div>
-
-    <input type="hidden" id="fecha_salida_hidden" value="${salida.fecha_salida}">
-
-    <div class="mb-2">
-        <label class="form-label">
-            Vehículo <span class="text-danger">*</span>
-        </label>
-
-        <select id="vehiculo_id" class="form-select">
-            <option value="">Seleccione vehículo</option>
-        </select>
-    </div>
-
-    <div class="mb-2">
-        <label class="form-label">
-            Conductor principal <span class="text-danger">*</span>
-        </label>
-
-        <select id="conductor_principal_id" class="form-select">
-            <option value="">Seleccione</option>
-        </select>
-    </div>
-
-    <div class="mb-2">
-        <label class="form-label">
-            Conductor secundario
-        </label>
-
-        <select id="conductor_secundario_id" class="form-select">
-            <option value="">Opcional</option>
-
-            ${window.CONDUCTORES.map(
-                (c) => `
-                    <option value="${c.id}">
-                        ${c.persona.nombres} ${c.persona.apellidos}
-                    </option>
-                `,
-            ).join("")}
-        </select>
-    </div>
-
-    <button
-        class="btn btn-success w-100 mt-2"
-        onclick="guardarInicioRuta(${salida.id}, ${salida.horario_id})">
-        Iniciar ruta
-    </button>
-`;
-
-        $("#tituloPanelSalida").text("Iniciar ruta");
-        $("#panelSalidaContenido").html(html);
-
-        // Reutiliza el mismo endpoint que ya usa editarSalida
-        // para llenar vehículo y conductores disponibles
-        cargarRecursosDisponibles(salida);
-
-        lucide.createIcons();
+    $.ajax({
+        url: route("salidas.update", { id }),
+        method: "POST",
+        data: {
+            _token: csrf(),
+            _method: "PUT",
+            horario_id,
+            fecha_salida,
+            estado: "en_ruta", // no cambia el estado, solo la asignación
+            vehiculo_id,
+            conductor_principal_id,
+            conductor_secundario_id,
+        },
+        success: () => {
+            Swal.fire("Actualizado", "Vehículo/conductor cambiado", "success");
+            recargarTabla();
+            verSalida(id);
+        },
+        error: errorAjax("Error", "No se pudo actualizar"),
     });
+};
+
+/* =========================================================
+   INICIAR / FINALIZAR RUTA
+   ========================================================= */
+function iniciarRuta(id) {
+    setPanel("Iniciar ruta", panelCargando());
+
+    $.get(route("salidas.show", { id }))
+        .done((salida) => {
+            setPanel(
+                "Iniciar ruta",
+                `
+                <div class="alert alert-info fs-7 mb-3">
+                    Vas a iniciar la ruta <strong>${salida.ruta?.nombre ?? ""}</strong>,
+                    programada para el ${salida.fecha_formateada ?? "-"} a las ${salida.hora_salida ?? "-"}.
+                </div>
+
+                <input type="hidden" id="fecha_salida_hidden" value="${salida.fecha_salida}">
+
+                ${bloqueAsignacionHtml()}
+
+                <button class="btn btn-success w-100 mt-2"
+                    onclick="guardarInicioRuta(${salida.id}, ${salida.horario_id})">
+                    Iniciar ruta
+                </button>`,
+            );
+
+            cargarRecursosDisponibles(salida);
+        })
+        .fail(errorAjax("Error", "No se pudo cargar la salida"));
 }
 
 window.guardarInicioRuta = function (id, horario_id) {
-    let fecha_salida = $("#fecha_salida_hidden").val();
-    let vehiculo_id = $("#vehiculo_id").val();
-    let conductor_principal_id = $("#conductor_principal_id").val();
-    let conductor_secundario_id = $("#conductor_secundario_id").val();
+    const fecha_salida = $("#fecha_salida_hidden").val();
+    const vehiculo_id = $("#vehiculo_id").val();
+    const conductor_principal_id = $("#conductor_principal_id").val();
+    const conductor_secundario_id = $("#conductor_secundario_id").val();
 
     if (!vehiculo_id || !conductor_principal_id) {
         Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
@@ -1211,10 +1021,10 @@ window.guardarInicioRuta = function (id, horario_id) {
         if (!result.isConfirmed) return;
 
         $.ajax({
-            url: route("salidas.update", { id: id }),
+            url: route("salidas.update", { id }),
             method: "POST",
             data: {
-                _token: $("meta[name=csrf-token]").attr("content"),
+                _token: csrf(),
                 _method: "PUT",
                 horario_id,
                 fecha_salida,
@@ -1223,28 +1033,15 @@ window.guardarInicioRuta = function (id, horario_id) {
                 conductor_principal_id,
                 conductor_secundario_id,
             },
-            success: function () {
+            success: () => {
                 Swal.fire("Ruta iniciada", "", "success");
-                tablaSalidas.ajax.reload();
-                $("#panelSalidaContenido").html(
-                    '<p class="text-muted">Selecciona una salida</p>',
-                );
+                recargarTabla();
+                panelVacio();
             },
-            error: function (err) {
-                Swal.fire(
-                    "Error",
-                    err.responseJSON?.message || "No se pudo iniciar la ruta",
-                    "error",
-                );
-            },
+            error: errorAjax("Error", "No se pudo iniciar la ruta"),
         });
     });
 };
-
-$(document).on("click", ".finalizar-ruta", function () {
-    let id = $(this).data("id");
-    finalizarRuta(id);
-});
 
 function finalizarRuta(id) {
     Swal.fire({
@@ -1258,230 +1055,177 @@ function finalizarRuta(id) {
     }).then((result) => {
         if (!result.isConfirmed) return;
 
-        $.get(route("salidas.show", { id: id }), function (salida) {
-            $.ajax({
-                url: route("salidas.update", { id: id }),
-                method: "POST",
-                data: {
-                    _token: $("meta[name=csrf-token]").attr("content"),
-                    _method: "PUT",
-                    horario_id: salida.horario_id,
-                    fecha_salida: salida.fecha_salida,
-                    estado: "finalizado",
-                    vehiculo_id: salida.vehiculo_id,
-                    conductor_principal_id: salida.conductor_principal_id,
-                    conductor_secundario_id: salida.conductor_secundario_id,
-                },
-                success: function () {
-                    Swal.fire("Ruta finalizada", "", "success");
-                    tablaSalidas.ajax.reload();
-                    $("#panelSalidaContenido").html(
-                        '<p class="text-muted">Selecciona una salida</p>',
-                    );
-                },
-                error: function (err) {
-                    Swal.fire(
-                        "Error",
-                        err.responseJSON?.message ||
-                            "No se pudo finalizar la ruta",
-                        "error",
-                    );
-                },
-            });
-        });
+        $.get(route("salidas.show", { id }))
+            .done((salida) => {
+                $.ajax({
+                    url: route("salidas.update", { id }),
+                    method: "POST",
+                    data: {
+                        _token: csrf(),
+                        _method: "PUT",
+                        horario_id: salida.horario_id,
+                        fecha_salida: salida.fecha_salida,
+                        estado: "finalizado",
+                        vehiculo_id: salida.vehiculo_id,
+                        conductor_principal_id: salida.conductor_principal_id,
+                        conductor_secundario_id: salida.conductor_secundario_id,
+                    },
+                    success: () => {
+                        Swal.fire("Ruta finalizada", "", "success");
+                        recargarTabla();
+                        panelVacio();
+                    },
+                    error: errorAjax("Error", "No se pudo finalizar la ruta"),
+                });
+            })
+            .fail(errorAjax("Error", "No se pudo cargar la salida"));
     });
+}
+
+/* =========================================================
+   EDITAR SALIDA (admin)
+   ========================================================= */
+function bloqueCambioEstado(salida = {}) {
+    const visible = ["reprogramado", "cancelado"].includes(salida.estado)
+        ? ""
+        : "display:none;";
+
+    return `
+    <div id="bloqueCambioEstado" style="${visible}">
+        <hr>
+
+        <div class="alert alert-warning">
+            <strong>Salida original:</strong><br>
+            Fecha: ${salida.fecha_formateada ?? "-"}<br>
+            Hora: ${salida.hora_salida ?? "-"}
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Nueva fecha <span class="text-danger">*</span></label>
+            <input type="date" id="fecha_cambio_estado" class="form-control"
+                min="${hoy()}" value="${salida.fecha_cambio_estado ?? hoy()}">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Nueva hora <span class="text-danger">*</span></label>
+            <input type="time" id="hora_cambio_estado" class="form-control"
+                value="${salida.hora_cambio_estado ?? ahora()}">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Motivo <span class="text-danger">*</span></label>
+            <textarea id="motivo_cambio_estado" class="form-control" rows="3">${salida.motivo_cambio_estado ?? ""}</textarea>
+        </div>
+    </div>`;
 }
 
 function editarSalida(id) {
-    $.get(route("salidas.show", { id: id }), function (salida) {
-        let html = `
-    <div class="mb-2">
-        <label class="form-label">
-            Estado <span class="text-danger">*</span>
-        </label>
+    setPanel("Editar salida", panelCargando());
 
-        <select id="estado" class="form-select">
-            ${opcionesEstados(salida.estado)}
-        </select>
-    </div>
+    $.get(route("salidas.show", { id }))
+        .done((salida) => {
+            setPanel(
+                "Editar salida",
+                `
+                <div class="mb-2">
+                    <label class="form-label">Estado <span class="text-danger">*</span></label>
+                    <select id="estado" class="form-select">
+                        ${opcionesEstados(salida.estado)}
+                    </select>
+                </div>
 
-    <div id="bloqueDatosSalida">
+                <div id="bloqueDatosSalida">
+                    <div class="mb-2">
+                        <label class="form-label">Horario <span class="text-danger">*</span></label>
+                        <select id="horario_id">
+                            ${opcionesHorarios(salida.horario_id)}
+                        </select>
+                    </div>
 
-        <div class="mb-2">
-            <label class="form-label">
-                Horario <span class="text-danger">*</span>
-            </label>
+                    <div class="mb-2">
+                        <label class="form-label">Fecha <span class="text-danger">*</span></label>
+                        <input type="date" id="fecha_salida" class="form-control"
+                            value="${salida.fecha_salida}">
+                    </div>
+                </div>
 
-            <select id="horario_id">
-                ${opcionesHorarios(salida.horario_id)}
-            </select>
-        </div>
+                ${bloqueCambioEstado(salida)}
 
-        <div class="mb-2">
-            <label class="form-label">
-                Fecha <span class="text-danger">*</span>
-            </label>
+                <div id="bloqueAsignacionRuta" style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
+                    <hr>
+                    ${bloqueAsignacionHtml()}
+                </div>
 
-            <input
-                type="date"
-                id="fecha_salida"
-                class="form-control"
-                value="${salida.fecha_salida}">
-        </div>
+                <button class="btn btn-success w-100 mt-2"
+                    onclick="guardarEdicionSalida(${salida.id}, ${salida.horario_id})">
+                    Guardar cambios
+                </button>
 
-    </div>
-
-    ${bloqueCambioEstado(salida)}
-
-    <div id="bloqueAsignacionRuta"
-        style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
-
-        <hr>
-
-        <div class="mb-2">
-            <label class="form-label">
-                Vehículo <span class="text-danger">*</span>
-            </label>
-
-         <select id="vehiculo_id" class="form-select">
-    <option value="">Seleccione vehículo</option>
-
-   ${cargarRecursosDisponibles(salida)}
-</select>
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">
-                Conductor principal
-                <span class="text-danger">*</span>
-            </label>
-
-          <select id="vehiculo_id" class="form-select">
-    <option value="">Seleccione vehículo</option>
-
-   ${cargarRecursosDisponibles(salida)}
-</select>
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">
-                Conductor secundario
-            </label>
-
-            <select id="conductor_secundario_id" class="form-select">
-                <option value="">Opcional</option>
-
-                ${window.CONDUCTORES.map(
-                    (c) => `
-                        <option
-                            value="${c.id}"
-                            ${c.id == salida.conductor_secundario_id ? "selected" : ""}>
-
-                            ${c.persona.nombres}
-                            ${c.persona.apellidos}
-                        </option>
-                    `,
-                ).join("")}
-            </select>
-        </div>
-
-    </div>
-
-  <button
-    class="btn btn-success w-100 mt-2"
-    onclick="guardarEdicionSalida(${salida.id}, ${salida.horario_id})">
-    Guardar cambios
-</button>
-`;
-
-        $("#tituloPanelSalida").text("Editar salida");
-        $("#panelSalidaContenido").html(html);
-
-        let horario = window.HORARIOS_SALIDA.find(
-            (h) => String(h.id) === String(salida.horario_id),
-        );
-
-        let horaOriginal = salida.hora_salida;
-        let fechaOriginal = salida.fecha_salida;
-
-        if (horario) {
-            let filtrados = window.VEHICULOS.filter(
-                (v) =>
-                    String(v.tipo_vehiculo_id) ===
-                    String(horario.tipo_vehiculo_id),
+                <button class="btn btn-link w-100 mt-1" onclick="verSalida(${salida.id})">
+                    Cancelar
+                </button>`,
             );
 
-            let options = `<option value="">Seleccione vehículo</option>`;
+            new TomSelect("#horario_id", { create: false });
 
-            filtrados.forEach((v) => {
-                options += `
-            <option value="${v.id}" ${String(v.id) === String(salida.vehiculo_id) ? "selected" : ""}>
-                ${v.tipo_vehiculo.descripcion} - ${v.numero_placa}
-            </option>
-        `;
-            });
+            // Los recursos solo se piden si la salida puede quedar en ruta
+            let recursosCargados = false;
+            const asegurarRecursos = () => {
+                if (recursosCargados) return;
+                recursosCargados = true;
+                cargarRecursosDisponibles(salida);
+            };
 
-            $("#vehiculo_id").html(options);
-        }
+            function aplicarReglasEstado() {
+                const estado = $("#estado").val();
 
-        new TomSelect("#horario_id", {
-            create: false,
-        });
+                const enRuta = estado === "en_ruta";
+                const reprogramado = estado === "reprogramado";
+                const cancelado = estado === "cancelado";
+                const finalizado = estado === "finalizado";
 
-        function aplicarReglasEstado() {
-            let estado = $("#estado").val();
+                const bloquearBase = enRuta || finalizado;
 
-            let enRuta = estado === "en_ruta";
-            let reprogramado = estado === "reprogramado";
-            let cancelado = estado === "cancelado";
-            let finalizado = estado === "finalizado";
-
-            let bloquearBase = enRuta || finalizado;
-
-            // 🔒 HORARIO
-            if ($("#horario_id")[0]?.tomselect) {
-                if (bloquearBase || reprogramado) {
-                    $("#horario_id")[0].tomselect.lock();
-                } else {
-                    $("#horario_id")[0].tomselect.unlock();
+                const ts = $("#horario_id")[0]?.tomselect;
+                if (ts) {
+                    bloquearBase || reprogramado ? ts.lock() : ts.unlock();
                 }
+
+                $("#fecha_salida").prop(
+                    "readonly",
+                    bloquearBase || reprogramado,
+                );
+
+                $("#bloqueDatosSalida").toggle(!enRuta);
+                $("#bloqueAsignacionRuta").toggle(enRuta);
+                $("#bloqueCambioEstado").toggle(reprogramado || cancelado);
+
+                $("#fecha_cambio_estado").closest(".mb-2").toggle(reprogramado);
+                $("#hora_cambio_estado").closest(".mb-2").toggle(reprogramado);
+
+                if (enRuta) asegurarRecursos();
             }
 
-            // 🔒 FECHA BASE
-            $("#fecha_salida").prop("readonly", bloquearBase || reprogramado);
-
-            // 📌 BLOQUE BASE (si está en ruta, ocultas esto)
-            $("#bloqueDatosSalida").toggle(!enRuta);
-
-            // 🚛 ASIGNACIÓN SOLO EN RUTA
-            $("#bloqueAsignacionRuta").toggle(enRuta);
-
-            // 🔁 CAMBIO DE ESTADO
-            $("#bloqueCambioEstado").toggle(reprogramado || cancelado);
-
-            $("#fecha_cambio_estado").closest(".mb-2").toggle(reprogramado);
-            $("#hora_cambio_estado").closest(".mb-2").toggle(reprogramado);
-        }
-
-        $("#estado").on("change", aplicarReglasEstado);
-        aplicarReglasEstado();
-
-        lucide.createIcons();
-    });
+            $("#estado").on("change", aplicarReglasEstado);
+            aplicarReglasEstado();
+        })
+        .fail(errorAjax("Error", "No se pudo cargar la salida"));
 }
 
 window.guardarEdicionSalida = function (id, horarioOriginal) {
-    let horario_id = $("#horario_id").val() || horarioOriginal;
-    let fecha_salida = $("#fecha_salida").val();
-    let estado = $("#estado").val();
-    let fecha_cambio_estado = $("#fecha_cambio_estado").val();
-    let hora_cambio_estado = $("#hora_cambio_estado").val();
-    let motivo_cambio_estado = $("#motivo_cambio_estado").val();
-    let vehiculo_id = $("#vehiculo_id").val();
-    let conductor_principal_id = $("#conductor_principal_id").val();
-    let conductor_secundario_id = $("#conductor_secundario_id").val();
+    const horario_id = $("#horario_id").val() || horarioOriginal;
+    const fecha_salida = $("#fecha_salida").val();
+    const estado = $("#estado").val();
+    const fecha_cambio_estado = $("#fecha_cambio_estado").val();
+    const hora_cambio_estado = $("#hora_cambio_estado").val();
+    const motivo_cambio_estado = (
+        $("#motivo_cambio_estado").val() || ""
+    ).trim();
+    const vehiculo_id = $("#vehiculo_id").val();
+    const conductor_principal_id = $("#conductor_principal_id").val();
+    const conductor_secundario_id = $("#conductor_secundario_id").val();
 
-    let cambioHora = String(horario_id) !== String(horarioOriginal);
+    const cambioHora = String(horario_id) !== String(horarioOriginal);
 
     if (cambioHora && estado !== "reprogramado") {
         Swal.fire(
@@ -1491,41 +1235,35 @@ window.guardarEdicionSalida = function (id, horarioOriginal) {
         );
         return;
     }
+
     if (!horario_id || !fecha_salida || !estado) {
         Swal.fire("Error", "Todos los campos son obligatorios", "error");
         return;
     }
 
-    if (estado === "reprogramado") {
-        if (
-            !fecha_cambio_estado ||
-            !hora_cambio_estado ||
-            !motivo_cambio_estado
-        ) {
-            Swal.fire("Error", "Debe ingresar fecha, hora y motivo", "error");
-            return;
-        }
+    if (
+        estado === "reprogramado" &&
+        (!fecha_cambio_estado || !hora_cambio_estado || !motivo_cambio_estado)
+    ) {
+        Swal.fire("Error", "Debe ingresar fecha, hora y motivo", "error");
+        return;
     }
 
-    if (estado === "cancelado") {
-        if (!motivo_cambio_estado) {
-            Swal.fire("Error", "Debe ingresar motivo", "error");
-            return;
-        }
+    if (estado === "cancelado" && !motivo_cambio_estado) {
+        Swal.fire("Error", "Debe ingresar motivo", "error");
+        return;
     }
 
-    if (estado === "en_ruta") {
-        if (!vehiculo_id || !conductor_principal_id) {
-            Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
-            return;
-        }
+    if (estado === "en_ruta" && (!vehiculo_id || !conductor_principal_id)) {
+        Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
+        return;
     }
 
     $.ajax({
-        url: route("salidas.update", { id: id }),
+        url: route("salidas.update", { id }),
         method: "POST",
         data: {
-            _token: $("meta[name=csrf-token]").attr("content"),
+            _token: csrf(),
             _method: "PUT",
             horario_id,
             fecha_salida,
@@ -1537,87 +1275,11 @@ window.guardarEdicionSalida = function (id, horarioOriginal) {
             hora_cambio_estado,
             motivo_cambio_estado,
         },
-        success: function () {
+        success: () => {
             Swal.fire("Actualizado", "", "success");
-            tablaSalidas.ajax.reload();
+            recargarTabla();
+            verSalida(id);
         },
+        error: errorAjax("Error", "No se pudo actualizar la salida"),
     });
 };
-
-function eliminarSalida(id) {
-    Swal.fire({
-        title: "¿Eliminar salida?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Sí, eliminar",
-    }).then((result) => {
-        if (!result.isConfirmed) return;
-
-        $.ajax({
-            url: route("salidas.destroy", { id: id }),
-            method: "POST",
-            data: {
-                _token: $("meta[name=csrf-token]").attr("content"),
-                _method: "DELETE",
-            },
-            success: function () {
-                Swal.fire("Eliminado", "", "success");
-                tablaSalidas.ajax.reload();
-                $("#panelSalidaContenido").html(
-                    '<p class="text-muted">Selecciona una salida</p>',
-                );
-            },
-            error: function (err) {
-                Swal.fire(
-                    "Error",
-                    err.responseJSON?.message || "No se pudo eliminar",
-                    "error",
-                );
-            },
-        });
-    });
-}
-
-$(document).on("click", ".ver", function () {
-    let id = $(this).data("id");
-    verSalida(id);
-});
-
-$(document).on("click", ".editar", function () {
-    let id = $(this).data("id");
-    editarSalida(id);
-});
-
-$(document).on("click", ".eliminar", function () {
-    let id = $(this).data("id");
-    eliminarSalida(id);
-});
-
-$(document).on("change", "#horario_id", function () {
-    let horario_id = $(this).val();
-
-    let horario = window.HORARIOS_SALIDA.find(
-        (h) => String(h.id) === String(horario_id),
-    );
-
-    if (!horario) {
-        $("#vehiculo_id").html('<option value="">Seleccione vehículo</option>');
-        return;
-    }
-
-    let filtrados = window.VEHICULOS.filter(
-        (v) => String(v.tipo_vehiculo_id) === String(horario.tipo_vehiculo_id),
-    );
-
-    let options = `<option value="">Seleccione vehículo</option>`;
-
-    filtrados.forEach((v) => {
-        options += `
-            <option value="${v.id}">
-                ${v.tipo_vehiculo.descripcion} - ${v.numero_placa}
-            </option>
-        `;
-    });
-
-    $("#vehiculo_id").html(options);
-});

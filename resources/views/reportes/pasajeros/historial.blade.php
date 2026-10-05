@@ -1,209 +1,83 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-
-    <title>Historial de Pasajero</title>
-
+    <title>Venta de Pasajes</title>
     <style>
-        body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 9px;
-            color: #222;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .header h2 {
-            margin: 0;
-            font-size: 17px;
-        }
-
-        .header p {
-            margin: 4px 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #eeeeee;
-            font-weight: bold;
-        }
-
-        th,
-        td {
-            border: 1px solid #999;
-            padding: 4px;
-        }
-
-        .center {
-            text-align: center;
-        }
-
-        .right {
-            text-align: right;
-        }
-
-        .total {
-            font-weight: bold;
-        }
+        @page { margin: 22px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 8px; color: #222; }
+        .header { text-align: center; margin-bottom: 15px; }
+        h2 { margin: 0; font-size: 17px; }
+        p { margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+        th { background: #e8eef5; font-weight: bold; }
+        th, td { border: 1px solid #aaa; padding: 4px; word-wrap: break-word; }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .total { font-weight: bold; background: #fff2cc; }
     </style>
 </head>
-
 <body>
-
-    @php
-        $primerPasaje = $pasajes->first();
-        $persona = $primerPasaje?->persona;
-
-        $nombrePasajero = $persona
-            ? trim(
-                ($persona->nombres ?? '') . ' ' .
-                ($persona->apellido_paterno ?? '') . ' ' .
-                ($persona->apellido_materno ?? '')
-            )
-            : 'Todos los pasajeros';
-
-        $total = 0;
-    @endphp
-
     <div class="header">
+        <h2>VENTA DE PASAJES</h2>
+        <p><strong>Período:</strong> {{ $desde->format('d/m/Y') }} al {{ $hasta->format('d/m/Y') }}</p>
 
-        <h2>
-            HISTORIAL DE PASAJERO
-        </h2>
-
-        @if ($persona)
-            <p>
-                <strong>Pasajero:</strong>
-                {{ $nombrePasajero }}
-            </p>
-
-            @if (!empty($persona->numero_documento))
-                <p>
-                    <strong>Documento:</strong>
-                    {{ $persona->numero_documento }}
-                </p>
-            @endif
+        @if ($dni !== null)
+            <p><strong>DNI del pasajero:</strong> {{ $dni }}</p>
+        @else
+            <p><strong>Pasajeros:</strong> Todos</p>
         @endif
 
-        <p>
-            <strong>Período:</strong>
-            {{ $desde->format('d/m/Y') }}
-            al
-            {{ $hasta->format('d/m/Y') }}
-        </p>
-
+        <p><strong>Cantidad de pasajes:</strong> {{ $cantidadPasajes }}</p>
     </div>
 
     <table>
-
         <thead>
             <tr>
-                <th>Fecha Venta</th>
-                <th>Ruta</th>
-                <th>Origen</th>
-                <th>Destino</th>
-                <th>Asiento</th>
-                <th>Usuario</th>
-                <th>Estado</th>
-                <th>Precio</th>
+                <th style="width: 9%">Fecha venta</th>
+                <th style="width: 9%">Comprobante</th>
+                <th style="width: 17%">Pasajero</th>
+                <th style="width: 8%">Documento</th>
+                <th style="width: 10%">Ruta</th>
+                <th style="width: 9%">Origen</th>
+                <th style="width: 9%">Destino</th>
+                <th style="width: 4%">Asiento</th>
+                <th style="width: 11%">Vendedor</th>
+                <th style="width: 7%">Estado</th>
+                <th style="width: 7%">Precio</th>
             </tr>
         </thead>
-
         <tbody>
-
-            @forelse ($pasajes as $pasaje)
-
-                @php
-                    $precio = $pasaje->precio_cobrado
-                        ?? $pasaje->precio_pasaje
-                        ?? 0;
-
-                    $total += $precio;
-
-                    $ruta = $pasaje->salida?->horario?->ruta;
-                @endphp
-
+            @forelse ($filas as $fila)
                 <tr>
-
-                    <td>
-                        {{ optional($pasaje->venta)->created_at
-                            ? $pasaje->venta->created_at->format('d/m/Y H:i')
-                            : '' }}
-                    </td>
-
-                    <td>
-                        {{ $ruta?->descripcion ?? '' }}
-                    </td>
-
-                    <td>
-                        {{ $pasaje->origen?->descripcion
-                            ?? $pasaje->origen?->nombre
-                            ?? '' }}
-                    </td>
-
-                    <td>
-                        {{ $pasaje->destino?->descripcion
-                            ?? $pasaje->destino?->nombre
-                            ?? '' }}
-                    </td>
-
-                    <td class="center">
-                        {{ $pasaje->asiento_numero }}
-                    </td>
-
-                    <td>
-                        {{ $pasaje->usuario?->name ?? '' }}
-                    </td>
-
-                    <td class="center">
-                        {{ $pasaje->estado }}
-                    </td>
-
-                    <td class="right">
-                        S/ {{ number_format($precio, 2) }}
-                    </td>
-
+                    <td>{{ $fila['fecha'] }}</td>
+                    <td>{{ $fila['comprobante'] }}</td>
+                    <td>{{ $fila['pasajero'] }}</td>
+                    <td>{{ $fila['documento'] }}</td>
+                    <td>{{ $fila['ruta'] }}</td>
+                    <td>{{ $fila['origen'] }}</td>
+                    <td>{{ $fila['destino'] }}</td>
+                    <td class="center">{{ $fila['asiento'] }}</td>
+                    <td>{{ $fila['vendedor'] }}</td>
+                    <td class="center">{{ $fila['estado'] }}</td>
+                    <td class="right">S/ {{ number_format($fila['precio'], 2) }}</td>
                 </tr>
-
             @empty
-
                 <tr>
-                    <td colspan="8" class="center">
-                        No se encontraron viajes para el pasajero.
+                    <td colspan="11" class="center">
+                        {{ $dni !== null
+                            ? 'No se encontraron pasajes para el DNI y período seleccionados.'
+                            : 'No se encontraron pasajes para el período seleccionado.' }}
                     </td>
                 </tr>
-
             @endforelse
-
-            @if ($pasajes->count() > 0)
-
-                <tr class="total">
-
-                    <td colspan="7" class="right">
-                        TOTAL
-                    </td>
-
-                    <td class="right">
-                        S/ {{ number_format($total, 2) }}
-                    </td>
-
-                </tr>
-
-            @endif
-
+            <tr class="total">
+                <td colspan="10" class="right">TOTAL DE IMPORTES DE PASAJES</td>
+                <td class="right">S/ {{ number_format($totalImporte, 2) }}</td>
+            </tr>
         </tbody>
-
     </table>
-
 </body>
-
 </html>

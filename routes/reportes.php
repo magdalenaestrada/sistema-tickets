@@ -14,11 +14,6 @@ Route::middleware(['auth', 'can:gestionar reportes'])
         Route::get('/ventas/resumen', [ReportesController::class, 'resumenVentas'])
             ->name('ventas.resumen');
 
-
-        // =====================================================
-        // VENTAS POR USUARIO
-        // =====================================================
-
         Route::get(
             '/ventas-usuario/excel',
             [ReportesController::class, 'ventasPorUsuarioExcel']
@@ -89,4 +84,9 @@ Route::middleware(['auth', 'can:gestionar reportes'])
 
         Route::get('/caja/medio-pago/pdf', [ReportesController::class, 'recaudacionMedioPagoPdf'])
             ->name('caja.medio_pago.pdf');
+
+        Route::get(
+            '/pasajeros/historial/excel',
+            [ReportesController::class, 'historialPasajeroExcel']
+        )->name('historial.pasajero.excel');
     });

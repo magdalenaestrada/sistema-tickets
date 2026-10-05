@@ -243,43 +243,57 @@
                             </div>
 
 
-                            {{-- PASAJES --}}
+
                             <div class="col-12 col-md-6 col-lg-4">
-
                                 <div class="report-card">
-
                                     <div>
-
                                         <h6 class="fw-bold text-dark mb-2">
                                             <i class="bi bi-ticket-perforated me-2 text-primary"></i>
                                             Venta de Pasajes
                                         </h6>
-
                                         <p class="text-muted micro-text mb-3">
-                                            Detalle de boletos, pasajeros, rutas, asientos y viajes.
+                                            Boletos, pasajeros, rutas, asientos e importes del período seleccionado.
                                         </p>
 
+                                        <label for="reporte_pasajes_dni" class="form-label small fw-semibold">
+                                            DNI del pasajero (opcional)
+                                        </label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" id="reporte_pasajes_dni" class="form-control"
+                                                inputmode="numeric" maxlength="8" pattern="[0-9]{8}"
+                                                placeholder="Ej.: 01234567" aria-describedby="reporte_pasajes_ayuda"
+                                                oninput="reiniciarBusquedaPasajes()"
+                                                onkeydown="if (event.key === 'Enter') { event.preventDefault(); buscarPasajeroReporte(); }">
+                                            <button type="button" id="btnBuscarPasajeroReporte"
+                                                class="btn btn-outline-primary"
+                                                onclick="buscarPasajeroReporte()">Buscar</button>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                onclick="limpiarDniPasajes()">Limpiar</button>
+                                        </div>
+                                        <div id="reporte_pasajes_ayuda" class="form-text">
+                                            Escribe el DNI y pulsa Buscar para comprobar el nombre. Vacío exporta todos.
+                                        </div>
+                                        <label for="reporte_pasajes_nombre" class="form-label small fw-semibold mt-3">
+                                            Pasajero
+                                        </label>
+                                        <input type="text" id="reporte_pasajes_nombre"
+                                            class="form-control form-control-sm" readonly
+                                            placeholder="Todos los pasajeros" aria-live="polite">
                                     </div>
 
                                     <div class="d-flex gap-2 pt-3">
-
                                         <button type="button" class="btn btn-outline-danger btn-sm w-100"
-                                            onclick="exportarReporte('venta-pasajes','pdf')">
-                                            <i class="bi bi-file-earmark-pdf me-1"></i>
-                                            PDF
+                                            onclick="exportarVentaPasajes('pdf')">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
                                         </button>
-
                                         <button type="button" class="btn btn-outline-success btn-sm w-100"
-                                            onclick="exportarReporte('venta-pasajes','excel')">
-                                            <i class="bi bi-file-earmark-excel me-1"></i>
-                                            Excel
+                                            onclick="exportarVentaPasajes('excel')">
+                                            <i class="bi bi-file-earmark-excel me-1"></i> Excel
                                         </button>
-
                                     </div>
-
                                 </div>
-
                             </div>
+
 
 
                             {{-- ENCOMIENDAS --}}
@@ -1276,6 +1290,119 @@
                     `Hasta: ${filters.dateTo}`
                 );
 
+            }
+
+            let solicitudDniPasajes = null;
+            let versionDniPasajes = 0;
+            let dniConfirmadoPasajes = '';
+
+            function reiniciarBusquedaPasajes() {
+                versionDniPasajes++;
+                dniConfirmadoPasajes = '';
+
+                if (solicitudDniPasajes) {
+                    solicitudDniPasajes.abort();
+                    solicitudDniPasajes = null;
+                }
+
+                const dni = ($('#reporte_pasajes_dni').val() || '').trim();
+                $('#reporte_pasajes_nombre').val('').attr('placeholder',
+                    dni ? 'Pulsa Buscar para ver el nombre' : 'Todos los pasajeros');
+                $('#btnBuscarPasajeroReporte').prop('disabled', false).text('Buscar');
+            }
+
+            function limpiarDniPasajes() {
+                $('#reporte_pasajes_dni').val('');
+                reiniciarBusquedaPasajes();
+                $('#reporte_pasajes_dni').trigger('focus');
+            }
+
+            function buscarPasajeroReporte() {
+                const documento = ($('#reporte_pasajes_dni').val() || '').trim();
+                reiniciarBusquedaPasajes();
+
+                if (!/^[0-9]{8}$/.test(documento)) {
+                    Swal.fire('Aviso', 'Escribe un DNI de 8 dígitos para buscar al pasajero.', 'warning');
+                    return;
+                }
+
+                const versionActual = versionDniPasajes;
+                $('#btnBuscarPasajeroReporte').prop('disabled', true).text('Buscando…');
+
+                solicitudDniPasajes = $.getJSON(route('buscar.buscar'), {
+                        documento
+                    })
+                    .done(function(data) {
+                        // Una respuesta anterior no puede llenar el nombre de un DNI nuevo.
+                        if (versionActual !== versionDniPasajes ||
+                            ($('#reporte_pasajes_dni').val() || '').trim() !== documento) return;
+
+                        if (!data || data.error) {
+                            Swal.fire('Aviso', data?.error || 'No se encontró el documento.', 'warning');
+                            return;
+                        }
+
+                        const nombreCompleto = (data.razon_social || [
+                            data.nombres,
+                            data.apellido_paterno,
+                            data.apellido_materno,
+                        ].filter(Boolean).join(' ')).trim();
+
+                        if (!nombreCompleto) {
+                            Swal.fire('Aviso', 'La búsqueda no devolvió el nombre del pasajero.', 'warning');
+                            return;
+                        }
+
+                        $('#reporte_pasajes_nombre').val(nombreCompleto);
+                        dniConfirmadoPasajes = documento;
+                    })
+                    .fail(function(_xhr, estado) {
+                        if (estado === 'abort' || versionActual !== versionDniPasajes) return;
+                        Swal.fire('Error', 'No se pudo buscar el documento. Intenta nuevamente.', 'error');
+                    })
+                    .always(function() {
+                        if (versionActual !== versionDniPasajes) return;
+                        solicitudDniPasajes = null;
+                        $('#btnBuscarPasajeroReporte').prop('disabled', false).text('Buscar');
+                    });
+            }
+
+            function exportarVentaPasajes(formato) {
+                const rutas = {
+                    pdf: @json(route('reportes.historial.pasajero.pdf')),
+                    excel: @json(route('reportes.historial.pasajero.excel')),
+                };
+                if (!Object.prototype.hasOwnProperty.call(rutas, formato)) return;
+
+                const dni = ($('#reporte_pasajes_dni').val() || '').trim();
+
+                if (dni !== '' && !/^[0-9]{8}$/.test(dni)) {
+                    Swal.fire('Aviso', 'Escribe un DNI de 8 dígitos o deja el campo vacío.', 'warning');
+                    return;
+                }
+
+                if (dni !== '' && dniConfirmadoPasajes !== dni) {
+                    Swal.fire('Aviso', 'Pulsa Buscar para comprobar el nombre del pasajero antes de exportar.', 'warning');
+                    return;
+                }
+
+                const filters = getGlobalFilters();
+                if (filters.period === 'custom' && (!filters.dateFrom || !filters.dateTo)) {
+                    Swal.fire('Aviso', 'Selecciona la fecha inicial y final.', 'warning');
+                    return;
+                }
+                if (filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo) {
+                    Swal.fire('Aviso', 'La fecha final debe ser igual o posterior a la inicial.', 'warning');
+                    return;
+                }
+
+                const url = new URL(rutas[formato], window.location.origin);
+                url.searchParams.set('period', filters.period);
+                if (filters.dateFrom) url.searchParams.set('date_from', filters.dateFrom);
+                if (filters.dateTo) url.searchParams.set('date_to', filters.dateTo);
+                if (dni !== '') url.searchParams.set('dni', dni);
+
+                window.open(url.toString(), '_blank', 'noopener,noreferrer');
             }
 
 
