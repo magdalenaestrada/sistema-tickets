@@ -7,7 +7,7 @@
    ========================================================= */
 
 let tablaSalidas;
-let estadoActual = "proximas";
+let estadoActual = "programado";
 let xhrDetalle = null;
 
 const horariosSalida = window.HORARIOS_SALIDA || [];
@@ -99,26 +99,32 @@ const opcionesTiposVehiculo = (selected = "") =>
         label: (t) => t.descripcion,
     });
 
-function opcionesEstados(selected = "programado") {
-    const estados = [
-        { id: "programado", nombre: "Programado" },
-        { id: "reprogramado", nombre: "Reprogramado" },
-        { id: "en_ruta", nombre: "En ruta" },
-        { id: "finalizado", nombre: "Finalizado" },
-        { id: "cancelado", nombre: "Cancelado" },
-    ];
-    return opcionesDesde(estados, {
-        placeholder: "Seleccione estado",
-        selected,
-        label: (e) => e.nombre,
-    });
+function opcionesEstados(actual = "programado") {
+    const nombres = {
+        programado: "Programado",
+        reprogramado: "Reprogramado",
+        en_ruta: "En ruta",
+        finalizado: "Finalizado",
+        cancelado: "Cancelado",
+    };
+    const permitidos = {
+        programado: ["programado", "en_ruta", "reprogramado", "cancelado"],
+        reprogramado: ["reprogramado", "en_ruta", "cancelado"],
+        en_ruta: ["en_ruta", "finalizado", "cancelado"],
+        finalizado: ["finalizado"],
+        cancelado: ["cancelado"],
+    }[actual] ?? [actual];
+
+    return permitidos
+        .map(
+            (e) =>
+                `<option value="${e}" ${e === actual ? "selected" : ""}>${nombres[e]}</option>`,
+        )
+        .join("");
 }
 
-/* =========================================================
-   TABLA
-   ========================================================= */
 const columnas = [
-    ...(window.IS_ADMIN
+    ...(window.IS_ADMIN && !window.MODO_MANIFIESTOS
         ? [
               {
                   data: "checkbox",
@@ -184,6 +190,7 @@ const columnas = [
 
 $(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
+        order: [], // <- agrega esto
         processing: true,
         serverSide: true,
         deferRender: true,
@@ -197,6 +204,7 @@ $(function () {
             data: (d) => {
                 d.estado = estadoActual;
                 d.ruta_id = $("#filtroRuta").val();
+                d.modo = window.MODO_MANIFIESTOS ? "manifiestos" : "";
             },
         },
         columns: columnas,
@@ -206,7 +214,9 @@ $(function () {
             processing: "Cargando...",
             paginate: { previous: "‹", next: "›" },
         },
-        drawCallback: () => lucide.createIcons(),
+        drawCallback: () => {
+            lucide.createIcons();
+        },
     });
 
     // Filtro de ruta (opciones renderizadas por Blade)
@@ -1124,86 +1134,61 @@ function editarSalida(id) {
 
     $.get(route("salidas.show", { id }))
         .done((salida) => {
+            const bloqueado = ["finalizado", "cancelado"].includes(
+                salida.estado,
+            );
+
             setPanel(
                 "Editar salida",
                 `
-                <div class="mb-2">
-                    <label class="form-label">Estado <span class="text-danger">*</span></label>
-                    <select id="estado" class="form-select">
-                        ${opcionesEstados(salida.estado)}
-                    </select>
+                <div class="p-2 border rounded bg-light mb-3">
+                    <small class="text-muted d-block">Ruta</small>
+                    <strong class="d-block">${salida.ruta?.nombre ?? "-"}</strong>
+                    <small class="text-muted">${salida.fecha_formateada ?? "-"} • ${salida.hora_salida ?? "-"}</small>
                 </div>
 
-                <div id="bloqueDatosSalida">
-                    <div class="mb-2">
-                        <label class="form-label">Horario <span class="text-danger">*</span></label>
-                        <select id="horario_id">
-                            ${opcionesHorarios(salida.horario_id)}
-                        </select>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Fecha <span class="text-danger">*</span></label>
-                        <input type="date" id="fecha_salida" class="form-control"
-                            value="${salida.fecha_salida}">
-                    </div>
+                <div class="mb-2">
+                    <label class="form-label">Estado <span class="text-danger">*</span></label>
+                    <select id="estado" class="form-select">${opcionesEstados(salida.estado)}</select>
                 </div>
 
                 ${bloqueCambioEstado(salida)}
 
-                <div id="bloqueAsignacionRuta" style="${salida.estado === "en_ruta" ? "" : "display:none;"}">
+                <div id="bloqueAsignacionRuta" style="display:none;">
                     <hr>
                     ${bloqueAsignacionHtml()}
                 </div>
 
-                <button class="btn btn-success w-100 mt-2"
-                    onclick="guardarEdicionSalida(${salida.id}, ${salida.horario_id})">
-                    Guardar cambios
-                </button>
+                ${
+                    bloqueado
+                        ? `<div class="alert alert-secondary fs-7 mt-2">Esta salida ya está ${salida.estado} y no admite cambios.</div>`
+                        : `<button class="btn btn-success w-100 mt-2"
+                          onclick="guardarEdicionSalida(${salida.id}, ${salida.horario_id}, '${salida.fecha_salida}')">
+                          Guardar cambios
+                       </button>`
+                }
 
-                <button class="btn btn-link w-100 mt-1" onclick="verSalida(${salida.id})">
-                    Cancelar
-                </button>`,
+                <button class="btn btn-link w-100 mt-1" onclick="verSalida(${salida.id})">Cancelar</button>
+            `,
             );
 
-            new TomSelect("#horario_id", { create: false });
-
-            // Los recursos solo se piden si la salida puede quedar en ruta
             let recursosCargados = false;
-            const asegurarRecursos = () => {
-                if (recursosCargados) return;
-                recursosCargados = true;
-                cargarRecursosDisponibles(salida);
-            };
 
             function aplicarReglasEstado() {
                 const estado = $("#estado").val();
-
                 const enRuta = estado === "en_ruta";
                 const reprogramado = estado === "reprogramado";
                 const cancelado = estado === "cancelado";
-                const finalizado = estado === "finalizado";
 
-                const bloquearBase = enRuta || finalizado;
-
-                const ts = $("#horario_id")[0]?.tomselect;
-                if (ts) {
-                    bloquearBase || reprogramado ? ts.lock() : ts.unlock();
-                }
-
-                $("#fecha_salida").prop(
-                    "readonly",
-                    bloquearBase || reprogramado,
-                );
-
-                $("#bloqueDatosSalida").toggle(!enRuta);
                 $("#bloqueAsignacionRuta").toggle(enRuta);
                 $("#bloqueCambioEstado").toggle(reprogramado || cancelado);
-
                 $("#fecha_cambio_estado").closest(".mb-2").toggle(reprogramado);
                 $("#hora_cambio_estado").closest(".mb-2").toggle(reprogramado);
 
-                if (enRuta) asegurarRecursos();
+                if (enRuta && !recursosCargados) {
+                    recursosCargados = true;
+                    cargarRecursosDisponibles(salida);
+                }
             }
 
             $("#estado").on("change", aplicarReglasEstado);
@@ -1212,9 +1197,8 @@ function editarSalida(id) {
         .fail(errorAjax("Error", "No se pudo cargar la salida"));
 }
 
-window.guardarEdicionSalida = function (id, horarioOriginal) {
-    const horario_id = $("#horario_id").val() || horarioOriginal;
-    const fecha_salida = $("#fecha_salida").val();
+window.guardarEdicionSalida = function (id, horario_id, fecha_salida) {
+    // horario y fecha SIEMPRE son los originales
     const estado = $("#estado").val();
     const fecha_cambio_estado = $("#fecha_cambio_estado").val();
     const hora_cambio_estado = $("#hora_cambio_estado").val();
@@ -1225,38 +1209,21 @@ window.guardarEdicionSalida = function (id, horarioOriginal) {
     const conductor_principal_id = $("#conductor_principal_id").val();
     const conductor_secundario_id = $("#conductor_secundario_id").val();
 
-    const cambioHora = String(horario_id) !== String(horarioOriginal);
-
-    if (cambioHora && estado !== "reprogramado") {
-        Swal.fire(
-            "Error",
-            "No puedes cambiar la hora sin reprogramar",
-            "error",
-        );
-        return;
-    }
-
-    if (!horario_id || !fecha_salida || !estado) {
-        Swal.fire("Error", "Todos los campos son obligatorios", "error");
-        return;
-    }
-
     if (
         estado === "reprogramado" &&
         (!fecha_cambio_estado || !hora_cambio_estado || !motivo_cambio_estado)
     ) {
-        Swal.fire("Error", "Debe ingresar fecha, hora y motivo", "error");
-        return;
+        return Swal.fire(
+            "Error",
+            "Debe ingresar fecha, hora y motivo",
+            "error",
+        );
     }
-
     if (estado === "cancelado" && !motivo_cambio_estado) {
-        Swal.fire("Error", "Debe ingresar motivo", "error");
-        return;
+        return Swal.fire("Error", "Debe ingresar motivo", "error");
     }
-
     if (estado === "en_ruta" && (!vehiculo_id || !conductor_principal_id)) {
-        Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
-        return;
+        return Swal.fire("Error", "Debe asignar vehículo y conductor", "error");
     }
 
     $.ajax({

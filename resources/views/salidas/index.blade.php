@@ -160,8 +160,8 @@
         }
 
         /* ===============================
-                       CHECKBOX
-                    ================================ */
+                                       CHECKBOX
+                                    ================================ */
 
         #tablaSalidas .form-check-input {
             width: 17px;
@@ -171,8 +171,8 @@
         }
 
         /* ===============================
-                       RUTA
-                    ================================ */
+                                       RUTA
+                                    ================================ */
 
         .ruta-cell {
             display: flex;
@@ -211,8 +211,8 @@
         }
 
         /* ===============================
-                       FECHA
-                    ================================ */
+                                       FECHA
+                                    ================================ */
 
         .fecha-cell {
             display: inline-flex;
@@ -230,8 +230,22 @@
         }
 
         /* ===============================
-                       HORARIOS
-                    ================================ */
+                                       HORARIOS
+                                    ================================ */
+        svg.lucide {
+            stroke: currentColor !important;
+            fill: none !important;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        #tablaSalidas svg.lucide {
+            width: 15px;
+            height: 15px;
+        }
 
         .hora-badge {
             display: inline-flex;
@@ -261,8 +275,8 @@
         }
 
         /* ===============================
-                       ESTADOS
-                    ================================ */
+                                       ESTADOS
+                                    ================================ */
 
         #tablaSalidas .badge {
             display: inline-flex;
@@ -277,8 +291,8 @@
         }
 
         /* ===============================
-                       ACCIONES
-                    ================================ */
+                                       ACCIONES
+                                    ================================ */
 
         #tablaSalidas .btn-xs {
             width: 31px;
@@ -310,8 +324,8 @@
         }
 
         /* ===============================
-                       COLUMNAS
-                    ================================ */
+                                       COLUMNAS
+                                    ================================ */
 
         #tablaSalidas .checkbox-col {
             width: 42px;
@@ -322,8 +336,8 @@
         }
 
         /* ===============================
-                       DATATABLE PAGINACIÓN
-                    ================================ */
+                                       DATATABLE PAGINACIÓN
+                                    ================================ */
 
         .dataTables_wrapper .dataTables_paginate {
             padding-top: 14px;
@@ -350,8 +364,8 @@
         }
 
         /* ===============================
-                       RESPONSIVE
-                    ================================ */
+                                       RESPONSIVE
+                                    ================================ */
 
         @media (max-width: 768px) {
 
@@ -374,48 +388,97 @@
 
         <!-- HEADER / ENCABEZADO -->
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+
+            <!-- TÍTULO -->
             <div class="d-flex align-items-center gap-3">
-                <div class="p-2.5 bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center"
+                <div class="p-2.5 bg-primary bg-opacity-10 text-white rounded-3
+                    d-flex align-items-center justify-content-center"
                     style="width: 44px; height: 44px;">
-                    <i data-lucide="bus" style="width: 24px; height: 24px;"></i>
+
+                    <i data-lucide="bus" ></i>
                 </div>
+
                 <div>
-                    <h4 class="fw-bold mb-0 text-dark" style="letter-spacing: -0.02em;">Salidas</h4>
-                    <span class="text-muted fs-7">Gestión y programación de salidas diarias</span>
+                    <h4 class="fw-bold mb-0 text-dark" style="letter-spacing: -0.02em;">
+                        Salidas
+                    </h4>
+
+                    <span class="text-muted fs-7">
+                        Gestión y programación de salidas diarias
+                    </span>
                 </div>
             </div>
 
-            <!-- ACCIONES / BOTONES -->
-            <div class="d-flex align-items-center gap-2">
+
+            <!-- FILTRO + ACCIONES -->
+            <div class="d-flex flex-wrap align-items-end justify-content-end gap-2">
+
+                <!-- FILTRO DE RUTA -->
+                <div style="width: 270px;">
+                  
+
+                    <select id="filtroRuta"
+                        style="
+                    height: 38px;
+                    border-color: #e2e8f0;
+                    border-radius: 8px;
+                    font-size: 13px;
+                    color: #475569;
+                    background-color: #fff;
+                ">
+                        <option value="">Todas las rutas</option>
+
+                        @foreach ($rutas as $ruta)
+                            <option value="{{ $ruta->id }}">
+                                {{ $ruta->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+
+                <!-- CREAR SALIDA -->
                 <button
-                    class="btn btn-light border bg-white shadow-sm fw-semibold text-secondary d-inline-flex align-items-center gap-2 px-3 py-2 fs-7"
+                    class="btn btn-light border bg-white shadow-sm fw-semibold
+                   text-secondary d-inline-flex align-items-center gap-2
+                   px-3 py-2 fs-7"
                     onclick="modoCrearSalida()">
                     <i data-lucide="plus" style="width: 16px;"></i>
                     Crear salida única
                 </button>
-                <button class="btn btn-primary shadow-sm fw-semibold d-inline-flex align-items-center gap-2 px-3 py-2 fs-7"
+
+
+                <!-- PROGRAMAR SALIDAS -->
+                <button
+                    class="btn btn-primary shadow-sm fw-semibold
+                   d-inline-flex align-items-center gap-2
+                   px-3 py-2 fs-7"
                     onclick="modoGenerarSalidas()">
                     <i data-lucide="calendar-plus" style="width: 16px;"></i>
                     Programar varias salidas
                 </button>
+
+
                 @if (auth()->user()->hasRole('Administrador'))
                     <button id="btnEliminarSeleccionados"
-                        class="btn btn-outline-danger fw-semibold d-inline-flex align-items-center gap-2 px-3 py-2 fs-7">
+                        class="btn btn-outline-danger fw-semibold
+                       d-inline-flex align-items-center gap-2
+                       px-3 py-2 fs-7">
                         <i data-lucide="trash-2" style="width: 16px;"></i>
                         Eliminar
                     </button>
                 @endif
+
             </div>
         </div>
 
         <!-- PESTAÑAS DE ESTADO (TABS) -->
         <div class="d-flex align-items-center gap-1 p-1 bg-secondary bg-opacity-10 rounded-3 mb-4 overflow-auto"
             id="pills-tab-estados" style="max-width: 100%;">
-            <button class="btn btn-pill-tab active" data-estado="proximas">Próximas</button>
             <button class="btn btn-pill-tab" data-estado="">Todas</button>
-            <button class="btn btn-pill-tab" data-estado="programado">Programadas</button>
+            <button class="btn btn-pill-tab active" data-estado="programado">Programadas</button>
+            <button class="btn btn-pill-tab" data-estado="retrasado">Retrasadas</button>
             <button class="btn btn-pill-tab" data-estado="en_ruta">En ruta</button>
-            <button class="btn btn-pill-tab" data-estado="reprogramado">Reprogramadas</button>
             <button class="btn btn-pill-tab" data-estado="finalizado">Finalizadas</button>
             <button class="btn btn-pill-tab" data-estado="vencido">Vencidas</button>
             <button class="btn btn-pill-tab" data-estado="cancelado">Canceladas</button>
@@ -430,15 +493,7 @@
 
                     <!-- BARRA DE FILTROS SECUNDARIA -->
                     <div class="row g-3 align-items-center mb-4">
-                        <div class="col-md-6 col-lg-5">
-                            <label class="form-label fs-8 fw-bold text-muted mb-1 text-uppercase">Filtrar por Ruta</label>
-                            <select id="filtroRuta" class="form-select border-slate-200">
-                                <option value="">Todas las rutas</option>
-                                @foreach ($rutas as $ruta)
-                                    <option value="{{ $ruta->id }}">{{ $ruta->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                      
 
                         <!-- SELECT DE ESTADO OCULTO (Sincronizado con las pestañas por JS) -->
                         <div class="col-md-4 d-none">

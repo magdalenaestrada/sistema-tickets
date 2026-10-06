@@ -61,11 +61,16 @@ class SalidaController extends Controller
 
     public function datatable(Request $request)
     {
-        $nowDate = now()->format('Y-m-d');
-        $nowTime = now()->format('H:i:s');
+        $now    = now();
+        $limite = now()->subHours(4);               // pasado este límite = vencido
+        $nowStr = $now->format('Y-m-d H:i:s');
+        $limStr = $limite->format('Y-m-d H:i:s');
 
-        $isAdmin = auth()->user()->hasRole('Administrador');
+        $isAdmin    = auth()->user()->hasRole('Administrador');
         $sucursalId = auth()->user()->empleado->sucursal_id ?? null;
+
+        // Fecha+hora real de la salida
+        $ts = "TIMESTAMP(salidas.fecha_salida, horarios.hora_salida)";
 
         $salidas = Salida::with([
             'horario.ruta.puntos.pueblito.sucursal',
@@ -76,71 +81,55 @@ class SalidaController extends Controller
             ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
             ->select('salidas.*')
             ->selectRaw("
-        CASE 
-            WHEN salidas.fecha_salida < ? THEN 1
-            WHEN salidas.fecha_salida = ? AND horarios.hora_salida < ? THEN 1
-            ELSE 0
-        END as vencida
-    ", [$nowDate, $nowDate, $nowTime])
-            ->selectRaw("
-        CASE 
-            WHEN (salidas.fecha_salida < ? OR (salidas.fecha_salida = ? AND horarios.hora_salida < ?)) 
-                 AND salidas.estado IN ('programado', 'reprogramado') THEN 2
-            WHEN salidas.estado = 'programado' THEN 0
-            ELSE 1
-        END as orden_prioridad
-    ", [$nowDate, $nowDate, $nowTime]);
+            CASE
+                WHEN salidas.estado = 'programado' AND $ts > ?  THEN 0  -- vigente
+                WHEN salidas.estado = 'programado' AND $ts > ?  THEN 1  -- retrasado
+                WHEN salidas.estado = 'programado'              THEN 3  -- vencido
+                ELSE 2                                                  -- en_ruta, finalizado, etc.
+            END as orden_prioridad
+        ", [$nowStr, $limStr]);
 
         if ($request->filled('estado')) {
+            switch ($request->estado) {
+                case 'programado': // vigentes + retrasadas, sin vencidas
+                    $salidas->where('salidas.estado', 'programado')
+                        ->whereRaw("$ts > ?", [$limStr]);
+                    break;
 
-            if ($request->estado === 'retrasado') {
+                case 'retrasado':
+                    $salidas->where('salidas.estado', 'programado')
+                        ->whereRaw("$ts <= ?", [$nowStr])
+                        ->whereRaw("$ts > ?",  [$limStr]);
+                    break;
 
-                $salidas->where('salidas.estado', 'programado')
-                    ->whereRaw("
-                NOW() >= CONCAT(
-                    salidas.fecha_salida,
-                    ' ',
-                    horarios.hora_salida
-                )
-            ")
-                    ->whereRaw("
-                NOW() < DATE_ADD(
-                    CONCAT(
-                        salidas.fecha_salida,
-                        ' ',
-                        horarios.hora_salida
-                    ),
-                    INTERVAL 4 HOUR
-                )
-            ");
-            } elseif ($request->estado === 'vencido') {
+                case 'vencido':
+                    $salidas->where('salidas.estado', 'programado')
+                        ->whereRaw("$ts <= ?", [$limStr]);
+                    break;
 
-                $salidas->where('salidas.estado', 'programado')
-                    ->whereRaw("
-                NOW() >= DATE_ADD(
-                    CONCAT(
-                        salidas.fecha_salida,
-                        ' ',
-                        horarios.hora_salida
-                    ),
-                    INTERVAL 4 HOUR
-                )
-            ");
-            } else {
-
-                $salidas->where('salidas.estado', $request->estado);
+                default:
+                    $salidas->where('salidas.estado', $request->estado);
             }
         }
+
         if ($request->filled('ruta_id')) {
             $salidas->where('rutas.id', $request->ruta_id);
         }
 
+        if ($request->modo === 'manifiestos') {
+            $salidas->whereBetween('salidas.fecha_salida', [
+                now()->subDay()->toDateString(),
+                now()->addDay()->toDateString(),
+            ]);
+        }
+
         return DataTables::of($salidas)
-            ->orderColumn('vencida', 'vencida $1')
-            ->order(function ($query) {
-                $query->orderBy('orden_prioridad', 'asc')
-                    ->orderBy('salidas.fecha_salida', 'asc')
-                    ->orderBy('horarios.hora_salida', 'asc');
+            ->order(function ($query) use ($request) {
+                if (!$request->has('order') || empty($request->input('order'))) {
+                    $query->orderBy('orden_prioridad', 'asc')
+                        ->orderBy('salidas.fecha_salida', 'asc')
+                        ->orderBy('horarios.hora_salida', 'asc');
+                }
             })
             ->addColumn('checkbox', function ($salida) use ($isAdmin) {
 
@@ -169,23 +158,16 @@ class SalidaController extends Controller
                 return $salida->fecha_formateada;
             })
             ->addColumn('estado_badge', function ($salida) {
-
                 if ($salida->estado === 'programado' && $salida->horario) {
+                    $horaRaw = $salida->horario->getRawOriginal('hora_salida'); // H:i:s
+                    $fechaHoraSalida = $salida->fecha_salida->copy()->setTimeFromTimeString($horaRaw);
 
-                    $fechaHoraSalida = $salida->fecha_salida
-                        ->copy()
-                        ->setTimeFromTimeString($salida->horario->hora_formateada);
-
-                    $fechaVencimiento = $fechaHoraSalida->copy()->addHours(4);
-
-                    if (now()->gte($fechaVencimiento)) {
+                    if (now()->gte($fechaHoraSalida->copy()->addHours(4))) {
                         return '<span class="badge bg-secondary">VENCIDO</span>';
                     }
-
                     if (now()->gte($fechaHoraSalida)) {
                         return '<span class="badge bg-warning text-dark">RETRASADO</span>';
                     }
-
                     return '<span class="badge bg-primary">PROGRAMADO</span>';
                 }
 
@@ -201,16 +183,16 @@ class SalidaController extends Controller
             ->addColumn('acciones', function ($salida) use ($isAdmin, $sucursalId) {
 
                 $botones = '
-        <button class="btn btn-light btn-xs ver" data-id="' . $salida->id . '">
-            <i class="link-icon" data-lucide="info"></i>
+        <button class="btn btn-light ver" data-id="' . $salida->id . '">
+            <i data-lucide="info"></i>
         </button>
     ';
 
                 if ($isAdmin) {
                     // Admin: solo Ver + Editar
                     $botones .= '
-            <button class="btn btn-warning btn-xs editar" data-id="' . $salida->id . '">
-                <i class="link-icon" data-lucide="pen"></i>
+            <button class="btn btn-warning editar" data-id="' . $salida->id . '">
+                <i data-lucide="pen"></i>
             </button>
         ';
 
@@ -885,28 +867,37 @@ class SalidaController extends Controller
         try {
             $salida = Salida::with(['pasajes', 'horario.ruta.puntos'])->findOrFail($id);
 
-            // 🔒 Autorización: un vendedor (no admin) solo puede hacer 3 cosas puntuales
-            if (!$isAdmin) {
-                $error = $this->validarAccionVendedor($request, $salida, $sucursalId);
-
-                if ($error) {
-                    return response()->json([
-                        'ok' => false,
-                        'message' => $error,
-                    ], 403);
-                }
+            // Ruta/horario y fecha son inmutables (admin y vendedor)
+            if (
+                (string) $request->horario_id !== (string) $salida->horario_id
+                || Carbon::parse($request->fecha_salida)->toDateString() !== $salida->fecha_salida->toDateString()
+            ) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'No se puede modificar la ruta, el horario ni la fecha de una salida.',
+                ], 422);
             }
 
-            $existe = Salida::where('horario_id', $request->horario_id)
-                ->where('fecha_salida', $request->fecha_salida)
-                ->where('hora_salida', $request->hora_salida)
-                ->where('id', '!=', $id)
-                ->exists();
+            $transiciones = [
+                'programado'   => ['programado', 'en_ruta', 'reprogramado', 'cancelado'],
+                'reprogramado' => ['reprogramado', 'en_ruta', 'cancelado'],
+                'en_ruta'      => ['en_ruta', 'finalizado', 'cancelado'],
+                'finalizado'   => ['finalizado'],
+                'cancelado'    => ['cancelado'],
+            ];
 
-            if ($existe) {
+            if (!in_array($request->estado, $transiciones[$salida->estado] ?? [], true)) {
                 return response()->json([
-                    'message' => 'Ya existe una salida programada para esta hora'
+                    'ok' => false,
+                    'message' => "No se puede pasar de {$salida->estado} a {$request->estado}.",
                 ], 422);
+            }
+
+            if (!$isAdmin) {
+                $error = $this->validarAccionVendedor($request, $salida, $sucursalId);
+                if ($error) {
+                    return response()->json(['ok' => false, 'message' => $error], 403);
+                }
             }
 
             if ($request->estado === 'en_ruta') {
@@ -926,12 +917,9 @@ class SalidaController extends Controller
             }
 
             $salida->update([
-                'horario_id' => $request->horario_id,
-                'fecha_salida' => $request->fecha_salida,
                 'estado' => $request->estado,
                 'usuario_cambio_estado_id' => $user->id,
                 'vehiculo_id' => $request->vehiculo_id,
-                'hora_salida' => $request->hora_salida,
                 'conductor_principal_id' => $request->conductor_principal_id,
                 'conductor_secundario_id' => $request->conductor_secundario_id,
                 'fecha_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->fecha_cambio_estado : null,
@@ -968,13 +956,6 @@ class SalidaController extends Controller
      */
     private function validarAccionVendedor(Request $request, Salida $salida, $sucursalId)
     {
-        if (
-            (string) $request->horario_id !== (string) $salida->horario_id
-            || (string) $request->fecha_salida !== (string) $salida->fecha_salida?->format('Y-m-d')
-        ) {
-            return 'No tienes permiso para modificar el horario o la fecha de esta salida.';
-        }
-
         if (in_array($request->estado, ['reprogramado', 'cancelado'])) {
             return 'No tienes permiso para reprogramar o cancelar salidas.';
         }
