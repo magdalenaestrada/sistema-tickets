@@ -54,6 +54,7 @@
             color: var(--gray-600);
         }
 
+
         .resultados-info {
             font-size: .82rem;
             color: var(--gray-400);
@@ -268,6 +269,33 @@
         .seat.libre .seat-body,
         .seat.libre .seat-base {
             fill: #cbd5e1 !important;
+        }
+
+        .seat {
+            color: #cbd5e1;
+            cursor: pointer;
+        }
+
+        .seat.libre {
+            color: #cbd5e1;
+        }
+
+        .seat.reservado {
+            color: #f9db16;
+        }
+
+        .seat.ocupado {
+            color: #51dc26;
+        }
+
+        .seat.selected-seat {
+            color: #2563eb;
+        }
+
+        .seat .seat-body,
+        .seat .seat-base,
+        .seat .armrest {
+            fill: currentColor;
         }
 
         .seat.reservado .seat-body,

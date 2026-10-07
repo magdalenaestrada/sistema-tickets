@@ -51,6 +51,24 @@ document.addEventListener("DOMContentLoaded", function () {
         return !!punto && punto.origen_permitido !== false;
     }
 
+    document.addEventListener("click", function (event) {
+        const floorButton = event.target.closest(".floor-btn");
+        if (!floorButton) return;
+
+        const container = document.getElementById("svg-container");
+
+        container
+            .querySelectorAll(".floor-btn")
+            .forEach((b) => b.classList.remove("active"));
+        container
+            .querySelectorAll(".floor")
+            .forEach((f) => f.classList.remove("active"));
+
+        floorButton.classList.add("active");
+        const piso = container.querySelector("#" + floorButton.dataset.floor);
+        if (piso) piso.classList.add("active");
+    });
+
     function attachRowEvents() {
         document.querySelectorAll(".horario-row").forEach((row) => {
             row.addEventListener("click", function () {
@@ -160,12 +178,11 @@ document.addEventListener("DOMContentLoaded", function () {
     function renderizarAsientos(data, salidaId) {
         svgContainer.innerHTML = data.svg;
 
-        const svgEl = svgContainer.querySelector("svg");
-        if (!svgEl) return;
+        if (!svgContainer.querySelector("svg")) return;
 
         Object.keys(data.asientos).forEach((numero) => {
             const estado = data.asientos[numero];
-            const seat = svgEl.querySelector(`#seat-${numero}`);
+            const seat = svgContainer.querySelector(`#seat-${numero}`);
             if (!seat) return;
 
             seat.classList.remove(

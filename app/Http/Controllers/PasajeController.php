@@ -80,10 +80,10 @@ class PasajeController extends Controller
         ])
             ->join('horarios', 'horarios.id', '=', 'salidas.horario_id')
             ->whereIn('salidas.estado', ['en_ruta', 'programado'])
-            //->whereDate('salidas.fecha_salida', '>=', $hoy)
-            ->whereBetween('salidas.fecha_salida', [$hace15Dias, $hoy])
-            ->orderBy('salidas.fecha_salida')
-            ->orderBy('horarios.hora_salida')
+            ->where(function ($q) use ($ayer) {
+                $q->whereDate('salidas.fecha_salida', '>=', $ayer)
+                    ->orWhere('salidas.estado', 'en_ruta');
+            })->orderBy('horarios.hora_salida')
             ->select('salidas.*')
             ->get();
 
