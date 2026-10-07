@@ -116,13 +116,6 @@ class SalidaController extends Controller
             $salidas->where('rutas.id', $request->ruta_id);
         }
 
-        if ($request->modo === 'manifiestos') {
-            $salidas->whereBetween('salidas.fecha_salida', [
-                now()->subDay()->toDateString(),
-                now()->addDay()->toDateString(),
-            ]);
-        }
-
         return DataTables::of($salidas)
             ->order(function ($query) use ($request) {
                 if (!$request->has('order') || empty($request->input('order'))) {
