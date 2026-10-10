@@ -108,7 +108,7 @@ function opcionesEstados(actual = "programado") {
         cancelado: "Cancelado",
     };
     const permitidos = {
-        programado: ["programado", "en_ruta", "reprogramado", "cancelado"],
+        programado: ["programado", "en_ruta", "cancelado"],
         reprogramado: ["reprogramado", "en_ruta", "cancelado"],
         en_ruta: ["en_ruta", "finalizado", "cancelado"],
         finalizado: ["finalizado"],
