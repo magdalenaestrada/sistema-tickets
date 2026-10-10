@@ -14,6 +14,20 @@
             background: transparent;
         }
 
+        /* Tom Select */
+        .ts-dropdown {
+            z-index: 2000 !important;
+        }
+
+        /* Select2 */
+        .select2-container--open {
+            z-index: 2000 !important;
+        }
+
+        .select2-dropdown {
+            z-index: 2000 !important;
+        }
+
         .btn-pill-tab:hover {
             background-color: #f1f5f9;
             color: #0f172a;
@@ -160,8 +174,8 @@
         }
 
         /* ===============================
-                                           CHECKBOX
-                                        ================================ */
+                                                       CHECKBOX
+                                                    ================================ */
 
         #tablaSalidas .form-check-input {
             width: 17px;
@@ -171,8 +185,8 @@
         }
 
         /* ===============================
-                                           RUTA
-                                        ================================ */
+                                                       RUTA
+                                                    ================================ */
 
         .ruta-cell {
             display: flex;
@@ -211,8 +225,8 @@
         }
 
         /* ===============================
-                                           FECHA
-                                        ================================ */
+                                                       FECHA
+                                                    ================================ */
 
         .fecha-cell {
             display: inline-flex;
@@ -230,8 +244,8 @@
         }
 
         /* ===============================
-                                           HORARIOS
-                                        ================================ */
+                                                       HORARIOS
+                                                    ================================ */
         svg.lucide {
             stroke: currentColor !important;
             fill: none !important;
@@ -275,8 +289,8 @@
         }
 
         /* ===============================
-                                           ESTADOS
-                                        ================================ */
+                                                       ESTADOS
+                                                    ================================ */
 
         #tablaSalidas .badge {
             display: inline-flex;
@@ -291,8 +305,8 @@
         }
 
         /* ===============================
-                                           ACCIONES
-                                        ================================ */
+                                                       ACCIONES
+                                                    ================================ */
 
         #tablaSalidas .btn-xs {
             width: 31px;
@@ -324,8 +338,8 @@
         }
 
         /* ===============================
-                                           COLUMNAS
-                                        ================================ */
+                                                       COLUMNAS
+                                                    ================================ */
 
         #tablaSalidas .checkbox-col {
             width: 42px;
@@ -336,8 +350,8 @@
         }
 
         /* ===============================
-                                           DATATABLE PAGINACIÓN
-                                        ================================ */
+                                                       DATATABLE PAGINACIÓN
+                                                    ================================ */
 
         .dataTables_wrapper .dataTables_paginate {
             padding-top: 14px;
@@ -364,8 +378,8 @@
         }
 
         /* ===============================
-                                           RESPONSIVE
-                                        ================================ */
+                                                       RESPONSIVE
+                                                    ================================ */
 
         @media (max-width: 768px) {
 
@@ -414,18 +428,17 @@
             <div class="d-flex flex-wrap align-items-end justify-content-end gap-2">
 
                 <!-- FILTRO DE RUTA -->
-                <div style="width: 270px;">
-
-
-                    <select id="filtroRuta"
+                <div style="width: 270px; max-width: 100%;">
+                    <select id="filtroRuta" class=" w-100"
                         style="
-                    height: 38px;
-                    border-color: #e2e8f0;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    color: #475569;
-                    background-color: #fff;
-                ">
+            height: 38px;
+            border-color: #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #475569;
+            background-color: #fff;
+            text-overflow: ellipsis;
+        ">
                         <option value="">Todas las rutas</option>
 
                         @foreach ($rutas as $ruta)
@@ -447,8 +460,7 @@
             <button class="btn btn-pill-tab" data-estado="retrasado">Retrasadas</button>
             <button class="btn btn-pill-tab" data-estado="en_ruta">En ruta</button>
             <button class="btn btn-pill-tab" data-estado="finalizado">Finalizadas</button>
-            <button class="btn btn-pill-tab" data-estado="vencido">Vencidas</button>
-            <button class="btn btn-pill-tab" data-estado="cancelado">Canceladas</button>
+
         </div>
 
         <!-- FILTROS Y CONTENIDO PRINCIPAL -->

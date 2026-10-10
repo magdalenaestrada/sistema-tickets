@@ -36,6 +36,30 @@
             margin-left: 4px;
         }
 
+        .tabla-salidas-wrapper {
+            border-radius: 14px;
+            overflow-x: auto;
+            /* antes: hidden */
+            overflow-y: visible;
+        }
+
+        #tablaSalidas .acciones-col {
+            width: 140px;
+            min-width: 140px;
+        }
+
+        .acciones-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+
+        #tablaSalidas .acciones-wrap .btn-xs+.btn-xs {
+            margin-left: 0;
+        }
+
         .btn-pill-tab.active .badge-count {
             background: #eff6ff;
             color: #2563eb;
@@ -160,8 +184,8 @@
         }
 
         /* ===============================
-                                       CHECKBOX
-                                    ================================ */
+                                                   CHECKBOX
+                                                ================================ */
 
         #tablaSalidas .form-check-input {
             width: 17px;
@@ -171,8 +195,8 @@
         }
 
         /* ===============================
-                                       RUTA
-                                    ================================ */
+                                                   RUTA
+                                                ================================ */
 
         .ruta-cell {
             display: flex;
@@ -211,8 +235,8 @@
         }
 
         /* ===============================
-                                       FECHA
-                                    ================================ */
+                                                   FECHA
+                                                ================================ */
 
         .fecha-cell {
             display: inline-flex;
@@ -230,8 +254,8 @@
         }
 
         /* ===============================
-                                       HORARIOS
-                                    ================================ */
+                                                   HORARIOS
+                                                ================================ */
         svg.lucide {
             stroke: currentColor !important;
             fill: none !important;
@@ -275,8 +299,8 @@
         }
 
         /* ===============================
-                                       ESTADOS
-                                    ================================ */
+                                                   ESTADOS
+                                                ================================ */
 
         #tablaSalidas .badge {
             display: inline-flex;
@@ -291,8 +315,8 @@
         }
 
         /* ===============================
-                                       ACCIONES
-                                    ================================ */
+                                                   ACCIONES
+                                                ================================ */
 
         #tablaSalidas .btn-xs {
             width: 31px;
@@ -324,8 +348,8 @@
         }
 
         /* ===============================
-                                       COLUMNAS
-                                    ================================ */
+                                                   COLUMNAS
+                                                ================================ */
 
         #tablaSalidas .checkbox-col {
             width: 42px;
@@ -336,8 +360,8 @@
         }
 
         /* ===============================
-                                       DATATABLE PAGINACIÓN
-                                    ================================ */
+                                                   DATATABLE PAGINACIÓN
+                                                ================================ */
 
         .dataTables_wrapper .dataTables_paginate {
             padding-top: 14px;
@@ -364,8 +388,8 @@
         }
 
         /* ===============================
-                                       RESPONSIVE
-                                    ================================ */
+                                                   RESPONSIVE
+                                                ================================ */
 
         @media (max-width: 768px) {
 
@@ -384,7 +408,7 @@
         }
     </style>
 
-    <div class="container-fluid px-4 py-4" style="background-color: #f8fafc; min-height: 100vh;">
+    <div class="container-fluid px-2 py-2" style="background-color: #f8fafc; min-height: 100vh;">
 
         <!-- HEADER / ENCABEZADO -->
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -395,7 +419,7 @@
                     d-flex align-items-center justify-content-center"
                     style="width: 44px; height: 44px;">
 
-                    <i data-lucide="bus" ></i>
+                    <i data-lucide="bus"></i>
                 </div>
 
                 <div>
@@ -415,7 +439,7 @@
 
                 <!-- FILTRO DE RUTA -->
                 <div style="width: 270px;">
-                  
+
 
                     <select id="filtroRuta"
                         style="
@@ -488,12 +512,12 @@
         <div class="row g-4">
 
             <!-- COLUMNA IZQUIERDA: TABLA DE SALIDAS -->
-            <div class="col-lg-9 col-xl-9">
+            <div class="col-lg-8 col-xl-9"> {{-- tabla --}}
                 <div class="panel-card p-4">
 
                     <!-- BARRA DE FILTROS SECUNDARIA -->
                     <div class="row g-3 align-items-center mb-4">
-                      
+
 
                         <!-- SELECT DE ESTADO OCULTO (Sincronizado con las pestañas por JS) -->
                         <div class="col-md-4 d-none">
@@ -512,7 +536,7 @@
 
 
                     <div class="table-responsive tabla-salidas-wrapper">
-                        <table id="tablaSalidas" class="table table-modern align-middle w-100">
+                        <table id="tablaSalidas" class="table align-middle w-100">
                             <thead>
                                 <tr>
                                     @if (auth()->user()->hasRole('Administrador'))
@@ -536,8 +560,8 @@
             </div>
 
             <!-- COLUMNA DERECHA: PANEL LATERAL DE DETALLE -->
-            <div class="col-lg-3 col-xl-3">
-                <div class="panel-card sticky-top" style="top: 1.5rem; z-index: 10;">
+            <div class="col-lg-4 col-xl-3"> {{-- panel de detalle --}} <div class="panel-card sticky-top"
+                    style="top: 1.5rem; z-index: 10;">
                     <div
                         class="p-3 border-bottom bg-light bg-opacity-50 rounded-top-3 d-flex align-items-center justify-content-between">
                         <h6 id="tituloPanelSalida" class="fw-bold text-dark mb-0 fs-6">Detalle de salida</h6>

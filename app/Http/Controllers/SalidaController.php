@@ -93,7 +93,7 @@ class SalidaController extends Controller
             switch ($request->estado) {
                 case 'programado': // vigentes + retrasadas, sin vencidas
                     $salidas->where('salidas.estado', 'programado')
-                        ->whereRaw("$ts > ?", [$limStr]);
+                        ->whereRaw("$ts > ?", [$nowStr]);
                     break;
 
                 case 'retrasado':
@@ -114,6 +114,13 @@ class SalidaController extends Controller
 
         if ($request->filled('ruta_id')) {
             $salidas->where('rutas.id', $request->ruta_id);
+        }
+
+        if ($request->modo === 'manifiestos') {
+            $salidas->whereBetween('salidas.fecha_salida', [
+                now()->subDay()->toDateString(),
+                now()->addDay()->toDateString(),
+            ]);
         }
 
         return DataTables::of($salidas)
@@ -174,21 +181,17 @@ class SalidaController extends Controller
                 };
             })
             ->addColumn('acciones', function ($salida) use ($isAdmin, $sucursalId) {
-
-                $botones = '
-        <button class="btn btn-light ver" data-id="' . $salida->id . '">
-            <i data-lucide="info"></i>
-        </button>
-    ';
+                $botones = '<div class="acciones-wrap">
+    <button class="btn btn-light ver" data-id="' . $salida->id . '" title="Ver detalle">
+        <i data-lucide="info"></i>
+    </button>';
 
                 if ($isAdmin) {
-                    // Admin: solo Ver + Editar
                     $botones .= '
-            <button class="btn btn-warning editar" data-id="' . $salida->id . '">
-                <i data-lucide="pen"></i>
-            </button>
-        ';
-
+        <button class="btn btn-warning editar" data-id="' . $salida->id . '" title="Editar">
+            <i data-lucide="pen"></i>
+        </button>
+    </div>';
                     return $botones;
                 }
 
@@ -210,7 +213,7 @@ class SalidaController extends Controller
 
                     if ($puedeIniciar) {
                         $botones .= '
-            <button class="btn btn-success btn-xs iniciar-ruta"
+            <button class="btn btn-success iniciar-ruta"
                 data-id="' . $salida->id . '"
                 title="Iniciar ruta">
                 <i class="link-icon" data-lucide="rocket"></i>
@@ -223,14 +226,14 @@ class SalidaController extends Controller
 
                     if ($puedeFinalizar) {
                         $botones .= '
-                <button class="btn btn-primary btn-xs finalizar-ruta" data-id="' . $salida->id . '" title="Finalizar ruta">
+                <button class="btn btn-primary finalizar-ruta" data-id="' . $salida->id . '" title="Finalizar ruta">
                     <i class="link-icon" data-lucide="flag"></i>
                 </button>
             ';
                     }
                 }
 
-                return $botones;
+                return $botones . '</div>';
             })
             ->rawColumns([
                 'checkbox',
