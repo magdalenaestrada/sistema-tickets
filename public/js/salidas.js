@@ -190,7 +190,7 @@ const columnas = [
 
 $(function () {
     tablaSalidas = $("#tablaSalidas").DataTable({
-        order: [], // <- agrega esto
+        order: [],
         processing: true,
         serverSide: true,
         deferRender: true,
@@ -205,6 +205,8 @@ $(function () {
                 d.estado = estadoActual;
                 d.ruta_id = $("#filtroRuta").val();
                 d.modo = window.MODO_MANIFIESTOS ? "manifiestos" : "";
+                d.fecha_desde = $("#fechaDesde").val();
+                d.fecha_hasta = $("#fechaHasta").val();
             },
         },
         columns: columnas,
@@ -214,27 +216,173 @@ $(function () {
             processing: "Cargando...",
             paginate: { previous: "‹", next: "›" },
         },
-        drawCallback: () => {
-            lucide.createIcons();
-        },
+        drawCallback: () => lucide.createIcons(),
     });
 
-    // Filtro de ruta (opciones renderizadas por Blade)
-    new TomSelect("#filtroRuta", {
+    /* ---------- Filtro de ruta ---------- */
+    const tsRuta = new TomSelect("#filtroRuta", {
         allowEmptyOption: true,
         maxOptions: 50,
+        maxItems: 1,
         placeholder: "Todas las rutas",
+        dropdownParent: "body",
     });
 
-    $("#filtroRuta").on("change", () => recargarTabla(true));
+    /* ---------- Fechas ---------- */
+    const fmt = (d) => d.toLocaleDateString("sv-SE"); // YYYY-MM-DD hora local
+    const fmtBonito = (s) =>
+        new Date(s + "T00:00:00").toLocaleDateString("es-PE", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        });
 
-    // Pestañas de estado
+    function marcarChip(rango) {
+        $(".chip-fecha").removeClass("active");
+        $(`.chip-fecha[data-rango="${rango}"]`).addClass("active");
+        $("#rangoPersonalizado").toggleClass("show", rango === "custom");
+    }
+
+    function cargarUltimaFecha() {
+        $.get(route("salidas.rango_fechas"), {
+            ruta_id: $("#filtroRuta").val(),
+        })
+            .done((r) => {
+                $("#ultimaFecha")
+                    .text(
+                        r.ultima_fecha
+                            ? fmtBonito(r.ultima_fecha)
+                            : "sin salidas",
+                    )
+                    .data("fecha", r.ultima_fecha);
+            })
+            .fail((xhr) => {
+                console.error(
+                    "rango_fechas falló",
+                    xhr.status,
+                    xhr.responseText,
+                );
+                $("#ultimaFecha").text("NO DISPONIBLE");
+            });
+    }
+    cargarUltimaFecha();
+
+    $("#filtroRuta").on("change", () => {
+        cargarUltimaFecha();
+        recargarTabla(true);
+    });
+
+    $(".chip-fecha").on("click", function () {
+        const rango = $(this).data("rango");
+        const t = new Date();
+        let desde = "",
+            hasta = "";
+
+        if (rango === "hoy") desde = hasta = fmt(t);
+        if (rango === "manana") {
+            t.setDate(t.getDate() + 1);
+            desde = hasta = fmt(t);
+        }
+        if (rango === "7") {
+            desde = fmt(t);
+            t.setDate(t.getDate() + 6);
+            hasta = fmt(t);
+        }
+
+        marcarChip(rango);
+        if (rango === "custom") return; // solo muestra los inputs
+
+        $("#fechaDesde").val(desde);
+        $("#fechaHasta").val(hasta);
+        recargarTabla(true);
+    });
+
+    $("#fechaDesde, #fechaHasta").on("change", () => recargarTabla(true));
+
+    $("#ultimaFecha").on("click", function (e) {
+        e.preventDefault();
+        const f = $(this).data("fecha");
+        if (!f) return;
+        marcarChip("custom");
+        $("#fechaDesde").val(fmt(new Date()));
+        $("#fechaHasta").val(f);
+        recargarTabla(true);
+    });
+
+    $("#btnLimpiar").on("click", function () {
+        $("#fechaDesde, #fechaHasta").val("");
+        tsRuta.clear(true); // sin disparar change
+        marcarChip("todo");
+        cargarUltimaFecha();
+        recargarTabla(true);
+    });
+
+    /* ---------- Pestañas de estado ---------- */
     $("#pills-tab-estados").on("click", ".btn-pill-tab", function () {
         $("#pills-tab-estados .btn-pill-tab").removeClass("active");
         $(this).addClass("active");
         estadoActual = $(this).data("estado");
         recargarTabla(true);
     });
+});
+
+const fmt = (d) => d.toISOString().split("T")[0];
+
+const SPINNER_FECHA = `<span class="spinner-border spinner-border-sm text-primary"
+    style="width:12px;height:12px;border-width:2px;"></span>`;
+
+function cargarUltimaFecha() {
+    const $f = $("#ultimaFecha");
+    $f.html(SPINNER_FECHA).data("fecha", null);
+
+    $.get(route("salidas.rango_fechas"), { ruta_id: $("#filtroRuta").val() })
+        .done((r) => {
+            $f.text(
+                r.ultima_fecha ? fmtBonito(r.ultima_fecha) : "SIN SALIDAS",
+            ).data("fecha", r.ultima_fecha);
+        })
+        .fail((xhr) => {
+            console.error("rango_fechas falló", xhr.status, xhr.responseText);
+            $f.text("NO DISPONIBLE");
+        });
+}
+
+cargarUltimaFecha();
+$("#filtroRuta").on("change", cargarUltimaFecha);
+
+$("#fechaDesde, #fechaHasta").on("change", () => recargarTabla(true));
+
+$(".rango-rapido").on("click", function () {
+    const t = new Date();
+    let desde = "",
+        hasta = "";
+    switch ($(this).data("rango")) {
+        case "hoy":
+            desde = hasta = fmt(t);
+            break;
+        case "manana":
+            t.setDate(t.getDate() + 1);
+            desde = hasta = fmt(t);
+            break;
+        case "7":
+            desde = fmt(t);
+            t.setDate(t.getDate() + 6);
+            hasta = fmt(t);
+            break;
+    }
+    $("#fechaDesde").val(desde);
+    $("#fechaHasta").val(hasta);
+    recargarTabla(true);
+});
+
+// Clic en la última fecha: filtra hasta ella
+$("#ultimaFecha").on("click", function (e) {
+    e.preventDefault();
+    const f = $(this).data("fecha");
+    if (!f) return;
+    $("#fechaDesde").val(fmt(new Date()));
+    $("#fechaHasta").val(f);
+    recargarTabla(true);
 });
 
 /* ---------- Acciones de la tabla ---------- */

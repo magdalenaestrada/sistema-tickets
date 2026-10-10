@@ -112,6 +112,13 @@ class SalidaController extends Controller
             }
         }
 
+        if ($request->filled('fecha_desde')) {
+            $salidas->whereDate('salidas.fecha_salida', '>=', $request->fecha_desde);
+        }
+        if ($request->filled('fecha_hasta')) {
+            $salidas->whereDate('salidas.fecha_salida', '<=', $request->fecha_hasta);
+        }
+
         if ($request->filled('ruta_id')) {
             $salidas->where('rutas.id', $request->ruta_id);
         }
@@ -242,6 +249,21 @@ class SalidaController extends Controller
             ])
             ->addIndexColumn()
             ->make(true);
+    }
+
+    public function rangoFechas(Request $request)
+    {
+        $q = Salida::join('horarios', 'salidas.horario_id', '=', 'horarios.id');
+
+        if ($request->filled('ruta_id')) {
+            $q->where('horarios.ruta_id', $request->ruta_id);
+        }
+
+        return response()->json([
+            'ultima_fecha'   => $q->clone()->max('salidas.fecha_salida'),
+            'primera_futura' => $q->clone()->where('salidas.fecha_salida', '>=', now()->toDateString())
+                ->min('salidas.fecha_salida'),
+        ]);
     }
 
     public function manifiestoPasajeros(Salida $salida, PdfService $pdfService, Request $request)

@@ -12,6 +12,7 @@ Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function
         '/directa',
         [SalidaController::class, 'storeDirecta']
     )->name('store.directa');
+    Route::get('/rango-fechas', [SalidaController::class, 'rangoFechas'])->name('rango_fechas');
 
     Route::get('{salida}/sucursales-ruta', [SalidaController::class, 'sucursalesRuta'])
         ->name('sucursales_ruta');
@@ -33,4 +34,5 @@ Route::middleware(['auth'])->prefix('salidas')->name('salidas.')->group(function
         ->name('recursos_disponibles');
     Route::post('/{salida}/registrar-check', [SalidaController::class, 'registrarCheck'])
         ->name('registrar_check');
+
 });
