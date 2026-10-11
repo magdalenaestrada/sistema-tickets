@@ -277,6 +277,7 @@ class SalidaController extends Controller
             'pasajes.origen',
             'pasajes.destino',
             'pasajes.venta',
+            'horario.ruta.puntos.pueblito.sucursal'
         ]);
 
         $empresa = Empresa::first();
@@ -288,13 +289,8 @@ class SalidaController extends Controller
 
         abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
-        $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
-        dd([
-            'sucursalId'   => $sucursalId,
-            'user_sucursal' => $user->sucursal_id,
-            'empleado_sucursal' => $user->empleado->sucursal_id ?? null,
-            'sucursales_ruta' => $salida->sucursalesRuta()->pluck('id'),
-        ]);
+        $perteneceARuta = $salida->sucursalesDePueblitos()->contains('id', $sucursalId);
+       
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
         $datos = $salida->datosManifiesto($sucursalId);
@@ -390,10 +386,11 @@ class SalidaController extends Controller
             'pasajes.origen',
             'pasajes.destino',
             'pasajes.venta',
+            'horario.ruta.puntos.pueblito.sucursal'
         ]);
 
         $empresa = Empresa::first();
-        $sucursales = $salida->sucursalesRuta();
+        $sucursales = $salida->sucursalesDePueblitos();
 
         abort_if($sucursales->isEmpty(), 404, 'La ruta no tiene sucursales asignadas.');
 
@@ -453,6 +450,7 @@ class SalidaController extends Controller
             'pasajes.origen',
             'pasajes.destino',
             'pasajes.venta',
+            'horario.ruta.puntos.pueblito.sucursal'
         ]);
 
         $empresa = Empresa::first();
@@ -514,6 +512,7 @@ class SalidaController extends Controller
             'encomiendas.origenPueblito',
             'encomiendas.destinoPueblito',
             'encomiendas.venta',
+            'horario.ruta.puntos.pueblito.sucursal'
         ]);
 
         $empresa = Empresa::first();
@@ -525,7 +524,7 @@ class SalidaController extends Controller
 
         abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
-        $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
+        $perteneceARuta = $salida->sucursalesDePueblitos()->contains('id', $sucursalId);
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
         $datos = $salida->datosManifiesto($sucursalId);
@@ -595,6 +594,7 @@ class SalidaController extends Controller
             'conductorPrincipal',
             'conductorSecundario',
             'encomiendas',
+            'horario.ruta.puntos.pueblito.sucursal'
         ]);
 
         $puntos = $salida->horario->ruta->puntos
@@ -632,6 +632,7 @@ class SalidaController extends Controller
             'vehiculo',
             'conductorPrincipal',
             'conductorSecundario',
+            'horario.ruta.puntos.pueblito.sucursal'
         ]);
 
         $puntos = $salida->horario->ruta->puntos->sortBy('orden')->values();

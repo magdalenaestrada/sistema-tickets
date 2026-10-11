@@ -66,6 +66,17 @@ class Salida extends Model
         return $this->horario?->ruta?->puntos?->sortBy('orden')->values() ?? collect();
     }
 
+
+    public function sucursalesDePueblitos()
+    {
+        return $this->horario->ruta->puntos
+            ->sortBy('orden')
+            ->map(fn($p) => $p->pueblito?->sucursal)
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
     /*
     public function obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)
     {
