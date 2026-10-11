@@ -43,6 +43,8 @@ function setPanel(titulo, html) {
 }
 
 function panelVacio() {
+    salidaSeleccionadaId = null;
+    $("#tablaSalidas tbody tr").removeClass("fila-activa");
     setPanel(
         "Detalle de salida",
         `<div class="text-center py-5">
@@ -137,41 +139,25 @@ const columnas = [
     {
         data: "ruta",
         name: "rutas.nombre",
-        render: (data) => `
-            <div class="ruta-cell">
-                <div>
-                    <div class="ruta-nombre">${data ?? "-"}</div>
-                    <div class="ruta-label">Servicio programado</div>
-                </div>
-            </div>`,
-    },
-    {
-        data: "fecha_formateada",
-        name: "salidas.fecha_salida",
-        className: "text-nowrap",
-        render: (data) => `
-            <div class="fecha-cell">
-                <i data-lucide="calendar-days"></i>
-                <span>${data ?? "-"}</span>
-            </div>`,
-    },
-    {
-        data: "hora_salida",
-        name: "horarios.hora_salida",
-        className: "text-center",
-        render: (data) => `
-            <span class="hora-badge salida">
-                <i data-lucide="clock-3"></i> ${data ?? "-"}
-            </span>`,
-    },
-    {
-        data: "hora_llegada",
-        name: "horarios.hora_llegada",
-        className: "text-center",
-        render: (data) => `
-            <span class="hora-badge llegada">
-                <i data-lucide="flag"></i> ${data ?? "-"}
-            </span>`,
+        render: (data, type, row) => {
+            if (type !== "display") return data;
+            return `
+        <div class="salida-cell">
+            <div class="ruta-nombre">${data ?? "-"}</div>
+            <div class="salida-meta">
+                <span class="meta-item">
+                    <i data-lucide="calendar-days"></i> ${row.fecha_formateada ?? "-"}
+                </span>
+                <span class="hora-badge salida">
+                    <i data-lucide="clock-3"></i> ${row.hora_salida ?? "-"}
+                </span>
+                <i data-lucide="arrow-right" class="meta-flecha"></i>
+                <span class="hora-badge llegada">
+                    <i data-lucide="flag"></i> ${row.hora_llegada ?? "-"}
+                </span>
+            </div>
+        </div>`;
+        },
     },
     {
         data: "estado",
@@ -216,7 +202,16 @@ $(function () {
             processing: "Cargando...",
             paginate: { previous: "‹", next: "›" },
         },
-        drawCallback: () => lucide.createIcons(),
+        drawCallback: () => {
+            lucide.createIcons();
+            if (salidaSeleccionadaId) {
+                tablaSalidas.rows().every(function () {
+                    if (this.data().id === salidaSeleccionadaId) {
+                        $(this.node()).addClass("fila-activa");
+                    }
+                });
+            }
+        },
     });
 
     /* ---------- Filtro de ruta ---------- */
@@ -385,10 +380,22 @@ $("#ultimaFecha").on("click", function (e) {
     recargarTabla(true);
 });
 
-/* ---------- Acciones de la tabla ---------- */
-$(document).on("click", ".ver", function () {
-    verSalida($(this).data("id"));
+let salidaSeleccionadaId = null;
+
+$(document).on("click", "#tablaSalidas tbody tr", function (e) {
+    // si el clic fue en un botón, checkbox o link, no abrir el detalle
+    if ($(e.target).closest("button, a, input, label, .acciones-wrap").length)
+        return;
+
+    const data = tablaSalidas.row(this).data();
+    if (!data?.id) return;
+
+    salidaSeleccionadaId = data.id;
+    $("#tablaSalidas tbody tr").removeClass("fila-activa");
+    $(this).addClass("fila-activa");
+    verSalida(data.id);
 });
+
 $(document).on("click", ".editar", function () {
     editarSalida($(this).data("id"));
 });
@@ -673,28 +680,31 @@ function renderTimeline(puntos) {
                   : "text-dark";
 
             const sucursal = punto.sucursal?.nombre_comercial
-                ? ` - ${punto.sucursal.nombre_comercial}`
+                ? `<div class="fs-9 text-muted text-break">${punto.sucursal.nombre_comercial}</div>`
                 : "";
 
             return `
-            <div class="d-flex align-items-center mb-1 py-1 position-relative">
-                <div class="me-2 flex-shrink-0" style="z-index: 1;">
-                    <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 22px; height: 22px;">
-                        <i data-lucide="${icono}" style="width: 10px;"></i>
-                    </div>
+<div class="d-flex align-items-start mb-1 py-1">
+    <div class="me-2 flex-shrink-0" style="z-index: 1;">
+        <div class="rounded-circle border d-flex align-items-center justify-content-center ${iconClass}" style="width: 22px; height: 22px;">
+            <i data-lucide="${icono}" style="width: 10px;"></i>
+        </div>
+    </div>
+    <div class="flex-grow-1 border-bottom pb-2 min-w-0">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+            <div class="min-w-0">
+                <div class="fw-bold fs-8 text-break ${claseNombre}">
+                    ${String.fromCharCode(65 + index)}. ${punto.nombre}
                 </div>
-                <div class="flex-grow-1 border-bottom pb-1 min-w-0">
-                    <div class="d-flex justify-content-between align-items-center gap-2">
-                        <span class="fw-bold fs-8 text-truncate ${claseNombre}" title="${punto.nombre}">
-                            ${String.fromCharCode(65 + index)}. ${punto.nombre}${sucursal}
-                        </span>
-                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                            <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span>
-                            ${badge}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+                ${sucursal}
+            </div>
+            <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                ${badge}
+                <span class="fw-bold fs-8 ${esActual ? "text-primary" : "text-muted"}">${punto.hora ?? "-"}</span>
+            </div>
+        </div>
+    </div>
+</div>`;
         })
         .join("");
 }
@@ -847,7 +857,8 @@ function renderDetalle(salida) {
         </div>`;
     }
 
-    const html = `
+    const html =
+        /* 
         <div class="row g-2 mb-3">
             <div class="col-4">
                 <div class="p-2 border rounded bg-light text-center">
@@ -873,7 +884,9 @@ function renderDetalle(salida) {
                 </div>
             </div>
         </div>
+        */
 
+        `
         ${botonEditarAsignacion}
 
         <div class="d-flex justify-content-between align-items-center mb-2">

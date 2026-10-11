@@ -467,7 +467,7 @@
         <div class="row g-4">
 
             <!-- COLUMNA IZQUIERDA: TABLA DE SALIDAS -->
-            <div class="col-lg-9 col-xl-9">
+            <div class="col-lg-7 col-xl-7">
                 <div class="panel-card p-4">
 
                     <!-- BARRA DE FILTROS SECUNDARIA -->
@@ -495,9 +495,6 @@
                             <thead>
                                 <tr>
                                     <th>RUTA</th>
-                                    <th>FECHA</th>
-                                    <th class="text-center">SALIDA</th>
-                                    <th class="text-center">LLEGADA</th>
                                     <th class="text-center">ESTADO</th>
                                     <th class="text-center acciones-col">ACCIONES</th>
                                 </tr>
@@ -509,7 +506,7 @@
             </div>
 
             <!-- COLUMNA DERECHA: PANEL LATERAL DE DETALLE -->
-            <div class="col-lg-3 col-xl-3">
+            <div class="col-lg-5 col-xl-5">
                 <div class="panel-card sticky-top" style="top: 1.5rem; z-index: 10;">
                     <div
                         class="p-3 border-bottom bg-light bg-opacity-50 rounded-top-3 d-flex align-items-center justify-content-between">

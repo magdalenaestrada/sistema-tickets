@@ -3,8 +3,8 @@
 @section('content')
     <style>
         /* ===============================
-               TABS DE ESTADO
-            ================================ */
+                           TABS DE ESTADO
+                        ================================ */
         .btn-pill-tab {
             border-radius: 8px;
             font-weight: 500;
@@ -14,6 +14,19 @@
             transition: all 0.2s ease;
             border: 1px solid transparent;
             background: transparent;
+        }
+
+        #tablaSalidas tbody tr {
+            cursor: pointer;
+        }
+
+        #tablaSalidas tbody tr:hover {
+            background: #f4f7ff;
+        }
+
+        #tablaSalidas tbody tr.fila-activa {
+            background: #e8f0ff;
+            box-shadow: inset 3px 0 0 #0d6efd;
         }
 
         .btn-pill-tab:hover {
@@ -30,8 +43,8 @@
         }
 
         /* ===============================
-               TARJETAS
-            ================================ */
+                           TARJETAS
+                        ================================ */
         .panel-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -53,15 +66,15 @@
         }
 
         /* ===============================
-               BARRA DE FILTROS
-            ================================ */
+                           BARRA DE FILTROS
+                        ================================ */
         .filtros-bar {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 12px;
-            padding: 12px 14px;
-            margin-bottom: 16px;
+            padding: 5px 12px;
+            margin-bottom: 3px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -110,6 +123,39 @@
         .chip-fecha svg {
             width: 13px;
             height: 13px;
+        }
+
+        .salida-cell {
+            min-width: 240px;
+        }
+
+        .salida-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px 8px;
+            margin-top: 6px;
+        }
+
+        .meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #475569;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .meta-item svg {
+            width: 14px;
+            height: 14px;
+            color: #94a3b8;
+        }
+
+        .meta-flecha {
+            width: 13px;
+            height: 13px;
+            color: #cbd5e1;
         }
 
         #rangoPersonalizado {
@@ -189,8 +235,8 @@
         }
 
         /* ===============================
-               TABLA
-            ================================ */
+                           TABLA
+                        ================================ */
         .tabla-salidas-wrapper {
             border-radius: 14px;
             overflow-x: auto;
@@ -487,7 +533,7 @@
         </div>
 
         <!-- PESTAÑAS DE ESTADO -->
-        <div class="d-flex align-items-center gap-1 p-1 bg-secondary bg-opacity-10 rounded-3 mb-4 overflow-auto"
+        <div class="d-flex align-items-center bg-secondary bg-opacity-10 rounded-3 mb-1 overflow-auto"
             id="pills-tab-estados" style="max-width: 100%;">
             <button class="btn btn-pill-tab" data-estado="">Todas</button>
             <button class="btn btn-pill-tab active" data-estado="programado">Programadas</button>
@@ -498,50 +544,49 @@
             <button class="btn btn-pill-tab" data-estado="cancelado">Canceladas</button>
         </div>
 
+        <div class="filtros-bar">
+
+            <div class="ruta-wrap">
+                <select id="filtroRuta">
+                    <option value="">Todas las rutas</option>
+                    @foreach ($rutas as $ruta)
+                        <option value="{{ $ruta->id }}">{{ $ruta->nombre }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="chips-fecha">
+                <button type="button" class="chip-fecha active" data-rango="todo">Todas</button>
+                <button type="button" class="chip-fecha" data-rango="hoy">Hoy</button>
+                <button type="button" class="chip-fecha" data-rango="manana">Mañana</button>
+                <button type="button" class="chip-fecha" data-rango="7">7 días</button>
+                <button type="button" class="chip-fecha" data-rango="custom">
+                    <i data-lucide="calendar-range"></i> Personalizado
+                </button>
+            </div>
+
+            <div id="rangoPersonalizado">
+                <input type="date" id="fechaDesde" class="form-control" title="Desde">
+                <span class="text-muted fs-8">a</span>
+                <input type="date" id="fechaHasta" class="form-control" title="Hasta">
+            </div>
+
+            <button type="button" class="btn-limpiar" id="btnLimpiar">
+                <i data-lucide="x"></i> Limpiar
+            </button>
+
+            <div class="ultima-fecha">
+                <i data-lucide="calendar-check"></i>
+                Última salida creada: <a href="#" id="ultimaFecha">—</a>
+            </div>
+        </div>
+
         <!-- CONTENIDO PRINCIPAL -->
         <div class="row g-4">
 
             <!-- TABLA -->
-            <div class="col-lg-8 col-xl-9">
+            <div class="col-lg-7 col-xl-7">
                 <div class="panel-card p-4">
-
-                    <!-- BARRA DE FILTROS -->
-                    <div class="filtros-bar">
-
-                        <div class="ruta-wrap">
-                            <select id="filtroRuta">
-                                <option value="">Todas las rutas</option>
-                                @foreach ($rutas as $ruta)
-                                    <option value="{{ $ruta->id }}">{{ $ruta->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="chips-fecha">
-                            <button type="button" class="chip-fecha active" data-rango="todo">Todas</button>
-                            <button type="button" class="chip-fecha" data-rango="hoy">Hoy</button>
-                            <button type="button" class="chip-fecha" data-rango="manana">Mañana</button>
-                            <button type="button" class="chip-fecha" data-rango="7">7 días</button>
-                            <button type="button" class="chip-fecha" data-rango="custom">
-                                <i data-lucide="calendar-range"></i> Personalizado
-                            </button>
-                        </div>
-
-                        <div id="rangoPersonalizado">
-                            <input type="date" id="fechaDesde" class="form-control" title="Desde">
-                            <span class="text-muted fs-8">a</span>
-                            <input type="date" id="fechaHasta" class="form-control" title="Hasta">
-                        </div>
-
-                        <button type="button" class="btn-limpiar" id="btnLimpiar">
-                            <i data-lucide="x"></i> Limpiar
-                        </button>
-
-                        <div class="ultima-fecha">
-                            <i data-lucide="calendar-check"></i>
-                            Última salida creada: <a href="#" id="ultimaFecha">—</a>
-                        </div>
-                    </div>
 
                     <!-- Select oculto de estado (sincronizado con las pestañas por JS) -->
                     <div class="d-none">
@@ -566,11 +611,7 @@
                                             <input type="checkbox" id="chk-todos" class="form-check-input">
                                         </th>
                                     @endif
-
-                                    <th>RUTA</th>
-                                    <th>FECHA</th>
-                                    <th class="text-center">SALIDA</th>
-                                    <th class="text-center">LLEGADA</th>
+                                    <th>SALIDA</th>
                                     <th class="text-center">ESTADO</th>
                                     <th class="text-center acciones-col">ACCIONES</th>
                                 </tr>
@@ -582,7 +623,7 @@
             </div>
 
             <!-- PANEL LATERAL DE DETALLE -->
-            <div class="col-lg-4 col-xl-3">
+            <div class="col-lg-5 col-xl-5">
                 <div class="panel-card sticky-top" style="top: 1.5rem; z-index: 1;">
                     <div
                         class="p-3 border-bottom bg-light bg-opacity-50 rounded-top-3 d-flex align-items-center justify-content-between">

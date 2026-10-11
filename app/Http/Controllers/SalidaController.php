@@ -188,10 +188,8 @@ class SalidaController extends Controller
                 };
             })
             ->addColumn('acciones', function ($salida) use ($isAdmin, $sucursalId) {
-                $botones = '<div class="acciones-wrap">
-    <button class="btn btn-light ver" data-id="' . $salida->id . '" title="Ver detalle">
-        <i data-lucide="info"></i>
-    </button>';
+                   $botones = '<div class="acciones-wrap">';
+
 
                 if ($isAdmin) {
                     $botones .= '
