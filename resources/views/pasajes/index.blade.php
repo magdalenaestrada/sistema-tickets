@@ -326,7 +326,7 @@
 
                 <div class="filtro-group">
                     <label>Fecha</label>
-                    <input type="date" id="filtro_fecha" min="{{ $ayer }}" class="form-control">
+                    <input type="date" id="filtro_fecha" class="form-control">
                 </div>
 
                 <button id="btn-limpiar-filtros" class="btn btn-outline-secondary">
@@ -345,6 +345,7 @@
                         @foreach ($salidas as $salida)
                             <div class="horario-row" style="display:none;" data-salida-id="{{ $salida->id }}"
                                 data-tipo-viaje-id="{{ $salida->horario->tipo_viaje_id }}"
+                                data-estado="{{ $salida->estado }}"
                                 data-fecha="{{ optional($salida->fecha_salida)->format('Y-m-d') }}"
                                 data-puntos="{{ $salida->puntos_json }}" data-origen-nombre="{{ $salida->origen_nombre }}"
                                 data-destino-nombre="{{ $salida->destino_nombre }}">

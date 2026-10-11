@@ -264,6 +264,12 @@ $(function () {
 
     $("#filtroRuta").on("change", () => {
         cargarUltimaFecha();
+
+        if (estadoActual === "vigentes") {
+            cargarSalidasVigentes();
+            return;
+        }
+
         recargarTabla(true);
     });
 
@@ -312,14 +318,128 @@ $(function () {
         recargarTabla(true);
     });
 
-    /* ---------- Pestañas de estado ---------- */
     $("#pills-tab-estados").on("click", ".btn-pill-tab", function () {
         $("#pills-tab-estados .btn-pill-tab").removeClass("active");
         $(this).addClass("active");
+
         estadoActual = $(this).data("estado");
+
+        if (estadoActual === "vigentes") {
+            mostrarSalidasVigentes();
+            return;
+        }
+
+        ocultarSalidasVigentes();
         recargarTabla(true);
     });
 });
+
+function escaparHTML(valor) {
+    return $("<div>")
+        .text(valor ?? "")
+        .html();
+}
+
+function mostrarSalidasVigentes() {
+    $("#contenidoPrincipalSalidas").addClass("d-none");
+    $("#panelSalidasVigentes").removeClass("d-none");
+
+    cargarSalidasVigentes();
+}
+
+function ocultarSalidasVigentes() {
+    $("#panelSalidasVigentes").addClass("d-none");
+    $("#contenidoPrincipalSalidas").removeClass("d-none");
+}
+
+function cargarSalidasVigentes() {
+    const $tbody = $("#listaSalidasVigentes");
+
+    $tbody.html(`
+        <tr>
+            <td colspan="3" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+                Cargando salidas vigentes...
+            </td>
+        </tr>
+    `);
+
+    $.get(route("salidas.vigentes"), {
+        ruta_id: $("#filtroRuta").val(),
+    })
+        .done(function (response) {
+            const salidas = response.data || [];
+
+            $("#totalRutasVigentes").text(`${response.total_rutas} rutas`);
+
+            if (!salidas.length) {
+                $tbody.html(`
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            No hay salidas vigentes.
+                        </td>
+                    </tr>
+                `);
+
+                return;
+            }
+
+            const formatoFecha = (fecha) => {
+                if (!fecha) return "-";
+
+                const fechaTexto = String(fecha).substring(0, 10);
+                const partes = fechaTexto.split("-");
+
+                return partes.length === 3
+                    ? `${partes[2]}/${partes[1]}/${partes[0]}`
+                    : fechaTexto;
+            };
+
+            $tbody.html(
+                salidas
+                    .map(
+                        (salida) => `
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">
+                                <i data-lucide="route"
+                                   class="text-primary"
+                                   style="width:15px;"></i>
+                                ${escaparHTML(salida.ruta)}
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            <span class="badge bg-primary-subtle text-primary">
+                                ${Number(salida.total_salidas)}
+                            </span>
+                        </td>
+
+                        <td class="text-center">
+                            <span class="fw-bold text-success">
+                                <i data-lucide="calendar-check"
+                                   style="width:14px;"></i>
+                                ${formatoFecha(salida.ultima_fecha)}
+                            </span>
+                        </td>
+                    </tr>
+                `,
+                    )
+                    .join(""),
+            );
+
+            lucide.createIcons();
+        })
+        .fail(function () {
+            $tbody.html(`
+                <tr>
+                    <td colspan="3" class="text-center text-danger py-4">
+                        No se pudo cargar la información.
+                    </td>
+                </tr>
+            `);
+        });
+}
 
 const fmt = (d) => d.toISOString().split("T")[0];
 

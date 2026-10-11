@@ -12,12 +12,15 @@ document.addEventListener("DOMContentLoaded", function () {
     let selectedReservedPasajeId = null;
     let currentOrigenId = null;
     let currentDestinoId = null;
+    let haBuscado = false;
 
     actualizarContador(-1);
     attachRowEvents();
     aplicarEstadoPorDefecto();
 
     function aplicarEstadoPorDefecto() {
+        haBuscado = false;
+
         document.getElementById("filtro_fecha").value = "";
         document.getElementById("filtro_destino").value = "";
 
@@ -28,10 +31,10 @@ document.addEventListener("DOMContentLoaded", function () {
         sellButton.style.display = "none";
         editButton.style.display = "none";
         svgContainer.innerHTML = `
-            <div class="no-results">
-                Selecciona una salida para ver los asientos
-            </div>
-        `;
+        <div class="no-results">
+            Selecciona una salida para ver los asientos
+        </div>
+    `;
         resetSeleccion();
 
         if (pueblitoDefaultId) {
@@ -406,12 +409,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     function obtenerFechasSemana() {
-        const hoy = new Date();
+        const hoyLima = ahoraLima().split(" ")[0]; // "YYYY-MM-DD"
+        const [y, m, d] = hoyLima.split("-").map(Number);
+
         const fechas = [];
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(hoy);
-            d.setDate(hoy.getDate() + i);
-            fechas.push(d.toISOString().split("T")[0]);
+        for (let i = -1; i < 7; i++) {
+            const f = new Date(Date.UTC(y, m - 1, d + i));
+            fechas.push(f.toISOString().split("T")[0]);
         }
         return fechas;
     }
@@ -603,7 +607,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function filtrarSalidas() {
+    function ejecutarFiltro() {
         const fecha = document.getElementById("filtro_fecha").value;
         const origen = document.getElementById("filtro_origen").value;
         const destino = document.getElementById("filtro_destino").value;
@@ -635,6 +639,34 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         mostrarSalidasPorOrigenDestinoFecha(origen, destino, fecha);
+    }
+
+    function filtrarSalidas() {
+        ejecutarFiltro();
+        if (!haBuscado) limitarProximas();
+    }
+
+    // Estado por defecto: solo programadas, máximo 10
+    function limitarProximas() {
+        let visibles = 0;
+
+        document.querySelectorAll(".horario-row").forEach((row) => {
+            if (row.style.display === "none") return;
+
+            if (row.dataset.estado === "en_ruta" || visibles >= 10) {
+                row.style.display = "none";
+                return;
+            }
+            visibles++;
+        });
+
+        actualizarContador(visibles);
+
+        estadoInicial.style.display = visibles ? "none" : "block";
+        if (!visibles) {
+            estadoInicial.innerHTML =
+                "No hay próximas salidas. Use los filtros para buscar";
+        }
     }
 
     function mostrarSalidasPorOrigenFecha(origen, fecha) {
@@ -811,7 +843,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     ["filtro_fecha", "filtro_origen", "filtro_destino"].forEach((id) => {
-        document.getElementById(id)?.addEventListener("change", filtrarSalidas);
+        document.getElementById(id)?.addEventListener("change", () => {
+            haBuscado = true;
+            filtrarSalidas();
+        });
     });
 
     function precargarDesdeUrl() {
@@ -822,6 +857,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const destinoId = params.get("destino_id");
 
         if (!salidaId || !origenId || !destinoId) return;
+        haBuscado = true; // 👈 nuevo
 
         document.getElementById("filtro_origen").value = origenId;
         document.getElementById("filtro_destino").value = destinoId;
@@ -836,29 +872,29 @@ document.addEventListener("DOMContentLoaded", function () {
             row.click();
         }
     }
+
     precargarDesdeUrl();
 
-    // 👇 FIX: el listado inicial (sin filtro de origen, típicamente admin)
-    // ya no debe listar una salida donde TODOS los orígenes están bloqueados.
     function mostrarPrimeras10Salidas() {
         const rows = Array.from(
             document.querySelectorAll(".horario-row"),
         ).filter((row) => {
+            if (row.dataset.estado === "en_ruta") return false; // no en ruta
+            if (yaSalio(row)) return false; // no las pasadas
+
             let puntos = [];
             try {
                 puntos = JSON.parse(row.dataset.puntos || "[]");
-            } catch (e) {
-                puntos = [];
-            }
+            } catch (e) {}
+
             return puntos.some((p) => p.origen_permitido !== false);
         });
-
-        let visibles = 0;
 
         document.querySelectorAll(".horario-row").forEach((row) => {
             row.style.display = "none";
         });
 
+        let visibles = 0;
         rows.forEach((row) => {
             if (visibles < 10) {
                 row.style.display = "flex";
@@ -868,9 +904,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
         actualizarContador(visibles);
 
-        const estadoInicial = document.getElementById("estado-inicial");
         if (estadoInicial) {
             estadoInicial.style.display = visibles ? "none" : "block";
+            if (!visibles) {
+                estadoInicial.innerHTML =
+                    "No hay próximas salidas. Use los filtros para buscar";
+            }
         }
+    }
+
+    // 2. Helpers (junto a esOrigenValido)
+    function ahoraLima() {
+        return new Intl.DateTimeFormat("sv-SE", {
+            timeZone: "America/Lima",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }).format(new Date());
+    }
+
+    function yaSalio(row) {
+        let puntos = [];
+        try {
+            puntos = JSON.parse(row.dataset.puntos || "[]");
+        } catch (e) {}
+
+        const origenSel = document.getElementById("filtro_origen").value;
+        const punto = origenSel
+            ? puntos.find((p) => String(p.pueblito_id) === String(origenSel))
+            : puntos.find((p) => p.origen_permitido !== false);
+
+        if (!punto) return true;
+        return `${punto.fecha} ${punto.hora}` < ahoraLima();
     }
 });

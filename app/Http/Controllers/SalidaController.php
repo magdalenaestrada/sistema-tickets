@@ -188,7 +188,7 @@ class SalidaController extends Controller
                 };
             })
             ->addColumn('acciones', function ($salida) use ($isAdmin, $sucursalId) {
-                   $botones = '<div class="acciones-wrap">';
+                $botones = '<div class="acciones-wrap">';
 
 
                 if ($isAdmin) {
@@ -289,6 +289,12 @@ class SalidaController extends Controller
         abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
         $perteneceARuta = $salida->sucursalesRuta()->contains('id', $sucursalId);
+        dd([
+            'sucursalId'   => $sucursalId,
+            'user_sucursal' => $user->sucursal_id,
+            'empleado_sucursal' => $user->empleado->sucursal_id ?? null,
+            'sucursales_ruta' => $salida->sucursalesRuta()->pluck('id'),
+        ]);
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
         $datos = $salida->datosManifiesto($sucursalId);
@@ -543,6 +549,42 @@ class SalidaController extends Controller
             "manifiesto_encomiendas_{$salida->id}.pdf",
             'P'
         );
+    }
+
+    public function salidasVigentes(Request $request)
+    {
+        $hoy = Carbon::now('America/Lima')->toDateString();
+
+        $salidas = Salida::query()
+            ->join('horarios', 'salidas.horario_id', '=', 'horarios.id')
+            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
+            ->where(function ($query) use ($hoy) {
+                $query->where(function ($q) use ($hoy) {
+                    $q->whereDate('salidas.fecha_salida', '>=', $hoy)
+                        ->whereIn('salidas.estado', [
+                            'programado',
+                            'reprogramado',
+                        ]);
+                })
+                    ->orWhere('salidas.estado', 'en_ruta');
+            })
+            ->when($request->filled('ruta_id'), function ($query) use ($request) {
+                $query->where('rutas.id', $request->ruta_id);
+            })
+            ->selectRaw('
+            rutas.id AS ruta_id,
+            rutas.nombre AS ruta,
+            COUNT(DISTINCT salidas.id) AS total_salidas,
+            MAX(salidas.fecha_salida) AS ultima_fecha
+        ')
+            ->groupBy('rutas.id', 'rutas.nombre')
+            ->orderBy('ultima_fecha', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $salidas,
+            'total_rutas' => $salidas->count(),
+        ]);
     }
 
     public function manifiestoBodega(Salida $salida, PdfService $pdfService)

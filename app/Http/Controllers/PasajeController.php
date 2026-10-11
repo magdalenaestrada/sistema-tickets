@@ -37,7 +37,7 @@ use Throwable;
 
 class PasajeController extends Controller
 {
-
+    /*
     public function index()
     {
         $hoy = now('America/Lima')->format('Y-m-d');
@@ -219,6 +219,176 @@ class PasajeController extends Controller
             'ruta' => $ruta
         ]);
     }
+    */
+
+    public function index()
+    {
+        $tz     = 'America/Lima';
+        $hoy    = now($tz)->toDateString();
+        $ayer   = now($tz)->subDay()->toDateString();
+        $limite = now($tz)->addDays(7)->toDateString(); // ajusta el horizonte que necesites
+
+        $user    = auth()->user();
+        $esAdmin = $user->hasRole('Administrador');
+
+        $pueblitos = Pueblito::with('sucursal')->orderBy('descripcion')->get();
+
+        $cajaAbierta = Caja::where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->exists();
+
+        $sucursalUsuario = $esAdmin ? null : Sucursal::find($user->sucursal_id);
+
+        // Sin query extra: $pueblitos ya viene ordenado por descripcion
+        $pueblitoSucursalId = $sucursalUsuario
+            ? $pueblitos->firstWhere('sucursal_id', $sucursalUsuario->id)?->id
+            : null;
+
+        $salidasQuery = Salida::with([
+            'horario.ruta.puntos.pueblito.sucursal',
+            'horario.ruta.puntos.sucursal',
+            // 'horario.ruta.tramos.origen',
+            // 'horario.ruta.tramos.destino',
+            'horario.tipo_viaje',
+            'horario.tipo_vehiculo',
+            'checks',
+        ])
+            ->join('horarios', 'horarios.id', '=', 'salidas.horario_id')
+            ->where(function ($q) use ($ayer, $limite) {
+                $q->where(function ($q) use ($ayer, $limite) {
+                    $q->where('salidas.estado', 'programado')
+                        ->where('salidas.fecha_salida', '>=', $ayer)
+                        ->where('salidas.fecha_salida', '<=', $limite . ' 23:59:59');
+                })->orWhere('salidas.estado', 'en_ruta');
+            })
+            ->orderBy('salidas.fecha_salida')
+            ->orderBy('horarios.hora_salida')
+            ->select('salidas.*')
+            ->get();
+
+        // $pasajesPorSalida = DB::table('pasajes')
+        // ->join('pasaje_tramos', 'pasajes.id', '=', 'pasaje_tramos.pasaje_id')
+        // ->whereIn('pasajes.salida_id', $salidasQuery->pluck('id'))
+        // ->whereIn('pasajes.estado', ['R', 'V'])
+        // ->select('pasajes.salida_id', 'pasajes.asiento_numero', 'pasajes.estado', 'pasaje_tramos.tramo_id')
+        // ->get()
+        // ->groupBy('salida_id');
+
+        $ocupadosPorSalida = DB::table('pasajes')
+            ->whereIn('salida_id', $salidasQuery->pluck('id'))
+            ->whereIn('estado', ['R', 'V'])
+            ->selectRaw('salida_id, COUNT(DISTINCT asiento_numero) AS ocupados')
+            ->groupBy('salida_id')
+            ->pluck('ocupados', 'salida_id');
+
+        // Lo que depende solo de la ruta se calcula una vez por ruta
+        $rutaCache = [];
+        \Debugbar::startMeasure('salidas_map', 'Procesar salidas');
+        $salidas = $salidasQuery->map(function ($salida) use ($esAdmin, $sucursalUsuario, $ocupadosPorSalida, &$rutaCache) {
+            $ruta = $salida->horario->ruta;
+
+            $rutaCache[$ruta->id] ??= [
+                'puntos' => $ruta->puntos->sortBy('orden')->values(),
+                'tramos' => $ruta->tramos->keyBy(fn($t) => $t->punto_origen_id . '-' . $t->punto_destino_id),
+            ];
+            ['puntos' => $puntos, 'tramos' => $tramos] = $rutaCache[$ruta->id];
+
+            $hora = Carbon::parse(
+                $salida->fecha_salida->format('Y-m-d') . ' ' . $salida->horario->hora_salida,
+                'America/Lima'
+            );
+
+            $bloqueados   = $salida->puntosBloqueadosIds(); // revisar que no haga query (ver abajo)
+            $ultimoIndex  = $puntos->count() - 1;
+            $puntosConHora = [];
+            $primerOrigen  = null;
+
+            foreach ($puntos as $i => $p) {
+                if ($i > 0) {
+                    $tramo = $tramos->get($puntos[$i - 1]->id . '-' . $p->id);
+                    if ($tramo) {
+                        $hora->addMinutes($tramo->duracion_minutos);
+                    }
+                }
+
+                $estaBloqueado = $bloqueados->contains($p->id);
+                $sucPueblito   = $p->pueblito?->sucursal_id;
+
+                $origenPermitido = match (true) {
+                    $i === $ultimoIndex, $estaBloqueado => false,
+                    $esAdmin                            => true,
+                    !$sucursalUsuario?->venta_otras     => $sucPueblito === $sucursalUsuario?->id,
+                    default                             => $sucPueblito === $sucursalUsuario->id
+                        || $sucPueblito === null
+                        || $p->pueblito?->sucursal?->venta_otras == 1,
+                };
+
+                $item = [
+                    'pueblito_id'      => (string) $p->pueblito_id,
+                    'orden'            => (int) $p->orden,
+                    'nombre'           => trim(($p->pueblito?->descripcion ?? '') .
+                        ($p->sucursal ? ' - ' . $p->sucursal->nombre_comercial : '')),
+                    'hora'             => $hora->format('H:i'),
+                    'fecha'            => $hora->format('Y-m-d'),
+                    'fecha_formateada' => $hora->format('d/m'),
+                    'origen_permitido' => $origenPermitido,
+                    'check_registrado' => $estaBloqueado,
+                ];
+
+                $puntosConHora[] = $item;
+                if ($origenPermitido && !$primerOrigen) {
+                    $primerOrigen = $item;
+                }
+            }
+
+            // Si no hay origen permitido, se descarta antes de calcular asientos
+            if (!$primerOrigen) {
+                return null;
+            }
+
+            $primero = $puntos->first();
+            $destino = $puntos->last();
+
+            $salida->puntos_json    = json_encode($puntosConHora, JSON_UNESCAPED_UNICODE);
+            $salida->origen_nombre  = $primerOrigen['nombre'];
+            $salida->destino_nombre = trim(($destino?->pueblito?->descripcion ?? '') .
+                ($destino?->sucursal ? ' - ' . $destino->sucursal->nombre_comercial : ''));
+
+            $inicio = $primero?->pueblito?->descripcion;
+            $fin    = $destino?->pueblito?->descripcion;
+            $salida->ruta_completa = $inicio && $fin ? "{$inicio} → {$fin}" : '-';
+
+            /*$asientosMap = $salida->asientosDisponibles(
+                $primero?->pueblito_id,
+                $destino?->pueblito_id,
+                $pasajesPorSalida->get($salida->id, collect())
+            );
+            $salida->capacidad_bus = collect($asientosMap)->filter(fn ($e) => $e === 'libre')->count();*/
+            $tv = $salida->horario->tipo_vehiculo;
+            $capacidad = $tv?->capacidad ?? $tv?->asientos ?? 0;
+
+            $salida->capacidad_bus = max(0, $capacidad - ($ocupadosPorSalida[$salida->id] ?? 0));
+
+            return $salida;
+        })
+            ->filter()
+            ->values();
+        \Debugbar::stopMeasure('salidas_map');
+        $sucursales = Sucursal::where('estado', 'A')->orderBy('nombre_comercial')->get();
+
+        return view('pasajes.index', [
+            'hoy'                => $hoy,
+            'ayer'               => $ayer,
+            'pueblitoSucursalId' => $pueblitoSucursalId,
+            'salidas'            => $salidas,
+            'sucursales'         => $sucursales,
+            'pueblitosOrigen'    => $pueblitos,
+            'pueblitos'          => $pueblitos,
+            'esAdmin'            => $esAdmin,
+            'cajaAbierta'        => $cajaAbierta,
+            'ruta'               => route('caja.index'),
+        ]);
+    }
 
     public function listarPasajes(Request $request)
     {
@@ -345,6 +515,13 @@ class PasajeController extends Controller
         $request->validate([
             'origen_id' => 'nullable|exists:pueblitos,id',
             'destino_id' => 'nullable|exists:pueblitos,id',
+        ]);
+
+        $salida->loadMissing([
+            'horario.ruta.puntos',
+            // 'horario.ruta.tramos.origen',
+            // 'horario.ruta.tramos.destino',
+            'horario.tipo_vehiculo',
         ]);
 
         $origenId = $request->origen_id;
@@ -492,8 +669,8 @@ class PasajeController extends Controller
 
             $salida = Salida::with([
                 'horario.ruta.puntos.pueblito',
-                'horario.ruta.tramos.origen',
-                'horario.ruta.tramos.destino',
+                // 'horario.ruta.tramos.origen',
+                // 'horario.ruta.tramos.destino',
                 'horario.tipo_vehiculo',
                 'horario.tipo_viaje',
             ])->findOrFail($request->salida_id);

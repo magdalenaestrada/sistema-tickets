@@ -3,8 +3,8 @@
 @section('content')
     <style>
         /* ===============================
-                           TABS DE ESTADO
-                        ================================ */
+                                       TABS DE ESTADO
+                                    ================================ */
         .btn-pill-tab {
             border-radius: 8px;
             font-weight: 500;
@@ -43,8 +43,8 @@
         }
 
         /* ===============================
-                           TARJETAS
-                        ================================ */
+                                       TARJETAS
+                                    ================================ */
         .panel-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -66,8 +66,8 @@
         }
 
         /* ===============================
-                           BARRA DE FILTROS
-                        ================================ */
+                                       BARRA DE FILTROS
+                                    ================================ */
         .filtros-bar {
             display: flex;
             flex-wrap: wrap;
@@ -235,8 +235,8 @@
         }
 
         /* ===============================
-                           TABLA
-                        ================================ */
+                                       TABLA
+                                    ================================ */
         .tabla-salidas-wrapper {
             border-radius: 14px;
             overflow-x: auto;
@@ -542,6 +542,10 @@
             <button class="btn btn-pill-tab" data-estado="finalizado">Finalizadas</button>
             <button class="btn btn-pill-tab" data-estado="vencido">Vencidas</button>
             <button class="btn btn-pill-tab" data-estado="cancelado">Canceladas</button>
+            <button class="btn btn-pill-tab" data-estado="vigentes">
+                <i data-lucide="calendar-check" style="width:14px;height:14px;"></i>
+                Salidas vigentes
+            </button>
         </div>
 
         <div class="filtros-bar">
@@ -575,15 +579,47 @@
                 <i data-lucide="x"></i> Limpiar
             </button>
 
-            <div class="ultima-fecha">
-                <i data-lucide="calendar-check"></i>
-                Última salida creada: <a href="#" id="ultimaFecha">—</a>
+        </div>
+
+        <div id="panelSalidasVigentes" class="panel-card p-3 mb-3 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h6 class="fw-bold mb-1">
+                        <i data-lucide="calendar-range"></i>
+                        Salidas vigentes por ruta
+                    </h6>
+                    <small class="text-muted">
+                        Consulta hasta qué fecha tienes salidas programadas.
+                    </small>
+                </div>
+
+                <span class="badge bg-primary" id="totalRutasVigentes">
+                    0 rutas
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>RUTA</th>
+                            <th class="text-center">SALIDAS PENDIENTES</th>
+                            <th class="text-center">ÚLTIMA FECHA DE SALIDA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaSalidasVigentes">
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                Cargando...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <!-- CONTENIDO PRINCIPAL -->
-        <div class="row g-4">
-
+        <div class="row g-4" id="contenidoPrincipalSalidas">
             <!-- TABLA -->
             <div class="col-lg-7 col-xl-7">
                 <div class="panel-card p-4">

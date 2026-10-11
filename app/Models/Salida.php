@@ -56,6 +56,17 @@ class Salida extends Model
         return $this->horario?->hora_llegada;
     }
 
+    private function puntosRuta(array $con = [])
+    {
+        $this->loadMissing(array_merge(
+            ['horario.ruta.puntos'],
+            array_map(fn($r) => "horario.ruta.puntos.$r", $con)
+        ));
+
+        return $this->horario?->ruta?->puntos?->sortBy('orden')->values() ?? collect();
+    }
+
+    /*
     public function obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)
     {
         $ruta = $this->horario?->ruta;
@@ -103,9 +114,38 @@ class Salida extends Model
             })
             ->values();
     }
+    */
+
+    public function obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)
+    {
+        $puntos = $this->puntosRuta();
+
+        $puntoOrigen  = $puntos->firstWhere('pueblito_id', $origenPueblitoId);
+        $puntoDestino = $puntos->firstWhere('pueblito_id', $destinoPueblitoId);
+
+        if (!$puntoOrigen || !$puntoDestino || $puntoOrigen->orden >= $puntoDestino->orden) {
+            return collect();
+        }
+
+        $this->loadMissing('horario.ruta.tramos');
+        $ordenPorId = $puntos->pluck('orden', 'id'); // [punto_id => orden]
+
+        return $this->horario->ruta->tramos
+            ->filter(function ($t) use ($ordenPorId, $puntoOrigen, $puntoDestino) {
+                $o = $ordenPorId[$t->punto_origen_id] ?? null;
+                $d = $ordenPorId[$t->punto_destino_id] ?? null;
+
+                return $o !== null && $d !== null
+                    && $o >= $puntoOrigen->orden
+                    && $d <= $puntoDestino->orden;
+            })
+            ->sortBy(fn($t) => $ordenPorId[$t->punto_origen_id])
+            ->values();
+    }
 
     public function asientosDisponibles($origenPueblitoId, $destinoPueblitoId, $pasajesPreloaded = null)
     {
+        $this->loadMissing('horario.tipo_vehiculo');
         $tramos = $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId);
         if ($tramos->isEmpty()) {
             return [];
@@ -186,7 +226,7 @@ class Salida extends Model
             ->withPivot(['usuario_id', 'fecha_asignacion', 'fecha_llegada', 'estado'])
             ->withTimestamps();
     }
-
+    /*
     public function puedeTransportarEncomienda($origenPueblitoId, $destinoPueblitoId)
     {
         $ruta = $this->horario?->ruta;
@@ -212,15 +252,55 @@ class Salida extends Model
         }
 
         return $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)->isNotEmpty();
-    }
+    }*/
 
+    public function puedeTransportarEncomienda($origenPueblitoId, $destinoPueblitoId)
+    {
+        $ruta = $this->horario?->ruta;
+
+        if (!$ruta) {
+            return false;
+        }
+
+        $puntos = $this->puntosRuta();
+
+        if ($puntos->isEmpty()) {
+            return false;
+        }
+
+        $primerPunto = $puntos->first();
+        $ultimoPunto = $puntos->last();
+
+        $tipoViajeId = (int) ($this->horario?->tipo_viaje_id ?? 0);
+
+        if ($tipoViajeId === 1) {
+            return (int) $primerPunto?->pueblito_id === (int) $origenPueblitoId
+                && (int) $ultimoPunto?->pueblito_id === (int) $destinoPueblitoId;
+        }
+
+        return $this->obtenerTramosDeViaje($origenPueblitoId, $destinoPueblitoId)->isNotEmpty();
+    }
+    /*
     public function getEsVencidaAttribute()
     {
         return $this->fecha_salida < now()->toDateString()
             || ($this->fecha_salida == now()->toDateString()
                 && $this->hora_salida < now()->format('H:i:s'));
+    }*/
+
+    public function getEsVencidaAttribute()
+    {
+        $hora = $this->horario?->getRawOriginal('hora_salida');
+
+        if (!$this->fecha_salida || !$hora) {
+            return false;
+        }
+
+        return Carbon::parse($this->fecha_salida->format('Y-m-d') . ' ' . $hora, 'America/Lima')
+            ->isPast();
     }
 
+    /*
     public function puntoActual($sucursalId)
     {
         $puntos = $this->horario
@@ -234,7 +314,18 @@ class Salida extends Model
             return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
         });
     }
+    */
 
+    public function puntoActual($sucursalId)
+    {
+        $puntos = $this->puntosRuta(['pueblito']);
+
+        return $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
+    }
+
+    /*
     public function siguientePunto($sucursalId)
     {
         $actual = $this->puntoActual($sucursalId);
@@ -248,7 +339,18 @@ class Salida extends Model
             ->puntos
             ->firstWhere('orden', $actual->orden + 1);
     }
+    */
 
+    public function siguientePunto($sucursalId)
+    {
+        $actual = $this->puntoActual($sucursalId);
+
+        return $actual
+            ? $this->puntosRuta()->firstWhere('orden', $actual->orden + 1)
+            : null;
+    }
+
+    /*
     public function pasajerosEnTramo($sucursalId)
     {
         $ruta = $this->horario?->ruta;
@@ -296,7 +398,54 @@ class Salida extends Model
             ->sortBy('asiento_numero')
             ->values();
     }
+    */
 
+    public function pasajerosEnTramo($sucursalId)
+    {
+        $ruta = $this->horario?->ruta;
+
+        if (!$ruta) {
+            return collect();
+        }
+
+        $puntos = $this->puntosRuta(['pueblito']);
+
+        $actual = $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
+
+        if (!$actual) {
+            return collect();
+        }
+
+        $ordenActual = $actual->orden;
+
+        return $this->pasajes
+            ->whereIn('estado', ['V', 'F'])
+            ->filter(function ($pasaje) use ($puntos, $ordenActual) {
+
+                $origen = $puntos->firstWhere(
+                    'pueblito_id',
+                    $pasaje->origen_pueblito_id
+                );
+
+                $destino = $puntos->firstWhere(
+                    'pueblito_id',
+                    $pasaje->destino_pueblito_id
+                );
+
+                if (!$origen || !$destino) {
+                    return false;
+                }
+
+                return $origen->orden <= $ordenActual
+                    && $destino->orden > $ordenActual;
+            })
+            ->sortBy('asiento_numero')
+            ->values();
+    }
+
+    /*
     public function encomiendasEnTramo($sucursalId)
     {
         $ruta = $this->horario?->ruta;
@@ -342,8 +491,52 @@ class Salida extends Model
             })
             ->values();
     }
+    */
 
-    public function datosManifiesto($sucursalId)
+    public function encomiendasEnTramo($sucursalId)
+    {
+        $ruta = $this->horario?->ruta;
+
+        if (!$ruta) {
+            return collect();
+        }
+
+        $puntos = $this->puntosRuta(['pueblito.sucursal']);
+
+        $actual = $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
+
+        if (!$actual) {
+            return collect();
+        }
+
+        $ordenActual = $actual->orden;
+
+        return $this->encomiendas
+            ->filter(function ($encomienda) use ($puntos, $ordenActual) {
+
+                $origen = $puntos->firstWhere(
+                    'pueblito_id',
+                    $encomienda->origen_pueblito_id
+                );
+
+                $destino = $puntos->firstWhere(
+                    'pueblito_id',
+                    $encomienda->destino_pueblito_id
+                );
+
+                if (!$origen || !$destino) {
+                    return false;
+                }
+
+                return $origen->orden <= $ordenActual
+                    && $destino->orden > $ordenActual;
+            })
+            ->values();
+    }
+
+    /*public function datosManifiesto($sucursalId)
     {
         $ruta = $this->horario?->ruta;
 
@@ -376,9 +569,41 @@ class Salida extends Model
             'origenTramo' => $actual->pueblito?->descripcion ?? '-',
             'destinoTramo' => $ultimoPunto->pueblito?->descripcion ?? '-',
         ];
+    }*/
+
+    public function datosManifiesto($sucursalId)
+    {
+        $ruta = $this->horario?->ruta;
+
+        if (!$ruta) {
+            return null;
+        }
+
+        $puntos = $this->puntosRuta(['pueblito.sucursal']);
+
+        $actual = $puntos->first(function ($punto) use ($sucursalId) {
+            return (int) $punto->pueblito?->sucursal_id === (int) $sucursalId;
+        });
+
+        if (!$actual) {
+            return null;
+        }
+
+        $primerPunto = $puntos->first();
+        $ultimoPunto = $puntos->last();
+
+        return [
+            'origen' => $primerPunto->pueblito?->descripcion ?? '-',
+            'destino' => $ultimoPunto->pueblito?->descripcion ?? '-',
+
+            'orden' => $actual->orden,
+
+            'origenTramo' => $actual->pueblito?->descripcion ?? '-',
+            'destinoTramo' => $ultimoPunto->pueblito?->descripcion ?? '-',
+        ];
     }
 
-    public function sucursalesRuta()
+    /*public function sucursalesRuta()
     {
         return $this->horario->ruta->puntos()
             ->with('pueblito.sucursal')
@@ -390,6 +615,11 @@ class Salida extends Model
             ->filter()
             ->unique('id')
             ->values();
+    }*/
+
+    public function sucursalesRuta()
+    {
+        return $this->puntosRuta(['pueblito.sucursal']);
     }
 
     public function checks()
@@ -420,7 +650,8 @@ class Salida extends Model
     // Arma el array de puntos con check_registrado y es_actual, listo para el frontend
     public function puntosConEstado()
     {
-        $puntos = $this->horario->ruta->puntos->orderBy('orden')->get();
+        $puntos = $this->puntosRuta(['pueblito', 'sucursal']);
+        // $puntos = $this->horario->ruta->puntos->orderBy('orden')->get();
         $bloqueados = $this->puntosBloqueadosIds();
 
         // La "próxima parada" es el primer punto sin check
@@ -443,7 +674,7 @@ class Salida extends Model
         return $this->puntosBloqueadosIds()->contains($puntoId);
     }
 
-
+    /*
     public function origenSucursalId()
     {
         $primerPunto = $this->horario?->ruta?->puntos?->sortBy('orden')->first();
@@ -453,6 +684,19 @@ class Salida extends Model
     public function destinoSucursalId()
     {
         $ultimoPunto = $this->horario?->ruta?->puntos?->sortBy('orden')->last();
+        return $ultimoPunto?->sucursal_id;
+    }
+    */
+
+    public function origenSucursalId()
+    {
+        $primerPunto = $this->puntosRuta()->first();
+        return $primerPunto?->sucursal_id;
+    }
+
+    public function destinoSucursalId()
+    {
+        $ultimoPunto = $this->puntosRuta()->last();
         return $ultimoPunto?->sucursal_id;
     }
 
@@ -466,9 +710,19 @@ class Salida extends Model
         return $sucursalId && (int) $this->destinoSucursalId() === (int) $sucursalId;
     }
 
+    /*
     public function origenYaConfirmado()
     {
         $origenPunto = $this->horario?->ruta?->puntos?->sortBy('orden')->first();
+
+        return $origenPunto
+            ? $this->puntosBloqueadosIds()->contains($origenPunto->id)
+            : false;
+    }
+    */
+    public function origenYaConfirmado()
+    {
+        $origenPunto = $this->puntosRuta()->first();
 
         return $origenPunto
             ? $this->puntosBloqueadosIds()->contains($origenPunto->id)
