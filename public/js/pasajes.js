@@ -13,10 +13,21 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentOrigenId = null;
     let currentDestinoId = null;
     let haBuscado = false;
+    const HORAS_LIMITE_SALIDA = 4;
+    let currentRow = null;
+
+    const MENSAJE_VENCIDA =
+        "HAN PASADO MÁS DE 4 HORAS DE SU HORA DE SALIDA SIN INICIAR SU RECORRIDO. " +
+        "CONSULTE CON ADMINISTRADOR ANTES DE VENDER";
 
     actualizarContador(-1);
     attachRowEvents();
     aplicarEstadoPorDefecto();
+    marcarSalidasVencidas();
+    setInterval(() => {
+        marcarSalidasVencidas();
+        if (currentRow) mostrarAlertaVencida(currentRow);
+    }, 60000);
 
     function aplicarEstadoPorDefecto() {
         haBuscado = false;
@@ -46,6 +57,8 @@ document.addEventListener("DOMContentLoaded", function () {
             estadoInicial.style.display = "block";
             mostrarPrimeras10Salidas();
         }
+        currentRow = null;
+        mostrarAlertaVencida(null);
     }
 
     // Helper único: decide si un punto de la ruta es un origen válido
@@ -84,7 +97,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     .forEach((r) => r.classList.remove("active"));
                 this.classList.add("active");
                 resetSeleccion();
-
+                currentRow = this;
+                mostrarAlertaVencida(this);
                 const origenSelect = document.getElementById("filtro_origen");
                 const destinoSelect = document.getElementById("filtro_destino");
 
@@ -392,12 +406,31 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        window.location.href = route("pasajes.vender", {
-            salida: currentSalidaId,
-            asientos: seats,
-            origen_id: currentOrigenId,
-            destino_id: currentDestinoId,
-        });
+        const irAVender = () => {
+            window.location.href = route("pasajes.vender", {
+                salida: currentSalidaId,
+                asientos: seats,
+                origen_id: currentOrigenId,
+                destino_id: currentDestinoId,
+            });
+        };
+
+        if (salidaVencida(currentRow)) {
+            Swal.fire({
+                icon: "warning",
+                title: "⚠ Salida vencida",
+                text: MENSAJE_VENCIDA,
+                showCancelButton: true,
+                confirmButtonText: "Ya consulté, continuar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#dc2626",
+            }).then((r) => {
+                if (r.isConfirmed) irAVender();
+            });
+            return;
+        }
+
+        irAVender();
     });
 
     editButton.addEventListener("click", function () {
@@ -586,6 +619,53 @@ document.addEventListener("DOMContentLoaded", function () {
             svgContainer.innerHTML = `<div class="no-results">No hay salidas disponibles</div>`;
         }
     }
+
+    function salidaVencida(row) {
+        if (!row || row.dataset.estado !== "programado") return false;
+
+        let puntos = [];
+        try {
+            puntos = JSON.parse(row.dataset.puntos || "[]");
+        } catch (e) {}
+
+        const inicio = puntos[0]; // hora real en que el bus debía arrancar
+        if (!inicio?.fecha || !inicio?.hora) return false;
+
+        // Lima es UTC-5 todo el año (sin horario de verano)
+        const salida = new Date(`${inicio.fecha}T${inicio.hora}:00-05:00`);
+        return (
+            Date.now() - salida.getTime() > HORAS_LIMITE_SALIDA * 3600 * 1000
+        );
+    }
+
+    function marcarSalidasVencidas() {
+        document.querySelectorAll(".horario-row").forEach((row) => {
+            row.querySelector(".badge-vencida")?.remove();
+            const vencida = salidaVencida(row);
+            row.classList.toggle("vencida", vencida);
+
+            if (vencida) {
+                const badge = document.createElement("div");
+                badge.className = "badge-vencida";
+                badge.textContent = "⚠ Vencida";
+                row.querySelector(".hr-seats")?.prepend(badge);
+            }
+        });
+    }
+
+    function mostrarAlertaVencida(row) {
+        const box = document.getElementById("alerta-vencida");
+        if (!box) return;
+
+        if (salidaVencida(row)) {
+            box.innerHTML = `<span class="alerta-icono">⚠️</span>${MENSAJE_VENCIDA}`;
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+            box.innerHTML = "";
+        }
+    }
+
     function actualizarFechaHoraSalida(row, puntoOrigen) {
         if (!row || !puntoOrigen) return;
         console.log("PUNTO ORIGEN SELECCIONADO:", puntoOrigen);

@@ -284,6 +284,40 @@
         .seat.selected-seat .seat-base {
             fill: #2563eb !important;
         }
+
+        .alerta-vencida {
+            display: none;
+            background: #fef2f2;
+            border: 1.5px solid var(--red);
+            color: #991b1b;
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            font-size: .8rem;
+            font-weight: 600;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+
+        .alerta-vencida .alerta-icono {
+            font-size: 1.1rem;
+            margin-right: 4px;
+        }
+
+        .horario-row.vencida {
+            border-color: #fca5a5;
+            background: #fff7f7;
+        }
+
+        .badge-vencida {
+            display: inline-block;
+            font-size: .7rem;
+            font-weight: 700;
+            color: var(--red);
+            background: #fee2e2;
+            border-radius: 20px;
+            padding: 2px 8px;
+            margin-bottom: 4px;
+        }
     </style>
 
     <div class="card">
@@ -326,7 +360,7 @@
 
                 <div class="filtro-group">
                     <label>Fecha</label>
-                    <input type="date" id="filtro_fecha" class="form-control">
+                    <input type="date" id="filtro_fecha" min="{{ $ayer }}"class="form-control">
                 </div>
 
                 <button id="btn-limpiar-filtros" class="btn btn-outline-secondary">
@@ -415,6 +449,8 @@
                             <span class="leyenda-dot" style="background:#2563eb;"></span> Seleccionado
                         </div>
                     </div>
+
+                    <div id="alerta-vencida" class="alerta-vencida"></div>
 
                     <div id="svg-container">
                         <div class="no-results">

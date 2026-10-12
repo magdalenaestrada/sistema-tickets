@@ -39,9 +39,9 @@ class FacturacionController extends Controller
             'tipoDocumentoFactura',
         ]);
 
-        // Fecha hasta
+        // Fecha de emisión (día exacto)
         if ($request->filled('fecha')) {
-            $query->whereDate('fecha_emision', '<=', $request->fecha_hasta);
+            $query->whereDate('fecha_emision', $request->fecha);
         }
 
         // Tipo de comprobante
