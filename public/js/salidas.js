@@ -399,32 +399,29 @@ function cargarSalidasVigentes() {
             $tbody.html(
                 salidas
                     .map(
-                        (salida) => `
-                    <tr>
-                        <td>
-                            <div class="fw-bold text-dark">
-                                <i data-lucide="route"
-                                   class="text-primary"
-                                   style="width:15px;"></i>
-${escaparHTML(salida.ruta)}
-<span class="badge bg-light text-dark border ms-1">${escaparHTML(salida.hora)}</span>                            </div>
-                        </td>
-
-                        <td class="text-center">
-                            <span class="badge bg-primary-subtle text-primary">
-                                ${Number(salida.total_salidas)}
-                            </span>
-                        </td>
-
-                        <td class="text-center">
-                            <span class="fw-bold text-success">
-                                <i data-lucide="calendar-check"
-                                   style="width:14px;"></i>
-                                ${formatoFecha(salida.ultima_fecha)}
-                            </span>
-                        </td>
-                    </tr>
-                `,
+                        (s) => `
+        <tr>
+            <td>
+                <div class="fw-bold text-dark">
+                    <i data-lucide="route" class="text-primary" style="width:15px;"></i>
+                    ${escaparHTML(s.ruta)}
+                </div>
+            </td>
+            <td class="text-center fw-semibold">${escaparHTML(s.hora)}</td>
+            <td class="text-center">${escaparHTML(s.duracion)}</td>
+            <td class="text-center">
+                <span class="badge bg-light text-dark border">${escaparHTML(s.vehiculo)}</span>
+            </td>
+            <td class="text-center">
+                <span class="badge bg-primary-subtle text-primary">${Number(s.total_salidas)}</span>
+            </td>
+            <td class="text-center">
+                <span class="fw-bold text-success">
+                    <i data-lucide="calendar-check" style="width:14px;"></i>
+                    ${formatoFecha(s.ultima_fecha)}
+                </span>
+            </td>
+        </tr>`,
                     )
                     .join(""),
             );

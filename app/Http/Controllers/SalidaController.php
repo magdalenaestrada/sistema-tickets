@@ -568,46 +568,59 @@ class SalidaController extends Controller
         );
     }
 
-    public function salidasVigentes(Request $request)
-    {
-        $hoy = Carbon::now('America/Lima')->toDateString();
+   public function salidasVigentes(Request $request)
+{
+    $hoy = Carbon::now('America/Lima')->toDateString();
 
-        $salidas = Salida::query()
-            ->join('horarios', 'salidas.horario_id', '=', 'horarios.id')
-            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
-            ->where(function ($query) use ($hoy) {
-                $query->where(function ($q) use ($hoy) {
-                    $q->whereDate('salidas.fecha_salida', '>=', $hoy)
-                        ->whereIn('salidas.estado', [
-                            'programado',
-                            'reprogramado',
-                        ]);
-                })
-                    ->orWhere('salidas.estado', 'en_ruta');
-            })
-            ->when($request->filled('ruta_id'), function ($query) use ($request) {
-                $query->where('rutas.id', $request->ruta_id);
-            })
-            ->selectRaw('
-    rutas.id AS ruta_id,
-    rutas.nombre AS ruta,
-    horarios.hora_salida AS horario_hora,
-    COUNT(DISTINCT salidas.id) AS total_salidas,
-    MAX(salidas.fecha_salida) AS ultima_fecha
-')
-            ->groupBy('rutas.id', 'rutas.nombre', 'horarios.hora_salida')
-            ->orderBy('rutas.nombre')
-            ->orderBy('horarios.hora_salida')
-            ->get()
-            ->map(function ($s) {
-                $s->hora = Carbon::createFromFormat('H:i:s', $s->horario_hora)->format('h:i A');
-                return $s;
-            });
-        return response()->json([
-            'data' => $salidas,
-            'total_rutas' => $salidas->count(),
-        ]);
-    }
+    $grupos = Salida::query()
+        ->join('horarios', 'salidas.horario_id', '=', 'horarios.id')
+        ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
+        ->where(function ($query) use ($hoy) {
+            $query->where(function ($q) use ($hoy) {
+                $q->whereDate('salidas.fecha_salida', '>=', $hoy)
+                    ->whereIn('salidas.estado', ['programado', 'reprogramado']);
+            })->orWhere('salidas.estado', 'en_ruta');
+        })
+        ->when($request->filled('ruta_id'), fn($q) => $q->where('rutas.id', $request->ruta_id))
+        ->selectRaw('
+            rutas.id AS ruta_id,
+            rutas.nombre AS ruta,
+            horarios.hora_salida AS hora_raw,
+            horarios.tipo_vehiculo_id AS tipo_vehiculo_id,
+            MIN(horarios.id) AS horario_id,
+            COUNT(DISTINCT salidas.id) AS total_salidas,
+            MAX(salidas.fecha_salida) AS ultima_fecha
+        ')
+        ->groupBy('rutas.id', 'rutas.nombre', 'horarios.hora_salida', 'horarios.tipo_vehiculo_id')
+        ->orderBy('rutas.nombre')
+        ->orderBy('horarios.hora_salida')
+        ->get();
+
+    $horarios = Horario::with(['ruta.tramos', 'tipo_vehiculo'])
+        ->whereIn('id', $grupos->pluck('horario_id'))
+        ->get()
+        ->keyBy('id');
+
+    $data = $grupos->map(function ($g) use ($horarios) {
+        $h = $horarios->get($g->horario_id);
+        $min = (int) ($h?->ruta?->tramos->sum('duracion_minutos') ?? 0);
+
+        return [
+            'ruta_id'       => $g->ruta_id,
+            'ruta'          => $g->ruta,
+            'hora'          => Carbon::createFromFormat('H:i:s', $g->hora_raw)->format('h:i A'),
+            'duracion'      => $min ? intdiv($min, 60) . ' h ' . str_pad($min % 60, 2, '0', STR_PAD_LEFT) . ' min' : '-',
+            'vehiculo'      => $h?->tipo_vehiculo?->descripcion ?? '-',
+            'total_salidas' => (int) $g->total_salidas,
+            'ultima_fecha'  => Carbon::parse($g->ultima_fecha)->toDateString(),
+        ];
+    })->values();
+
+    return response()->json([
+        'data'        => $data,
+        'total_rutas' => $data->pluck('ruta_id')->unique()->count(),
+    ]);
+}
 
     public function manifiestoBodega(Salida $salida, PdfService $pdfService)
     {

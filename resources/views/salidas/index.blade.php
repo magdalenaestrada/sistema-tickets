@@ -3,8 +3,8 @@
 @section('content')
     <style>
         /* ===============================
-                                       TABS DE ESTADO
-                                    ================================ */
+                                           TABS DE ESTADO
+                                        ================================ */
         .btn-pill-tab {
             border-radius: 8px;
             font-weight: 500;
@@ -43,8 +43,8 @@
         }
 
         /* ===============================
-                                       TARJETAS
-                                    ================================ */
+                                           TARJETAS
+                                        ================================ */
         .panel-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -66,8 +66,8 @@
         }
 
         /* ===============================
-                                       BARRA DE FILTROS
-                                    ================================ */
+                                           BARRA DE FILTROS
+                                        ================================ */
         .filtros-bar {
             display: flex;
             flex-wrap: wrap;
@@ -235,8 +235,8 @@
         }
 
         /* ===============================
-                                       TABLA
-                                    ================================ */
+                                           TABLA
+                                        ================================ */
         .tabla-salidas-wrapper {
             border-radius: 14px;
             overflow-x: auto;
@@ -602,9 +602,12 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>RUTA</th>
-                            <th class="text-center">SALIDAS PENDIENTES</th>
-                            <th class="text-center">ÚLTIMA FECHA DE SALIDA</th>
+                            <th>Ruta</th>
+                            <th class="text-center">Hora de salida</th>
+                            <th class="text-center">Duración</th>
+                            <th class="text-center">Vehículo</th>
+                            <th class="text-center">Salidas programadas</th>
+                            <th class="text-center">Última fecha</th>
                         </tr>
                     </thead>
                     <tbody id="listaSalidasVigentes">
