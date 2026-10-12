@@ -251,16 +251,34 @@ class SalidaController extends Controller
 
     public function rangoFechas(Request $request)
     {
-        $q = Salida::join('horarios', 'salidas.horario_id', '=', 'horarios.id');
+        $q = Salida::join('horarios', 'salidas.horario_id', '=', 'horarios.id')
+            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id');
 
         if ($request->filled('ruta_id')) {
             $q->where('horarios.ruta_id', $request->ruta_id);
         }
 
+        $porHorario = $q->clone()
+            ->selectRaw('
+            rutas.nombre AS ruta,
+            horarios.hora_salida AS horario_hora,
+            MAX(salidas.fecha_salida) AS ultima_fecha
+        ')
+            ->groupBy('rutas.nombre', 'horarios.hora_salida')
+            ->orderBy('rutas.nombre')
+            ->orderBy('horarios.hora_salida')
+            ->get()
+            ->map(fn($r) => [
+                'ruta'         => $r->ruta,
+                'hora'         => Carbon::createFromFormat('H:i:s', $r->horario_hora)->format('h:i A'),
+                'ultima_fecha' => Carbon::parse($r->ultima_fecha)->toDateString(),
+            ]);
+
         return response()->json([
             'ultima_fecha'   => $q->clone()->max('salidas.fecha_salida'),
             'primera_futura' => $q->clone()->where('salidas.fecha_salida', '>=', now()->toDateString())
                 ->min('salidas.fecha_salida'),
+            'por_horario'    => $porHorario,
         ]);
     }
 
@@ -290,7 +308,7 @@ class SalidaController extends Controller
         abort_unless($sucursalId, 422, 'Debe indicar una sucursal.');
 
         $perteneceARuta = $salida->sucursalesDePueblitos()->contains('id', $sucursalId);
-       
+
         abort_unless($perteneceARuta, 404, 'La sucursal no pertenece a la ruta.');
 
         $datos = $salida->datosManifiesto($sucursalId);
@@ -571,15 +589,20 @@ class SalidaController extends Controller
                 $query->where('rutas.id', $request->ruta_id);
             })
             ->selectRaw('
-            rutas.id AS ruta_id,
-            rutas.nombre AS ruta,
-            COUNT(DISTINCT salidas.id) AS total_salidas,
-            MAX(salidas.fecha_salida) AS ultima_fecha
-        ')
-            ->groupBy('rutas.id', 'rutas.nombre')
-            ->orderBy('ultima_fecha', 'desc')
-            ->get();
-
+    rutas.id AS ruta_id,
+    rutas.nombre AS ruta,
+    horarios.hora_salida AS horario_hora,
+    COUNT(DISTINCT salidas.id) AS total_salidas,
+    MAX(salidas.fecha_salida) AS ultima_fecha
+')
+            ->groupBy('rutas.id', 'rutas.nombre', 'horarios.hora_salida')
+            ->orderBy('rutas.nombre')
+            ->orderBy('horarios.hora_salida')
+            ->get()
+            ->map(function ($s) {
+                $s->hora = Carbon::createFromFormat('H:i:s', $s->horario_hora)->format('h:i A');
+                return $s;
+            });
         return response()->json([
             'data' => $salidas,
             'total_rutas' => $salidas->count(),

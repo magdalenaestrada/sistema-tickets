@@ -225,6 +225,7 @@ $(function () {
 
     /* ---------- Fechas ---------- */
     const fmt = (d) => d.toLocaleDateString("sv-SE"); // YYYY-MM-DD hora local
+
     const fmtBonito = (s) =>
         new Date(s + "T00:00:00").toLocaleDateString("es-PE", {
             day: "2-digit",
@@ -300,16 +301,6 @@ $(function () {
 
     $("#fechaDesde, #fechaHasta").on("change", () => recargarTabla(true));
 
-    $("#ultimaFecha").on("click", function (e) {
-        e.preventDefault();
-        const f = $(this).data("fecha");
-        if (!f) return;
-        marcarChip("custom");
-        $("#fechaDesde").val(fmt(new Date()));
-        $("#fechaHasta").val(f);
-        recargarTabla(true);
-    });
-
     $("#btnLimpiar").on("click", function () {
         $("#fechaDesde, #fechaHasta").val("");
         tsRuta.clear(true); // sin disparar change
@@ -332,6 +323,16 @@ $(function () {
         ocultarSalidasVigentes();
         recargarTabla(true);
     });
+});
+
+$(document).on("click", ".ultima-fecha-item", function (e) {
+    e.preventDefault();
+    const f = $(this).data("fecha");
+    if (!f) return;
+    marcarChip("custom");
+    $("#fechaDesde").val(new Date().toLocaleDateString("sv-SE"));
+    $("#fechaHasta").val(f);
+    recargarTabla(true);
 });
 
 function escaparHTML(valor) {
@@ -405,8 +406,8 @@ function cargarSalidasVigentes() {
                                 <i data-lucide="route"
                                    class="text-primary"
                                    style="width:15px;"></i>
-                                ${escaparHTML(salida.ruta)}
-                            </div>
+${escaparHTML(salida.ruta)}
+<span class="badge bg-light text-dark border ms-1">${escaparHTML(salida.hora)}</span>                            </div>
                         </td>
 
                         <td class="text-center">
@@ -448,13 +449,31 @@ const SPINNER_FECHA = `<span class="spinner-border spinner-border-sm text-primar
 
 function cargarUltimaFecha() {
     const $f = $("#ultimaFecha");
-    $f.html(SPINNER_FECHA).data("fecha", null);
+    $f.html(SPINNER_FECHA);
 
     $.get(route("salidas.rango_fechas"), { ruta_id: $("#filtroRuta").val() })
         .done((r) => {
-            $f.text(
-                r.ultima_fecha ? fmtBonito(r.ultima_fecha) : "SIN SALIDAS",
-            ).data("fecha", r.ultima_fecha);
+            const lista = r.por_horario || [];
+
+            if (!lista.length) {
+                $f.text("SIN SALIDAS");
+                return;
+            }
+
+            const verRuta = !$("#filtroRuta").val(); // sin ruta elegida, mostrar el nombre
+
+            $f.html(
+                lista
+                    .map(
+                        (h) => `
+                    <a href="#" class="ultima-fecha-item badge bg-light text-dark border me-1 mb-1 text-decoration-none"
+                       data-fecha="${h.ultima_fecha}">
+                        ${verRuta ? escaparHTML(h.ruta) + " · " : ""}${h.hora}
+                        → <strong>${fmtBonito(h.ultima_fecha)}</strong>
+                    </a>`,
+                    )
+                    .join(""),
+            );
         })
         .fail((xhr) => {
             console.error("rango_fechas falló", xhr.status, xhr.responseText);
@@ -487,16 +506,6 @@ $(".rango-rapido").on("click", function () {
     }
     $("#fechaDesde").val(desde);
     $("#fechaHasta").val(hasta);
-    recargarTabla(true);
-});
-
-// Clic en la última fecha: filtra hasta ella
-$("#ultimaFecha").on("click", function (e) {
-    e.preventDefault();
-    const f = $(this).data("fecha");
-    if (!f) return;
-    $("#fechaDesde").val(fmt(new Date()));
-    $("#fechaHasta").val(f);
     recargarTabla(true);
 });
 
