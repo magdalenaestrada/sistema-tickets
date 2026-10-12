@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let currentRow = null;
 
     const MENSAJE_VENCIDA =
-        "HAN PASADO MÁS DE 4 HORAS DE SU HORA DE SALIDA SIN INICIAR SU RECORRIDO. " +
+        "HAN PASADO MÁS DE 4 HORAS SIN INICIAR EL RECORRIDO. " +
         "CONSULTE CON ADMINISTRADOR ANTES DE VENDER";
 
     actualizarContador(-1);
@@ -658,7 +658,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!box) return;
 
         if (salidaVencida(row)) {
-            box.innerHTML = `<span class="alerta-icono">⚠️</span>${MENSAJE_VENCIDA}`;
+            box.innerHTML = `${MENSAJE_VENCIDA}`;
             box.style.display = "block";
         } else {
             box.style.display = "none";
