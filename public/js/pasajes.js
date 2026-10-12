@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setInterval(() => {
         marcarSalidasVencidas();
         if (currentRow) mostrarAlertaVencida(currentRow);
+        aplicarBloqueoAsientos();
     }, 60000);
 
     function aplicarEstadoPorDefecto() {
@@ -212,23 +213,10 @@ document.addEventListener("DOMContentLoaded", function () {
             seat.classList.add(estado);
             seat.dataset.estado = estado;
             seat.dataset.numero = numero;
-
-            if (estado === "libre") {
-                seat.style.cursor = "pointer";
-                seat.style.opacity = "1";
-                seat.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleSeatSelection(seat, numero);
-                };
-            } else {
-                seat.style.cursor = "pointer";
-                seat.style.opacity = "1";
-                seat.onclick = (e) => {
-                    e.stopPropagation();
-                    obtenerPasajeAsiento(salidaId, numero);
-                };
-            }
+            // Sin onclick: el clic lo maneja el listener de #svg-container
         });
+
+        aplicarBloqueoAsientos();
     }
 
     function toggleSeatSelection(seatElement, numero) {
@@ -376,6 +364,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     sellButton.addEventListener("click", function (e) {
+        if (asientosBloqueados()) {
+            avisarSalidaVencida();
+            return;
+        }
         if (!window.VENTA_CONFIG.esAdmin && !window.VENTA_CONFIG.cajaAbierta) {
             e.preventDefault();
 
@@ -434,6 +426,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     editButton.addEventListener("click", function () {
+        if (asientosBloqueados()) {
+            avisarSalidaVencida();
+            return;
+        }
         if (!selectedReservedPasajeId) return;
 
         window.location.href = route("pasajes.editar", {
@@ -637,6 +633,49 @@ document.addEventListener("DOMContentLoaded", function () {
             Date.now() - salida.getTime() > HORAS_LIMITE_SALIDA * 3600 * 1000
         );
     }
+
+    function asientosBloqueados() {
+        return salidaVencida(currentRow) && !window.VENTA_CONFIG?.esAdmin;
+    }
+
+    function avisarSalidaVencida() {
+        Swal.fire({
+            icon: "error",
+            title: "Salida vencida",
+            text: MENSAJE_VENCIDA,
+        });
+    }
+
+    function aplicarBloqueoAsientos() {
+        const bloqueado = asientosBloqueados();
+        svgContainer
+            .querySelectorAll(".seat")
+            .forEach((s) => s.classList.toggle("bloqueado", bloqueado));
+
+        if (bloqueado) {
+            svgContainer
+                .querySelectorAll(".selected-seat")
+                .forEach((s) => s.classList.remove("selected-seat"));
+            resetSeleccion();
+        }
+    }
+
+    // Un solo listener para todos los asientos
+    svgContainer.addEventListener("click", function (e) {
+        const seat = e.target.closest(".seat");
+        if (!seat || !seat.dataset.numero) return;
+
+        if (asientosBloqueados()) {
+            avisarSalidaVencida();
+            return;
+        }
+
+        if (seat.dataset.estado === "libre") {
+            toggleSeatSelection(seat, seat.dataset.numero);
+        } else {
+            obtenerPasajeAsiento(currentSalidaId, seat.dataset.numero);
+        }
+    });
 
     function marcarSalidasVencidas() {
         document.querySelectorAll(".horario-row").forEach((row) => {
