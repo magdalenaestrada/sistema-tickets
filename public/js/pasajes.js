@@ -74,16 +74,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const container = document.getElementById("svg-container");
 
-        container
-            .querySelectorAll(".floor-btn")
-            .forEach((b) => b.classList.remove("active"));
-        container
-            .querySelectorAll(".floor")
-            .forEach((f) => f.classList.remove("active"));
+        container.querySelectorAll(".floor-btn").forEach((b) => {
+            b.classList.remove("active");
+            b.setAttribute("aria-pressed", "false");
+        });
+
+        container.querySelectorAll(".floor").forEach((f) => {
+            f.classList.remove("active");
+        });
 
         floorButton.classList.add("active");
+        floorButton.setAttribute("aria-pressed", "true");
+
         const piso = container.querySelector("#" + floorButton.dataset.floor);
-        if (piso) piso.classList.add("active");
+
+        if (piso) {
+            piso.classList.add("active");
+        }
+
+        // Ajustar el área visible según el piso seleccionado.
+        const svg = container.querySelector("#bus-svg");
+
+        if (svg && floorButton.dataset.viewbox) {
+            svg.setAttribute("viewBox", floorButton.dataset.viewbox);
+        }
     });
 
     function attachRowEvents() {

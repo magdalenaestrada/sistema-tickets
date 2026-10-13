@@ -12,7 +12,6 @@ class Venta extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'tipo_servicio_id',
         'sucursal_id',
         'tipo_documento_factura_id',
         'usuario_id',
@@ -54,11 +53,6 @@ class Venta extends Model
     public function pagos()
     {
         return $this->hasMany(VentaPago::class);
-    }
-
-    public function tipoServicio()
-    {
-        return $this->belongsTo(TipoServicio::class, 'tipo_servicio_id');
     }
 
     public function cajaDetalles()

@@ -238,7 +238,6 @@ class FacturacionController extends Controller
                 $nueva->tipo_documento_factura_id = $tipoDestino->id;
                 $nueva->sucursal_id              = $ventaOrigen->sucursal_id;
                 $nueva->persona_id               = $persona->id;
-                $nueva->tipo_servicio_id         = $ventaOrigen->tipo_servicio_id;
                 $nueva->venta_referencia_id      = $ventaOrigen->id;
                 $nueva->serie                    = $comprobante['serie'];
                 $nueva->numero                   = $comprobante['numero'];
@@ -434,7 +433,6 @@ class FacturacionController extends Controller
         $nc->tipo_documento_factura_id = $tipoNC->id;
         $nc->sucursal_id = $ventaOrigen->sucursal_id;
         $nc->persona_id = $ventaOrigen->persona_id;
-        $nc->tipo_servicio_id = $ventaOrigen->tipo_servicio_id;
         $nc->venta_referencia_id = $ventaOrigen->id;
         $nc->serie = $comprobanteNC['serie'];
         $nc->numero = $comprobanteNC['numero'];
@@ -905,7 +903,6 @@ class FacturacionController extends Controller
                 $nc->tipo_documento_factura_id = $tipoNC->id;
                 $nc->sucursal_id = $venta->sucursal_id;
                 $nc->persona_id = $venta->persona_id;
-                $nc->tipo_servicio_id = $venta->tipo_servicio_id;
                 $nc->venta_referencia_id = $venta->id;
                 $nc->serie = $comprobanteNC['serie'];
                 $nc->numero = $comprobanteNC['numero'];
@@ -1020,8 +1017,7 @@ class FacturacionController extends Controller
             return view('tickets.pasaje', compact('venta'));
         }
 
-        switch ($venta->tipo_servicio_id) {
-
+        switch ($venta->detalles->first()?->tipo_servicio_id) {
             case 1:
                 return view('tickets.pasaje', compact('venta'));
 
