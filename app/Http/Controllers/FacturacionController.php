@@ -77,6 +77,13 @@ class FacturacionController extends Controller
                 });
             }
         }
+        $user    = auth()->user();
+        $esAdmin = $user->hasRole('Administrador');
+
+        $cajaAbierta = Caja::where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->exists();
+
 
         $ventas = $query
             ->orderByDesc('fecha_emision')
@@ -125,8 +132,14 @@ class FacturacionController extends Controller
             'cajas',
             'empresa',
             'porcentajeIgv',
-            'cajasAbiertas'
-        ));
+            'cajasAbiertas',
+            'esAdmin',
+            'cajaAbierta'
+        ), [
+            'esAdmin'            => $esAdmin,
+            'cajaAbierta'        => $cajaAbierta,
+            'ruta'               => route('caja.index'),
+        ]);
     }
 
     public function previewConversion(Request $request)

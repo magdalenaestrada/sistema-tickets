@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caja;
 use App\Models\Salida;
 use App\Models\User;
 use App\Models\Venta;
@@ -177,6 +178,12 @@ class DashboardVendedorController extends Controller
             'mis_ventas_hoy' => $misVentasHoy,
         ];
 
+        $cajaAbierta = Caja::where('usuario_id', $user->id)
+            ->where('estado', 'A')
+            ->exists();
+
+            $ruta = route('caja.index');
+
         return view('dashboard.vendedor', compact(
             'vendedores',
             'kpis',
@@ -184,7 +191,9 @@ class DashboardVendedorController extends Controller
             'salidas',
             'alertas',
             'resumenHorarios',
-            'ventasPorHoraChart'
-        ));
+            'ventasPorHoraChart',
+            'cajaAbierta', 'ruta'
+        )
+        );
     }
 }

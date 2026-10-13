@@ -25,6 +25,10 @@ class DashboardController extends Controller
             0 => 'domingo',
         ];
 
+        $cajaAbierta = Caja::where('usuario_id', $usuario->id)
+            ->where('estado', 'A')
+            ->exists();
+
         $columnaDia = $mapDias[$diaSemana];
         $ventasHoy = Venta::where('sucursal_id', $sucursalId)
             ->whereDate('fecha_emision', $hoy)
@@ -41,12 +45,13 @@ class DashboardController extends Controller
 
         $hoy = now()->toDateString();
 
-       
+
         return view('dashboard', [
             'ventasHoy' => $ventasHoy,
             'encomiendasHoy' => $encomiendasHoy,
             'montoActual' => $montoActual,
             'usuario' => $usuario,
+            'cajaAbierta' => $cajaAbierta,
         ]);
     }
 }

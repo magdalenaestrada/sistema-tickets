@@ -322,8 +322,15 @@
         @include('facturacion.modals.seleccionar')
 
     @endsection
+
     @push('scripts')
         <script>
+            window.VENTA_CONFIG = {
+                esAdmin: @json($esAdmin),
+                cajaAbierta: @json($cajaAbierta),
+                rutaCaja: @json($ruta),
+            };
+
             let pasoComprobanteActual = 1;
 
             let flujoComprobante = {
@@ -2435,6 +2442,34 @@
                 const modalComprobante = document.getElementById("modalComprobante");
 
                 if (!modalComprobante) return;
+
+                modalComprobante.addEventListener("show.bs.modal", function(e) {
+
+                    const {
+                        esAdmin,
+                        cajaAbierta,
+                        rutaCaja
+                    } = window.VENTA_CONFIG;
+
+                    if (!esAdmin && !cajaAbierta) {
+                        e.preventDefault();
+
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Caja cerrada",
+                            text: "Debe abrir una caja antes de realizar una venta.",
+                            showCancelButton: true,
+                            confirmButtonText: "Ir a abrir caja",
+                            cancelButtonText: "Cancelar",
+                            confirmButtonColor: "#3085d6",
+                            cancelButtonColor: "#6c757d"
+                        }).then((result) => {
+                            if (result.isConfirmed && rutaCaja) {
+                                window.location.href = rutaCaja;
+                            }
+                        });
+                    }
+                });
 
                 modalComprobante.addEventListener("hidden.bs.modal", function() {
                     resetModalComprobante();

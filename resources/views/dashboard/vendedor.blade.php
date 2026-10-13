@@ -10,7 +10,43 @@
         {{-- ===================================================== --}}
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-4">
+                @if (!$cajaAbierta)
+                    <div class="alert alert-danger border-start border-danger border-4
+                rounded-3 shadow-sm mb-4 px-3 py-3"
+                        role="alert">
 
+                        <div
+                            class="d-flex flex-column flex-md-row
+                    align-items-md-center justify-content-between gap-3">
+
+                            <div class="d-flex align-items-start gap-3">
+
+    <i data-lucide="triangle-alert"
+       class="text-danger flex-shrink-0"
+       style="width: 40px; height: 40px;"></i>
+                                <div>
+                                    <h3 class="fw-bold text-danger mb-1">
+                                        ¡Caja cerrada!
+                                    </h3>
+
+                                    <h5>
+                                        Recuerda que debes hacer una apertura de caja para empezar a vender.
+                                    </h5>
+                                </div>
+
+                            </div>
+
+                            <a href="{{ $ruta }}"
+                                class="btn btn-danger btn-sm rounded-3 px-4
+                      fw-semibold shadow-sm flex-shrink-0">
+                                <i data-lucide="wallet"></i>
+                                Abrir caja
+                                <i data-lucide="chevron-right"></i>
+                            </a>
+
+                        </div>
+                    </div>
+                @endif
                 <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3">
 
                     <div>
@@ -28,9 +64,11 @@
                             👋 {{ $saludo }}, {{ auth()->user()->persona->nombres }}
                         </h4>
 
+
                         <p class="text-muted mb-0 small">
                             Aquí tienes el resumen de tus ventas, horarios y salidas de hoy.
                         </p>
+
                     </div>
 
                     <form method="GET" action="{{ route('dashboard.vendedor') }}" class="row g-2 align-items-end">
