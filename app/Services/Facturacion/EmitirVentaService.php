@@ -104,7 +104,7 @@ class EmitirVentaService
 
     protected function resolverTipoDocumento(Venta $venta): string
     {
-        return $venta->tipoDocumentoFactura->codigo_sunat;
+        return $venta->tipoDocumentoFactura->codigo;
     }
 
     protected function notaDeBoleta(Venta $venta): bool

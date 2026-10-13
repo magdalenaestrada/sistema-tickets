@@ -488,7 +488,7 @@ class VentaService
                 'fecha_anulacion' => now(),
                 'observacion' => 'Venta anulada en SUNAT: ' . $cdr->getDescription(),
             ]);
-            
+
             $this->liberarRecursosVenta($venta);
 
             $ventaOriginal->update([
@@ -729,7 +729,7 @@ class VentaService
         ]);
 
         return [
-            'success' => true,
+            'success' => $code === 0,
             'estado' => $estadoSunat,
             'codigo' => $code,
             'descripcion' => $cdr->getDescription(),
