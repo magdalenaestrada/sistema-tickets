@@ -49,4 +49,53 @@ class Descuento extends Model
     {
         return $this->hasMany(Pasaje::class, 'descuento_id');
     }
+
+    // App\Models\Descuento
+
+    public function usosDePersona(int $personaId, ?int $excluirPasajeId = null): int
+    {
+        return Pasaje::where('descuento_id', $this->id)
+            ->where('persona_id', $personaId)
+            ->whereIn('estado', ['R', 'V', 'F'])
+            ->when($excluirPasajeId, fn($q) => $q->where('id', '!=', $excluirPasajeId))
+            ->count();
+    }
+
+    public function validarParaPersona(
+        ?Persona $persona,
+        int $usosEnEstaVenta = 0,
+        ?int $excluirPasajeId = null
+    ): ?string {
+        if (!$this->isActivo()) {
+            return 'Descuento inactivo o vencido';
+        }
+
+        if ($this->tipo_asignacion_id !== 'T') {
+            if (!$persona) {
+                return 'Debe indicar el documento del cliente';
+            }
+
+            $esCliente = Cliente::where('persona_id', $persona->id)->exists();
+            $cargoId   = Empleado::where('persona_id', $persona->id)->value('cargo_id');
+
+            $asignado =
+                $this->personas()->where('persona_id', $persona->id)->exists()
+                || ($cargoId && $this->cargos()->where('cargo_id', $cargoId)->exists())
+                || ($this->tipo_asignacion_id === 'C' && $esCliente);
+
+            if (!$asignado) {
+                return 'Este cupón no está asignado a esta persona';
+            }
+        }
+
+        if ($persona && !is_null($this->cantidad_usos)) {
+            $usados = $this->usosDePersona($persona->id, $excluirPasajeId) + $usosEnEstaVenta;
+
+            if ($usados >= $this->cantidad_usos) {
+                return 'El cupón ya alcanzó su límite de usos para este pasajero';
+            }
+        }
+
+        return null;
+    }
 }

@@ -224,8 +224,7 @@
                                             class="card-header bg-light d-flex justify-content-between align-items-center">
                                             <strong>
                                                 <i class="bi bi-box-seam me-1"></i>
-                                                Sobre equipaje
-                                            </strong>
+SOBRE EQUIPAJE                                            </strong>
 
                                             <button type="button" class="btn btn-primary btn-sm btn-agregar-sobre"
                                                 data-index="{{ $index }}">

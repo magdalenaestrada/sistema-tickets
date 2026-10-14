@@ -651,6 +651,7 @@ class PasajeController extends Controller
             'pago_yape' => 'nullable|numeric|min:0',
             'pago_plin' => 'nullable|numeric|min:0',
             'pago_transferencia' => 'nullable|numeric|min:0',
+            'precio_manual' => 'nullable|numeric|min:0',
         ]);
         if (
             $request->accion === 'vender' &&
@@ -696,10 +697,15 @@ class PasajeController extends Controller
                 ]);
             }
 
-            $precioBase = $salida->calcularCostoPorTramos($request->origen_id, $request->destino_id);
+            $precioRuta = (float) $salida->calcularCostoPorTramos($request->origen_id, $request->destino_id);
+
+            $precioBase = $request->filled('precio_manual') && (float) $request->precio_manual > 0
+                ? (float) $request->precio_manual
+                : $precioRuta;
 
             $pasajeros = [];
             $totalVenta = 0;
+            $usosCuponEnVenta = [];
 
             foreach ($request->asientos as $index => $asientoNumero) {
                 $documento = trim($request->documento[$index] ?? '');
@@ -753,13 +759,12 @@ class PasajeController extends Controller
                 }
 
                 $descuentoId = $request->descuento_ids[$index] ?? null;
-                $precioFinalFront = (float) ($request->precios_finales[$index] ?? $precioBase);
 
                 $descuentoMontoReal = 0;
                 $esPromocion = false;
 
                 if ($descuentoId) {
-                    $descuento = Descuento::find($descuentoId);
+                    $descuento = Descuento::lockForUpdate()->find($descuentoId);
 
                     if (!$descuento) {
                         throw ValidationException::withMessages([
@@ -767,7 +772,18 @@ class PasajeController extends Controller
                         ]);
                     }
 
+                    $clave = $descuento->id . '-' . $persona->id;
+
+                    if ($error = $descuento->validarParaPersona($persona, $usosCuponEnVenta[$clave] ?? 0)) {
+                        throw ValidationException::withMessages([
+                            "descuento_ids.$index" => $error,
+                        ]);
+                    }
+
+                    $usosCuponEnVenta[$clave] = ($usosCuponEnVenta[$clave] ?? 0) + 1;
+
                     if ((int) $descuento->id === 1) {
+
                         $cantidadCompradosMismoDni = Pasaje::whereHas('persona', function ($q) use ($documento) {
                             $q->where('documento', $documento);
                         })
@@ -795,10 +811,15 @@ class PasajeController extends Controller
                     }
                 }
 
-                $precioFinalReal = $precioFinalFront;
 
-                if ($precioFinalReal < 0) {
-                    $precioFinalReal = 0;
+                $descuentoMontoReal = min($descuentoMontoReal, $precioBase);
+                $precioFinalReal    = round(max(0, $precioBase - $descuentoMontoReal), 2);
+
+                $precioFinalFront = (float) ($request->precios_finales[$index] ?? $precioFinalReal);
+                if (abs($precioFinalFront - $precioFinalReal) > 0.01) {
+                    throw ValidationException::withMessages([
+                        "precios_finales.$index" => "El precio del asiento {$asientoNumero} no coincide (S/ {$precioFinalFront} vs S/ {$precioFinalReal}). Recarga la página.",
+                    ]);
                 }
 
                 $totalVenta += $precioFinalReal;
@@ -938,7 +959,7 @@ class PasajeController extends Controller
                     'salida_id' => $salida->id,
                     'origen_pueblito_id' => $request->origen_id,
                     'destino_pueblito_id' => $request->destino_id,
-                    'precio_pasaje' => $request->precio_manual,
+                    'precio_pasaje' => $precioBase,
                     'estado' => $estadoPasaje,
                     'es_promocion' => $pasajeroData['es_promocion'],
                     'precio_cobrado' => $pasajeroData['precio_final'],
@@ -1421,19 +1442,26 @@ class PasajeController extends Controller
                 ['user_id' => Auth::id()]
             );
 
-            // --- descuento, recalculado contra precio_pasaje guardado ---
-            $precioBase = (float) $pasaje->precio_pasaje;
+            $precioBase = $request->filled('precio_manual') && (float) $request->precio_manual > 0
+                ? (float) $request->precio_manual
+                : (float) $pasaje->precio_pasaje;
             $descuentoId = $request->descuento_ids[$index] ?? null;
-            $precioFinalFront = (float) ($request->precios_finales[$index] ?? $precioBase);
             $descuentoMontoReal = 0;
             $esPromocion = false;
 
             if ($descuentoId) {
-                $descuento = Descuento::find($descuentoId);
+                $descuento = Descuento::lockForUpdate()->find($descuentoId);
 
                 if (!$descuento) {
                     throw ValidationException::withMessages([
                         "descuento_ids.$index" => "El descuento no existe.",
+                    ]);
+                }
+
+                // Se excluye este mismo pasaje para que su uso actual no cuente contra sí mismo
+                if ($error = $descuento->validarParaPersona($persona, 0, $pasaje->id)) {
+                    throw ValidationException::withMessages([
+                        "descuento_ids.$index" => $error,
                     ]);
                 }
 
@@ -1462,8 +1490,8 @@ class PasajeController extends Controller
                 }
             }
 
-            $precioFinalReal = max(0, $precioFinalFront);
-
+            $descuentoMontoReal = min($descuentoMontoReal, $precioBase);
+            $precioFinalReal    = round(max(0, $precioBase - $descuentoMontoReal), 2);
             $totalSobreEquipaje = 0;
             $detallesEquipaje = $request->sobre_equipaje_detalles[$index] ?? [];
 
@@ -1509,13 +1537,15 @@ class PasajeController extends Controller
                     foreach ($request->sobre_equipaje_detalles ?? [] as $grupo) {
                         foreach ($grupo as $item) {
                             $costo = (float) $item['costo'];
-
-                            $detalles[] = [
-                                'tipo_servicio_id' => 3,
-                                'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
-                                'costo' => $costo,
-                                'descuento' => 0,
-                            ];
+                            foreach ($detallesEquipaje as $item) {
+                                $detalle[] = [
+                                    'tipo_servicio_id' => 3,
+                                    'descripcion' => 'Sobreequipaje - ' . ($item['descripcion'] ?? ''),
+                                    'costo' => (float) $item['costo'],
+                                    'peso' => (float) $item['peso'],
+                                    'descuento' => 0,
+                                ];
+                            }
                         }
                     }
 
@@ -1573,7 +1603,7 @@ class PasajeController extends Controller
                 'venta_id' => $venta?->id,
                 'descuento_id' => $descuentoId,
                 'es_promocion' => $esPromocion,
-                'precio_pasaje' => $request->precio_manual,
+                'precio_pasaje' => $precioBase,
                 'precio_cobrado' => $precioFinalReal,
                 'estado' => $accion === 'vender' ? 'V' : 'R',
             ]);
