@@ -85,11 +85,8 @@
         <tbody>
 
             @foreach ($pasajes as $pasaje)
-
                 @php
-                    $precio = $pasaje->precio_cobrado
-                        ?? $pasaje->precio_pasaje
-                        ?? 0;
+                    $precio = $pasaje->precio_cobrado ?? ($pasaje->precio_pasaje ?? 0);
 
                     $total += $precio;
 
@@ -99,17 +96,15 @@
                 <tr>
 
                     <td>
-                        {{ optional($pasaje->venta)->created_at
-                            ? $pasaje->venta->created_at->format('d/m/Y H:i')
-                            : '' }}
+                        {{ optional($pasaje->venta)->created_at ? $pasaje->venta->created_at->format('d/m/Y H:i') : '' }}
                     </td>
 
                     <td>
-                        {{ $pasaje->usuario?->name ?? '' }}
+                        {{ $pasaje->usuario?->persona->nombre_completo ?? '' }}
                     </td>
 
                     <td>
-                        {{ $ruta?->descripcion ?? '' }}
+                        {{ $ruta?->nombre ?? '' }}
                     </td>
 
                     <td>
@@ -121,11 +116,11 @@
                     </td>
 
                     <td>
-                        {{ $pasaje->origen?->nombre ?? '' }}
+                        {{ $pasaje->origen?->descripcion ?? '' }}
                     </td>
 
                     <td>
-                        {{ $pasaje->destino?->nombre ?? '' }}
+                        {{ $pasaje->destino?->descripcion ?? '' }}
                     </td>
 
                     <td class="center">
@@ -133,7 +128,11 @@
                     </td>
 
                     <td class="center">
-                        {{ $pasaje->estado }}
+                        @if ($pasaje->estado === 'V')
+                            VENDIDO
+                        @else
+                            RESERVADO
+                        @endif
                     </td>
 
                     <td class="right">
@@ -141,7 +140,6 @@
                     </td>
 
                 </tr>
-
             @endforeach
 
             <tr class="total">

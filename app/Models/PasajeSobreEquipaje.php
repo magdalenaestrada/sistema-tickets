@@ -20,6 +20,9 @@ class PasajeSobreEquipaje extends Model
 
     public function encomienda()
     {
-        return $this->belongsTo(Encomienda::class);
+        return $this->belongsTo(
+            Encomienda::class,
+            'encomienda_id'
+        );
     }
 }

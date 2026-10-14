@@ -89,4 +89,28 @@ Route::middleware(['auth', 'can:gestionar reportes'])
             '/pasajeros/historial/excel',
             [ReportesController::class, 'historialPasajeroExcel']
         )->name('historial.pasajero.excel');
+
+        Route::get(
+            '/historial/encomiendas/pdf',
+            [ReportesController::class, 'historialEncomiendasPdf']
+        )
+            ->name('historial.encomiendas.pdf');
+
+        Route::get(
+            '/historial/encomiendas/excel',
+            [ReportesController::class, 'historialEncomiendasExcel']
+        )
+            ->name('historial.encomiendas.excel');
+
+        Route::get(
+            '/historial/sobreequipaje/pdf',
+            [ReportesController::class, 'historialSobreequipajePdf']
+        )
+            ->name('historial.sobreequipaje.pdf');
+
+        Route::get(
+            '/historial/sobreequipaje/excel',
+            [ReportesController::class, 'historialSobreequipajeExcel']
+        )
+            ->name('historial.sobreequipaje.excel');
     });

@@ -398,6 +398,7 @@ class FacturacionController extends Controller
             } else {
                 $persona->update([
                     'nombres' => $nombre,
+                    'apellidos' => null,
                     'direccion' => $direccion ?: $persona->direccion,
                 ]);
             }
@@ -792,14 +793,21 @@ class FacturacionController extends Controller
                 ];
             }
 
+            $nombres   = trim($request->nombres ?? '');
+            $apellidos = trim($request->apellidos ?? '');
+
+            // Si "nombres" ya termina con los apellidos, no los vuelvas a agregar
+            if ($apellidos !== '' && str_ends_with(mb_strtoupper($nombres), mb_strtoupper($apellidos))) {
+                $razonSocial = $nombres;
+            } else {
+                $razonSocial = trim("$nombres $apellidos");
+            }
+
             $data = new \Illuminate\Http\Request([
                 'tipo_documento_factura_id' => $request->tipo_documento_factura_id,
                 'tipo_servicio_id'          => $request->tipo_servicio_id,
                 'numero_documento_id'       => $request->documento,
-                'razon_social'              => trim(
-                    ($request->nombres ?? '') . ' ' .
-                        ($request->apellidos ?? '')
-                ),
+                'razon_social' => $razonSocial,
                 'direccion' => $request->direccion,
                 'correo'    => $request->correo,
                 'telefono'  => $request->telefono,

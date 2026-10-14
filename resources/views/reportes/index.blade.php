@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid py-4 px-md-4 min-vh-100">
+    <div class="container-fluid py-4 px-md-4 min-vh-100 ed-reportes">
 
         {{-- =========================================================
             HEADER
@@ -134,6 +134,85 @@
 
 
         {{-- =========================================================
+            BUSCADOR ÚNICO PARA HISTORIALES PERSONALES
+            No modifica los filtros de reportes generales, caja o administración.
+        ========================================================== --}}
+        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white ed-person-search">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="ed-person-icon"><i class="bi bi-person-vcard"></i></div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Buscar historial de una persona</h6>
+                        <p class="text-muted small mb-0">Escribe una sola vez el DNI para filtrar los reportes de Pasajes, Encomiendas y Sobreequipajes.</p>
+                    </div>
+                </div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-5 col-xl-4">
+                        <label class="form-label fw-semibold small" for="reporte_persona_dni">DNI (opcional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-person-badge text-muted"></i></span>
+                            <input type="text" id="reporte_persona_dni" class="form-control"
+                                inputmode="numeric" maxlength="8" pattern="[0-9]{8}"
+                                placeholder="Ej.: 01234567" autocomplete="off"
+                                aria-describedby="reporte_persona_ayuda"
+                                oninput="reiniciarBusquedaPersonaGlobal()"
+                                onkeydown="if (event.key === 'Enter') { event.preventDefault(); buscarPersonaGlobal(); }">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4 col-xl-5">
+                        <label class="form-label fw-semibold small" for="reporte_persona_nombre">Persona encontrada</label>
+                        <input type="text" id="reporte_persona_nombre" class="form-control bg-light"
+                            readonly placeholder="Todas las personas" aria-live="polite">
+                    </div>
+                    <div class="col-12 col-md-3 col-xl-3">
+                        <div class="d-flex gap-2">
+                            <button type="button" id="btnBuscarPersonaGlobal" class="btn btn-primary flex-fill"
+                                onclick="buscarPersonaGlobal()"><i class="bi bi-search me-1"></i> Buscar</button>
+                            <button type="button" class="btn btn-outline-secondary"
+                                onclick="limpiarBusquedaPersonaGlobal()" title="Mostrar todos" aria-label="Limpiar DNI">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+                    <div id="reporte_persona_ayuda" class="form-text mt-0">
+                        Sin DNI, se exportan todos los registros del período. Si ingresas uno, pulsa Buscar para confirmar el nombre.
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="ed-person-tag"><i class="bi bi-ticket-perforated"></i> Pasajes</span>
+                        <span class="ed-person-tag"><i class="bi bi-box-seam"></i> Encomiendas</span>
+                        <span class="ed-person-tag"><i class="bi bi-luggage"></i> Sobreequipajes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Navegación visual: no modifica los filtros ni las exportaciones --}}
+        <div class="ed-overview row g-3 mb-4">
+            <div class="col-6 col-xl-3"><div class="ed-stat"><span class="ed-stat-icon purple"><i class="bi bi-grid"></i></span><div><small>REPORTES DISPONIBLES</small><strong id="edTotalReportes">13</strong><span>En el catálogo</span></div></div></div>
+            <div class="col-6 col-xl-3"><div class="ed-stat"><span class="ed-stat-icon green"><i class="bi bi-collection"></i></span><div><small>CATEGORÍAS</small><strong>5</strong><span>Áreas de consulta</span></div></div></div>
+            <div class="col-6 col-xl-3"><div class="ed-stat"><span class="ed-stat-icon blue"><i class="bi bi-file-earmark-pdf"></i></span><div><small>EXPORTACIÓN PDF</small><strong>PDF</strong><span>Documentos descargables</span></div></div></div>
+            <div class="col-6 col-xl-3"><div class="ed-stat"><span class="ed-stat-icon amber"><i class="bi bi-file-earmark-excel"></i></span><div><small>EXPORTACIÓN EXCEL</small><strong>XLS</strong><span>Archivos de análisis</span></div></div></div>
+        </div>
+        <div class="ed-toolbar d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center mb-3">
+            <div><h5 class="fw-bold mb-1">Catálogo de reportes</h5><p class="text-muted mb-0 small">Encuentra tus reportes por nombre o área.</p></div>
+            <div class="ed-search"><i class="bi bi-search"></i><input id="edBuscarReporte" type="search" class="form-control" placeholder="Buscar reporte por nombre o tema…" aria-label="Buscar reportes"></div>
+        </div>
+        <div class="ed-category-nav mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"><div><strong>Explorar por área</strong><div class="text-muted small">Selecciona una categoría para ver sus reportes.</div></div></div>
+            <div class="ed-category-pills" id="edCategoryPills">
+                <button type="button" class="ed-pill active" data-category="all"><i class="bi bi-grid"></i> Todos</button>
+                <button type="button" class="ed-pill" data-category="ventas"><i class="bi bi-cash-stack"></i> Ventas</button>
+                <button type="button" class="ed-pill" data-category="operaciones"><i class="bi bi-bus-front"></i> Operaciones</button>
+                <button type="button" class="ed-pill" data-category="caja"><i class="bi bi-wallet2"></i> Caja</button>
+                <button type="button" class="ed-pill" data-category="control"><i class="bi bi-shield-check"></i> Control</button>
+                <button type="button" class="ed-pill" data-category="comprobantes"><i class="bi bi-receipt"></i> Comprobantes</button>
+            </div>
+        </div>
+        <div id="edSinResultados" class="ed-empty mb-3" hidden>No encontramos reportes con esos criterios.</div>
+
+        {{-- =========================================================
             GRID
         ========================================================== --}}
         <div class="row g-4">
@@ -142,9 +221,9 @@
             {{-- =====================================================
                 1. VENTAS
             ====================================================== --}}
-            <div class="col-12">
+            <div class="col-12 ed-report-section" data-ed-category="ventas">
 
-                <div class="card border-0 shadow-sm rounded-4">
+                <div class="card border-0 shadow-sm rounded-4 ed-category-card">
 
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
 
@@ -188,7 +267,7 @@
                             {{-- GENERAL --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -245,7 +324,7 @@
 
 
                             <div class="col-12 col-md-6 col-lg-4">
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
                                     <div>
                                         <h6 class="fw-bold text-dark mb-2">
                                             <i class="bi bi-ticket-perforated me-2 text-primary"></i>
@@ -255,30 +334,10 @@
                                             Boletos, pasajeros, rutas, asientos e importes del período seleccionado.
                                         </p>
 
-                                        <label for="reporte_pasajes_dni" class="form-label small fw-semibold">
-                                            DNI del pasajero (opcional)
-                                        </label>
-                                        <div class="input-group input-group-sm">
-                                            <input type="text" id="reporte_pasajes_dni" class="form-control"
-                                                inputmode="numeric" maxlength="8" pattern="[0-9]{8}"
-                                                placeholder="Ej.: 01234567" aria-describedby="reporte_pasajes_ayuda"
-                                                oninput="reiniciarBusquedaPasajes()"
-                                                onkeydown="if (event.key === 'Enter') { event.preventDefault(); buscarPasajeroReporte(); }">
-                                            <button type="button" id="btnBuscarPasajeroReporte"
-                                                class="btn btn-outline-primary"
-                                                onclick="buscarPasajeroReporte()">Buscar</button>
-                                            <button type="button" class="btn btn-outline-secondary"
-                                                onclick="limpiarDniPasajes()">Limpiar</button>
+                                        <div class="ed-linked-filter">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            Usa el DNI del buscador general.
                                         </div>
-                                        <div id="reporte_pasajes_ayuda" class="form-text">
-                                            Escribe el DNI y pulsa Buscar para comprobar el nombre. Vacío exporta todos.
-                                        </div>
-                                        <label for="reporte_pasajes_nombre" class="form-label small fw-semibold mt-3">
-                                            Pasajero
-                                        </label>
-                                        <input type="text" id="reporte_pasajes_nombre"
-                                            class="form-control form-control-sm" readonly
-                                            placeholder="Todos los pasajeros" aria-live="polite">
                                     </div>
 
                                     <div class="d-flex gap-2 pt-3">
@@ -299,7 +358,7 @@
                             {{-- ENCOMIENDAS --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -312,18 +371,34 @@
                                             Remitentes, destinatarios, bultos, peso, rutas e importes.
                                         </p>
 
+                                        {{-- DNI opcional: puede coincidir con emisor o receptor --}}
+                                        <label for="reporte_encomiendas_tipo_persona" class="form-label small fw-semibold">
+                                            Buscar como
+                                        </label>
+                                        <select id="reporte_encomiendas_tipo_persona"
+                                            class="form-select form-select-sm mb-2">
+                                            <option value="ambos">Emisor o receptor</option>
+                                            <option value="emisor">Solo emisor</option>
+                                            <option value="receptor">Solo receptor</option>
+                                        </select>
+
+                                        <div class="ed-linked-filter mt-2">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            Usa el DNI del buscador general.
+                                        </div>
+
                                     </div>
 
                                     <div class="d-flex gap-2 pt-3">
 
                                         <button type="button" class="btn btn-outline-danger btn-sm w-100"
-                                            onclick="exportarReporte('venta-encomiendas','pdf')">
+                                            onclick="exportarVentaEncomiendas('pdf')">
                                             <i class="bi bi-file-earmark-pdf me-1"></i>
                                             PDF
                                         </button>
 
                                         <button type="button" class="btn btn-outline-success btn-sm w-100"
-                                            onclick="exportarReporte('venta-encomiendas','excel')">
+                                            onclick="exportarVentaEncomiendas('excel')">
                                             <i class="bi bi-file-earmark-excel me-1"></i>
                                             Excel
                                         </button>
@@ -338,7 +413,7 @@
                             {{-- SOBREEQUIPAJE --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -350,19 +425,23 @@
                                         <p class="text-muted micro-text mb-3">
                                             Sobreequipaje relacionado al boleto, pasajero y viaje.
                                         </p>
+                                        <div class="ed-linked-filter">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            Filtra por DNI del pasajero desde el buscador general.
+                                        </div>
 
                                     </div>
 
                                     <div class="d-flex gap-2 pt-3">
 
                                         <button type="button" class="btn btn-outline-danger btn-sm w-100"
-                                            onclick="exportarReporte('venta-sobreequipaje','pdf')">
+                                            onclick="exportarVentaSobreequipaje('pdf')">
                                             <i class="bi bi-file-earmark-pdf me-1"></i>
                                             PDF
                                         </button>
 
                                         <button type="button" class="btn btn-outline-success btn-sm w-100"
-                                            onclick="exportarReporte('venta-sobreequipaje','excel')">
+                                            onclick="exportarVentaSobreequipaje('excel')">
                                             <i class="bi bi-file-earmark-excel me-1"></i>
                                             Excel
                                         </button>
@@ -377,7 +456,7 @@
                             {{-- RUTA --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -431,7 +510,7 @@
                             {{-- VENDEDOR --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -485,7 +564,7 @@
                             {{-- SUCURSAL --}}
                             <div class="col-12 col-md-6 col-lg-4">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -532,9 +611,9 @@
             {{-- =====================================================
                 2. OPERACIONES Y VIAJES
             ====================================================== --}}
-            <div class="col-12 col-xl-6">
+            <div class="col-12 col-xl-6 ed-report-section" data-ed-category="operaciones">
 
-                <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card border-0 shadow-sm rounded-4 h-100 ed-category-card">
 
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
 
@@ -570,7 +649,7 @@
 
                             <div class="col-12">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -668,9 +747,9 @@
             {{-- =====================================================
                 3. CAJA Y RECAUDACIÓN
             ====================================================== --}}
-            <div class="col-12 col-xl-6">
+            <div class="col-12 col-xl-6 ed-report-section" data-ed-category="caja">
 
-                <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card border-0 shadow-sm rounded-4 h-100 ed-category-card">
 
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
 
@@ -708,7 +787,7 @@
                             {{-- CAJA VENDEDOR --}}
                             <div class="col-12 col-md-6">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -748,7 +827,7 @@
                             {{-- CAJA SUCURSAL --}}
                             <div class="col-12 col-md-6">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -788,7 +867,7 @@
                             {{-- MEDIO DE PAGO --}}
                             <div class="col-12">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -860,9 +939,9 @@
             {{-- =====================================================
                 4. CONTROL DE OPERACIONES
             ====================================================== --}}
-            <div class="col-12 col-xl-6">
+            <div class="col-12 col-xl-6 ed-report-section" data-ed-category="control">
 
-                <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card border-0 shadow-sm rounded-4 h-100 ed-category-card">
 
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
 
@@ -898,7 +977,7 @@
 
                             <div class="col-12">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -966,9 +1045,9 @@
             {{-- =====================================================
                 5. COMPROBANTES
             ====================================================== --}}
-            <div class="col-12 col-xl-6">
+            <div class="col-12 col-xl-6 ed-report-section" data-ed-category="comprobantes">
 
-                <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card border-0 shadow-sm rounded-4 h-100 ed-category-card">
 
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
 
@@ -1004,7 +1083,7 @@
 
                             <div class="col-12">
 
-                                <div class="report-card">
+                                <div class="report-card ed-report-card">
 
                                     <div>
 
@@ -1074,28 +1153,56 @@
     ============================================================== --}}
     @push('styles')
         <style>
-            .report-card {
-                padding: 1rem;
-                border-radius: .75rem;
-                background: var(--bs-light-bg-subtle, #f8f9fa);
-                border: 1px solid var(--bs-border-color);
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-
-            .report-card h6 {
-                line-height: 1.4;
-            }
-
-            .report-card .form-select {
-                background-color: #fff;
-            }
-
-            .report-card button {
-                font-weight: 500;
-            }
+            .ed-reportes{--ed-primary:#625cff;--ed-border:#e6ebf2;--ed-muted:#738096;--ed-shadow:0 3px 12px rgba(30,45,75,.055);color:#182230;font-size:14px}
+            .ed-reportes .ed-category-card,.ed-reportes .ed-category-nav,.ed-reportes .ed-stat{background:#fff;border:1px solid #edf0f5!important;border-radius:16px!important;box-shadow:var(--ed-shadow)!important}
+            .ed-reportes .ed-category-card{overflow:hidden}
+            .ed-reportes .ed-category-card>.card-header{padding:20px 20px 5px!important}
+            .ed-reportes .ed-category-card>.card-body{padding:16px 20px 20px!important}
+            .ed-reportes .ed-category-card h5{font-size:15px;font-weight:800;letter-spacing:-.3px}
+            .ed-reportes .ed-category-card>.card-header .badge{border:0!important;background:#f0f3f7!important;color:#6f7b8f!important;padding:7px 10px;border-radius:8px;font-size:10px}
+            .ed-reportes .ed-category-card .icon-box{border-radius:12px!important;width:38px!important;height:38px!important;display:grid!important;place-items:center}
+            .ed-reportes .bg-primary-subtle{background:#e8e8ff!important}.ed-reportes .text-primary{color:#625cff!important}
+            .ed-reportes .report-card{padding:17px;border:1px solid var(--ed-border);border-radius:13px;background:linear-gradient(160deg,#fff,#fcfcfe);height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:12px;transition:border-color .15s,box-shadow .15s,transform .15s}
+            .ed-reportes .report-card:hover{border-color:#d8d8ff;box-shadow:0 8px 20px rgba(55,62,109,.07);transform:translateY(-1px)}
+            .ed-reportes .report-card h6{font-size:13px;font-weight:800!important;line-height:1.4;color:#182230!important;margin-bottom:7px!important}
+            .ed-reportes .report-card p{font-size:11px;color:var(--ed-muted)!important;line-height:1.55}
+            .ed-reportes .report-card .form-select,.ed-reportes .report-card .form-control{background-color:#fff!important;border:1px solid var(--ed-border)!important;border-radius:8px!important;min-height:35px;font-size:12px;box-shadow:none!important}
+            .ed-reportes .report-card .form-select:focus,.ed-reportes .report-card .form-control:focus{border-color:var(--ed-primary)!important;box-shadow:0 0 0 3px #625cff16!important}
+            .ed-reportes .report-card .form-label{font-size:11px;color:#72809a}
+            .ed-reportes .report-card .form-text{font-size:10px;color:#8a97aa}
+            .ed-reportes .report-card button{font-weight:700;font-size:11px;min-height:35px;border-radius:8px}
+            .ed-reportes .report-card .btn-outline-danger{color:#ff3864;border-color:#ff3864}.ed-reportes .report-card .btn-outline-danger:hover{background:#ff3864;color:white}
+            .ed-reportes .report-card .btn-outline-success{color:#00a85a;border-color:#00a85a}.ed-reportes .report-card .btn-outline-success:hover{background:#00a85a;color:white}
+            .ed-reportes #filterForm .btn-primary{background:var(--ed-primary);border-color:var(--ed-primary);min-height:39px}
+            .ed-reportes #filterForm .btn-primary:hover{background:#4e49e8}
+            .ed-reportes #filterForm .btn-check:checked+.btn-outline-custom{background:var(--ed-primary);color:#fff;box-shadow:0 3px 7px #625cff30}
+            .ed-reportes #filterForm .btn-outline-custom{color:var(--ed-primary);border:1px solid #c9c7ff!important;white-space:normal;font-size:11px;padding:9px 7px}
+            .ed-reportes #filterForm .btn-check:checked+.btn-outline-custom{border-color:var(--ed-primary)!important}
+            .ed-reportes #filterForm .btn-group{background:#fff!important;gap:0;padding:0!important}
+            .ed-reportes #filterForm .form-label{font-size:11px;letter-spacing:.5px}
+            .ed-reportes #filterForm .form-control,.ed-reportes #filterForm .input-group-text{min-height:39px;font-size:12px}
+            .ed-reportes .ed-stat{padding:15px 17px;display:flex;gap:12px;align-items:center;min-height:92px}
+            .ed-reportes .ed-stat-icon{display:grid;place-items:center;flex:0 0 38px;height:38px;border-radius:11px;font-size:18px}
+            .ed-reportes .ed-stat-icon.purple{color:#625cff;background:#e8e8ff}.ed-reportes .ed-stat-icon.green{color:#00a85a;background:#e1f8ec}.ed-reportes .ed-stat-icon.blue{color:#2670ff;background:#e4efff}.ed-reportes .ed-stat-icon.amber{color:#b77e00;background:#fff2d2}
+            .ed-reportes .ed-stat small,.ed-reportes .ed-stat span:not(.ed-stat-icon){display:block;color:#738096;font-size:10px;font-weight:650}
+            .ed-reportes .ed-stat strong{display:block;font-size:22px;line-height:1.25;font-weight:800}
+            .ed-reportes .ed-toolbar h5{font-size:17px}.ed-reportes .ed-search{position:relative;width:min(330px,100%)}
+            .ed-reportes .ed-search i{position:absolute;left:13px;top:11px;color:#91a0b4}.ed-reportes .ed-search input{border-radius:10px;border:1px solid var(--ed-border);padding:10px 12px 10px 38px;font-size:12px}
+            .ed-reportes .ed-search input:focus{border-color:var(--ed-primary);box-shadow:0 0 0 3px #625cff16}
+            .ed-reportes .ed-category-nav{padding:15px 16px}.ed-reportes .ed-category-nav strong{font-size:12px}.ed-reportes .ed-category-pills{display:flex;gap:7px;flex-wrap:wrap}
+            .ed-reportes .ed-pill{border:1px solid var(--ed-border);border-radius:9px;background:#fff;color:#526078;padding:9px 12px;font-size:11px;font-weight:750;display:inline-flex;align-items:center;gap:8px}
+            .ed-reportes .ed-pill:hover{border-color:#c9c7ff;color:#625cff}.ed-reportes .ed-pill.active{background:#625cff;border-color:#625cff;color:#fff;box-shadow:0 3px 8px #625cff25}
+            .ed-reportes .ed-empty{padding:25px;text-align:center;color:#738096;background:#fff;border:1px dashed var(--ed-border);border-radius:12px}
+            .ed-reportes .ed-person-search{border:1px solid #e7e5ff!important}
+            .ed-reportes .ed-person-search .card-body{background:linear-gradient(130deg,#fff 72%,#f8f7ff)}
+            .ed-reportes .ed-person-icon{flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;border-radius:12px;color:#625cff;background:#e8e8ff;font-size:20px}
+            .ed-reportes .ed-person-search .form-control,.ed-reportes .ed-person-search .input-group-text{border-color:#e6ebf2;min-height:40px;font-size:13px}
+            .ed-reportes .ed-person-search #btnBuscarPersonaGlobal{background:#625cff;border-color:#625cff;min-height:40px}
+            .ed-reportes .ed-person-search #btnBuscarPersonaGlobal:hover{background:#4e49e8}
+            .ed-reportes .ed-person-tag{font-size:11px;color:#635ed4;border-radius:8px;background:#f0efff;padding:5px 9px;display:inline-flex;gap:6px;align-items:center}
+            .ed-reportes .ed-linked-filter{font-size:11px;color:#66748b;background:#f7f8fc;border:1px dashed #e2e6f1;border-radius:8px;padding:9px 10px}
+            .ed-reportes [hidden]{display:none!important}
+            @media(max-width:767px){.ed-reportes .ed-category-card>.card-body{padding:14px!important}.ed-reportes .ed-category-card>.card-header{padding:16px 14px 5px!important}.ed-reportes .ed-stat{padding:11px;gap:8px}.ed-reportes .ed-stat strong{font-size:19px}.ed-reportes .ed-stat-icon{flex-basis:32px;height:32px}.ed-reportes .ed-search{width:100%}.ed-reportes #filterForm .btn-group{flex-wrap:wrap}.ed-reportes #filterForm .btn-group label{flex:1 0 30%}}
         </style>
     @endpush
 
@@ -1107,6 +1214,38 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 updateDateRange();
+                // Navegación y búsqueda únicamente visuales sobre los reportes existentes.
+                const buscador = document.getElementById('edBuscarReporte');
+                const botones = document.querySelectorAll('#edCategoryPills [data-category]');
+                const secciones = document.querySelectorAll('.ed-report-section');
+                const tarjetas = document.querySelectorAll('.ed-report-section .report-card');
+                const totalReportes = document.getElementById('edTotalReportes');
+                if (totalReportes) totalReportes.textContent = String(tarjetas.length);
+                let categoriaActiva = 'all';
+                function filtrarCatalogo() {
+                    const termino = (buscador?.value || '').trim().toLocaleLowerCase('es');
+                    let visibles = 0;
+                    secciones.forEach(seccion => {
+                        const categoriaVisible = categoriaActiva === 'all' || seccion.dataset.edCategory === categoriaActiva;
+                        let cantidad = 0;
+                        seccion.querySelectorAll('.report-card').forEach(tarjeta => {
+                            const coincide = tarjeta.textContent.toLocaleLowerCase('es').includes(termino);
+                            const mostrar = categoriaVisible && coincide;
+                            tarjeta.closest('[class*="col-"]')?.classList.toggle('d-none', !mostrar);
+                            if (mostrar) { cantidad++; visibles++; }
+                        });
+                        seccion.classList.toggle('d-none', cantidad === 0);
+                    });
+                    const sinResultados = document.getElementById('edSinResultados');
+                    if (sinResultados) sinResultados.hidden = visibles !== 0;
+                }
+                botones.forEach(boton => boton.addEventListener('click', () => {
+                    categoriaActiva = boton.dataset.category;
+                    botones.forEach(item => item.classList.toggle('active', item === boton));
+                    filtrarCatalogo();
+                }));
+                buscador?.addEventListener('input', filtrarCatalogo);
+
             });
 
 
@@ -1292,117 +1431,145 @@
 
             }
 
-            let solicitudDniPasajes = null;
-            let versionDniPasajes = 0;
-            let dniConfirmadoPasajes = '';
+            /* ===============================================================
+             * FILTRO COMPARTIDO DE PERSONAS (PASAJES, ENCOMIENDAS Y SOBREEQUIPAJES)
+             * No se agrega a Caja, Ventas generales ni otros reportes.
+             * =============================================================== */
+            let solicitudPersonaGlobal = null;
+            let versionBusquedaPersonaGlobal = 0;
+            let dniGlobalConfirmado = '';
 
-            function reiniciarBusquedaPasajes() {
-                versionDniPasajes++;
-                dniConfirmadoPasajes = '';
+            function reiniciarBusquedaPersonaGlobal() {
+                versionBusquedaPersonaGlobal++;
+                dniGlobalConfirmado = '';
 
-                if (solicitudDniPasajes) {
-                    solicitudDniPasajes.abort();
-                    solicitudDniPasajes = null;
+                if (solicitudPersonaGlobal) {
+                    solicitudPersonaGlobal.abort();
+                    solicitudPersonaGlobal = null;
                 }
 
-                const dni = ($('#reporte_pasajes_dni').val() || '').trim();
-                $('#reporte_pasajes_nombre').val('').attr('placeholder',
-                    dni ? 'Pulsa Buscar para ver el nombre' : 'Todos los pasajeros');
-                $('#btnBuscarPasajeroReporte').prop('disabled', false).text('Buscar');
+                const dni = (document.getElementById('reporte_persona_dni')?.value || '').trim();
+                const nombre = document.getElementById('reporte_persona_nombre');
+                nombre.value = '';
+                nombre.placeholder = dni ? 'Pulsa Buscar para confirmar el nombre' : 'Todas las personas';
+                $('#btnBuscarPersonaGlobal').prop('disabled', false).html('<i class="bi bi-search me-1"></i> Buscar');
             }
 
-            function limpiarDniPasajes() {
-                $('#reporte_pasajes_dni').val('');
-                reiniciarBusquedaPasajes();
-                $('#reporte_pasajes_dni').trigger('focus');
+            function limpiarBusquedaPersonaGlobal() {
+                document.getElementById('reporte_persona_dni').value = '';
+                reiniciarBusquedaPersonaGlobal();
+                document.getElementById('reporte_persona_dni').focus();
             }
 
-            function buscarPasajeroReporte() {
-                const documento = ($('#reporte_pasajes_dni').val() || '').trim();
-                reiniciarBusquedaPasajes();
+            function buscarPersonaGlobal() {
+                const documento = (document.getElementById('reporte_persona_dni').value || '').trim();
+                reiniciarBusquedaPersonaGlobal();
 
                 if (!/^[0-9]{8}$/.test(documento)) {
-                    Swal.fire('Aviso', 'Escribe un DNI de 8 dígitos para buscar al pasajero.', 'warning');
+                    Swal.fire('Aviso', 'Escribe un DNI de exactamente 8 dígitos.', 'warning');
                     return;
                 }
 
-                const versionActual = versionDniPasajes;
-                $('#btnBuscarPasajeroReporte').prop('disabled', true).text('Buscando…');
+                const versionActual = versionBusquedaPersonaGlobal;
+                $('#btnBuscarPersonaGlobal').prop('disabled', true).text('Buscando…');
 
-                solicitudDniPasajes = $.getJSON(route('buscar.buscar'), {
-                        documento
-                    })
+                solicitudPersonaGlobal = $.getJSON(@json(route('buscar.buscar')), { documento })
                     .done(function(data) {
-                        // Una respuesta anterior no puede llenar el nombre de un DNI nuevo.
-                        if (versionActual !== versionDniPasajes ||
-                            ($('#reporte_pasajes_dni').val() || '').trim() !== documento) return;
+                        if (versionActual !== versionBusquedaPersonaGlobal ||
+                            document.getElementById('reporte_persona_dni').value.trim() !== documento) return;
 
                         if (!data || data.error) {
-                            Swal.fire('Aviso', data?.error || 'No se encontró el documento.', 'warning');
+                            Swal.fire('Aviso', data?.error || 'No se encontró el DNI.', 'warning');
                             return;
                         }
 
-                        const nombreCompleto = (data.razon_social || [
+                        const nombreCompleto = String(data.razon_social || [
                             data.nombres,
                             data.apellido_paterno,
-                            data.apellido_materno,
+                            data.apellido_materno
                         ].filter(Boolean).join(' ')).trim();
 
                         if (!nombreCompleto) {
-                            Swal.fire('Aviso', 'La búsqueda no devolvió el nombre del pasajero.', 'warning');
+                            Swal.fire('Aviso', 'La búsqueda no devolvió el nombre de la persona.', 'warning');
                             return;
                         }
 
-                        $('#reporte_pasajes_nombre').val(nombreCompleto);
-                        dniConfirmadoPasajes = documento;
+                        document.getElementById('reporte_persona_nombre').value = nombreCompleto;
+                        dniGlobalConfirmado = documento;
                     })
                     .fail(function(_xhr, estado) {
-                        if (estado === 'abort' || versionActual !== versionDniPasajes) return;
-                        Swal.fire('Error', 'No se pudo buscar el documento. Intenta nuevamente.', 'error');
+                        if (estado === 'abort' || versionActual !== versionBusquedaPersonaGlobal) return;
+                        Swal.fire('Error', 'No se pudo buscar el DNI. Intenta nuevamente.', 'error');
                     })
                     .always(function() {
-                        if (versionActual !== versionDniPasajes) return;
-                        solicitudDniPasajes = null;
-                        $('#btnBuscarPasajeroReporte').prop('disabled', false).text('Buscar');
+                        if (versionActual !== versionBusquedaPersonaGlobal) return;
+                        solicitudPersonaGlobal = null;
+                        $('#btnBuscarPersonaGlobal').prop('disabled', false)
+                            .html('<i class="bi bi-search me-1"></i> Buscar');
                     });
             }
 
-            function exportarVentaPasajes(formato) {
-                const rutas = {
-                    pdf: @json(route('reportes.historial.pasajero.pdf')),
-                    excel: @json(route('reportes.historial.pasajero.excel')),
-                };
-                if (!Object.prototype.hasOwnProperty.call(rutas, formato)) return;
-
-                const dni = ($('#reporte_pasajes_dni').val() || '').trim();
-
-                if (dni !== '' && !/^[0-9]{8}$/.test(dni)) {
-                    Swal.fire('Aviso', 'Escribe un DNI de 8 dígitos o deja el campo vacío.', 'warning');
-                    return;
-                }
-
-                if (dni !== '' && dniConfirmadoPasajes !== dni) {
-                    Swal.fire('Aviso', 'Pulsa Buscar para comprobar el nombre del pasajero antes de exportar.', 'warning');
-                    return;
-                }
-
+            // Devuelve el filtro válido para los tres historiales; null si existe un error.
+            function validarFiltroHistorialPersonal() {
+                const dni = (document.getElementById('reporte_persona_dni')?.value || '').trim();
                 const filters = getGlobalFilters();
+
+                if (dni && !/^[0-9]{8}$/.test(dni)) {
+                    Swal.fire('Aviso', 'El DNI debe tener 8 dígitos o quedar vacío.', 'warning');
+                    return null;
+                }
+                if (dni && dniGlobalConfirmado !== dni) {
+                    Swal.fire('Aviso', 'Pulsa Buscar y confirma el nombre antes de exportar.', 'warning');
+                    return null;
+                }
                 if (filters.period === 'custom' && (!filters.dateFrom || !filters.dateTo)) {
-                    Swal.fire('Aviso', 'Selecciona la fecha inicial y final.', 'warning');
-                    return;
+                    Swal.fire('Aviso', 'Selecciona la fecha inicial y la fecha final.', 'warning');
+                    return null;
                 }
                 if (filters.dateFrom && filters.dateTo && filters.dateFrom > filters.dateTo) {
                     Swal.fire('Aviso', 'La fecha final debe ser igual o posterior a la inicial.', 'warning');
-                    return;
+                    return null;
                 }
 
+                return { dni, filters };
+            }
+
+            function descargarHistorialPersonal(formato, rutas, extra = {}) {
+                if (!Object.prototype.hasOwnProperty.call(rutas, formato)) return;
+                const filtro = validarFiltroHistorialPersonal();
+                if (!filtro) return;
+
                 const url = new URL(rutas[formato], window.location.origin);
-                url.searchParams.set('period', filters.period);
-                if (filters.dateFrom) url.searchParams.set('date_from', filters.dateFrom);
-                if (filters.dateTo) url.searchParams.set('date_to', filters.dateTo);
-                if (dni !== '') url.searchParams.set('dni', dni);
+                url.searchParams.set('period', filtro.filters.period);
+                if (filtro.filters.dateFrom) url.searchParams.set('date_from', filtro.filters.dateFrom);
+                if (filtro.filters.dateTo) url.searchParams.set('date_to', filtro.filters.dateTo);
+                if (filtro.dni) url.searchParams.set('dni', filtro.dni);
+                Object.entries(extra).forEach(([clave, valor]) => url.searchParams.set(clave, valor));
 
                 window.open(url.toString(), '_blank', 'noopener,noreferrer');
+            }
+
+            function exportarVentaPasajes(formato) {
+                descargarHistorialPersonal(formato, {
+                    pdf: @json(route('reportes.historial.pasajero.pdf')),
+                    excel: @json(route('reportes.historial.pasajero.excel')),
+                });
+            }
+
+            function exportarVentaEncomiendas(formato) {
+                descargarHistorialPersonal(formato, {
+                    pdf: @json(route('reportes.historial.encomiendas.pdf')),
+                    excel: @json(route('reportes.historial.encomiendas.excel')),
+                }, {
+                    tipo_persona: document.getElementById('reporte_encomiendas_tipo_persona')?.value || 'ambos'
+                });
+            }
+
+            function exportarVentaSobreequipaje(formato) {
+                descargarHistorialPersonal(formato, {
+                    pdf: @json(route('reportes.historial.sobreequipaje.pdf')),
+                    excel: @json(route('reportes.historial.sobreequipaje.excel')),
+                });
             }
 
 
@@ -1422,17 +1589,17 @@
 
                     'venta-pasajes': {
                         pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        excel: "{{ route('reportes.historial.pasajero.excel') }}"
                     },
 
                     'venta-encomiendas': {
-                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        pdf: "{{ route('reportes.historial.encomiendas.pdf') }}",
+                        excel: "{{ route('reportes.historial.encomiendas.excel') }}"
                     },
 
                     'venta-sobreequipaje': {
-                        pdf: "{{ route('reportes.historial.pasajero.pdf') }}",
-                        excel: "{{ route('reportes.historial.pasajero.pdf') }}"
+                        pdf: "{{ route('reportes.historial.sobreequipaje.pdf') }}",
+                        excel: "{{ route('reportes.historial.sobreequipaje.excel') }}"
                     },
 
                     'ventas-sucursal': {

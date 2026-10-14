@@ -2,7 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PasajerosPorRutaExport;
+use App\Exports\VentaEncomiendasExport;
+use App\Exports\VentaPasajesExport;
+use App\Exports\VentasGeneralExport;
+use App\Exports\VentaSobreequipajeExport;
+use App\Exports\VentasPorAgenciaExport;
+use App\Exports\VentasPorRutaExport;
+use App\Exports\VentasPorUsuarioExport;
 use App\Models\Caja;
+use App\Models\CajaDetalle;
 use Illuminate\Http\Request;
 use App\Models\Venta;
 use App\Models\VentaPago;
@@ -23,6 +32,7 @@ use App\Models\TipoVehiculo;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
 use Illuminate\Support\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 use PDF;
 use Yajra\DataTables\DataTables;
 
@@ -182,8 +192,8 @@ class ReportesController extends Controller
 
         [$desde, $hasta] = $this->obtenerFechas($request);
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\VentasPorUsuarioExport(
+        return Excel::download(
+            new VentasPorUsuarioExport(
                 $pasajes,
                 $desde,
                 $hasta
@@ -511,8 +521,8 @@ class ReportesController extends Controller
     {
         $data = $this->obtenerResumenVentasGeneral($request);
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\VentasGeneralExport($data),
+        return Excel::download(
+            new VentasGeneralExport($data),
             'reporte_general_ventas_' .
                 $data['desde']->format('Ymd') . '_' .
                 $data['hasta']->format('Ymd') . '.xlsx'
@@ -712,8 +722,8 @@ class ReportesController extends Controller
             ->orderBy('usuario_id')
             ->get();
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\VentasPorAgenciaExport($pasajes),
+        return Excel::download(
+            new VentasPorAgenciaExport($pasajes),
             'ventas_por_agencia.xlsx'
         );
     }
@@ -837,8 +847,8 @@ class ReportesController extends Controller
             ->orderBy('salida_id')
             ->get();
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\VentasPorRutaExport($pasajes),
+        return Excel::download(
+            new VentasPorRutaExport($pasajes),
             'ventas_por_ruta.xlsx'
         );
     }
@@ -902,8 +912,8 @@ class ReportesController extends Controller
             ->orderBy('asiento_numero')
             ->get();
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\PasajerosPorRutaExport($pasajes),
+        return Excel::download(
+            new PasajerosPorRutaExport($pasajes),
             'pasajeros_transportados_por_ruta.xlsx'
         );
     }
@@ -961,151 +971,408 @@ class ReportesController extends Controller
         return $query;
     }
 
-    
-private function queryHistorialPasajero(
-    Carbon $desde,
-    Carbon $hasta,
-    ?string $dni
-): \Illuminate\Database\Eloquent\Builder {
-    return Pasaje::query()
-        ->with([
-            'persona',
-            'usuario.persona',
-            'venta',
-            'salida.horario.ruta',
-            'origen',
-            'destino',
-        ])
-        ->whereHas('venta', function ($query) use ($desde, $hasta) {
-            // Se conserva la fecha de venta utilizada por tu historial actual.
-            $query->whereBetween('created_at', [$desde, $hasta]);
-        })
-        ->when($dni !== null, function ($query) use ($dni) {
-            $query->whereHas('persona', function ($persona) use ($dni) {
-                // Coincidencia exacta. El DNI permanece como texto.
-                $persona->where('documento', $dni);
+
+    private function queryHistorialPasajero(
+        Carbon $desde,
+        Carbon $hasta,
+        ?string $dni
+    ): \Illuminate\Database\Eloquent\Builder {
+        return Pasaje::query()
+            ->with([
+                'persona',
+                'usuario.persona',
+                'venta',
+                'salida.horario.ruta',
+                'origen',
+                'destino',
+            ])
+            ->whereHas('venta', function ($query) use ($desde, $hasta) {
+                // Se conserva la fecha de venta utilizada por tu historial actual.
+                $query->whereBetween('created_at', [$desde, $hasta]);
+            })
+            ->when($dni !== null, function ($query) use ($dni) {
+                $query->whereHas('persona', function ($persona) use ($dni) {
+                    // Coincidencia exacta. El DNI permanece como texto.
+                    $persona->where('documento', $dni);
+                });
             });
+    }
+
+    private function obtenerDatosHistorialPasajero(Request $request): array
+    {
+        $filtros = \Illuminate\Support\Facades\Validator::make([
+            'dni' => $request->input('dni'),
+            'period' => $request->input('period') ?? $request->input('periodo') ?? 'month',
+            'date_from' => $request->input('date_from') ?? $request->input('desde'),
+            'date_to' => $request->input('date_to') ?? $request->input('hasta'),
+        ], [
+            'dni' => ['bail', 'nullable', 'string', 'regex:/^[0-9]{8}$/'],
+            'period' => ['required', 'in:today,week,month,year,custom'],
+            'date_from' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
+            'date_to' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
+        ], [
+            'dni.regex' => 'El DNI debe contener exactamente 8 dígitos.',
+            'date_from.required_if' => 'Selecciona la fecha inicial.',
+            'date_to.required_if' => 'Selecciona la fecha final.',
+        ])->validate();
+
+        // Comprueba también las fechas recibidas, antes de resolver el período.
+        if (
+            !empty($filtros['date_from']) && !empty($filtros['date_to'])
+            && $filtros['date_from'] > $filtros['date_to']
+        ) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'date_to' => 'La fecha final debe ser igual o posterior a la inicial.',
+            ]);
+        }
+
+        $dni = filled($filtros['dni'] ?? null) ? $filtros['dni'] : null;
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        if ($hasta->lt($desde)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'date_to' => 'La fecha final debe ser igual o posterior a la inicial.',
+            ]);
+        }
+
+        $filas = $this->queryHistorialPasajero($desde, $hasta, $dni)
+            ->orderBy('salida_id')
+            ->orderBy('asiento_numero')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($pasaje) {
+                $persona = $pasaje->persona;
+                $nombre = trim($persona?->nombre_completo ?? '');
+
+                if ($nombre === '') {
+                    $nombre = trim(implode(' ', array_filter([
+                        $persona?->nombres,
+                        $persona?->apellido_paterno,
+                        $persona?->apellido_materno,
+                    ], fn($valor) => $valor !== null && $valor !== '')));
+                }
+
+                $comprobante = collect([$pasaje->venta?->serie, $pasaje->venta?->numero])
+                    ->filter(fn($valor) => $valor !== null && $valor !== '')
+                    ->map(fn($valor) => $this->textoReportePasajes($valor))
+                    ->implode('-');
+
+                return [
+                    'fecha' => $pasaje->venta?->created_at?->format('d/m/Y H:i') ?? '-',
+                    'comprobante' => $comprobante ?: '-',
+                    'pasajero' => $nombre ?: 'SIN PASAJERO',
+                    'documento' => $this->textoReportePasajes($persona?->documento) ?: '-',
+                    'ruta' => $this->textoReportePasajes($pasaje->salida?->horario?->ruta?->nombre) ?: '-',
+                    'origen' => $this->textoReportePasajes($pasaje->origen?->descripcion
+                        ?? $pasaje->origen?->nombre) ?: '-',
+                    'destino' => $this->textoReportePasajes($pasaje->destino?->descripcion
+                        ?? $pasaje->destino?->nombre) ?: '-',
+                    'asiento' => $this->textoReportePasajes($pasaje->asiento_numero),
+                    'vendedor' => $this->textoReportePasajes($pasaje->usuario?->persona?->nombre_completo
+                        ?? $pasaje->usuario?->name) ?: 'SIN USUARIO',
+                    'estado' => $this->textoReportePasajes($pasaje->estado),
+                    'precio' => (float) ($pasaje->precio_cobrado ?? $pasaje->precio_pasaje ?? 0),
+                ];
+            });
+
+        return [
+            'filas' => $filas,
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'dni' => $dni,
+            'cantidadPasajes' => $filas->count(),
+            // Conserva la suma de todos los importes que mostraba tu PDF original.
+            'totalImporte' => $filas->sum('precio'),
+        ];
+    }
+
+    private function textoReportePasajes(mixed $valor): string
+    {
+        return match (true) {
+            $valor instanceof \BackedEnum => (string) $valor->value,
+            $valor instanceof \UnitEnum => $valor->name,
+            default => (string) ($valor ?? ''),
+        };
+    }
+
+    public function historialPasajeroPdf(Request $request)
+    {
+        $data = $this->obtenerDatosHistorialPasajero($request);
+        $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.pasajeros.historial', $data)
+            ->setPaper('a4', 'landscape')
+            ->download('venta_pasajes_' . $alcance . '_'
+                . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.pdf');
+    }
+
+    public function historialPasajeroExcel(Request $request)
+    {
+        $data = $this->obtenerDatosHistorialPasajero($request);
+        $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
+
+        return Excel::download(
+            new VentaPasajesExport($data),
+            'venta_pasajes_' . $alcance . '_'
+                . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.xlsx'
+        );
+    }
+
+    /**
+     * Historial de ventas de encomiendas filtrable por DNI de emisor/receptor.
+     * Utiliza la fecha de la VENTA, igual que el historial de Pasajes.
+     */
+    private function obtenerDatosHistorialEncomiendas(Request $request): array
+    {
+        $filtros = $request->validate([
+            'dni' => ['nullable', 'string', 'regex:/^[0-9]{8}$/'],
+            'tipo_persona' => ['nullable', 'in:ambos,emisor,receptor'],
+            'period' => ['nullable', 'in:today,week,month,year,custom'],
+            'date_from' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
+            'date_to' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
+        ], [
+            'dni.regex' => 'El DNI debe tener exactamente 8 dígitos.',
+            'date_from.required_if' => 'Selecciona la fecha inicial.',
+            'date_to.required_if' => 'Selecciona la fecha final.',
+        ]);
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+
+        if ($hasta->lt($desde)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'date_to' => 'La fecha final debe ser igual o posterior a la inicial.',
+            ]);
+        }
+
+        $dni = filled($filtros['dni'] ?? null) ? $filtros['dni'] : null;
+        $tipoPersona = $filtros['tipo_persona'] ?? 'ambos';
+
+        $query = Encomienda::query()
+            ->with([
+                'emisor',
+                'receptor',
+                'venta',
+                'detalles',
+                'sucursal_origen',
+                'sucursal_destino',
+            ])
+            ->where('sobre_equipaje', false)
+            ->whereHas('venta', fn($q) => $q->whereBetween('created_at', [$desde, $hasta]));
+
+        if ($dni !== null) {
+            $query->where(function ($q) use ($dni, $tipoPersona) {
+                if ($tipoPersona === 'emisor') {
+                    $q->whereHas('emisor', fn($p) => $p->where('documento', $dni));
+                } elseif ($tipoPersona === 'receptor') {
+                    $q->whereHas('receptor', fn($p) => $p->where('documento', $dni));
+                } else {
+                    $q->whereHas('emisor', fn($p) => $p->where('documento', $dni))
+                        ->orWhereHas('receptor', fn($p) => $p->where('documento', $dni));
+                }
+            });
+        }
+
+        $filas = $query->orderBy('id')->get()->map(function ($encomienda) {
+            $emisor = $encomienda->emisor;
+            $receptor = $encomienda->receptor;
+
+            $nombreCompleto = static function ($persona): string {
+                if (!$persona) return 'SIN DATOS';
+                $nombre = trim((string) ($persona->nombre_completo ?? ''));
+                if ($nombre !== '') return $nombre;
+                $nombre = trim(implode(' ', array_filter([
+                    $persona->nombres ?? null,
+                    $persona->apellido_paterno ?? null,
+                    $persona->apellido_materno ?? null,
+                ], fn($valor) => filled($valor))));
+                return $nombre !== '' ? $nombre : 'SIN DATOS';
+            };
+
+            $fechaVenta = $encomienda->venta?->created_at;
+
+            return [
+                'fecha' => $fechaVenta?->format('d/m/Y H:i') ?? '-',
+                'codigo' => (string) ($encomienda->codigo ?? $encomienda->id),
+                'emisor' => $nombreCompleto($emisor),
+                'dni_emisor' => (string) ($emisor?->documento ?? ''),
+                'receptor' => $nombreCompleto($receptor),
+                'dni_receptor' => (string) ($receptor?->documento ?? ''),
+                'origen' => (string) ($encomienda->sucursal_origen?->nombre_comercial
+                    ?? $encomienda->sucursal_origen?->nombre ?? $encomienda->origen ?? '-'),
+                'destino' => (string) ($encomienda->sucursal_destino?->nombre_comercial
+                    ?? $encomienda->sucursal_destino?->nombre ?? $encomienda->destino ?? '-'),
+                'bultos' => $encomienda->detalles->count(),
+                'peso' => (float) $encomienda->detalles->sum('peso'),
+                'total' => (float) ($encomienda->total ?? 0),
+            ];
         });
-}
 
-private function obtenerDatosHistorialPasajero(Request $request): array
-{
-    $filtros = \Illuminate\Support\Facades\Validator::make([
-        'dni' => $request->input('dni'),
-        'period' => $request->input('period') ?? $request->input('periodo') ?? 'month',
-        'date_from' => $request->input('date_from') ?? $request->input('desde'),
-        'date_to' => $request->input('date_to') ?? $request->input('hasta'),
-    ], [
-        'dni' => ['bail', 'nullable', 'string', 'regex:/^[0-9]{8}$/'],
-        'period' => ['required', 'in:today,week,month,year,custom'],
-        'date_from' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
-        'date_to' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
-    ], [
-        'dni.regex' => 'El DNI debe contener exactamente 8 dígitos.',
-        'date_from.required_if' => 'Selecciona la fecha inicial.',
-        'date_to.required_if' => 'Selecciona la fecha final.',
-    ])->validate();
-
-    // Comprueba también las fechas recibidas, antes de resolver el período.
-    if (!empty($filtros['date_from']) && !empty($filtros['date_to'])
-        && $filtros['date_from'] > $filtros['date_to']) {
-        throw \Illuminate\Validation\ValidationException::withMessages([
-            'date_to' => 'La fecha final debe ser igual o posterior a la inicial.',
-        ]);
+        return [
+            'filas' => $filas,
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'dni' => $dni,
+            'tipoPersona' => $tipoPersona,
+            'cantidadEncomiendas' => $filas->count(),
+            'totalImporte' => $filas->sum('total'),
+            'totalPeso' => $filas->sum('peso'),
+        ];
     }
 
-    $dni = filled($filtros['dni'] ?? null) ? $filtros['dni'] : null;
-    [$desde, $hasta] = $this->obtenerFechas($request);
+    public function historialEncomiendasPdf(Request $request)
+    {
+        $data = $this->obtenerDatosHistorialEncomiendas($request);
+        $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
 
-    if ($hasta->lt($desde)) {
-        throw \Illuminate\Validation\ValidationException::withMessages([
-            'date_to' => 'La fecha final debe ser igual o posterior a la inicial.',
-        ]);
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.encomiendas.historial', $data)
+            ->setPaper('a4', 'landscape')
+            ->download('venta_encomiendas_' . $alcance . '_'
+                . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.pdf');
     }
 
-    $filas = $this->queryHistorialPasajero($desde, $hasta, $dni)
-        ->orderBy('salida_id')
-        ->orderBy('asiento_numero')
-        ->orderBy('id')
-        ->get()
-        ->map(function ($pasaje) {
+    public function historialEncomiendasExcel(Request $request)
+    {
+        $data = $this->obtenerDatosHistorialEncomiendas($request);
+        $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
+
+        return Excel::download(
+            new VentaEncomiendasExport($data['filas']),
+            'venta_encomiendas_' . $alcance . '_'
+                . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.xlsx'
+        );
+    }
+
+    /**
+     * Historial de SOBREEQUIPAJES asociados a PASAJES.
+     * La búsqueda por DNI se aplica a la persona del pasaje.
+     * La fecha usada para filtrar es la venta del sobreequipaje.
+     * Requiere la relación Pasaje::sobreEquipajes() presente en tu controlador.
+     */
+    private function obtenerDatosHistorialSobreequipaje(Request $request): array
+    {
+        $filtros = $request->validate([
+            'dni' => ['nullable', 'string', 'regex:/^[0-9]{8}$/'],
+            'period' => ['nullable', 'in:today,week,month,year,custom'],
+            'date_from' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
+            'date_to' => ['required_if:period,custom', 'nullable', 'date_format:Y-m-d'],
+        ], [
+            'dni.regex' => 'El DNI debe tener exactamente 8 dígitos.',
+            'date_from.required_if' => 'Selecciona la fecha inicial.',
+            'date_to.required_if' => 'Selecciona la fecha final.',
+        ]);
+
+        [$desde, $hasta] = $this->obtenerFechas($request);
+        if ($hasta->lt($desde)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'date_to' => 'La fecha final debe ser igual o posterior a la inicial.',
+            ]);
+        }
+
+        $dni = filled($filtros['dni'] ?? null) ? $filtros['dni'] : null;
+
+
+        $equipajesDelPeriodo = function ($q) use ($desde, $hasta) {
+            $q->whereHas('encomienda', function ($encomienda) use ($desde, $hasta) {
+                $encomienda
+                    ->where('sobre_equipaje', true)
+                    ->whereHas('venta', function ($venta) use ($desde, $hasta) {
+                        $venta->whereBetween('created_at', [$desde, $hasta]);
+                    });
+            });
+        };
+
+        $pasajes = Pasaje::query()
+            ->with([
+                'persona',
+                'salida.horario.ruta',
+                'origen',
+                'destino',
+                'sobreEquipajes' => function ($q) use ($equipajesDelPeriodo) {
+                    $equipajesDelPeriodo($q);
+                    $q->with(['encomienda.venta', 'encomienda.detalles']);
+                },
+            ])
+            ->whereHas('sobreEquipajes', $equipajesDelPeriodo)
+            ->when($dni !== null, fn($q) => $q->whereHas(
+                'persona',
+                fn($persona) => $persona->where('documento', $dni)
+            ))
+            ->orderBy('id')
+            ->get();
+
+        $filas = collect();
+        $idsProcesados = [];
+
+        foreach ($pasajes as $pasaje) {
             $persona = $pasaje->persona;
-            $nombre = trim($persona?->nombre_completo ?? '');
-
+            $nombre = trim((string) ($persona?->nombre_completo ?? ''));
             if ($nombre === '') {
                 $nombre = trim(implode(' ', array_filter([
                     $persona?->nombres,
                     $persona?->apellido_paterno,
                     $persona?->apellido_materno,
-                ], fn ($valor) => $valor !== null && $valor !== '')));
+                ], fn($parte) => filled($parte))));
             }
 
-            $comprobante = collect([$pasaje->venta?->serie, $pasaje->venta?->numero])
-                ->filter(fn ($valor) => $valor !== null && $valor !== '')
-                ->map(fn ($valor) => $this->textoReportePasajes($valor))
-                ->implode('-');
+            foreach ($pasaje->sobreEquipajes as $sb) {
+                if (isset($idsProcesados[$sb->id])) continue;
+                $idsProcesados[$sb->id] = true;
 
-            return [
-                'fecha' => $pasaje->venta?->created_at?->format('d/m/Y H:i') ?? '-',
-                'comprobante' => $comprobante ?: '-',
-                'pasajero' => $nombre ?: 'SIN PASAJERO',
-                'documento' => $this->textoReportePasajes($persona?->documento) ?: '-',
-                'ruta' => $this->textoReportePasajes($pasaje->salida?->horario?->ruta?->nombre) ?: '-',
-                'origen' => $this->textoReportePasajes($pasaje->origen?->descripcion
-                    ?? $pasaje->origen?->nombre) ?: '-',
-                'destino' => $this->textoReportePasajes($pasaje->destino?->descripcion
-                    ?? $pasaje->destino?->nombre) ?: '-',
-                'asiento' => $this->textoReportePasajes($pasaje->asiento_numero),
-                'vendedor' => $this->textoReportePasajes($pasaje->usuario?->persona?->nombre_completo
-                    ?? $pasaje->usuario?->name) ?: 'SIN USUARIO',
-                'estado' => $this->textoReportePasajes($pasaje->estado),
-                'precio' => (float) ($pasaje->precio_cobrado ?? $pasaje->precio_pasaje ?? 0),
-            ];
-        });
+                $encomienda = $sb->encomienda;
 
-    return [
-        'filas' => $filas,
-        'desde' => $desde,
-        'hasta' => $hasta,
-        'dni' => $dni,
-        'cantidadPasajes' => $filas->count(),
-        // Conserva la suma de todos los importes que mostraba tu PDF original.
-        'totalImporte' => $filas->sum('precio'),
-    ];
-}
+                if (!$encomienda) {
+                    continue;
+                }
 
-private function textoReportePasajes(mixed $valor): string
-{
-    return match (true) {
-        $valor instanceof \BackedEnum => (string) $valor->value,
-        $valor instanceof \UnitEnum => $valor->name,
-        default => (string) ($valor ?? ''),
-    };
-}
+                $fecha = $encomienda->venta?->created_at
+                    ?? $encomienda->fecha_creacion;
 
-public function historialPasajeroPdf(Request $request)
-{
-    $data = $this->obtenerDatosHistorialPasajero($request);
-    $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
+                $filas->push([
+                    'fecha' => $fecha?->format('d/m/Y H:i') ?? '-',
+                    'codigo' => (string) ($sb->codigo ?? $sb->id),
+                    'pasajero' => $nombre ?: 'SIN PASAJERO',
+                    'dni' => (string) ($persona?->documento ?? ''),
+                    'ruta' => (string) ($pasaje->salida?->horario?->ruta?->nombre ?? '-'),
+                    'origen' => (string) ($pasaje->origen?->descripcion ?? $pasaje->origen?->nombre ?? '-'),
+                    'destino' => (string) ($pasaje->destino?->descripcion ?? $pasaje->destino?->nombre ?? '-'),
+                    'bultos' => $sb->encomienda->detalles->count(),
+                    'peso' => (float) $sb->encomienda->detalles->sum('peso'),
+                    'total' => (float) ($sb->total ?? 0),
+                ]);
+            }
+        }
 
-    return \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.pasajeros.historial', $data)
-        ->setPaper('a4', 'landscape')
-        ->download('venta_pasajes_' . $alcance . '_'
-            . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.pdf');
-}
+        return [
+            'filas' => $filas,
+            'dni' => $dni,
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'cantidadSobreequipajes' => $filas->count(),
+            'totalPeso' => $filas->sum('peso'),
+            'totalImporte' => $filas->sum('total'),
+        ];
+    }
 
-public function historialPasajeroExcel(Request $request)
-{
-    $data = $this->obtenerDatosHistorialPasajero($request);
-    $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
+    public function historialSobreequipajePdf(Request $request)
+    {
+        $data = $this->obtenerDatosHistorialSobreequipaje($request);
+        $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
 
-    return \Maatwebsite\Excel\Facades\Excel::download(
-        new \App\Exports\VentaPasajesExport($data),
-        'venta_pasajes_' . $alcance . '_'
-            . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.xlsx'
-    );
-}
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('reportes.sobreequipaje.historial', $data)
+            ->setPaper('a4', 'landscape')
+            ->download('venta_sobreequipaje_' . $alcance . '_'
+                . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.pdf');
+    }
 
+    public function historialSobreequipajeExcel(Request $request)
+    {
+        $data = $this->obtenerDatosHistorialSobreequipaje($request);
+        $alcance = $data['dni'] !== null ? 'dni_' . $data['dni'] : 'todos';
 
-
+        return Excel::download(
+            new VentaSobreequipajeExport($data['filas']),
+            'venta_sobreequipaje_' . $alcance . '_'
+                . $data['desde']->format('Ymd') . '_' . $data['hasta']->format('Ymd') . '.xlsx'
+        );
+    }
 }
