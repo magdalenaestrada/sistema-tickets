@@ -153,7 +153,8 @@ $(function () {
         let totalPagar = 0;
 
         selectedSeatNumbers.forEach((num, i) => {
-            const precioFinal = parseFloat(seatPrices[num]) || 0;
+            const precioFinal =
+                Math.round((parseFloat(seatPrices[num]) || 0) * 100) / 100;
             const descuento = parseFloat(descuentosAplicados[num]?.monto || 0);
 
             let totalSobre = 0;
@@ -486,8 +487,8 @@ $(function () {
     }
 
     $("#emitir_sunat").on("change", function () {
-    actualizarEstadoSunat();
-});
+        actualizarEstadoSunat();
+    });
 
     $("#caja_id").on("change", function () {
         const tipoActual = $("#tipo_doc_sunat").val();
@@ -647,6 +648,8 @@ $(function () {
         descuentosAplicados[asiento] = {
             descuento_id: null,
             codigo: null,
+            tipo: null,
+            valor: 0,
             monto: 0,
         };
 
@@ -726,9 +729,10 @@ $(function () {
         input.prop("disabled", true);
 
         try {
-            const res = await $.getJSON(
-                route("descuentos.buscar") + `?codigo=${codigo}`,
-            );
+            const res = await $.getJSON(route("descuentos.buscar"), {
+                codigo: codigo,
+                documento: dni,
+            });
 
             console.log(res);
 
@@ -820,6 +824,10 @@ $(function () {
 
         return valido;
     }
+
+    $(document).on("input", ".documento-input", function () {
+        limpiarCupones($(this).data("index"));
+    });
 
     function construirPayload(accion) {
         const form = document.getElementById("formVenta");
@@ -1320,6 +1328,11 @@ $(function () {
         );
 
         $(`#tablaSobreEquipaje_${index} tbody`).append(fila);
+        if (typeof lucide !== "undefined") {
+            lucide.createIcons({
+                nodes: fila.find("[data-lucide]").toArray(),
+            });
+        }
     }
 
     function validarSobreEquipaje() {
