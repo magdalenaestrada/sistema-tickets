@@ -427,21 +427,24 @@ class FacturacionController extends Controller
             return ['requiere_nc' => false, 'metodo' => 'Anulación interna (sin efecto en SUNAT)'];
         }
 
-        // Caso 2: Boleta/Factura ya emitida -> aplica el mismo criterio de plazos
-        $puedeAnularConResumen = $codigoOrigen === '01'
-            ? Carbon::parse($ventaOrigen->fecha_emision)->diffInDays(now()) <= 2
-            : Carbon::parse($ventaOrigen->fecha_emision)->diffInDays(now()) <= 7;
+        $empresa = Empresa::first();
 
-        if ($puedeAnularConResumen) {
-            $result = app(VentaService::class)->anularVentaDirecta($ventaOrigen);
+        if ($empresa->modo === 'produccion') {
+            // Caso 2: Boleta/Factura ya emitida -> aplica el mismo criterio de plazos
+            $puedeAnularConResumen = $codigoOrigen === '01'
+                ? Carbon::parse($ventaOrigen->fecha_emision)->diffInDays(now()) <= 2
+                : Carbon::parse($ventaOrigen->fecha_emision)->diffInDays(now()) <= 7;
 
-            if (!($result['success'] ?? false)) {
-                throw new Exception('No se pudo anular el comprobante origen (resumen diario).');
+            if ($puedeAnularConResumen) {
+                $result = app(VentaService::class)->anularVentaDirecta($ventaOrigen);
+
+                if (!($result['success'] ?? false)) {
+                    throw new Exception('No se pudo anular el comprobante origen (resumen diario).');
+                }
+
+                return ['requiere_nc' => false, 'metodo' => 'Anulación directa'];
             }
-
-            return ['requiere_nc' => false, 'metodo' => 'Anulación directa'];
         }
-
         // Caso 3: Fuera de plazo -> requiere Nota de Crédito
         $tipoNCId = str_starts_with($ventaOrigen->serie, 'B') ? 4 : 7;
         $tipoNC = TipoDocumentoFactura::findOrFail($tipoNCId);
@@ -454,7 +457,6 @@ class FacturacionController extends Controller
         if (!$comprobanteNC['serie'] || !$comprobanteNC['numero']) {
             throw new Exception('No se pudo obtener la serie para la nota de crédito.');
         }
-
         $nc = new Venta();
         $nc->tipo_documento_factura_id = $tipoNC->id;
         $nc->sucursal_id = $ventaOrigen->sucursal_id;

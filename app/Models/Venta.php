@@ -36,7 +36,8 @@ class Venta extends Model
         'fecha_emision',
         'fecha_anulacion',
         'caja_id',
-        'venta_referencia_id'
+        'venta_referencia_id',
+        'tipo_documento_referencia'
     ];
 
     protected $casts = [
