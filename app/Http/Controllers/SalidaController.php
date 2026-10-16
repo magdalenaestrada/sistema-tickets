@@ -9,6 +9,7 @@ use App\Models\Ruta;
 use App\Models\Salida;
 use App\Models\TipoVehiculo;
 use App\Models\Vehiculo;
+use App\Services\LicenciaConductorService;
 use App\Services\PdfService;
 use Carbon\Carbon;
 use Exception;
@@ -215,7 +216,14 @@ class SalidaController extends Controller
 
                     $puedeIniciar = $origenSucursalId
                         && (int) $origenSucursalId === (int) $sucursalId;
-
+                    $$botones .= '
+                        <button type="button"
+    class="btn btn-sm btn-outline-primary ver-detalle"
+    data-id="{{ $salida->id }}"
+    title="Ver detalle">
+    <i data-lucide="eye"></i>
+</button>
+            ';
                     if ($puedeIniciar) {
                         $botones .= '
             <button class="btn btn-success iniciar-ruta"
@@ -337,50 +345,43 @@ class SalidaController extends Controller
         );
     }
 
-    public function recursosDisponibles(Salida $salida)
-    {
-        $tipoVehiculoId = $salida->horario->tipo_vehiculo_id;
 
-        $vehiculosOcupados = Salida::where('id', '!=', $salida->id)
-            ->whereNotIn('estado', ['finalizado', 'cancelado'])
-            ->whereNotNull('vehiculo_id')
-            ->pluck('vehiculo_id');
+    public function recursosDisponibles(
+        Salida $salida,
+        LicenciaConductorService $licenciaService
+    ) {
+        $salida->load('horario.tipo_vehiculo');
 
+        $tipoVehiculo = $salida->horario?->tipo_vehiculo;
+
+        if (!$tipoVehiculo) {
+            return response()->json([
+                'vehiculos' => [],
+                'conductores' => [],
+                'message' => 'El horario no tiene un tipo de vehículo asignado.',
+            ], 422);
+        }
+
+        $tipoVehiculoId = $tipoVehiculo->id;
+        $licenciasPermitidas = $licenciaService
+            ->obtenerCompatibles($tipoVehiculo);
         $vehiculos = Vehiculo::with('tipo_vehiculo')
             ->where('tipo_vehiculo_id', $tipoVehiculoId)
-            // ->where(function ($q) use ($vehiculosOcupados, $salida) {
-            //     $q->whereNotIn('id', $vehiculosOcupados)
-            //         ->orWhere('id', $salida->vehiculo_id);
-            // })
+            ->where('estado', "A")
             ->get();
-
-        $ocupadosPrincipal = Salida::where('id', '!=', $salida->id)
-            ->whereNotIn('estado', ['finalizado', 'cancelado'])
-            ->whereNotNull('conductor_principal_id')
-            ->pluck('conductor_principal_id');
-
-        $ocupadosSecundario = Salida::where('id', '!=', $salida->id)
-            ->whereNotIn('estado', ['finalizado', 'cancelado'])
-            ->whereNotNull('conductor_secundario_id')
-            ->pluck('conductor_secundario_id');
-
-        $conductoresOcupados = $ocupadosPrincipal->merge($ocupadosSecundario)->unique();
-
-        $permitidosDeEstaSalida = collect([
-            $salida->conductor_principal_id,
-            $salida->conductor_secundario_id,
-        ])->filter();
-
-        $conductores = Empleado::with('persona')
-            ->where("cargo_id", 3)
-            // ->where(function ($q) use ($conductoresOcupados, $permitidosDeEstaSalida) {
-            //     $q->whereNotIn('id', $conductoresOcupados)
-            //         ->orWhereIn('id', $permitidosDeEstaSalida);
-            // })
+        $conductores = Empleado::with(['persona', 'tipoLicencia'])
+            ->where('cargo_id', 3)
+            ->whereHas('tipoLicencia', function ($query) use ($licenciasPermitidas) {
+                $query->whereIn('codigo', $licenciasPermitidas);
+            })
+            ->where(function ($query) {
+                $query->whereNull('fecha_vencimiento_licencia')
+                    ->orWhereDate('fecha_vencimiento_licencia', '>=', today());
+            })
             ->get();
 
         return response()->json([
-            'vehiculos'   => $vehiculos,
+            'vehiculos' => $vehiculos,
             'conductores' => $conductores,
         ]);
     }
@@ -568,21 +569,21 @@ class SalidaController extends Controller
         );
     }
 
-   public function salidasVigentes(Request $request)
-{
-    $hoy = Carbon::now('America/Lima')->toDateString();
+    public function salidasVigentes(Request $request)
+    {
+        $hoy = Carbon::now('America/Lima')->toDateString();
 
-    $grupos = Salida::query()
-        ->join('horarios', 'salidas.horario_id', '=', 'horarios.id')
-        ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
-        ->where(function ($query) use ($hoy) {
-            $query->where(function ($q) use ($hoy) {
-                $q->whereDate('salidas.fecha_salida', '>=', $hoy)
-                    ->whereIn('salidas.estado', ['programado', 'reprogramado']);
-            })->orWhere('salidas.estado', 'en_ruta');
-        })
-        ->when($request->filled('ruta_id'), fn($q) => $q->where('rutas.id', $request->ruta_id))
-        ->selectRaw('
+        $grupos = Salida::query()
+            ->join('horarios', 'salidas.horario_id', '=', 'horarios.id')
+            ->join('rutas', 'horarios.ruta_id', '=', 'rutas.id')
+            ->where(function ($query) use ($hoy) {
+                $query->where(function ($q) use ($hoy) {
+                    $q->whereDate('salidas.fecha_salida', '>=', $hoy)
+                        ->whereIn('salidas.estado', ['programado', 'reprogramado']);
+                })->orWhere('salidas.estado', 'en_ruta');
+            })
+            ->when($request->filled('ruta_id'), fn($q) => $q->where('rutas.id', $request->ruta_id))
+            ->selectRaw('
             rutas.id AS ruta_id,
             rutas.nombre AS ruta,
             horarios.hora_salida AS hora_raw,
@@ -591,36 +592,36 @@ class SalidaController extends Controller
             COUNT(DISTINCT salidas.id) AS total_salidas,
             MAX(salidas.fecha_salida) AS ultima_fecha
         ')
-        ->groupBy('rutas.id', 'rutas.nombre', 'horarios.hora_salida', 'horarios.tipo_vehiculo_id')
-        ->orderBy('rutas.nombre')
-        ->orderBy('horarios.hora_salida')
-        ->get();
+            ->groupBy('rutas.id', 'rutas.nombre', 'horarios.hora_salida', 'horarios.tipo_vehiculo_id')
+            ->orderBy('rutas.nombre')
+            ->orderBy('horarios.hora_salida')
+            ->get();
 
-    $horarios = Horario::with(['ruta.tramos', 'tipo_vehiculo'])
-        ->whereIn('id', $grupos->pluck('horario_id'))
-        ->get()
-        ->keyBy('id');
+        $horarios = Horario::with(['ruta.tramos', 'tipo_vehiculo'])
+            ->whereIn('id', $grupos->pluck('horario_id'))
+            ->get()
+            ->keyBy('id');
 
-    $data = $grupos->map(function ($g) use ($horarios) {
-        $h = $horarios->get($g->horario_id);
-        $min = (int) ($h?->ruta?->tramos->sum('duracion_minutos') ?? 0);
+        $data = $grupos->map(function ($g) use ($horarios) {
+            $h = $horarios->get($g->horario_id);
+            $min = (int) ($h?->ruta?->tramos->sum('duracion_minutos') ?? 0);
 
-        return [
-            'ruta_id'       => $g->ruta_id,
-            'ruta'          => $g->ruta,
-            'hora'          => Carbon::createFromFormat('H:i:s', $g->hora_raw)->format('h:i A'),
-            'duracion'      => $min ? intdiv($min, 60) . ' h ' . str_pad($min % 60, 2, '0', STR_PAD_LEFT) . ' min' : '-',
-            'vehiculo'      => $h?->tipo_vehiculo?->descripcion ?? '-',
-            'total_salidas' => (int) $g->total_salidas,
-            'ultima_fecha'  => Carbon::parse($g->ultima_fecha)->toDateString(),
-        ];
-    })->values();
+            return [
+                'ruta_id'       => $g->ruta_id,
+                'ruta'          => $g->ruta,
+                'hora'          => Carbon::createFromFormat('H:i:s', $g->hora_raw)->format('h:i A'),
+                'duracion'      => $min ? intdiv($min, 60) . ' h ' . str_pad($min % 60, 2, '0', STR_PAD_LEFT) . ' min' : '-',
+                'vehiculo'      => $h?->tipo_vehiculo?->descripcion ?? '-',
+                'total_salidas' => (int) $g->total_salidas,
+                'ultima_fecha'  => Carbon::parse($g->ultima_fecha)->toDateString(),
+            ];
+        })->values();
 
-    return response()->json([
-        'data'        => $data,
-        'total_rutas' => $data->pluck('ruta_id')->unique()->count(),
-    ]);
-}
+        return response()->json([
+            'data'        => $data,
+            'total_rutas' => $data->pluck('ruta_id')->unique()->count(),
+        ]);
+    }
 
     public function manifiestoBodega(Salida $salida, PdfService $pdfService)
     {

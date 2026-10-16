@@ -507,21 +507,21 @@ $(".rango-rapido").on("click", function () {
 });
 
 let salidaSeleccionadaId = null;
+$(document).on("click", ".ver-detalle", function (e) {
+    e.preventDefault();
 
-$(document).on("click", "#tablaSalidas tbody tr", function (e) {
-    // si el clic fue en un botón, checkbox o link, no abrir el detalle
-    if ($(e.target).closest("button, a, input, label, .acciones-wrap").length)
-        return;
+    const id = $(this).data("id");
 
-    const data = tablaSalidas.row(this).data();
-    if (!data?.id) return;
+    if (!id) return;
 
-    salidaSeleccionadaId = data.id;
+    salidaSeleccionadaId = id;
+
     $("#tablaSalidas tbody tr").removeClass("fila-activa");
-    $(this).addClass("fila-activa");
-    verSalida(data.id);
-});
 
+    $(this).closest("tr").addClass("fila-activa");
+
+    verSalida(id);
+});
 $(document).on("click", ".editar", function () {
     editarSalida($(this).data("id"));
 });
@@ -1143,7 +1143,7 @@ function cargarRecursosDisponibles(salida) {
             );
 
             const labelConductor = (c) =>
-                `${c.persona.nombres} ${c.persona.apellidos}`;
+                `${c.persona.nombres} ${c.persona.apellidos} - `;
 
             $("#conductor_principal_id").html(
                 opcionesDesde(res.conductores, {
