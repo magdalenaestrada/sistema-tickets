@@ -123,13 +123,47 @@ class SalidaController extends Controller
             $salidas->where('rutas.id', $request->ruta_id);
         }
 
-        if ($request->modo === 'manifiestos') {
-            $salidas->whereBetween('salidas.fecha_salida', [
-                now()->subDay()->toDateString(),
-                now()->addDay()->toDateString(),
-            ]);
-        }
+      if ($request->modo === 'manifiestos') {
 
+    $ayer = now()->subDay()->toDateString();
+    $manana = now()->addDay()->toDateString();
+    $limiteFinalizacion = now()->subHours(24)
+        ->format('Y-m-d H:i:s');
+
+    $salidas->where(function ($query) use (
+        $ayer,
+        $manana,
+        $limiteFinalizacion
+    ) {
+
+        // Estados con rango normal de fechas.
+        $query->where(function ($q) use ($ayer, $manana) {
+            $q->whereNotIn('salidas.estado', [
+                'en_ruta',
+                'finalizado'
+            ])
+            ->whereBetween('salidas.fecha_salida', [
+                $ayer,
+                $manana
+            ]);
+        })
+
+        // Las salidas EN RUTA permanecen visibles.
+        ->orWhere('salidas.estado', 'en_ruta')
+
+        // FINALIZADAS: visibles durante 24 horas.
+        ->orWhere(function ($q) use ($limiteFinalizacion) {
+            $q->where('salidas.estado', 'finalizado')
+              ->whereRaw("
+                  TIMESTAMP(
+                      salidas.fecha_cambio_estado,
+                      salidas.hora_cambio_estado
+                  ) >= ?
+              ", [$limiteFinalizacion]);
+        });
+
+    });
+} 
         return DataTables::of($salidas)
             ->order(function ($query) use ($request) {
                 if (!$request->has('order') || empty($request->input('order'))) {
@@ -1011,17 +1045,42 @@ class SalidaController extends Controller
                 }
             }
 
-            $salida->update([
-                'estado' => $request->estado,
-                'usuario_cambio_estado_id' => $user->id,
-                'vehiculo_id' => $request->vehiculo_id,
-                'conductor_principal_id' => $request->conductor_principal_id,
-                'conductor_secundario_id' => $request->conductor_secundario_id,
-                'fecha_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->fecha_cambio_estado : null,
-                'hora_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->hora_cambio_estado : null,
-                'motivo_cambio_estado' => in_array($request->estado, ['reprogramado', 'cancelado']) ? $request->motivo_cambio_estado : null,
-            ]);
+           // Detectar únicamente la transición real a FINALIZADO.
+$esFinalizacion = $salida->estado !== 'finalizado'
+    && $request->estado === 'finalizado';
 
+$fechaCambio = null;
+$horaCambio = null;
+$motivoCambio = null;
+
+if ($esFinalizacion) {
+    // Registrar la fecha y hora reales de finalización.
+    $fechaCambio = now()->toDateString();
+    $horaCambio = now()->format('H:i:s');
+
+} elseif (in_array($request->estado, ['reprogramado', 'cancelado'])) {
+    // Mantener la lógica existente de reprogramación y cancelación.
+    $fechaCambio = $request->fecha_cambio_estado;
+    $horaCambio = $request->hora_cambio_estado;
+    $motivoCambio = $request->motivo_cambio_estado;
+
+} elseif ($salida->estado === 'finalizado') {
+    // Evitar sobrescribir la finalización si se vuelve a editar.
+    $fechaCambio = $salida->fecha_cambio_estado;
+    $horaCambio = $salida->hora_cambio_estado;
+    $motivoCambio = $salida->motivo_cambio_estado;
+}
+
+$salida->update([
+    'estado' => $request->estado,
+    'usuario_cambio_estado_id' => $user->id,
+    'vehiculo_id' => $request->vehiculo_id,
+    'conductor_principal_id' => $request->conductor_principal_id,
+    'conductor_secundario_id' => $request->conductor_secundario_id,
+    'fecha_cambio_estado' => $fechaCambio,
+    'hora_cambio_estado' => $horaCambio,
+    'motivo_cambio_estado' => $motivoCambio,
+]); 
             if (in_array($request->estado, ['reprogramado', 'cancelado'])) {
                 foreach ($salida->pasajes as $pasaje) {
                     $pasaje->update([
