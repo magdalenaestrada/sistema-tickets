@@ -1143,7 +1143,7 @@ function cargarRecursosDisponibles(salida) {
             );
 
             const labelConductor = (c) =>
-                `${c.persona.nombres} ${c.persona.apellidos} - `;
+                `${c.persona.nombres} ${c.persona.apellidos} - ${c.tipoLicencia.descripcion}`;
 
             $("#conductor_principal_id").html(
                 opcionesDesde(res.conductores, {
