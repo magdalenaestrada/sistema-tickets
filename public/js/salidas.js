@@ -1142,8 +1142,13 @@ function cargarRecursosDisponibles(salida) {
                 }),
             );
 
-            const labelConductor = (c) =>
-                `${c.persona.nombres} ${c.persona.apellidos} - ${c.tipoLicencia.descripcion}`;
+            const labelConductor = (c) => {
+                const nombres = c.persona?.nombres ?? "";
+                const apellidos = c.persona?.apellidos ?? "";
+                const licencia = c.tipo_licencia?.codigo ?? "Sin licencia";
+
+                return `${nombres} ${apellidos} - ${licencia}`;
+            };
 
             $("#conductor_principal_id").html(
                 opcionesDesde(res.conductores, {
