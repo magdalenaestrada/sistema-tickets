@@ -189,58 +189,73 @@ class SalidaController extends Controller
                 };
             })
             ->addColumn('acciones', function ($salida) use ($isAdmin, $sucursalId) {
+
                 $botones = '<div class="acciones-wrap">';
 
+                $botones .= '
+        <button type="button"
+            class="btn btn-sm btn-light ver-detalle"
+            data-id="' . $salida->id . '"
+            title="Ver detalle">
+            <i data-lucide="eye"></i>
+        </button>
+    ';
 
                 if ($isAdmin) {
                     $botones .= '
-        <button class="btn btn-warning editar" data-id="' . $salida->id . '" title="Editar">
-            <i data-lucide="pen"></i>
-        </button>
-    </div>';
-                    return $botones;
+            <button type="button"
+                class="btn btn-warning editar"
+                data-id="' . $salida->id . '"
+                title="Editar">
+                <i data-lucide="pen"></i>
+            </button>
+        ';
+
+                    return $botones . '</div>';
                 }
 
                 $puntos = $salida->horario?->ruta?->puntos;
 
-                $puntosOrdenados = $puntos && $puntos->count()
+                $puntosOrdenados = $puntos && $puntos->isNotEmpty()
                     ? $puntos->sortBy('orden')->values()
-                    : null;
+                    : collect();
 
-                $puntoInicio = $puntosOrdenados?->first();
+                $puntoInicio = $puntosOrdenados->first();
+                $puntoFinal = $puntosOrdenados->last();
 
                 $origenSucursalId = $puntoInicio?->pueblito?->sucursal_id;
-                $destinoSucursalId = $puntosOrdenados?->last()?->pueblito?->sucursal_id;
+                $destinoSucursalId = $puntoFinal?->pueblito?->sucursal_id;
 
+                // INICIAR RUTA
                 if (in_array($salida->estado, ['programado', 'reprogramado'])) {
 
                     $puedeIniciar = $origenSucursalId
                         && (int) $origenSucursalId === (int) $sucursalId;
-                    $$botones .= '
-                        <button type="button"
-    class="btn btn-sm btn-outline-primary ver-detalle"
-    data-id="{{ $salida->id }}"
-    title="Ver detalle">
-    <i data-lucide="eye"></i>
-</button>
-            ';
+
                     if ($puedeIniciar) {
                         $botones .= '
-            <button class="btn btn-success iniciar-ruta"
-                data-id="' . $salida->id . '"
-                title="Iniciar ruta">
-                <i class="link-icon" data-lucide="rocket"></i>
-            </button>
-        ';
+                <button type="button"
+                    class="btn btn-success iniciar-ruta"
+                    data-id="' . $salida->id . '"
+                    title="Iniciar ruta">
+                    <i data-lucide="rocket"></i>
+                </button>
+            ';
                     }
                 }
+
                 if ($salida->estado === 'en_ruta') {
-                    $puedeFinalizar = $destinoSucursalId && (int) $destinoSucursalId === (int) $sucursalId;
+
+                    $puedeFinalizar = $destinoSucursalId
+                        && (int) $destinoSucursalId === (int) $sucursalId;
 
                     if ($puedeFinalizar) {
                         $botones .= '
-                <button class="btn btn-primary finalizar-ruta" data-id="' . $salida->id . '" title="Finalizar ruta">
-                    <i class="link-icon" data-lucide="flag"></i>
+                <button type="button"
+                    class="btn btn-primary finalizar-ruta"
+                    data-id="' . $salida->id . '"
+                    title="Finalizar ruta">
+                    <i data-lucide="flag"></i>
                 </button>
             ';
                     }
