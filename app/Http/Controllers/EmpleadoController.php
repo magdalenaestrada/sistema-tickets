@@ -183,7 +183,9 @@ class EmpleadoController extends Controller
             }
             if ($request->empleado_id) {
 
-                $userExistente = User::where('persona_id', $persona->id)->first();
+                $userExistente = User::withTrashed()
+                    ->where('persona_id', $persona->id)
+                    ->first();
 
                 if ($userExistente) {
 
@@ -205,56 +207,90 @@ class EmpleadoController extends Controller
                 }
             }
 
-            $empleado = Empleado::updateOrCreate(
-                ['id' => $request->empleado_id],
-                [
-                    'persona_id' => $persona->id,
-                    'sucursal_id' => $request->sucursal_id,
-                    'cargo_id' => $request->cargo_id,
-                    'tipo_licencia_id' => $request->tipo_licencia_id,
-                    'licencia_conducir' => $request->licencia_conducir,
-                    'fecha_vencimiento_licencia' => $request->fecha_vencimiento_licencia,
-                    'fecha_ingreso' => $request->fecha_ingreso,
-                    'estado' => $request->estado ?? 'A',
-                ]
-            );
+            $empleado = $request->filled('empleado_id')
+                ? Empleado::findOrFail($request->empleado_id)
+                : Empleado::withTrashed()
+                ->where('persona_id', $persona->id)
+                ->first();
 
-            if ($request->chkUsuario) {
-                $userExistente = User::where('persona_id', $persona->id)->first();
+            if (!$empleado) {
+                $empleado = new Empleado();
+            }
+
+            if ($empleado->exists && $empleado->trashed()) {
+                $empleado->restore();
+            }
+
+            $empleado->fill([
+                'persona_id' => $persona->id,
+                'sucursal_id' => $request->sucursal_id,
+                'cargo_id' => $request->cargo_id,
+                'tipo_licencia_id' => $request->tipo_licencia_id,
+                'licencia_conducir' => $request->licencia_conducir,
+                'fecha_vencimiento_licencia' => $request->fecha_vencimiento_licencia,
+                'fecha_ingreso' => $request->fecha_ingreso,
+                'estado' => $request->estado ?? 'A',
+            ]);
+
+            $empleado->save();
+
+            if ($request->boolean('chkUsuario')) {
+
+                $userExistente = User::withTrashed()
+                    ->where('persona_id', $persona->id)
+                    ->first();
+
                 $request->validate([
                     'usuario' => [
                         'required',
-                        Rule::unique('users', 'username')->ignore($userExistente->id ?? null)
+                        'string',
+                        'max:255',
+                        Rule::unique('users', 'username')
+                            ->ignore($userExistente?->id),
                     ],
-                    'password' => 'nullable|min:6',
+                    'password' => [
+                        $userExistente ? 'nullable' : 'required',
+                        'string',
+                        'min:6',
+                    ],
                 ]);
 
                 $dataUser = [
+                    'persona_id' => $persona->id,
                     'username' => $request->usuario,
                     'numero_licencia' => $request->licencia_conducir,
                     'tipo_licencia_id' => $request->tipo_licencia_id,
                     'sucursal_id' => $request->sucursal_id,
                     'documento' => $persona->documento,
                     'estado' => $request->estado ?? 'A',
-                    'fecha_creacion' => now(),
-
                 ];
 
                 if ($request->filled('password')) {
                     $dataUser['password'] = bcrypt($request->password);
                 }
 
-                $user = User::updateOrCreate(
-                    ['persona_id' => $persona->id],
-                    $dataUser
-                );
+                if ($userExistente) {
 
-                if ($request->rol) {
-                    $rol = Role::find($request->rol);
-
-                    if ($rol) {
-                        $user->syncRoles([$rol->name]);
+                    if ($userExistente->trashed()) {
+                        $userExistente->restore();
                     }
+
+                    $userExistente->update($dataUser);
+
+                    $user = $userExistente;
+                } else {
+
+                    // CREAR USUARIO NUEVO
+                    $dataUser['fecha_creacion'] = now();
+
+                    $user = User::create($dataUser);
+                }
+
+                // ASIGNAR ROL
+                if ($request->filled('rol')) {
+                    $rol = Role::findOrFail($request->rol);
+
+                    $user->syncRoles([$rol->name]);
                 }
             }
 
@@ -295,9 +331,27 @@ class EmpleadoController extends Controller
 
     public function eliminar($id)
     {
-        $empleado = Empleado::findOrFail($id);
-        $empleado->delete();
+        DB::transaction(function () use ($id) {
 
-        return response()->json(['success' => true, 'message' => 'Empleado eliminado correctamente.']);
+            $empleado = Empleado::findOrFail($id);
+
+            $usuario = User::where('persona_id', $empleado->persona_id)
+                ->first();
+
+            if ($usuario) {
+                $usuario->update([
+                    'estado' => 'I',
+                ]);
+
+                $usuario->delete();
+            }
+
+            $empleado->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Empleado y usuario eliminados correctamente.'
+        ]);
     }
 }

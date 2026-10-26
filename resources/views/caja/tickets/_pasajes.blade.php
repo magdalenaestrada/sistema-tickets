@@ -50,15 +50,9 @@
         {{-- 1. ENCABEZADO + DATOS EMISIÓN Y CLIENTE --}}
         <div class="center">
             @if ($empresa && $empresa->logo)
-                @php
-                    $logoPath = public_path('storage/' . $empresa->logo);
-                @endphp
-
-                @if (file_exists($logoPath))
-                    <div class="logo-container">
-                        <img src="{{ $logoPath }}" alt="Logo">
-                    </div>
-                @endif
+                <div class="logo-container">
+                    <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                </div>
             @endif
 
             <div class="bold" style="font-size: 12px;">
@@ -233,8 +227,7 @@
             <div class="center" style="margin-bottom: 4px;">
                 @if ($empresa && $empresa->logo)
                     <div class="logo-container">
-                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($empresa->logo) ? asset('storage/' . $empresa->logo) : asset($empresa->logo) }}"
-                            alt="Logo">
+                        <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
                     </div>
                 @endif
                 <div class="bold" style="font-size: 11px;">
