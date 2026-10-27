@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 let puntos = [];
                 try {
                     puntos = JSON.parse(this.dataset.puntos || "[]");
-                } catch (e) {}
+                } catch (e) { }
 
                 const primero = puntos[0];
                 const ultimo = puntos[puntos.length - 1];
@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const res = await fetch(
                 route("pasajes.buscar") +
-                    `?salida_id=${salidaId}&asiento=${numeroAsiento}`,
+                `?salida_id=${salidaId}&asiento=${numeroAsiento}`,
             );
 
             const data = await res.json();
@@ -636,7 +636,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let puntos = [];
         try {
             puntos = JSON.parse(row.dataset.puntos || "[]");
-        } catch (e) {}
+        } catch (e) { }
 
         const inicio = puntos[0]; // hora real en que el bus debía arrancar
         if (!inicio?.fecha || !inicio?.hora) return false;
@@ -829,8 +829,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // 👇 FIX
             const matchOrigen = esOrigenValido(puntoOrigen);
-            const matchFecha = rowFecha === fecha;
-
+            const matchFecha = !!puntoOrigen && puntoOrigen.fecha === fecha;
             const ordenMax = puntos.length
                 ? Math.max(...puntos.map((p) => Number(p.orden)))
                 : null;
@@ -909,8 +908,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 (p) => String(p.pueblito_id) === String(destino),
             );
 
-            const matchFecha = rowFecha === fecha;
-            // 👇 FIX
+            const matchFecha = !!puntoOrigen && puntoOrigen.fecha === fecha;            // 👇 FIX
             const matchOrigen = esOrigenValido(puntoOrigen);
             const matchDestino = !!puntoDestino;
 
@@ -1018,7 +1016,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let puntos = [];
             try {
                 puntos = JSON.parse(row.dataset.puntos || "[]");
-            } catch (e) {}
+            } catch (e) { }
 
             return puntos.some((p) => p.origen_permitido !== false);
         });
@@ -1063,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let puntos = [];
         try {
             puntos = JSON.parse(row.dataset.puntos || "[]");
-        } catch (e) {}
+        } catch (e) { }
 
         const origenSel = document.getElementById("filtro_origen").value;
         const punto = origenSel

@@ -247,7 +247,7 @@ class PasajeController extends Controller
         $salidasQuery = Salida::with([
             'horario.ruta.puntos.pueblito.sucursal',
             'horario.ruta.puntos.sucursal',
-            // 'horario.ruta.tramos.origen',
+            'horario.ruta.tramos.origen',
             // 'horario.ruta.tramos.destino',
             'horario.tipo_viaje',
             'horario.tipo_vehiculo',
