@@ -75,7 +75,7 @@ class VentaService
                         $numeroDocumento,
                         $tipoDocumentoFacturaId
                     ),
-                    'nombres' => $razonSocial,
+                    'razon_social' => $razonSocial,
                     'direccion' => $direccion,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
