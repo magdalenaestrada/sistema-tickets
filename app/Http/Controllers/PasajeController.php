@@ -1774,6 +1774,8 @@ class PasajeController extends Controller
             'pasajes.origen',
             'pasajes.destino',
             'pasajes.salida',
+            'pasajes.salida.horario.ruta.puntos',
+            'pasajes.salida.horario.ruta.tramos',
             'pasajes.descuento',
             'pasajes.sobreEquipajes.encomienda.detalles',
 

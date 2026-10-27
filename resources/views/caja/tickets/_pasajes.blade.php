@@ -45,6 +45,9 @@
             $totalPasaje = $detallesPasaje->sum('total');
             $origenText = $pasaje->origen?->descripcion ?? ($salida->origen ?? '—');
             $destinoText = $pasaje->destino?->descripcion ?? ($salida->destino ?? '—');
+            $momentoEmbarque = $salida?->momentoEnPunto($pasaje->origen_pueblito_id);
+            $fechaEmbarque = ($momentoEmbarque ?? $salida?->fecha_salida)?->format('d/m/Y');
+            $horaEmbarque = $momentoEmbarque?->format('H:i') ?? ($salida?->hora_salida ?? '—');
         @endphp
 
         {{-- 1. ENCABEZADO + DATOS EMISIÓN Y CLIENTE --}}
@@ -107,8 +110,7 @@
             <div class="ruta-box">{{ $origenText }} - {{ $destinoText }}</div>
             @if ($salida)
                 <div class="fecha-hora-box">
-                    {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') }} —
-                    {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
+                    {{ $fechaEmbarque }} — {{ $horaEmbarque }}
                 </div>
             @endif
         </div>
@@ -266,15 +268,11 @@
                 @if ($salida)
                     <tr>
                         <td class="bold">F. Salida:</td>
-                        <td class="right">
-                            {{ optional($salida->fecha_salida ?? ($salida->fecha ?? null))?->format('d/m/Y') }}
-                        </td>
+                        <td class="right">{{ $fechaEmbarque }}</td>
                     </tr>
                     <tr>
                         <td class="bold">H. Salida:</td>
-                        <td class="right">
-                            {{ $salida->hora_salida ?? ($salida->hora ?? '—') }}
-                        </td>
+                        <td class="right">{{ $horaEmbarque }}</td>
                     </tr>
                 @endif
             </table>

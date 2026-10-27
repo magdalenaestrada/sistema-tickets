@@ -67,6 +67,29 @@ class Salida extends Model
     }
 
 
+    public function momentoEnPunto($pueblitoId): ?Carbon
+    {
+        $puntos = $this->puntosRuta();
+        $this->loadMissing('horario.ruta.tramos');
+        $tramos = $this->horario->ruta->tramos
+            ->keyBy(fn($t) => $t->punto_origen_id . '-' . $t->punto_destino_id);
+
+        $hora = Carbon::parse(
+            $this->fecha_salida->format('Y-m-d') . ' ' . $this->horario->getRawOriginal('hora_salida'),
+            'America/Lima'
+        );
+
+        foreach ($puntos as $i => $p) {
+            if ($i > 0 && ($t = $tramos->get($puntos[$i - 1]->id . '-' . $p->id))) {
+                $hora->addMinutes($t->duracion_minutos);
+            }
+            if ((string) $p->pueblito_id === (string) $pueblitoId) {
+                return $hora;
+            }
+        }
+        return null;
+    }
+
     public function sucursalesDePueblitos()
     {
         return $this->horario->ruta->puntos
