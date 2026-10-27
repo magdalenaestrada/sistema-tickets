@@ -105,7 +105,6 @@ class HorarioController extends Controller
     {
         $request->validate([
             'ruta_id' => 'required|exists:rutas,id',
-            'tipo_viaje_id' => 'nullable|exists:tipos_viajes,id',
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'hora_salida' => 'required',
             'costo_base' => 'nullable|numeric|min:0',
@@ -114,7 +113,7 @@ class HorarioController extends Controller
         try {
             $horario = Horario::create([
                 'ruta_id' => $request->ruta_id,
-                'tipo_viaje_id' => $request->tipo_viaje_id,
+                'tipo_viaje_id' => 2,
                 'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
                 'hora_salida' => $request->hora_salida,
                 'costo_base' => $request->costo_base,
@@ -138,7 +137,6 @@ class HorarioController extends Controller
     {
         $request->validate([
             'ruta_id' => 'required|exists:rutas,id',
-            'tipo_viaje_id' => 'nullable|exists:tipos_viajes,id',
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'hora_salida' => 'required',
             'costo_base' => 'nullable|numeric|min:0',
@@ -149,7 +147,6 @@ class HorarioController extends Controller
 
             $horario->update([
                 'ruta_id' => $request->ruta_id,
-                'tipo_viaje_id' => $request->tipo_viaje_id,
                 'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
                 'hora_salida' => $request->hora_salida,
                 'costo_base' => $request->costo_base,
