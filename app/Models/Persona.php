@@ -68,11 +68,14 @@ class Persona extends Model
 
     public function getNombreFacturacionAttribute()
     {
-        if (!empty($this->razon_social)) {
-            return $this->razon_social;
+        if (!empty(trim($this->razon_social ?? ''))) {
+            return trim($this->razon_social);
         }
 
-        return trim(($this->nombres ?? '') . ' ' . ($this->apellidos ?? ''));
+        return trim(
+            ($this->nombres ?? '') . ' ' .
+                ($this->apellidos ?? '')
+        );
     }
 
     public function cliente()

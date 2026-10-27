@@ -189,7 +189,7 @@
                                     </td>
 
                                     <td>
-                                        {{ $venta->persona?->nombre_facturacion ?? 'CLIENTE VARIOS' }}
+                                        {{ $venta->persona?->nombre_completo ?? 'CLIENTE VARIOS' }}
                                     </td>
 
                                     <td>

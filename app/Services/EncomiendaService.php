@@ -70,7 +70,7 @@ class EncomiendaService
                 ['documento' => $request->numero_documento_id],
                 [
                     'tipo_documento_id' => $tipo_documento_persona ?? 1,
-                    'nombres' => $request->razon_social ?: 'CLIENTE VARIOS',
+                    'razon_social' => $request->razon_social ?: 'CLIENTE VARIOS',
                     'direccion' => $request->direccion,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
