@@ -223,7 +223,7 @@ class VentaDocumentBuilder
 
     protected function resolverTipoDocumento(Venta $venta): string
     {
-        return $venta->tipoDocumentoFactura->codigo_sunat;
+        return $venta->tipoDocumentoFactura->codigo;
     }
 
     protected function resolverTipoDocCliente($persona): string

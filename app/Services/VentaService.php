@@ -917,7 +917,9 @@ class VentaService
         $client = (new Client())
             ->setTipoDoc($tipoDocCliente)
             ->setNumDoc($cliente->documento ?: '00000000')
-            ->setRznSocial(trim($cliente->nombres . ' ' . ($cliente->apellidos ?? '')))
+            ->setRznSocial(trim((
+                $cliente->razon_social
+                ?: trim(($cliente->nombres ?? '') . ' ' . ($cliente->apellidos ?? '')))))
             ->setAddress(
                 (new Address())->setDireccion($cliente->direccion ?? '-')
             );
@@ -1013,6 +1015,7 @@ class VentaService
 
         return $invoice;
     }
+
     private function resolverTipoDocumentoCliente(?string $numeroDocumento, ?int $tipoDocumentoFacturaId): int
     {
         $numeroDocumento = trim((string) $numeroDocumento);

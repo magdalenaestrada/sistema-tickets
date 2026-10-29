@@ -96,7 +96,11 @@ class EncomiendaService
                     'tipo_servicio_id' => $tipo_servicio,
                     'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                     'numero_documento_id' => $personaFacturacion->documento,
-                    'razon_social' => $personaFacturacion->nombres,
+                    'razon_social' => $personaFacturacion->razon_social
+                        ?: trim(implode(' ', array_filter([
+                            $personaFacturacion->nombres,
+                            $personaFacturacion->apellidos,
+                        ]))),
                     'total' => $request->total,
                     'caja_id' => $request->caja_id,
                     'detalles' => $detalles,

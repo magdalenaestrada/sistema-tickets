@@ -897,13 +897,17 @@ class PasajeController extends Controller
                 }
 
                 $totalVenta += $totalSobreEquipaje;
-
                 $ventaData = $ventaService->crearVenta(
                     new Request([
                         'tipo_servicio_id' => 1,
                         'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                         'numero_documento_id' => $personaFacturacion->documento,
-                        'razon_social' => $personaFacturacion->nombres,
+                        'direccion' => $personaFacturacion->direccion,
+                        'razon_social' => $personaFacturacion->razon_social
+                            ?: trim(implode(' ', array_filter([
+                                $personaFacturacion->nombres,
+                                $personaFacturacion->apellidos,
+                            ]))),
                         'total' => $totalVenta,
                         'caja_id' => $request->caja_id,
                         'detalles' => $detalles,
@@ -1554,7 +1558,11 @@ class PasajeController extends Controller
                             'tipo_servicio_id' => 1,
                             'tipo_documento_factura_id' => $request->tipo_doc_sunat,
                             'numero_documento_id' => $personaFacturacion->documento,
-                            'razon_social' => $personaFacturacion->nombres,
+                            'razon_social' => $personaFacturacion->razon_social
+                                ?: trim(implode(' ', array_filter([
+                                    $personaFacturacion->nombres,
+                                    $personaFacturacion->apellidos,
+                                ]))),
                             'total' => $totalVenta,
                             'caja_id' => $request->caja_id,
                             'detalles' => $detalle,
