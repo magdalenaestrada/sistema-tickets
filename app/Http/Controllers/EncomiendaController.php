@@ -892,7 +892,8 @@ class EncomiendaController extends Controller
             return response()->json([
                 'success' => true,
                 'redirect' => route('encomiendas.index-no-asignadas'),
-                'ticket_id' => $encomienda->id
+                'ticket_id' => $encomienda->id,
+                'ticket_url' => route('encomiendas.ticket', $encomienda->id),
             ]);
         } catch (\Throwable $th) {
             \Log::error($th);
@@ -1005,14 +1006,13 @@ class EncomiendaController extends Controller
                 $user_id
             );
 
-
-
             return response()->json([
                 'success' => true,
                 'redirect' => $esSobreequipaje
                     ? route('pasajes.listar')
                     : route('encomiendas.index-no-asignadas'),
-                'ticket_id' => $encomienda->id
+                'ticket_id' => $encomienda->id,
+                'ticket_url' => route('encomiendas.ticket', $encomienda->id),
             ]);
         } catch (\Throwable $th) {
             \Log::error('Error al guardar encomienda: ' . $th->getMessage());

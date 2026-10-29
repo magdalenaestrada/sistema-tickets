@@ -441,6 +441,21 @@ $(async function () {
         return true;
     }
 
+    function bloquearBotonEnvio() {
+        const $btn = $("#btnConfirmarVenta");
+        $btn.data("texto-original", $btn.html());
+        $btn.prop("disabled", true).html(
+            '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Enviando...',
+        );
+    }
+
+    function desbloquearBotonEnvio() {
+        const $btn = $("#btnConfirmarVenta");
+        const original = $btn.data("texto-original");
+        if (original) $btn.html(original);
+        $btn.prop("disabled", false);
+    }
+
     function buscarCliente() {
         let documento = $("#doc_cliente").val().trim();
         if (!documento) return;
@@ -729,8 +744,8 @@ $(async function () {
     // ===============================
 
     $("#emitir_sunat").on("change", function () {
-    actualizarEstadoSunat();
-});
+        actualizarEstadoSunat();
+    });
 
     $("#caja_id").on("change", function () {
         const tipoActual = $("#tipo_doc_sunat").val();
@@ -1118,6 +1133,7 @@ $(async function () {
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
+        if ($(this).prop("disabled")) return;
 
         if (!validarClienteFacturacion()) return;
 
@@ -1292,6 +1308,8 @@ $(async function () {
             pagos: pagos,
         };
 
+        bloquearBotonEnvio();
+
         $.ajax({
             url: url,
             method: method,
@@ -1302,19 +1320,9 @@ $(async function () {
                     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                     modal.hide();
 
-                    Swal.fire({
-                        icon: "success",
-                        title: encomiendaId
-                            ? "Actualizada con éxito"
-                            : "Creada con éxito",
-                        timer: 1200,
-                        showConfirmButton: false,
-                    });
-
-                    setTimeout(() => {
-                        window.location.href = res.redirect;
-                    }, 1200);
+                    imprimirTicketYRedirigir(res.ticket_url, res.redirect);
                 } else {
+                    desbloquearBotonEnvio();
                     Swal.fire(
                         "Error",
                         res.message || "Ocurrió un error",
@@ -1344,4 +1352,43 @@ $(async function () {
         // Abrir aquí el modal de métodos de pago
         $("#modalMetodoPago").modal("show");
     });
+
+    function imprimirTicketYRedirigir(ticketUrl, redirectUrl) {
+        // Si no hay ticket, solo redirige
+        if (!ticketUrl) {
+            window.location.href = redirectUrl;
+            return;
+        }
+
+        let redirigido = false;
+        const redirigir = () => {
+            if (redirigido) return;
+            redirigido = true;
+            window.location.href = redirectUrl;
+        };
+
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.src = ticketUrl;
+
+        iframe.onload = function () {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.addEventListener("afterprint", redirigir);
+                iframe.contentWindow.print();
+
+                setTimeout(redirigir, 300);
+            } catch (e) {
+                console.error("Error al intentar imprimir:", e);
+                redirigir();
+            }
+        };
+
+        document.body.appendChild(iframe);
+    }
 });
