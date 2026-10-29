@@ -481,10 +481,9 @@ $(function () {
         }
     }
 
-    $("#emitir_sunat").on("change", function () {
-        $("#emitir_sunat").prop("checked", false).prop("disabled", true);
-        actualizarEstadoSunat();
-    });
+   $("#emitir_sunat").on("change", function () {
+    actualizarEstadoSunat();
+});
 
     $("#caja_id").on("change", function () {
         const tipoActual = $("#tipo_doc_sunat").val();
