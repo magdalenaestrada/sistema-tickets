@@ -441,6 +441,21 @@ $(async function () {
         return true;
     }
 
+    function bloquearBotonEnvio() {
+    const $btn = $("#btnConfirmarVenta");
+    $btn.data("texto-original", $btn.html());
+    $btn.prop("disabled", true).html(
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Enviando...',
+    );
+}
+
+function desbloquearBotonEnvio() {
+    const $btn = $("#btnConfirmarVenta");
+    const original = $btn.data("texto-original");
+    if (original) $btn.html(original);
+    $btn.prop("disabled", false);
+}
+
     function buscarCliente() {
         let documento = $("#doc_cliente").val().trim();
         if (!documento) return;
@@ -1118,6 +1133,7 @@ $(async function () {
 
     $("#btnConfirmarVenta").on("click", function (e) {
         e.preventDefault();
+    if ($(this).prop("disabled")) return;
 
         if (!validarClienteFacturacion()) return;
 
@@ -1291,6 +1307,8 @@ $(async function () {
             tipo_servicio_id: 2,
             pagos: pagos,
         };
+
+        bloquearBotonEnvio();
 
         $.ajax({
             url: url,
