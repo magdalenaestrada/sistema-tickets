@@ -84,28 +84,28 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-
     document.addEventListener("click", function (e) {
-    const boton = e.target.closest(".btn-editar-pasaje, .btn-sobreequipaje");
+        const boton = e.target.closest(
+            ".btn-editar-pasaje, .btn-sobreequipaje",
+        );
 
-    if (!boton) return;
+        if (!boton) return;
 
-    if (!window.VENTA_CONFIG.esAdmin && !window.VENTA_CONFIG.cajaAbierta) {
-        e.preventDefault();
+        if (!window.VENTA_CONFIG.esAdmin && !window.VENTA_CONFIG.cajaAbierta) {
+            e.preventDefault();
 
-        Swal.fire({
-            icon: "warning",
-            title: "Caja cerrada",
-            text: "Debe abrir una caja antes de realizar esta operación.",
-            confirmButtonText: "Ir a abrir caja",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = window.VENTA_CONFIG.rutaCaja;
-            }
-        });
-    }
-});
-
+            Swal.fire({
+                icon: "warning",
+                title: "Caja cerrada",
+                text: "Debe abrir una caja antes de realizar esta operación.",
+                confirmButtonText: "Ir a abrir caja",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = window.VENTA_CONFIG.rutaCaja;
+                }
+            });
+        }
+    });
 
     function cargarResultados(url = null) {
         const dni = (document.getElementById("filtroDNI")?.value || "").trim();
@@ -221,35 +221,78 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!boton) return;
 
         const url = boton.dataset.url;
+        const requiereObservacion =
+            boton.dataset.requiere - observacion === "1";
 
-        const result = await Swal.fire({
-            title: "¿Está seguro?",
-            text: "Esta acción anulará la reserva y liberará el asiento.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sí, anular",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#d33",
-            reverseButtons: true,
-        });
+        let observacion = null;
 
-        if (!result.isConfirmed) {
-            return;
+        if (requiereObservacion) {
+            const result = await Swal.fire({
+                title: "Anular reserva",
+                text: "Indique el motivo de la anulación de la reserva.",
+                icon: "warning",
+                input: "textarea",
+                inputLabel: "Observaciones",
+                inputPlaceholder: "Escriba el motivo de la anulación...",
+                inputAttributes: {
+                    maxlength: 500,
+                    "aria-label": "Motivo de anulación",
+                },
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return "Debe ingresar el motivo de la anulación.";
+                    }
+                },
+                showCancelButton: true,
+                confirmButtonText: "Sí, anular",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#d33",
+                reverseButtons: true,
+            });
+
+            if (!result.isConfirmed) return;
+
+            observacion = result.value.trim();
+        } else {
+            const result = await Swal.fire({
+                title: "¿Está seguro?",
+                text: "Esta acción anulará la reserva y liberará el asiento.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, anular",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#d33",
+                reverseButtons: true,
+            });
+
+            if (!result.isConfirmed) return;
         }
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": document.querySelector(
-                    'meta[name="csrf-token"]',
-                ).content,
-                Accept: "application/json",
-            },
-        });
+        try {
+            boton.disabled = true;
 
-        const data = await response.json();
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]',
+                    ).content,
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({
+                    observacion: observacion,
+                }),
+            });
 
-        if (data.success) {
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message ?? "No se pudo anular la reserva.",
+                );
+            }
+
             await Swal.fire({
                 icon: "success",
                 title: "Reserva anulada",
@@ -257,12 +300,14 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             location.reload();
-        } else {
+        } catch (error) {
             Swal.fire({
                 icon: "error",
                 title: "Error",
-                text: data.message ?? "No se pudo anular la reserva.",
+                text: error.message,
             });
+
+            boton.disabled = false;
         }
     });
 

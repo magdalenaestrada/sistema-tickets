@@ -56,6 +56,22 @@ class Salida extends Model
         return $this->horario?->hora_llegada;
     }
 
+    public function getSupero24HorasAttribute(): bool
+    {
+        $hora = $this->horario?->getRawOriginal('hora_salida');
+
+        if (!$this->fecha_salida || !$hora) {
+            return true;
+        }
+
+        $fechaHoraSalida = Carbon::parse(
+            $this->fecha_salida->format('Y-m-d') . ' ' . $hora,
+            'America/Lima'
+        );
+
+        return $fechaHoraSalida->copy()->addDay()->isPast();
+    }
+
     private function puntosRuta(array $con = [])
     {
         $this->loadMissing(array_merge(

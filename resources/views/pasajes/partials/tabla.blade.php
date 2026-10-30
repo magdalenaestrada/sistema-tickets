@@ -86,8 +86,9 @@
                                     <i data-lucide="receipt"></i>
                                 </a>
 
-                                <button class="btn btn-xs btn-danger btn-anular-reserva"
-                                    data-url="{{ route('pasajes.anular_reserva', $pasaje->id) }}">
+                                <button type="button" class="btn btn-xs btn-danger btn-anular-reserva"
+                                    data-url="{{ route('pasajes.anular_reserva', $pasaje->id) }}"
+                                    data-requiere-observacion="{{ $requiereObservacion ? 1 : 0 }}">
                                     <i data-lucide="x"></i>
                                 </button>
                             @endif
@@ -97,7 +98,7 @@
                                     <i data-lucide="baggage-claim"></i>
                                 </button>
                             @endif
-                            @if ($pasaje->venta_id)
+                            @if ($pasaje->venta_id && !$pasaje->salida?->supero_24_horas)
                                 <a href="{{ route('encomiendas.sobreequipaje.formulario', $pasaje->id) }}"
                                     class="btn btn-warning btn-xs btn-sobreequipaje" title="Agregar sobre equipaje">
                                     <i data-lucide="plus"></i>

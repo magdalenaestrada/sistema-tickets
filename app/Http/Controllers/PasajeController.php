@@ -1671,8 +1671,12 @@ class PasajeController extends Controller
         }
     }
 
-    public function anularReserva(Pasaje $pasaje)
+    public function anularReserva(Request $request, Pasaje $pasaje)
     {
+        $validated = $request->validate([
+            'observacion' => ['nullable', 'string', 'max:500'],
+        ]);
+
         try {
 
             DB::beginTransaction();
@@ -1695,6 +1699,8 @@ class PasajeController extends Controller
             $pasaje->update([
                 'estado' => 'N', // Reserva anulada
                 'fecha_inactivacion' => now(),
+                'observacion_pasaje' => $validated['observacion'] ?? null,
+
             ]);
 
             DB::commit();
