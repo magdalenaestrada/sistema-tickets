@@ -193,4 +193,19 @@ class SerieSucursalController extends Controller
             'message' => 'Serie eliminada correctamente.',
         ]);
     }
+
+    public function cambiarEstado(SerieSucursal $serieSucursal)
+    {
+        $serieSucursal->update([
+            'estado' => !$serieSucursal->estado,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $serieSucursal->estado
+                ? 'Serie activada correctamente.'
+                : 'Serie desactivada correctamente.',
+            'estado' => $serieSucursal->estado,
+        ]);
+    }
 }

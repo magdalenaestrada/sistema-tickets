@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('content')
@@ -67,10 +66,17 @@
                                         data-id="{{ $item->id }}">
                                         Editar
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger btnEliminarSerie"
-                                        data-id="{{ $item->id }}">
-                                        Eliminar
-                                    </button>
+                                    @if ($item->estado)
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-cambiar-estado"
+                                            data-url="{{ route('series-sucursal.estado', $item->id) }}" data-estado="1">
+                                            Desactivar
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-outline-success btn-cambiar-estado"
+                                            data-url="{{ route('series-sucursal.estado', $item->id) }}" data-estado="0">
+                                            Activar
+                                        </button>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -219,6 +225,47 @@
                     });
             });
 
+            $(document).on('click', '.btn-cambiar-estado', function() {
+                const boton = $(this);
+                const url = boton.data('url');
+                const activo = boton.data('estado') == 1;
+
+                Swal.fire({
+                    title: activo ? '¿Desactivar serie?' : '¿Activar serie?',
+                    text: activo ?
+                        'La serie dejará de estar disponible para emitir comprobantes.' :
+                        'La serie volverá a estar disponible.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, continuar',
+                    cancelButtonText: 'Cancelar',
+                }).then(async (result) => {
+                    if (!result.isConfirmed) return;
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'PATCH',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'No se pudo cambiar el estado.');
+                        }
+
+                        await Swal.fire('Éxito', data.message, 'success');
+
+                        location.reload();
+                    } catch (error) {
+                        Swal.fire('Error', error.message, 'error');
+                    }
+                });
+            });
             // Eliminar (delegación de eventos porque las filas se crean dinámicamente)
             tbodySeries.addEventListener('click', function(e) {
                 const btn = e.target.closest('.btnEliminarSerie');

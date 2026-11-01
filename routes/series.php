@@ -13,3 +13,8 @@ Route::put('/series-sucursal/{serieSucursal}', [SerieSucursalController::class, 
 
 Route::delete('/series-sucursal/{serieSucursal}', [SerieSucursalController::class, 'destroy'])
     ->name('series-sucursal.destroy');
+
+Route::patch(
+    '/series-sucursal/{serieSucursal}/estado',
+    [SerieSucursalController::class, 'cambiarEstado']
+)->name('series-sucursal.estado');
