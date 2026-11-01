@@ -1,9 +1,4 @@
-{{--
-    resources/views/series_sucursal/index.blade.php
 
-    Ajusta @extends / @section al layout real de tu proyecto.
-    Se asume Bootstrap 4/5 ya cargado en el layout.
---}}
 @extends('layouts.app')
 
 @section('content')

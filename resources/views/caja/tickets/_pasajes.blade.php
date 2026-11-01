@@ -92,7 +92,7 @@
             @endif
               @if ($cliente && $cliente->direccion)
                 <tr>
-                    <td class="bold">Dirección:</td>
+                    <td class="bold">Direcciónñ:</td>
                     <td class="right">{{ $cliente->direccion }}</td>
                 </tr>
             @endif

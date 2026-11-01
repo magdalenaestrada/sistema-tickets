@@ -27,9 +27,17 @@ class Pasaje extends Model
         'fecha_inactivacion',
         'descuento_id',
         'precio_pasaje',
-        'observacion_pasaje'
+        'observacion_pasaje',
+        'fecha_cambio_estado',
 
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'fecha_cambio_estado' => 'datetime',
+        ];
+    }
 
     public function tramos()
     {
@@ -40,6 +48,7 @@ class Pasaje extends Model
             'tramo_id'
         );
     }
+
 
     public function salida()
     {

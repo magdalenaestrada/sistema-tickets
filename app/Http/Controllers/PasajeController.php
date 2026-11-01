@@ -431,8 +431,8 @@ class PasajeController extends Controller
             ->orderBy('salidas.fecha_salida', 'desc')
             ->orderBy('pasajes.asiento_numero', 'asc')
             ->select('pasajes.*')
-            ->paginate(20)->withQueryString();
-
+            ->paginate(20)
+            ->withQueryString();
         $sucursales = Sucursal::where('estado', 'A')
             ->orderBy('nombre_comercial')
             ->get();
@@ -1207,7 +1207,7 @@ class PasajeController extends Controller
 
         $pasaje->update([
             'estado' => 'F',
-            'fecha_inactivacion' => now(),
+            'fecha_cambio_estado' => now(),
         ]);
 
         return response()->json([
@@ -1227,7 +1227,7 @@ class PasajeController extends Controller
 
         $pasaje->update([
             'estado' => 'X',
-            'fecha_inactivacion' => now(),
+            'fecha_cambio_estado' => now(),
         ]);
 
         return response()->json([

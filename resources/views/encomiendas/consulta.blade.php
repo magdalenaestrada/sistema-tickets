@@ -18,7 +18,7 @@
                     <div class="row g-3 justify-content-center">
                         <div class="col-md-8 col-lg-7">
                             <label for="inputCodigo" class="form-label font-medium text-secondary fw-semibold">
-                                Número de Guía / Código de Encomienda o DNI
+                               BUSCAR POR CODIGO DE ENCOMIENDA
                             </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text bg-white border-end-0 text-muted">
@@ -26,7 +26,7 @@
                                 </span>
                                 <input type="text" id="inputCodigo"
                                     class="form-control border-start-0 text-uppercase fw-bold text-dark px-2"
-                                    placeholder="Ej: EC-0012345 o DNI / RUC" autofocus autocomplete="off">
+                                    placeholder="Ingrese el código" autofocus autocomplete="off">
                                 <button type="submit" class="btn btn-primary px-4 font-semibold" id="btnBuscar">
                                     <span class="spinner-border spinner-border-sm d-none me-1" id="spinner"></span>
                                     <span id="btnTexto">Consultar</span>

@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const url = boton.dataset.url;
         const requiereObservacion =
-            boton.dataset.requiere - observacion === "1";
+            boton.dataset.requiereObservacion === "1";
 
         let observacion = null;
 
@@ -275,7 +275,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]',
+                        'meta[name="csrf-token"]'
                     ).content,
                     "Content-Type": "application/json",
                     Accept: "application/json",
@@ -289,7 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (!response.ok || !data.success) {
                 throw new Error(
-                    data.message ?? "No se pudo anular la reserva.",
+                    data.message ?? "No se pudo anular la reserva."
                 );
             }
 
@@ -299,7 +299,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 text: data.message,
             });
 
-            location.reload();
+            cargarResultados();
         } catch (error) {
             Swal.fire({
                 icon: "error",
