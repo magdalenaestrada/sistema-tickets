@@ -20,15 +20,9 @@
         <div class="center">
 
             @if ($empresa && $empresa->logo)
-                @php
-                    $logoPath = public_path('storage/' . $empresa->logo);
-                @endphp
-
-                @if (file_exists($logoPath))
-                    <div class="logo-container">
-                        <img src="{{ $logoPath }}" alt="Logo">
-                    </div>
-                @endif
+                <div class="logo-container">
+                    <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                </div>
             @endif
 
             <div class="empresa">

@@ -31,6 +31,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -1812,17 +1813,28 @@ class PasajeController extends Controller
         return view('caja.ticket', compact('venta', 'empresa', 'cliente'));
     }
 
+
     public function ticketVentaPdf(Venta $venta)
     {
         $venta = $this->cargarVentaParaTicket($venta);
 
+        $empresa = $venta->sucursal?->empresa;
+        $cliente = $venta->persona;
+
+        $logoPath = null;
+
+        if ($empresa?->logo && Storage::disk('public')->exists($empresa->logo)) {
+            $logoPath = Storage::disk('public')->path($empresa->logo);
+        }
+
         $pdf = Pdf::loadView('caja.ticket', [
             'venta' => $venta,
+            'empresa' => $empresa,
+            'cliente' => $cliente,
+            'logoPath' => $logoPath,
             'esPdf' => true,
         ])->setPaper([0, 0, 226.77, 1500], 'portrait');
 
-        $nombreArchivo = "ticket-{$venta->serie}-{$venta->numero}.pdf";
-
-        return $pdf->download($nombreArchivo);
+        return $pdf->download("ticket-{$venta->serie}-{$venta->numero}.pdf");
     }
 }

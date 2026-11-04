@@ -376,8 +376,8 @@
         <table class="table-data">
             <tr>
                 <td width="32%"><strong>Código</strong></td>
-                <td>
-                    {{ $encomienda->codigo ?? '---' }}
+                <td class="bold">
+                    {{ $encomienda->codigo }}
                 </td>
             </tr>
             <tr>
@@ -433,14 +433,6 @@
 
             @endif
 
-            @if ($encomienda->codigo)
-                <tr>
-                    <td><strong>Código</strong></td>
-                    <td class="bold">
-                        {{ $encomienda->codigo }}
-                    </td>
-                </tr>
-            @endif
 
         </table>
 

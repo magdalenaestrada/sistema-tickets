@@ -54,10 +54,10 @@
         <div class="center">
             @if ($empresa && $empresa->logo)
                 <div class="logo-container">
-                    <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                    <img src="{{ !empty($esPdf) && $logoPath ? $logoPath : asset('storage/' . $empresa->logo) }}"
+                        alt="Logo">
                 </div>
             @endif
-
             <div class="bold" style="font-size: 12px;">
                 {{ $empresa->razon_social ?? 'TRANSPORTES EDIMSA S.A.C.' }}
             </div>
@@ -90,9 +90,9 @@
                     <td class="right">{{ $cliente->documento }}</td>
                 </tr>
             @endif
-              @if ($cliente && $cliente->direccion)
+            @if ($cliente && $cliente->direccion)
                 <tr>
-                    <td class="bold">Direcciónñ:</td>
+                    <td class="bold">Dirección:</td>
                     <td class="right">{{ $cliente->direccion }}</td>
                 </tr>
             @endif
@@ -235,7 +235,8 @@
             <div class="center" style="margin-bottom: 4px;">
                 @if ($empresa && $empresa->logo)
                     <div class="logo-container">
-                        <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
+                        <img src="{{ !empty($esPdf) && $logoPath ? $logoPath : asset('storage/' . $empresa->logo) }}"
+                            alt="Logo">
                     </div>
                 @endif
                 <div class="bold" style="font-size: 11px;">

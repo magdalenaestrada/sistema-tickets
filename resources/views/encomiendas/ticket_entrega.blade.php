@@ -131,7 +131,7 @@
     <div class="center">
         @if ($empresa && $empresa->logo)
             <div class="logo-container">
-                <img src="{{ public_path('storage/' . $empresa->logo) }}" alt="Logo">
+                <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo">
             </div>
         @endif
 

@@ -10,14 +10,12 @@ class BuscarDocumentoController extends Controller
 {
     public function buscarDocumento(Request $request)
     {
-        $numero = $request->get('documento');
+        $numero = trim((string) $request->input('documento', ''));
 
-        if (!$numero) {
-            return response()->json(['error' => 'Debe ingresar un número de documento.'], 400);
-        }
-
-        if (!in_array(strlen($numero), [8, 11])) {
-            return response()->json(['error' => 'Número de documento inválido.'], 400);
+        if (!preg_match('/^(\d{8}|\d{11})$/', $numero)) {
+            return response()->json([
+                'error' => 'Debe ingresar un DNI de 8 dígitos o un RUC de 11 dígitos.'
+            ], 400);
         }
 
         try {
@@ -32,10 +30,11 @@ class BuscarDocumentoController extends Controller
             $datosAPI = $this->consultarAPI($numero);
 
             if ($datosAPI) {
+                $this->guardarPersona($datosAPI);
 
                 return response()->json($datosAPI);
             }
-
+            
             return response()->json(['error' => 'Documento no encontrado'], 404);
         } catch (\Exception $e) {
             return response()->json([
@@ -74,53 +73,95 @@ class BuscarDocumentoController extends Controller
     }
 
 
+
     private function consultarAPI(string $numero): ?array
     {
-        $token   = config('token.decolecta.token');
-        $baseUrl = config('token.decolecta.url');
+        $token = config('token.decolecta.token');
+        $baseUrl = rtrim(config('token.decolecta.url'), '/');
 
-        if (strlen($numero) === 8) {
-            $endpoint = "reniec/dni?numero={$numero}";
-        } else {
-            $endpoint = "sunat/ruc?numero={$numero}";
-        }
-
-        $response = Http::withHeaders([
-            'Authorization' => "Bearer {$token}",
-            'Content-Type' => 'application/json',
-        ])->get($baseUrl . $endpoint);
-
-        if ($response->failed()) {
+        if (!$token || !$baseUrl) {
+            \Log::error('Falta configurar el token o URL de APIsPERU.');
             return null;
         }
 
-        $data = $response->json();
+        $esDni = strlen($numero) === 8;
+        $tipo = $esDni ? 'dni' : 'ruc';
 
-        if (strlen($numero) === 8) {
-            return [
-                'tipo' => 'DNI',
-                'documento' => $data['document_number'] ?? $numero,
-                'nombres' => $data['first_name'] ?? '',
-                'apellido_paterno' => $data['first_last_name'] ?? '',
-                'apellido_materno' => $data['second_last_name'] ?? '',
-                'nombre_completo' => $data['full_name'] ?? '',
-                'origen' => 'api_externa',
-            ];
-        } else {
+        // Evitar duplicar /api/v1 si ya está incluido en la configuración.
+        if (!str_ends_with($baseUrl, '/api/v1')) {
+            $baseUrl .= '/api/v1';
+        }
+
+        $endpoint = "{$baseUrl}/{$tipo}/{$numero}";
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout(10)
+                ->get($endpoint, [
+                    'token' => $token,
+                ]);
+
+            if ($response->failed()) {
+                \Log::warning('Error consultando APIsPERU', [
+                    'tipo' => $tipo,
+                    'numero' => $numero,
+                    'status' => $response->status(),
+                ]);
+
+                return null;
+            }
+
+            $data = $response->json();
+
+            if (!is_array($data) || ($data['success'] ?? true) === false) {
+                return null;
+            }
+
+            if ($esDni) {
+                return [
+                    'tipo' => 'DNI',
+                    'documento' => $data['dni'] ?? $numero,
+                    'nombres' => $data['nombres'] ?? '',
+                    'apellido_paterno' => $data['apellidoPaterno'] ?? '',
+                    'apellido_materno' => $data['apellidoMaterno'] ?? '',
+                    'nombre_completo' => trim(
+                        ($data['nombres'] ?? '') . ' ' .
+                            ($data['apellidoPaterno'] ?? '') . ' ' .
+                            ($data['apellidoMaterno'] ?? '')
+                    ),
+                    'cod_verifica' => $data['codVerifica'] ?? null,
+                    'origen' => 'api_externa',
+                ];
+            }
+
             return [
                 'tipo' => 'RUC',
-                'documento' => $data['numero_documento'] ?? $numero,
-                'razon_social' => $data['razon_social'] ?? '',
+                'documento' => $data['ruc'] ?? $numero,
+                'razon_social' => $data['razonSocial'] ?? '',
+                'nombre_comercial' => $data['nombreComercial'] ?? '',
+                'telefonos' => $data['telefonos'] ?? [],
                 'direccion' => $data['direccion'] ?? '',
                 'estado' => $data['estado'] ?? '',
                 'condicion' => $data['condicion'] ?? '',
                 'departamento' => $data['departamento'] ?? '',
                 'provincia' => $data['provincia'] ?? '',
                 'distrito' => $data['distrito'] ?? '',
+                'ubigeo' => $data['ubigeo'] ?? '',
+                'capital' => $data['capital'] ?? '',
                 'origen' => 'api_externa',
             ];
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('Error de conexión con APIsPERU', [
+                'tipo' => $tipo,
+                'numero' => $numero,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
         }
     }
+
+
 
 
     private function extraerApellidoPaterno(?string $apellidos): string
