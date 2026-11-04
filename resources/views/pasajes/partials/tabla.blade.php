@@ -48,10 +48,12 @@
 
                     <td class="text-nowrap">
                         <div class="fw-semibold text-dark">
-                            {{ $pasaje->salida?->fecha_salida?->format('d/m/Y') ?? '-' }}
+                            {{ $pasaje->salida?->horario?->ruta?->nombre ?? '-' }}
                         </div>
+
                         <small class="text-muted">
-                            {{ $pasaje->salida?->horario?->hora_formateada ?? '-' }}
+                            {{ $pasaje->salida?->fecha_salida?->format('d/m/Y') ?? '-' }}
+                            {{ $pasaje->salida?->horario?->hora_formateada ?? '' }}
                         </small>
                     </td>
 
@@ -59,13 +61,18 @@
 
                     <td>{{ $pasaje->destino->descripcion ?? '-' }}</td>
 
+                    @php
+                        $horaAbordaje = $pasaje->salida?->momentoEnPunto($pasaje->origen_pueblito_id);
+                    @endphp
+
                     <td class="text-nowrap">
-                        @if ($pasaje->estado === 'F' && $pasaje->fecha_cambio_estado)
+                        @if ($horaAbordaje)
                             <div class="fw-semibold">
-                                {{ $pasaje->fecha_cambio_estado->format('d/m/Y') }}
+                                {{ $horaAbordaje->format('d/m/Y') }}
                             </div>
+
                             <small class="text-muted">
-                                {{ $pasaje->fecha_cambio_estado->format('h:i A') }}
+                                {{ $horaAbordaje->format('h:i A') }}
                             </small>
                         @else
                             <span class="text-muted">-</span>
@@ -85,22 +92,6 @@
                                     class="badge rounded-pill bg-primary bg-opacity-10 text-white border border-primary border-opacity-10 px-2.5 py-1 fw-medium">
                                     <i data-lucide="check-circle" class="me-1 align-middle"
                                         style="width: 13px; height: 13px;"></i>Vendido
-                                </span>
-                            @break
-
-                            @case('F')
-                                <span
-                                    class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-10 px-2.5 py-1 fw-medium">
-                                    <i data-lucide="user-check" class="me-1 align-middle"
-                                        style="width: 13px; height: 13px;"></i>Abordó
-                                </span>
-                            @break
-
-                            @case('X')
-                                <span
-                                    class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 px-2.5 py-1 fw-medium">
-                                    <i data-lucide="user-x" class="me-1 align-middle" style="width: 13px; height: 13px;"></i>No
-                                    abordó
                                 </span>
                             @break
 
@@ -131,18 +122,7 @@
                     <td class="text-end text-nowrap pe-3">
                         <div class="d-flex flex-wrap gap-1">
 
-                            @if ($pasaje->estado == 'V')
-                                <button type="button"
-                                    class="btn btn-abordo badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-10 px-2 py-1 fw-medium"
-                                    data-id="{{ $pasaje->id }}" title="Marcar como abordó">
-                                    <i data-lucide="user-check"></i>
-                                </button>
 
-                                <button type="button" class="btn  btn-danger btn-no-abordo"
-                                    data-id="{{ $pasaje->id }}" title="Marcar como no abordó">
-                                    <i data-lucide="user-x"></i>
-                                </button>
-                            @endif
 
                             @if ($pasaje->estado == 'R')
                                 <a href="{{ route('pasajes.editar', $pasaje->id) }}"
@@ -172,8 +152,7 @@
                             @endif
 
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
-                                <button class="btn  btn-secondary imprimir-pasaje"
-                                    data-id="{{ $pasaje->venta_id }}">
+                                <button class="btn  btn-secondary imprimir-pasaje" data-id="{{ $pasaje->venta_id }}">
                                     <i data-lucide="printer"></i>
                                 </button>
                             @endif

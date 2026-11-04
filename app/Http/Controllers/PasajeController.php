@@ -395,12 +395,13 @@ class PasajeController extends Controller
     {
         $query = Pasaje::query()
             ->with([
-                'salida.horario.ruta',
+                'salida.horario.ruta.puntos',
+                'salida.horario.ruta.tramos',
                 'origen',
                 'destino',
                 'persona',
                 'venta',
-                'sobreEquipajes'
+                'sobreEquipajes',
             ])
             ->join('salidas', 'pasajes.salida_id', '=', 'salidas.id')
             ->join('personas', 'pasajes.persona_id', '=', 'personas.id')
