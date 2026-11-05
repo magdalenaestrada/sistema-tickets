@@ -124,21 +124,21 @@
 
 
 
-                            @if ($pasaje->estado == 'R')
+                            @if ($pasaje->estado == 'R' && !$pasaje->salida?->supero_24_horas)
                                 <a href="{{ route('pasajes.editar', $pasaje->id) }}"
-                                    class="btn  btn-success btn-editar-pasaje">
+                                    class="btn btn-xs btn-success btn-editar-pasaje">
                                     <i data-lucide="receipt"></i>
                                 </a>
 
-                                <button type="button" class="btn  btn-danger btn-anular-reserva"
+                                <button type="button" class="btn btn-xs btn-danger btn-anular-reserva"
                                     data-url="{{ route('pasajes.anular_reserva', $pasaje->id) }}"
                                     data-requiere-observacion="{{ $requiereObservacion ? 1 : 0 }}">
                                     <i data-lucide="x"></i>
                                 </button>
                             @endif
 
-                            @if ($pasaje->sobreEquipajes->count() > 0)
-                                <button class="btn btn-info  btnVerSobreEquipaje" data-id="{{ $pasaje->id }}"
+                            @if ($pasaje->sobreEquipajes->count() > 0 && !$pasaje->salida?->supero_24_horas)
+                                <button class="btn btn-xs btn-info  btnVerSobreEquipaje" data-id="{{ $pasaje->id }}"
                                     title="Ver sobre equipaje">
                                     <i data-lucide="baggage-claim"></i>
                                 </button>
@@ -146,20 +146,20 @@
 
                             @if ($pasaje->venta_id && !$pasaje->salida?->supero_24_horas)
                                 <a href="{{ route('encomiendas.sobreequipaje.formulario', $pasaje->id) }}"
-                                    class="btn btn-warning  btn-sobreequipaje" title="Agregar sobre equipaje">
+                                    class="btn btn-xs btn-warning  btn-sobreequipaje" title="Agregar sobre equipaje">
                                     <i data-lucide="plus"></i>
                                 </a>
                             @endif
 
                             @if ($pasaje->venta_id && Route::has('ventas.imprimir'))
-                                <button class="btn  btn-secondary imprimir-pasaje" data-id="{{ $pasaje->venta_id }}">
+                                <button class="btn btn-xs btn-secondary imprimir-pasaje" data-id="{{ $pasaje->venta_id }}">
                                     <i data-lucide="printer"></i>
                                 </button>
                             @endif
 
                             @if ($pasaje->autorizacion_pdf)
                                 <a href="{{ Storage::disk('public')->url($pasaje->autorizacion_pdf) }}"
-                                    class="btn  btn-danger" target="_blank" title="Ver autorización">
+                                    class="btn btn-xs btn-danger" target="_blank" title="Ver autorización">
                                     <i data-lucide="file"></i>
                                 </a>
                             @endif

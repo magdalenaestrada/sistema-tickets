@@ -70,8 +70,13 @@ class EncomiendaService
                 ['documento' => $request->numero_documento_id],
                 [
                     'tipo_documento_id' => $tipo_documento_persona ?? 1,
-                    'razon_social' => $request->razon_social ?: 'CLIENTE VARIOS',
-                    'direccion' => $request->direccion,
+                    'razon_social' => $request->filled('razon_social')
+                        ? $request->razon_social
+                        : 'CLIENTE VARIOS',
+
+                    'direccion' => $request->filled('direccion')
+                        ? $request->direccion
+                        : null,
                     'estado' => 'A',
                     'fecha_creacion' => now(),
                 ]
@@ -95,6 +100,7 @@ class EncomiendaService
                 new Request([
                     'tipo_servicio_id' => $tipo_servicio,
                     'tipo_documento_factura_id' => $request->tipo_doc_sunat,
+                    'direccion' => $request->direccion,
                     'numero_documento_id' => $personaFacturacion->documento,
                     'razon_social' => $personaFacturacion->razon_social
                         ?: trim(implode(' ', array_filter([

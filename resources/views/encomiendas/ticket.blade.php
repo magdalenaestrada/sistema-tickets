@@ -265,7 +265,24 @@
     </div>
 
     <table class="table-data">
-
+        <tr>
+            <td class="bold">Cliente:</td>
+            <td class="right bold">
+                {{ $cliente ? $cliente->nombre_facturacion ?? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}
+            </td>
+        </tr>
+        @if ($cliente && $cliente->documento)
+            <tr>
+                <td class="bold">Doc. Cliente:</td>
+                <td class="right">{{ $cliente->documento }}</td>
+            </tr>
+        @endif
+        @if ($cliente && $cliente->direccion)
+            <tr>
+                <td class="bold">Dirección:</td>
+                <td class="right">{{ $cliente->direccion }}</td>
+            </tr>
+        @endif
         <tr>
             <td width="38%"><strong>Fecha</strong></td>
             <td class="right">

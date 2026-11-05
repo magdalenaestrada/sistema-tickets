@@ -766,11 +766,12 @@ class EncomiendaController extends Controller
             'detalles.tipo_encomienda',
             'venta',
         ]);
+        $cliente = $encomienda->venta->persona;
 
         $empresa = Empresa::first();
         return Pdf::loadView(
             'encomiendas.ticket_entrega',
-            compact('encomienda', 'empresa')
+            compact('encomienda', 'empresa', 'cliente'  )
         )->stream("ENTREGA-{$encomienda->id}.pdf");
     }
     public function enAgencia($id)
@@ -1198,7 +1199,8 @@ class EncomiendaController extends Controller
             'venta.sucursal.empresa',
             'venta.pagos.metodoPago',
         ]);
+        $cliente = $encomienda->venta->persona;
         $venta = $encomienda->venta;
-        return view('encomiendas.ticket', compact('encomienda', 'venta'));
+        return view('encomiendas.ticket', compact('encomienda', 'venta', 'cliente'));
     }
 }

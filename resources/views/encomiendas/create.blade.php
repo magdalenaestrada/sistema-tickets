@@ -40,18 +40,21 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Nombres <span style="color: red">*</span></label>
-                                <input type="text" class="form-control form-control-sm solo-letras" id="emisor_nombres"
+                                <label class="form-label" id="label_emisor_nombres">
+                                    Nombres <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="emisor_nombres"
                                     name="emisor_nombres" value="{{ $esSobreequipaje ? $pasaje->persona->nombres : '' }}"
-                                    {{ $esSobreequipaje ? 'disable' : 'required' }}>
+                                    required>
                             </div>
 
-                            <div class="col-md-4">
-                                <label class="form-label">Apellidos <span style="color: red">*</span></label>
-                                <input type="text" class="form-control form-control-sm solo-letras" id="emisor_apellidos"
+                            <div class="col-md-4" id="contenedor_emisor_apellidos">
+                                <label class="form-label" id="label_emisor_apellidos">
+                                    Apellidos <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="emisor_apellidos"
                                     name="emisor_apellidos"
-                                    value="{{ $esSobreequipaje ? $pasaje->persona->apellidos : '' }}"
-                                    {{ $esSobreequipaje ? 'disable' : 'required' }}>
+                                    value="{{ $esSobreequipaje ? $pasaje->persona->apellidos : '' }}" required>
                             </div>
                         </div>
 
