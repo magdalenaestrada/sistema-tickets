@@ -89,19 +89,56 @@ document.addEventListener("DOMContentLoaded", function () {
         return data;
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const modal = document.getElementById("modalObservacion");
+    const modalObservacion = document.getElementById("modalObservacion");
 
-        modal.addEventListener("show.bs.modal", function (event) {
+    if (modalObservacion) {
+        modalObservacion.addEventListener("show.bs.modal", function (event) {
             const button = event.relatedTarget;
 
-            const url = button.getAttribute("data-url");
-            const observacion = button.getAttribute("data-observacion") || "";
+            if (!button) return;
 
-            document.getElementById("formObservacion").action = url;
-            document.getElementById("observacionTexto").value = observacion;
+            const form = document.getElementById("formObservacion");
+            const textarea = document.getElementById("observacionTexto");
+
+            if (!form || !textarea) {
+                console.error("No se encontró el formulario de observaciones.");
+                return;
+            }
+
+            form.action = button.dataset.url;
+            textarea.value = button.dataset.observacion || "";
+
+            console.log("Formulario de observación:", form.action);
         });
-    });
+    }
+
+    const formObservacion = document.getElementById("formObservacion");
+
+    if (formObservacion) {
+        formObservacion.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            bloquearBoton(formObservacion, true);
+
+            const data = await enviarFormulario(formObservacion);
+
+            bloquearBoton(formObservacion, false);
+
+            if (!data) return;
+
+            bootstrap.Modal.getOrCreateInstance(modalObservacion).hide();
+
+            Swal.fire({
+                icon: "success",
+                title: "Correcto",
+                text: data.message,
+                timer: 1200,
+                showConfirmButton: false,
+            }).then(() => {
+                location.reload();
+            });
+        });
+    }
 
     function actualizarTotales(data) {
         if (!data) return;

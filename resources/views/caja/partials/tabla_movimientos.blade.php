@@ -31,7 +31,6 @@
                                         ? optional($detalle->venta)->serie . '-' . optional($detalle->venta)->numero
                                         : $detalle->numero_ticket }}
                                 </td>
-                                </td>
                                 <td>
                                     @if ($detalle->amount > 0 && $detalle->subtipo_movimiento_caja_id != 10)
                                         <span class="badge bg-success">Ingreso</span>
@@ -56,10 +55,7 @@
                                 <td>
                                     @if ($detalle->observacion)
                                         <div class="d-flex flex-column gap-1">
-                                            <span class="text-primary small" title="{{ $detalle->observacion }}">
-                                                <i class="fas fa-comment-alt"></i>
-                                                {{ \Illuminate\Support\Str::limit($detalle->observacion, 35) }}
-                                            </span>
+                                            
 
                                             <button type="button" class="btn btn-link btn-sm p-0 text-start"
                                                 data-bs-toggle="modal" data-bs-target="#modalObservacion"
