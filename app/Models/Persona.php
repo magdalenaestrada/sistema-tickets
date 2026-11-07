@@ -53,6 +53,10 @@ class Persona extends Model
 
     public function getNombreCompletoAttribute()
     {
+        if (!empty(trim($this->razon_social ?? ''))) {
+            return trim($this->razon_social);
+        }
+
         return trim("{$this->nombres} {$this->apellidos}");
     }
 

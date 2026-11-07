@@ -54,7 +54,7 @@
                                 </label>
                                 <input type="text" class="form-control form-control-sm" id="emisor_apellidos"
                                     name="emisor_apellidos"
-                                    value="{{ $esSobreequipaje ? $pasaje->persona->apellidos : '' }}" required>
+                                    value="{{ $esSobreequipaje ? $pasaje->persona->apellidos : '' }}">
                             </div>
                         </div>
 
@@ -73,8 +73,9 @@
 
                             <div class="col-md-4">
                                 <label class="form-label">Correo electrónico</label>
-                                <input type="text" class="form-control form-control-sm" id="emisor_direccion"
-                                    name="emisor_direccion">
+                                <input type="email" class="form-control form-control-sm" id="emisor_correo"
+                                    name="emisor_correo">
+                                <input type="hidden" id="emisor_direccion" name="emisor_direccion">
                             </div>
 
                             <div class="col-md-2">
@@ -144,8 +145,9 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label">Correo electrónico</label>
-                                    <input type="text" class="form-control form-control-sm" id="receptor_direccion"
-                                        name="receptor_direccion">
+                                    <input type="email" class="form-control form-control-sm" id="receptor_correo"
+                                        name="receptor_correo">
+                                    <input type="hidden" id="receptor_direccion" name="receptor_direccion">
                                 </div>
                             </div>
 

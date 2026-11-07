@@ -306,13 +306,11 @@
     <table class="table-data">
         <tr>
             <td width="28%"><strong>Nombre</strong></td>
-            <td>
-                {{ $emisor ? $emisor->nombres . ' ' . $emisor->apellidos : 'CLIENTE VARIOS' }}
-            </td>
+            <td>{{ $emisor?->nombre_completo ?: 'CLIENTE VARIOS' }}</td>
         </tr>
 
         <tr>
-            <td><strong>DNI</strong></td>
+            <td><strong>{{ strlen($emisor->documento ?? '') === 11 ? 'RUC' : 'DNI' }}</strong></td>
             <td>{{ $emisor->documento ?? '---' }}</td>
         </tr>
 

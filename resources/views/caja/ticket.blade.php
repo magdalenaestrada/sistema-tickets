@@ -17,6 +17,16 @@
             padding: 0;
         }
 
+        .table-data {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .table-data td.right {
+            text-align: right;
+            word-wrap: break-word;
+        }
+
         body {
             font-family: 'Courier New', Courier, monospace;
             width: 260px;

@@ -771,7 +771,7 @@ class EncomiendaController extends Controller
         $empresa = Empresa::first();
         return Pdf::loadView(
             'encomiendas.ticket_entrega',
-            compact('encomienda', 'empresa', 'cliente'  )
+            compact('encomienda', 'empresa', 'cliente')
         )->stream("ENTREGA-{$encomienda->id}.pdf");
     }
     public function enAgencia($id)
@@ -920,6 +920,8 @@ class EncomiendaController extends Controller
         ]);
 
         try {
+            $esRucEmisor = strlen($request->input('emisor.documento')) === 11;
+
             $emisor = Persona::updateOrCreate(
                 [
                     'tipo_documento_id' => $request->input('emisor.tipo_documento_id'),
@@ -927,12 +929,12 @@ class EncomiendaController extends Controller
                 ],
                 [
                     'distrito_id' => $request->input('emisor.distrito_id', 1),
-                    'nombres' => $request->input('emisor.nombres'),
-                    'apellidos' => $request->input('emisor.apellidos'),
+                    'nombres' => $esRucEmisor ? null : $request->input('emisor.nombres'),
+                    'apellidos' => $esRucEmisor ? null : $request->input('emisor.apellidos'),
+                    'razon_social' => $esRucEmisor ? $request->input('emisor.nombres') : null,
                     'telefono' => $request->input('emisor.telefono'),
                     'celular' => $request->input('emisor.celular'),
-                    'correo' => $request->input('emisor.correo'),
-                    'direccion' => $request->input('emisor.direccion'),
+                    'correo' => $request->input('emisor.direccion'),
                     'estado' => 'A',
                     'fecha_creacion' => now(),
                 ]

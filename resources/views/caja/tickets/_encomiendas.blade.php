@@ -58,62 +58,60 @@
             INFORMACIÓN DE EMISIÓN
         </div>
 
-        <table class="table-data">
+        <table class="table-data" style="table-layout: fixed; width: 100%;">
             <tr>
-                <td class="bold">Cliente:</td>
-                <td class="right bold">
-                    {{ $cliente ? $cliente->nombre_facturacion ?? $cliente->nombres . ' ' . $cliente->apellidos : 'CLIENTE VARIOS' }}
+                <td width="35%" class="bold">Cliente:</td>
+                <td width="65%" class="bold" style="text-align:right; word-wrap:break-word;">
+                    {{ $cliente?->nombre_facturacion ?: 'CLIENTE VARIOS' }}
                 </td>
             </tr>
+
             @if ($cliente && $cliente->documento)
                 <tr>
                     <td class="bold">Doc. Cliente:</td>
-                    <td class="right">{{ $cliente->documento }}</td>
+                    <td style="text-align:right;">{{ $cliente->documento }}</td>
                 </tr>
             @endif
+
             @if ($cliente && $cliente->direccion)
                 <tr>
                     <td class="bold">Dirección:</td>
-                    <td class="right">{{ $cliente->direccion }}</td>
+                    <td style="text-align:right; word-wrap:break-word;">{{ $cliente->direccion }}</td>
                 </tr>
             @endif
+
             <tr>
-                <td width="38%"><strong>Fecha</strong></td>
-                <td class="right">
+                <td class="bold">Fecha:</td>
+                <td style="text-align:right;">
                     {{ $venta->fecha_emision ? $venta->fecha_emision->format('d/m/Y H:i') : $venta->created_at->format('d/m/Y H:i') }}
                 </td>
             </tr>
 
             <tr>
-                <td><strong>Cajero</strong></td>
-                <td class="right">
+                <td class="bold">Cajero:</td>
+                <td style="text-align:right;">
                     {{ $venta->usuario->persona->nombre_completo ?? 'Sistema' }}
                 </td>
             </tr>
-
         </table>
-
         <div class="section-title">
             REMITENTE
         </div>
-
         <table class="table-data">
             <tr>
                 <td width="28%"><strong>Nombre</strong></td>
-                <td>
-                    {{ $emisor ? $emisor->nombres . ' ' . $emisor->apellidos : 'CLIENTE VARIOS' }}
-                </td>
+                <td class="right">{{ $emisor?->nombre_completo ?: 'CLIENTE VARIOS' }}</td>
             </tr>
 
             <tr>
-                <td><strong>DNI</strong></td>
-                <td>{{ $emisor->documento ?? '---' }}</td>
+                <td><strong>{{ strlen($emisor->documento ?? '') === 11 ? 'RUC' : 'DNI' }}</strong></td>
+                <td class="right">{{ $emisor->documento ?? '---' }}</td>
             </tr>
 
             @if ($emisor?->telefono)
                 <tr>
                     <td><strong>Celular</strong></td>
-                    <td>{{ $emisor->telefono }}</td>
+                    <td class="right">{{ $emisor->telefono }}</td>
                 </tr>
             @endif
         </table>
@@ -132,20 +130,18 @@
 
                 <tr>
                     <td width="28%"><strong>Nombre</strong></td>
-                    <td>
-                        {{ $receptor ? $receptor->nombres . ' ' . $receptor->apellidos : '---' }}
-                    </td>
+                    <td class="right">{{ $receptor?->nombre_completo ?: '---' }}</td>
                 </tr>
 
                 <tr>
-                    <td><strong>DNI</strong></td>
-                    <td>{{ $receptor->documento ?? '---' }}</td>
+                    <td><strong>{{ strlen($receptor->documento ?? '') === 11 ? 'RUC' : 'DNI' }}</strong></td>
+                    <td class="right">{{ $receptor->documento ?? '---' }}</td>
                 </tr>
 
                 @if ($receptor?->telefono)
                     <tr>
                         <td><strong>Celular</strong></td>
-                        <td>{{ $receptor->telefono }}</td>
+                        <td class="right">{{ $receptor->telefono }}</td>
                     </tr>
                 @endif
 

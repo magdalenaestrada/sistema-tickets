@@ -601,6 +601,9 @@ $(async function () {
                 $(`#${tipo}_apellidos`).val("");
                 $(`#${tipo}_direccion`).val(res.direccion || "");
             }
+            if (res.correo) $(`#${tipo}_correo`).val(res.correo);
+
+            ajustarCamposPorTipo(tipo); // <-- agregar
 
             if (tipo === "emisor") {
                 updateRazonSocial();
@@ -848,6 +851,11 @@ $(async function () {
         },
     );
 
+    $("#emisor_documento, #receptor_documento").on("input", function () {
+        const tipo = $(this).attr("id").replace("_documento", "");
+        ajustarCamposPorTipo(tipo);
+    });
+
     $(document).on("input change", ".tipo, .peso, .costo, .desc", function () {
         if ($(this).val()) {
             $(this).removeClass("is-invalid");
@@ -857,21 +865,33 @@ $(async function () {
     function validarFormulario() {
         const campos = [
             { id: "#emisor_documento", nombre: "Documento del emisor" },
-            { id: "#emisor_nombres", nombre: "Nombres del emisor" },
-            { id: "#emisor_apellidos", nombre: "Apellidos del emisor" },
-
+            {
+                id: "#emisor_nombres",
+                nombre: "Nombres / Razón social del emisor",
+            },
             { id: "#origen", nombre: "Origen" },
             { id: "#destino", nombre: "Destino" },
         ];
 
-        // Solo validar receptor cuando NO es sobreequipaje
+        if (!esRuc("emisor")) {
+            campos.push({
+                id: "#emisor_apellidos",
+                nombre: "Apellidos del emisor",
+            });
+        }
+
         if (!$("input[name='sobrequipaje']").length) {
-            campos.splice(
-                3,
-                0,
-                { id: "#receptor_nombres", nombre: "Nombres del receptor" },
-                { id: "#receptor_apellidos", nombre: "Apellidos del receptor" },
-            );
+            campos.push({
+                id: "#receptor_nombres",
+                nombre: "Nombres / Razón social del receptor",
+            });
+
+            if (!esRuc("receptor")) {
+                campos.push({
+                    id: "#receptor_apellidos",
+                    nombre: "Apellidos del receptor",
+                });
+            }
         }
 
         for (const campo of campos) {
@@ -1262,6 +1282,7 @@ $(async function () {
                 apellidos: $("#emisor_apellidos").val(),
                 celular: $("#emisor_celular").val(),
                 telefono: $("#emisor_telefono").val(),
+                correo: $("#emisor_correo").val(),
                 direccion: $("#emisor_direccion").val(),
             },
             receptor: {
@@ -1271,6 +1292,7 @@ $(async function () {
                 apellidos: $("#receptor_apellidos").val(),
                 celular: $("#receptor_celular").val(),
                 telefono: $("#receptor_telefono").val(),
+                correo: $("#receptor_correo").val(),
                 direccion: $("#receptor_direccion").val(),
             },
 
@@ -1390,5 +1412,30 @@ $(async function () {
         };
 
         document.body.appendChild(iframe);
+    }
+
+    function esRuc(tipo) {
+        const doc = ($(`#${tipo}_documento`).val() || "").trim();
+        return doc.length === 11;
+    }
+
+    function ajustarCamposPorTipo(tipo) {
+        const ruc = esRuc(tipo);
+
+        const $apellidos = $(`#${tipo}_apellidos`);
+        const $contApellidos = $(`#contenedor_${tipo}_apellidos`);
+        const $labelNombres = $(`#label_${tipo}_nombres`);
+
+        if (ruc) {
+            $contApellidos.addClass("d-none");
+            $apellidos.prop("required", false).val("");
+            $labelNombres.html(
+                'Razón social <span class="text-danger">*</span>',
+            );
+        } else {
+            $contApellidos.removeClass("d-none");
+            $apellidos.prop("required", true);
+            $labelNombres.html('Nombres <span class="text-danger">*</span>');
+        }
     }
 });
