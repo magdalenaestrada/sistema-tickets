@@ -89,11 +89,25 @@ document.addEventListener("DOMContentLoaded", function () {
         return data;
     }
 
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = document.getElementById("modalObservacion");
+
+        modal.addEventListener("show.bs.modal", function (event) {
+            const button = event.relatedTarget;
+
+            const url = button.getAttribute("data-url");
+            const observacion = button.getAttribute("data-observacion") || "";
+
+            document.getElementById("formObservacion").action = url;
+            document.getElementById("observacionTexto").value = observacion;
+        });
+    });
+
     function actualizarTotales(data) {
         if (!data) return;
 
         console.log(data);
-        
+
         const tablaContenedor = document.getElementById(
             "contenedor-tabla-movimientos",
         );

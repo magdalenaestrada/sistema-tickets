@@ -18,19 +18,27 @@ class CajaDetalle extends Model
         'billetera_digital_id',
         'amount',
         'description',
+        'observacion',
+        'observacion_usuario_id',
+        'observacion_at',
         'numero_ticket',
         'anulado',
         'venta_id'
     ];
 
     protected $casts = [
-        'amount'  => 'decimal:2',
+        'amount' => 'decimal:2',
         'anulado' => 'boolean',
+        'observacion_at' => 'datetime',
     ];
-
     public function caja()
     {
         return $this->belongsTo(Caja::class, 'caja_id');
+    }
+
+    public function usuarioObservacion()
+    {
+        return $this->belongsTo(User::class, 'observacion_usuario_id');
     }
 
     public function venta()
@@ -52,5 +60,4 @@ class CajaDetalle extends Model
     {
         return $this->belongsTo(BilleteraDigital::class, 'billetera_digital_id');
     }
-
 }

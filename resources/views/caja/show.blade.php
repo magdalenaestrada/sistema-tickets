@@ -181,6 +181,7 @@
     </div>
     @include('caja.modals.egreso')
     @include('caja.modals.ingreso')
+    @include('caja.modals.modal_nota')
 @endsection
 @push('scripts')
     <script src="{{ asset('js/caja_detalle.js') }}"></script>

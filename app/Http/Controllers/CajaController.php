@@ -313,6 +313,28 @@ class CajaController extends Controller
         }
     }
 
+    public function guardarObservacion(CajaDetalle $detalle, Request $request)
+    {
+        $detalle->load('caja');
+
+        $this->autorizarCaja($detalle->caja);
+
+        $request->validate([
+            'observacion' => 'required|string|max:1000',
+        ], [
+            'observacion.required' => 'Escribe una observación.',
+            'observacion.max' => 'La observación no puede superar los 1000 caracteres.',
+        ]);
+
+        $detalle->update([
+            'observacion' => trim($request->observacion),
+            'observacion_usuario_id' => auth()->id(),
+            'observacion_at' => now(),
+        ]);
+
+        return back()->with('success', 'Observación guardada correctamente.');
+    }
+
     public function registrarSalida(Caja $caja, Request $request)
     {
         $this->autorizarCaja($caja);

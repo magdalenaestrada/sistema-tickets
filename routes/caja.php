@@ -17,4 +17,8 @@ Route::middleware(['auth', 'can:gestionar caja'])->prefix('cajas')->name('caja.'
 
     Route::get('/caja-detalle/{detalle}/reimprimir', [CajaController::class, 'reimprimir'])->name('reimprimir');
     Route::post('/caja-detalle/{detalle}/anular', [CajaController::class, 'anular'])->name('anular');
+    Route::post(
+        '/detalle/{detalle}/observacion',
+        [CajaController::class, 'guardarObservacion']
+    )->name('detalle.observacion');
 });

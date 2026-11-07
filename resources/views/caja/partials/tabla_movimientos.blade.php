@@ -19,6 +19,7 @@
                             <th>Descripción</th>
                             <th>Monto</th>
                             <th>Estado</th>
+                            <th>Observación</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,7 +42,8 @@
                                     @endif
                                 </td>
                                 <td>{{ $detalle->subtipo->descripcion ?? '---' }}</td>
-                                <td>{{ $detalle->metodoPago->descripcion ?? '---' }} {{ $detalle->billetera_digital->descripcion ?? '' }}</td>
+                                <td>{{ $detalle->metodoPago->descripcion ?? '---' }}
+                                    {{ $detalle->billetera_digital->descripcion ?? '' }}</td>
                                 <td>{{ $detalle->description ?? '---' }}</td>
                                 <td><strong>S/ {{ number_format(abs($detalle->amount), 2) }}</strong></td>
                                 <td>
@@ -51,7 +53,30 @@
                                         <span class="badge bg-primary">Activo</span>
                                     @endif
                                 </td>
-                              
+                                <td>
+                                    @if ($detalle->observacion)
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="text-primary small" title="{{ $detalle->observacion }}">
+                                                <i class="fas fa-comment-alt"></i>
+                                                {{ \Illuminate\Support\Str::limit($detalle->observacion, 35) }}
+                                            </span>
+
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-start"
+                                                data-bs-toggle="modal" data-bs-target="#modalObservacion"
+                                                data-url="{{ route('caja.detalle.observacion', $detalle->id) }}"
+                                                data-observacion="{{ $detalle->observacion }}">
+                                                <i class="fas fa-edit"></i> Editar nota
+                                            </button>
+                                        </div>
+                                    @else
+                                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            data-bs-toggle="modal" data-bs-target="#modalObservacion"
+                                            data-url="{{ route('caja.detalle.observacion', $detalle->id) }}"
+                                            data-observacion="">
+                                            <i class="fas fa-plus"></i> Añadir nota
+                                        </button>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
