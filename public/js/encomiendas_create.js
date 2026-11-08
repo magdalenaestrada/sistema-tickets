@@ -97,6 +97,8 @@ $(async function () {
 
     const csrf = $('meta[name="csrf-token"]').attr("content");
     let tiposEncomienda = [];
+    const LONGITUD_DOC = { DNI: 8, RUC: 11 };
+    const TIPO_DOC_POR_ID = { 1: "DNI", 2: "RUC" };
 
     // ===============================
     // ORIGEN / DESTINO
@@ -405,11 +407,11 @@ $(async function () {
     }
 
     function validarClienteFacturacion() {
-        const tipo = $("#tipo_doc_sunat").val();
+        const tipo = $("#tipo_doc_sunat").val(); // 1=factura, 2=boleta, 3=nota de venta
         const doc = $("#doc_cliente").val().trim();
         const razon = $("#razon_social").val().trim();
 
-        if (tipo === "4") return true;
+        if (tipo === "3") return true;
 
         if (!doc || !razon) {
             Swal.fire(
@@ -420,7 +422,7 @@ $(async function () {
             return false;
         }
 
-        if (tipo === "factura" && doc.length !== 11) {
+        if (tipo === "1" && !/^\d{11}$/.test(doc)) {
             Swal.fire(
                 "Atención",
                 "La factura requiere RUC de 11 dígitos.",
@@ -429,7 +431,7 @@ $(async function () {
             return false;
         }
 
-        if (tipo === "boleta" && doc.length !== 8 && doc.length !== 11) {
+        if (tipo === "2" && !/^(\d{8}|\d{11})$/.test(doc)) {
             Swal.fire(
                 "Atención",
                 "La boleta requiere DNI (8) o RUC (11).",
@@ -457,8 +459,28 @@ $(async function () {
     }
 
     function buscarCliente() {
-        let documento = $("#doc_cliente").val().trim();
+        const documento = $("#doc_cliente").val().trim();
         if (!documento) return;
+
+        const tipoComprobante = $("#tipo_doc_sunat").val(); // 1=factura, 2=boleta, 3=nota de venta
+
+        if (tipoComprobante === "1" && !/^\d{11}$/.test(documento)) {
+            Swal.fire(
+                "Atención",
+                "Para factura el RUC debe tener 11 dígitos.",
+                "warning",
+            );
+            return;
+        }
+
+        if (!/^(\d{8}|\d{11})$/.test(documento)) {
+            Swal.fire(
+                "Atención",
+                "Ingresa un DNI de 8 dígitos o un RUC de 11 dígitos.",
+                "warning",
+            );
+            return;
+        }
 
         $("#btnBuscarCliente").prop("disabled", true);
 
@@ -579,11 +601,16 @@ $(async function () {
         }
     }
 
-    function buscarPersona(tipo, campoDocumento = null) {
-        const doc = campoDocumento
-            ? $(campoDocumento).val()
-            : $(`#${tipo}_documento`).val();
+    function buscarPersona(tipo, campoDocumento = null, silencioso = false) {
+        const doc = (
+            (campoDocumento
+                ? $(campoDocumento).val()
+                : $(`#${tipo}_documento`).val()) || ""
+        ).trim();
+
         if (!doc) return;
+
+        if (!campoDocumento && !documentoValido(tipo, !silencioso)) return;
 
         $.get(route("buscar.buscar") + `?documento=${doc}`, function (res) {
             if (res.error) {
@@ -779,24 +806,20 @@ $(async function () {
         const valor = $(this).val().trim();
         const tipo = $("#tipo_doc_sunat").val();
 
-        if (!valor || tipo === "4") return;
+        if (!valor || tipo === "3") return;
 
-        if (tipo === "factura" && valor.length !== 11) {
+        if (tipo === "1" && !/^\d{11}$/.test(valor)) {
             Swal.fire(
                 "Atención",
                 "Para factura el RUC debe tener 11 dígitos.",
                 "warning",
             );
-            return;
-        }
-
-        if (tipo === "boleta" && !(valor.length === 8 || valor.length === 11)) {
+        } else if (tipo === "2" && !/^(\d{8}|\d{11})$/.test(valor)) {
             Swal.fire(
                 "Atención",
                 "Para boleta usa DNI de 8 dígitos o RUC de 11.",
                 "warning",
             );
-            return;
         }
     });
 
@@ -817,19 +840,17 @@ $(async function () {
 
     $("#receptor_tipo_documento_id").on("change", sinDocumento);
     $("#tipo_documento_id").on("change", updateRazonSocial);
-
     $("#emisor_documento").on(
         "blur",
-        debounce(() => buscarPersona("emisor"), 300),
+        debounce(() => buscarPersona("emisor", null, true), 300),
     );
     $("#receptor_documento").on(
         "blur",
-        debounce(() => buscarPersona("receptor"), 300),
+        debounce(() => buscarPersona("receptor", null, true), 300),
     );
-
     $("#receptor2_documento").on(
         "blur",
-        debounce(() => buscarPersona("receptor2"), 300),
+        debounce(() => buscarPersona("receptor2", null, true), 300),
     );
 
     // Botones de búsqueda por click
@@ -851,10 +872,37 @@ $(async function () {
         },
     );
 
-    $("#emisor_documento, #receptor_documento").on("input", function () {
-        const tipo = $(this).attr("id").replace("_documento", "");
-        ajustarCamposPorTipo(tipo);
+    function aplicarReglaDocumento(tipo) {
+        const $doc = $(`#${tipo}_documento`);
+        if ($doc.prop("disabled")) return;
+
+        const t = tipoDocPersona(tipo);
+        if (t) {
+            const max = LONGITUD_DOC[t];
+            $doc.attr({ maxlength: max, inputmode: "numeric" });
+            $doc.val($doc.val().replace(/\D/g, "").slice(0, max));
+        }
+    }
+
+    $("#emisor_documento, #receptor_documento, #receptor2_documento").on(
+        "input",
+        function () {
+            const tipo = $(this).attr("id").replace("_documento", "");
+            aplicarReglaDocumento(tipo);
+            $(this).removeClass("is-invalid");
+            if (tipo !== "receptor2") ajustarCamposPorTipo(tipo);
+        },
+    );
+
+    $(
+        "#emisor_tipo_documento_id, #receptor_tipo_documento_id, #receptor2_tipo_documento_id",
+    ).on("change", function () {
+        const tipo = $(this).attr("id").replace("_tipo_documento_id", "");
+        $(`#${tipo}_documento`).val("");
+        aplicarReglaDocumento(tipo);
     });
+
+    ["emisor", "receptor", "receptor2"].forEach(aplicarReglaDocumento);
 
     $(document).on("input change", ".tipo, .peso, .costo, .desc", function () {
         if ($(this).val()) {
@@ -919,6 +967,20 @@ $(async function () {
             $("#destino").focus();
             return false;
         }
+
+        if (!documentoValido("emisor")) return false;
+
+        if (
+            !$("input[name='sobrequipaje']").length &&
+            !documentoValido("receptor")
+        )
+            return false;
+
+        if (
+            $("#usar_receptor2").is(":checked") &&
+            !documentoValido("receptor2")
+        )
+            return false;
 
         return true;
     }
@@ -1371,12 +1433,43 @@ $(async function () {
             return;
         }
 
-        // Abrir aquí el modal de métodos de pago
         $("#modalMetodoPago").modal("show");
     });
 
+    function tipoDocPersona(tipo) {
+        const id = $(`#${tipo}_tipo_documento_id`).val();
+        return TIPO_DOC_POR_ID[id] || null;
+    }
+
+    function documentoValido(tipo, mostrarAlerta = true) {
+        const $doc = $(`#${tipo}_documento`);
+        if ($doc.prop("disabled")) return true; // "sin documento"
+
+        const t = tipoDocPersona(tipo);
+        if (!t) return true;
+
+        const valor = ($doc.val() || "").trim();
+        const requerido = LONGITUD_DOC[t];
+
+        if (!/^\d+$/.test(valor) || valor.length !== requerido) {
+            $doc.addClass("is-invalid");
+
+            if (mostrarAlerta) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Documento inválido",
+                    text: `Seleccionaste ${t}: el número debe tener exactamente ${requerido} dígitos. No coincide con el tipo de documento.`,
+                });
+                $doc.focus();
+            }
+            return false;
+        }
+
+        $doc.removeClass("is-invalid");
+        return true;
+    }
+
     function imprimirTicketYRedirigir(ticketUrl, redirectUrl) {
-        // Si no hay ticket, solo redirige
         if (!ticketUrl) {
             window.location.href = redirectUrl;
             return;
