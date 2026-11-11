@@ -44,7 +44,7 @@
                 </tr>
                 <tr>
                     <td class="titulo-main">
-                        MANIFIESTO DE PASAJEROS
+                        MANIFIESTO DE USUARIOS
                     </td>
                 </tr>
                 <tr>
