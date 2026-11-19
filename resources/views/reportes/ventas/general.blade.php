@@ -676,7 +676,7 @@
                         </td>
 
                         <td class="money">
-                            {{ number_format($fila['inafecta'] ?? 0, 2) }}
+                            {{ number_format($fila['exonerada'] ?? 0, 2) }}
                         </td>
 
                         <td class="money">

@@ -6,95 +6,208 @@ use App\Models\Venta;
 use BackedEnum;
 use Illuminate\Support\Collection;
 
-/** Una fila por comprobante para evitar duplicar importes por pago o detalle. */
 class ReporteVentasGeneralDetalleService
 {
+    /**
+     * Genera una fila por comprobante.
+     * Evita duplicar importes por servicios o medios de pago.
+     */
     public function construir(Collection $ventas): Collection
     {
-        return $ventas->map(fn (Venta $venta) => $this->fila($venta));
+        $ventas->loadMissing([
+            'detalles.tipoServicio',
+            'pasajes',
+            'encomiendas',
+            'pagos.metodoPago',
+            'pagos.billetera',
+            'persona',
+            'usuario.persona',
+            'sucursal',
+        ]);
+
+        return $ventas->map(
+            fn(Venta $venta) => $this->fila($venta)
+        );
     }
 
     private function fila(Venta $venta): array
     {
         $detalles = $venta->detalles;
+
+        // TIPOS DE SERVICIO
         $categorias = $detalles->map(function ($detalle) {
-            $nombre = trim((string) ($detalle->tipoServicio?->nombre ?? $detalle->tipoServicio?->descripcion ?? ''));
-            if ($nombre !== '') return $nombre;
-            return match ((string) ($detalle->tipo_servicio_id ?? '')) {
-                default => 'SERVICIO NO IDENTIFICADO',
-            };
+            return trim((string) (
+                $detalle->tipoServicio?->nombre
+                ?? $detalle->tipoServicio?->descripcion
+                ?? 'SERVICIO NO IDENTIFICADO'
+            ));
         })->unique()->values();
 
-        // Respaldo para comprobantes históricos sin VentaDetalle.
-        if ($categorias->isEmpty()) {
-            if ($venta->pasajes->isNotEmpty()) $categorias->push('PASAJE');
-            if ($venta->encomiendas->where('sobre_equipaje', false)->isNotEmpty()) $categorias->push('ENCOMIENDA');
-            if ($venta->encomiendas->where('sobre_equipaje', true)->isNotEmpty()) $categorias->push('SOBREEQUIPAJE');
-        }
+        if ($detalles->isEmpty()) {
+            $categorias = collect();
 
-        $medios = $venta->pagos->map(function ($pago) {
-            $nombre = $pago->metodoPago?->nombre ?? $pago->metodoPago?->descripcion ?? 'SIN MÉTODO';
-            $billetera = $pago->billetera?->nombre ?? $pago->billetera?->descripcion;
-            return mb_strtoupper($billetera ? "BILLETERA DIGITAL - {$billetera}" : $nombre);
-        })->unique()->implode(', ');
+            if ($venta->pasajes->isNotEmpty()) {
+                $categorias->push('PASAJE');
+            }
 
-        // Códigos SUNAT 10: gravada; 20: exonerada; 30: inafecta.
-        // No derivar exonerado/inafecto del total del comprobante: pueden coexistir afectaciones.
-        $gravada = 0.0;
-        $igvDetalles = 0.0;
-        $exonerada = 0.0;
-        $inafecta = 0.0;
-        $hayAfectacion = false;
+            if ($venta->encomiendas
+                ->where('sobre_equipaje', false)
+                ->isNotEmpty()
+            ) {
+                $categorias->push('ENCOMIENDA');
+            }
 
-        foreach ($detalles as $detalle) {
-            $codigo = trim((string) ($detalle->tipo_afectacion_igv ?? ''));
-            if ($codigo === '') continue;
-
-            $hayAfectacion = true;
-            $valor = (float) ($detalle->valor_venta ?? 0);
-
-            if (str_starts_with($codigo, '10')) {
-                $gravada += $valor;
-                $igvDetalles += (float) ($detalle->igv ?? 0);
-            } elseif (str_starts_with($codigo, '20')) {
-                $exonerada += $valor;
-            } elseif (str_starts_with($codigo, '30')) {
-                $inafecta += $valor;
+            if ($venta->encomiendas
+                ->where('sobre_equipaje', true)
+                ->isNotEmpty()
+            ) {
+                $categorias->push('SOBREEQUIPAJE');
             }
         }
 
-        // Para comprobantes con detalle tributario confiamos en sus líneas.
-        // Solo en comprobantes históricos sin afectación usamos la cabecera.
-        $subtotalReporte = $hayAfectacion
-            ? round($gravada, 2)
-            : (float) ($venta->subtotal ?? 0);
+        // MEDIOS DE PAGO
+        $medios = $venta->pagos->map(function ($pago) {
+            $nombre = $pago->metodoPago?->nombre
+                ?? $pago->metodoPago?->descripcion
+                ?? 'SIN MÉTODO';
+
+            $billetera = $pago->billetera?->nombre
+                ?? $pago->billetera?->descripcion;
+
+            return mb_strtoupper(
+                $billetera
+                    ? "BILLETERA DIGITAL - {$billetera}"
+                    : $nombre
+            );
+        })->unique()->implode(', ');
+
+        /*
+        |--------------------------------------------------------------------------
+        | CÁLCULO TRIBUTARIO
+        |--------------------------------------------------------------------------
+        | 10 = Gravada
+        | 20 = Exonerada
+        | 30 = Inafecta
+        |
+        | Compatibilidad temporal:
+        | El Excel y PDF actuales leen la operación
+        | exonerada desde la clave 'inafecta'.
+        |--------------------------------------------------------------------------
+        */
+
+        $baseImponible = 0.0;
+        $igv = 0.0;
+        $exonerada = 0.0;
+        $inafectaReal = 0.0;
+        $hayAfectacion = false;
+
+        foreach ($detalles as $detalle) {
+
+            $codigo = trim(
+                (string) ($detalle->tipo_afectacion_igv ?? '')
+            );
+
+            $valorVenta = (float) (
+                $detalle->valor_venta ?? 0
+            );
+
+            switch ($codigo) {
+                case '10':
+                    $hayAfectacion = true;
+
+                    $baseImponible += (float) (
+                        $detalle->base_igv ?? 0
+                    );
+
+                    $igv += (float) (
+                        $detalle->igv ?? 0
+                    );
+                    break;
+
+                case '20':
+                    $hayAfectacion = true;
+                    $exonerada += $valorVenta;
+                    break;
+
+                case '30':
+                    $hayAfectacion = true;
+                    $inafectaReal += $valorVenta;
+                    break;
+            }
+        }
+
+        // Para registros antiguos sin clasificación tributaria,
+        // no inventamos una distribución entre gravada y exonerada.
+        $baseReporte = $hayAfectacion
+            ? round($baseImponible, 2)
+            : 0.0;
+
         $igvReporte = $hayAfectacion
-            ? round($igvDetalles, 2)
+            ? round($igv, 2)
             : (float) ($venta->impuesto ?? 0);
 
         $estado = $venta->estado instanceof BackedEnum
-            ? $venta->estado->value : (string) $venta->estado;
+            ? $venta->estado->value
+            : (string) $venta->estado;
 
         return [
-            'fecha' => $venta->fecha_emision?->format('d/m/Y H:i') ?? '',
-            'comprobante' => trim(($venta->serie ?? '') . '-' . ($venta->numero ?? ''), '-'),
+            'fecha' => $venta->fecha_emision
+                ?->format('d/m/Y H:i') ?? '',
+
+            'comprobante' => trim(
+                ($venta->serie ?? '') . '-' .
+                    ($venta->numero ?? ''),
+                '-'
+            ),
+
             'serie' => (string) ($venta->serie ?? ''),
             'numero' => (string) ($venta->numero ?? ''),
-            // ID interno, NO número de operación de banco/Yape.
+
             'operacion' => (string) $venta->id,
-            'documento' => (string) ($venta->persona?->documento ?? ''),
-            'cliente' => $venta->persona?->nombre_completo ?? $venta->persona?->razon_social ?? 'SIN CLIENTE',
-            'tipo_servicio' => $categorias->isNotEmpty() ? $categorias->implode(', ') : 'SIN DETALLE',
-            'detalle_servicio' => $detalles->pluck('descripcion')->filter()->unique()->implode(' | ') ?: ($venta->observacion ?: '-'),
-            'subtotal' => $subtotalReporte,
+
+            'documento' => (string) (
+                $venta->persona?->documento ?? ''
+            ),
+
+            'cliente' => $venta->persona?->nombre_completo
+                ?? $venta->persona?->razon_social
+                ?? 'SIN CLIENTE',
+
+            'tipo_servicio' => $categorias->isNotEmpty()
+                ? $categorias->implode(', ')
+                : 'SIN DETALLE',
+
+            'detalle_servicio' => $detalles
+                ->pluck('descripcion')
+                ->filter()
+                ->unique()
+                ->implode(' | ')
+                ?: ($venta->observacion ?: '-'),
+
+            // BASE IMPONIBLE: venta_detalles.base_igv
+            'subtotal' => $baseReporte,
+
+            // IMPUESTO: venta_detalles.igv
             'igv' => $igvReporte,
-            'exonerada' => $hayAfectacion ? $exonerada : null,
-            'inafecta' => $hayAfectacion ? $inafecta : null,
-            'total' => (float) ($venta->total ?? 0),
+
+            // Valor exonerado real de los detalles
+            'exonerada' => round($exonerada + $inafectaReal, 2),
+            'inafecta' => round($inafectaReal, 2),
+
+            'total' => (float) $venta->total,
+
             'medio_pago' => $medios ?: 'SIN MÉTODO',
-            'vendedor' => $venta->usuario?->persona?->nombre_completo ?? $venta->usuario?->name ?? 'SIN USUARIO',
+
+            'vendedor' => $venta->usuario?->persona
+                ?->nombre_completo
+                ?? $venta->usuario?->name
+                ?? 'SIN USUARIO',
+
             'estado' => $estado,
-            'sucursal' => $venta->sucursal?->nombre_comercial ?? $venta->sucursal?->nombre ?? 'SIN SUCURSAL',
+
+            'sucursal' => $venta->sucursal?->nombre_comercial
+                ?? $venta->sucursal?->nombre
+                ?? 'SIN SUCURSAL',
         ];
     }
 }

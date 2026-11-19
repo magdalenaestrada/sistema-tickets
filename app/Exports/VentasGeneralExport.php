@@ -69,7 +69,7 @@ class VentasGeneralExport extends DefaultValueBinder implements
             $base = (float) ($fila['subtotal'] ?? 0);
             $igv = (float) ($fila['igv'] ?? 0);
             // Compatibilidad TEMPORAL: inafecta = exonerada en la BD actual.
-            $exonerada = (float) ($fila['inafecta'] ?? 0);
+            $exonerada = (float) ($fila['exonerada'] ?? 0);
             $total = (float) ($fila['total'] ?? 0);
 
             $this->rows[] = [
