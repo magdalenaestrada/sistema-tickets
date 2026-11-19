@@ -647,7 +647,7 @@
                     <th>Documento</th>
                     <th>Cliente</th>
                     <th>Detalle</th>
-                    <th>Base Imponible</th>
+                    <th>Subtotal</th>
                     <th>IGV</th>
                     <th>Op. Exonerada</th>
                     <th>Total</th>

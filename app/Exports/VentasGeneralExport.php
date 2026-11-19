@@ -52,7 +52,7 @@ class VentasGeneralExport extends DefaultValueBinder implements
                 'Documento',
                 'Cliente',
                 'Detalle',
-                'Base Imponible',
+                'Subtotal',
                 'IGV Gravada',
                 'Op. Exonerada',
                 'Total',
