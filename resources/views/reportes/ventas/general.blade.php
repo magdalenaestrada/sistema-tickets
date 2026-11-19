@@ -154,7 +154,7 @@
             width: calc(100% + 20px);
         }
 
-        .two-columns > tbody > tr > td {
+        .two-columns>tbody>tr>td {
             width: 50%;
             vertical-align: top;
             border: none;
@@ -180,6 +180,36 @@
             font-size: 7px;
             color: #94a3b8;
             text-align: right;
+        }
+
+        .detail-grid {
+            table-layout: fixed;
+            font-size: 6px;
+        }
+
+        .detail-grid th,
+        .detail-grid td {
+            font-size: 6px;
+            padding: 3px 2px;
+            word-wrap: break-word;
+        }
+
+        .detail-grid th {
+            background: #1e293b;
+            color: #fff;
+        }
+
+        .detail-grid tbody tr {
+            page-break-inside: avoid;
+        }
+
+        .detail-grid thead {
+            display: table-header-group;
+        }
+
+        .detail-grid .money {
+            text-align: right;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -383,7 +413,6 @@
                         <tbody>
 
                             @forelse ($metodosPago as $metodo)
-
                                 <tr>
 
                                     <td>
@@ -407,7 +436,6 @@
                                         Sin pagos registrados
                                     </td>
                                 </tr>
-
                             @endforelse
 
 
@@ -420,10 +448,7 @@
                                 <td class="right total-amount">
 
                                     S/
-                                    {{ number_format(
-                                        $metodosPago->sum('total'),
-                                        2
-                                    ) }}
+                                    {{ number_format($metodosPago->sum('total'), 2) }}
 
                                 </td>
 
@@ -466,7 +491,6 @@
                         <tbody>
 
                             @forelse ($ventasPorSucursal as $item)
-
                                 <tr>
 
                                     <td>
@@ -490,7 +514,6 @@
                                         Sin ventas registradas
                                     </td>
                                 </tr>
-
                             @endforelse
 
 
@@ -557,7 +580,6 @@
             <tbody>
 
                 @forelse ($ventasPorVendedor as $item)
-
                     <tr>
 
                         <td>
@@ -583,7 +605,6 @@
                         </td>
 
                     </tr>
-
                 @endforelse
 
 
@@ -607,6 +628,85 @@
 
         </table>
 
+    </div>
+
+
+
+    <div class="section">
+        <div class="section-title">
+            6. Grilla general de ventas por comprobante
+        </div>
+
+        <table class="detail-grid">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Comprobante</th>
+                    <th>Serie</th>
+                    <th>Número</th>
+                    <th>Documento</th>
+                    <th>Cliente</th>
+                    <th>Detalle</th>
+                    <th>Base Imponible</th>
+                    <th>IGV</th>
+                    <th>Op. Exonerada</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Sucursal</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @forelse ($detalleGeneral as $fila)
+                    <tr>
+                        <td>{{ $fila['fecha'] }}</td>
+                        <td>{{ $fila['comprobante'] }}</td>
+                        <td>{{ $fila['serie'] }}</td>
+                        <td>{{ $fila['numero'] }}</td>
+                        <td>{{ $fila['documento'] }}</td>
+                        <td>{{ $fila['cliente'] }}</td>
+                        <td>{{ $fila['detalle_servicio'] }}</td>
+
+                        <td class="money">
+                            {{ number_format($fila['subtotal'] ?? 0, 2) }}
+                        </td>
+
+                        <td class="money">
+                            {{ number_format($fila['igv'] ?? 0, 2) }}
+                        </td>
+
+                        <td class="money">
+                            {{ number_format($fila['inafecta'] ?? 0, 2) }}
+                        </td>
+
+                        <td class="money">
+                            {{ number_format($fila['total'] ?? 0, 2) }}
+                        </td>
+
+                        <td>{{ $fila['estado'] }}</td>
+                        <td>{{ $fila['sucursal'] }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="13" class="center">
+                            No se encontraron ventas.
+                        </td>
+                    </tr>
+                @endforelse
+
+                <tr class="total-row">
+                    <td colspan="10" class="right">
+                        TOTAL EMITIDAS
+                    </td>
+
+                    <td class="money">
+                        {{ number_format($totalVendido, 2) }}
+                    </td>
+
+                    <td colspan="2"></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
 

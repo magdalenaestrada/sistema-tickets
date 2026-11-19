@@ -294,7 +294,29 @@
                                             @endforeach
 
                                         </select>
-
+                                        <select id="reporte_general_usuario" class="form-select form-select-sm mt-2">
+                                            <option value="">Todos los vendedores</option>
+                                            @foreach ($usuarios as $usuario)
+                                                <option value="{{ $usuario->id }}">{{ $usuario->persona?->nombre_completo ?? $usuario->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <select id="reporte_general_servicio" class="form-select form-select-sm mt-2">
+                                            <option value="">Todos los servicios</option>
+                                            <option value="pasaje">Pasajes</option>
+                                            <option value="encomienda">Encomiendas</option>
+                                            <option value="sobreequipaje">Sobreequipajes</option>
+                                        </select>
+                                        <select id="reporte_general_metodo_pago" class="form-select form-select-sm mt-2">
+                                            <option value="">Todos los medios de pago</option>
+                                            @foreach ($metodosPagoReporte as $metodo)
+                                                <option value="{{ $metodo->id }}">{{ $metodo->nombre ?? $metodo->descripcion }}</option>
+                                            @endforeach
+                                        </select>
+                                        <select id="reporte_general_estado" class="form-select form-select-sm mt-2">
+                                            <option value="">Todos los estados</option>
+                                            <option value="EMITIDO">Emitido</option>
+                                            <option value="ANULADO">Anulado</option>
+                                        </select>
                                     </div>
 
                                     <div class="d-flex gap-2 pt-3">
@@ -1782,51 +1804,28 @@
             */
 
             function exportarVentasGeneral(formato) {
-
-                const filters =
-                    getGlobalFilters();
-
-                const sucursalId =
-                    document.getElementById(
-                        'reporte_general_sucursal'
-                    )?.value || '';
-
-
-                const url =
-                    formato === 'pdf' ?
-                    "{{ route('reportes.ventas.general.pdf') }}" :
-                    "{{ route('reportes.ventas.general.excel') }}";
-
-
-                const params =
-                    new URLSearchParams({
-
-                        periodo: filters.period,
-
-                        desde: filters.dateFrom,
-
-                        hasta: filters.dateTo
-
-                    });
-
-
-                if (sucursalId) {
-
-                    params.append(
-                        'sucursal_id',
-                        sucursalId
-                    );
-
+                const filters = getGlobalFilters();
+                const params = new URLSearchParams({
+                    periodo: filters.period,
+                    desde: filters.dateFrom,
+                    hasta: filters.dateTo
+                });
+                const campos = {
+                    sucursal_id: 'reporte_general_sucursal',
+                    usuario_id: 'reporte_general_usuario',
+                    tipo_servicio: 'reporte_general_servicio',
+                    estado: 'reporte_general_estado',
+                    metodo_pago_id: 'reporte_general_metodo_pago'
+                };
+                for (const [parametro, id] of Object.entries(campos)) {
+                    const valor = document.getElementById(id)?.value;
+                    if (valor) params.set(parametro, valor);
                 }
-
-
-                window.open(
-                    `${url}?${params.toString()}`,
-                    '_blank'
-                );
-
+                const url = formato === 'pdf'
+                    ? "{{ route('reportes.ventas.general.pdf') }}"
+                    : "{{ route('reportes.ventas.general.excel') }}";
+                window.open(`${url}?${params.toString()}`, '_blank');
             }
-
 
             /*
             |--------------------------------------------------------------------------

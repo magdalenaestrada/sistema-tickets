@@ -45,7 +45,8 @@ class ReportesController extends Controller
         $usuarios = User::with("persona")->get();
         $tipos_documento = TipoDocumentoFactura::where('estado', 'A')->get();
         $rutas = Ruta::all();
-        return view('reportes.index', compact('sucursales', 'tipos_documento', 'usuarios', 'rutas'));
+        $metodosPagoReporte = MetodoPago::all();
+        return view('reportes.index', compact('sucursales', 'tipos_documento', 'usuarios', 'rutas', 'metodosPagoReporte'));
     }
 
     public function resumenVentas(Request $request)
@@ -231,41 +232,31 @@ class ReportesController extends Controller
 
         $query = Venta::query()
             ->with([
-                'usuario.persona',
-                'sucursal',
-                'persona',
-                'tipoDocumentoFactura',
-                'pagos.metodoPago',
-                'pagos.billetera',
-                'pasajes',
-                'encomiendas' => function ($q) {
-                    $q->select([
-                        'id',
-                        'venta_id',
-                        'sobre_equipaje',
-                        'estado',
-                        'total',
-                    ]);
-                },
+                'usuario.persona', 'sucursal', 'persona', 'tipoDocumentoFactura',
+                'pagos.metodoPago', 'pagos.billetera', 'pasajes', 'encomiendas',
+                'detalles.tipoServicio',
             ])
             ->whereBetween('fecha_emision', [$desde, $hasta]);
 
-        /*
-    |--------------------------------------------------------------------------
-    | SUCURSAL / AGENCIA
-    |--------------------------------------------------------------------------
-    */
-        if ($request->filled('agencia_id')) {
-            $query->where('sucursal_id', $request->agencia_id);
+        // Alias antiguo para enlaces existentes, priorizando el filtro nuevo.
+        $sucursalId = $request->input('sucursal_id', $request->input('agencia_id'));
+        if (filled($sucursalId)) $query->where('sucursal_id', $sucursalId);
+        if ($request->filled('usuario_id')) $query->where('usuario_id', $request->usuario_id);
+        if ($request->filled('estado')) $query->where('estado', $request->estado);
+
+        if ($request->filled('metodo_pago_id')) {
+            $query->whereHas('pagos', fn ($q) => $q->where('metodo_pago_id', $request->metodo_pago_id));
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | USUARIO
-    |--------------------------------------------------------------------------
-    */
-        if ($request->filled('usuario_id')) {
-            $query->where('usuario_id', $request->usuario_id);
+        if ($request->filled('tipo_servicio')) {
+            // Filtramos comprobantes; si contienen varios servicios se muestran
+            // sus importes COMPLETOS, no solo el importe del servicio buscado.
+            $tipo = $request->tipo_servicio;
+            if ($tipo === 'pasaje') {
+                $query->whereHas('pasajes');
+            } elseif ($tipo === 'encomienda' || $tipo === 'sobreequipaje') {
+                $query->whereHas('encomiendas', fn ($q) => $q->where('sobre_equipaje', $tipo === 'sobreequipaje'));
+            }
         }
 
         return $query;
@@ -454,6 +445,7 @@ class ReportesController extends Controller
             ->values();
 
         return [
+            'detalleGeneral' => app(\App\Services\ReporteVentasGeneralDetalleService::class)->construir($ventas),
             'ventas' => $ventas,
 
             'ventasEmitidas' => $ventasEmitidas,
@@ -538,7 +530,7 @@ class ReportesController extends Controller
             $data
         );
 
-        $pdf->setPaper('a4', 'portrait');
+        $pdf->setPaper('a3', 'landscape');
 
         return $pdf->download(
             'reporte_general_ventas_' .
