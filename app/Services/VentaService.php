@@ -113,16 +113,43 @@ class VentaService
                     $tipoServicioDetalle = 1;
                     $igv = $empresa->igv;
                 } elseif ((int) $tipoServicioId === 2) {
-                    $descripcion = 'Encomienda: '
-                        . ($detalle['tipo_encomienda_nombre'] ?? 'Servicio')
-                        . ' - '
-                        . ($detalle['peso'] ?? 0)
-                        . 'kg';
+
+                    // ENCOMIENDA
+                    $descripcion = trim((string) ($detalle['descripcion'] ?? ''));
+
+                    if ($descripcion === '') {
+                        $tipoEncomienda = trim((string) ($detalle['tipo_encomienda_nombre'] ?? ''));
+                        $peso = $detalle['peso'] ?? null;
+
+                        $descripcion = 'Encomienda';
+
+                        if ($tipoEncomienda !== '') {
+                            $descripcion .= ': ' . $tipoEncomienda;
+                        }
+
+                        if (is_numeric($peso) && (float) $peso > 0) {
+                            $descripcion .= ' - ' . $peso . 'kg';
+                        }
+                    }
+
                     $tipoServicioDetalle = 2;
                     $referenciaType = EncomiendaDetalle::class;
                     $igv = $empresa->igv_encomienda;
                 } else {
-                    $descripcion = 'Equipaje extra - ' . ($detalle['peso'] ?? 0) . 'kg';
+
+                    // EQUIPAJE EXTRA
+                    $descripcion = trim((string) ($detalle['descripcion'] ?? ''));
+
+                    if ($descripcion === '') {
+                        $peso = $detalle['peso'] ?? null;
+
+                        $descripcion = 'Equipaje extra';
+
+                        if (is_numeric($peso) && (float) $peso > 0) {
+                            $descripcion .= ' - ' . $peso . 'kg';
+                        }
+                    }
+
                     $tipoServicioDetalle = 3;
                     $referenciaType = EncomiendaDetalle::class;
                     $igv = $empresa->igv_encomienda;
